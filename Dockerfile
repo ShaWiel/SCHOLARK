@@ -1,11 +1,17 @@
 FROM node:22-alpine
 
-RUN apk add --no-cache unzip
+RUN apk add --no-cache unzip patch
 WORKDIR /app
 
 COPY SCHOLARK_V22_Deploy.zip /tmp/scholark.zip
+COPY scholark_v23_patch.gz.b64 /tmp/scholark_v23_patch.gz.b64
+COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
+
 RUN unzip /tmp/scholark.zip -d /app \
-    && rm /tmp/scholark.zip
+    && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
+    && patch -p1 -d /app < /tmp/scholark_v23.patch \
+    && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
+    && rm /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch
 
 RUN npm install --omit=dev
 
