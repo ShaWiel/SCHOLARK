@@ -12,6 +12,7 @@ RUN unzip /tmp/scholark.zip -d /app \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
     && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g' {} + \
+    && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#19.99#g; s#9\.99#14.99#g' {} + \
     && rm /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch
 
 RUN npm install --omit=dev
