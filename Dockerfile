@@ -9,6 +9,7 @@ COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
 COPY scholark-v24-ui.js /tmp/scholark-v24-ui.js
 COPY scholark-v25-enhancements.js /tmp/scholark-v25-enhancements.js
+COPY scholark-v26-fixes.js /tmp/scholark-v26-fixes.js
 
 RUN unzip /tmp/scholark.zip -d /app \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
@@ -17,8 +18,8 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
-    && find /app -type f -name '*.html' -exec sh -c 'cp /tmp/scholark-v24-ui.js "$(dirname "$1")/scholark-v24-ui.js"; cp /tmp/scholark-v25-enhancements.js "$(dirname "$1")/scholark-v25-enhancements.js"; sed -i "s#</body>#<script src=\"scholark-v24-ui.js\"></script><script src=\"scholark-v25-enhancements.js\"></script></body>#" "$1"' sh {} \; \
-    && rm /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-v24-ui.js /tmp/scholark-v25-enhancements.js
+    && find /app -type f -name '*.html' -exec sh -c 'cp /tmp/scholark-v24-ui.js "$(dirname "$1")/scholark-v24-ui.js"; cp /tmp/scholark-v25-enhancements.js "$(dirname "$1")/scholark-v25-enhancements.js"; cp /tmp/scholark-v26-fixes.js "$(dirname "$1")/scholark-v26-fixes.js"; sed -i "s#</body>#<script src=\"scholark-v24-ui.js\"></script><script src=\"scholark-v25-enhancements.js\"></script><script src=\"scholark-v26-fixes.js\"></script></body>#" "$1"' sh {} \; \
+    && rm /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-v24-ui.js /tmp/scholark-v25-enhancements.js /tmp/scholark-v26-fixes.js
 
 RUN npm install --omit=dev
 
