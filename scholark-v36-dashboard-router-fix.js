@@ -5,6 +5,7 @@
   const isDashboard = () => (location.hash || '').toLowerCase().includes('dashboard');
   let workspace = null;
   let workspaceDisplay = '';
+  let entered = false;
 
   function findWorkspace() {
     const tagged = document.querySelector('[data-v30-legacy-home="1"]');
@@ -18,12 +19,13 @@
     return sidebar?.nextElementSibling || document.querySelector('main,[role="main"]');
   }
 
-  function forceSidebarOpen() {
-    localStorage.setItem('scholark_sidebar_closed', '0');
+  function openSidebarOnce() {
+    if (entered) return;
+    entered = true;
     const toggle = document.getElementById('v26-sidebar-toggle');
     if (!toggle) return;
-    const wantsOpen = toggle.textContent.trim() === '☰' || /open sidebar/i.test(toggle.title || '');
-    if (wantsOpen) toggle.click();
+    const looksClosed = toggle.textContent.trim() === '☰' || /open sidebar/i.test(toggle.title || '');
+    if (looksClosed) toggle.click();
   }
 
   function enterDashboard() {
@@ -37,7 +39,6 @@
 
     workspace = workspace || findWorkspace();
     if (workspace) {
-      // Temporarily remove V30's marker to recover the workspace's real display mode.
       if (workspace.dataset?.v30LegacyHome === '1') delete workspace.dataset.v30LegacyHome;
       workspace.hidden = false;
       workspace.style.removeProperty('display');
@@ -49,7 +50,7 @@
       workspace.style.setProperty('pointer-events', 'auto', 'important');
     }
 
-    forceSidebarOpen();
+    openSidebarOnce();
 
     const dashEntry = document.getElementById('v34-dashboard-entry');
     if (dashEntry) dashEntry.hidden = true;
@@ -57,6 +58,7 @@
 
   function leaveDashboard() {
     document.body?.classList.remove('v36-dashboard-route');
+    entered = false;
     if (workspace) {
       workspace.style.removeProperty('display');
       workspace.style.removeProperty('visibility');
