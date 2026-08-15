@@ -2,6 +2,7 @@
   if (window.__SCHOLARK_V34_DASHBOARD_ENTRY__) return;
   window.__SCHOLARK_V34_DASHBOARD_ENTRY__ = true;
 
+  const USED_KEY='scholark_dashboard_entry_used';
   const style=document.createElement('style');
   style.id='scholark-v34-dashboard-style';
   style.textContent=`
@@ -15,47 +16,101 @@
 
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const text=e=>(e?.textContent||'').trim();
+  const visible=el=>{
+    if(!el) return false;
+    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+    return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0&&r.width>1&&r.height>1;
+  };
+
+  function wasUsed(){
+    try{return sessionStorage.getItem(USED_KEY)==='1'}catch{return false}
+  }
+  function markUsed(){
+    try{sessionStorage.setItem(USED_KEY,'1')}catch{}
+  }
 
   function onPublicHome(){
     const layer=document.querySelector('#v29-home-layer.v30-native-home');
     return !!(layer && !layer.hidden && getComputedStyle(layer).display!=='none');
   }
 
-  function findDashboardTarget(){
-    const candidates=$$('button,a,[role="button"],[tabindex]')
-      .filter(el=>!el.closest('#v29-home-layer') && /^(dashboard|open dashboard|dashboard openen)$/i.test(text(el)));
-    if(candidates.length) return candidates[0];
+  function findSidebar(){
+    const tokens=['Dashboard','Education & Learning','Studio AI','Planner','Progress'];
+    return $$('aside,nav,section,div')
+      .filter(el=>!el.closest('#v29-home-layer'))
+      .map(el=>({el,hits:tokens.filter(t=>(el.textContent||'').includes(t)).length,r:el.getBoundingClientRect()}))
+      .filter(o=>o.hits>=3 && o.r.width>=120 && o.r.width<=480 && o.r.height>=250)
+      .sort((a,b)=>b.hits-a.hits || a.r.width-b.r.width)[0]?.el||null;
+  }
 
-    const sidebar=$$('aside,nav,section,div').find(el=>{
-      if(el.closest('#v29-home-layer')) return false;
-      const t=text(el);
-      const r=el.getBoundingClientRect();
-      return r.width>=120&&r.width<=460&&r.height>=280&&t.includes('Dashboard')&&t.includes('Studio AI');
-    });
-    if(sidebar){
-      const exact=$$('button,a,[role="button"],div',sidebar).find(el=>/^Dashboard$/i.test(text(el)));
-      if(exact) return exact;
+  function dashboardItem(sidebar){
+    if(!sidebar) return null;
+    return $$('button,a,[role="button"],[tabindex],div',sidebar)
+      .filter(el=>/^Dashboard$/i.test(text(el)))
+      .sort((a,b)=>{
+        const aa=['BUTTON','A'].includes(a.tagName)?0:1;
+        const bb=['BUTTON','A'].includes(b.tagName)?0:1;
+        return aa-bb;
+      })[0]||null;
+  }
+
+  function revealWorkspace(){
+    // Stop showing the marketing/public home immediately.
+    const layer=document.getElementById('v29-home-layer');
+    if(layer){
+      layer.hidden=true;
+      layer.style.setProperty('display','none','important');
     }
-    return null;
+
+    // Restore the original SCHOLARK application content that V30 hid on Home.
+    const legacy=document.querySelector('[data-v30-legacy-home="1"]');
+    if(legacy){
+      delete legacy.dataset.v30LegacyHome;
+      legacy.style.removeProperty('display');
+      legacy.hidden=false;
+    }
+
+    document.body?.classList.remove('v31-public-home');
+  }
+
+  function activateDashboard(){
+    revealWorkspace();
+    if((location.hash||'').toLowerCase()!=='#dashboard') location.hash='dashboard';
+
+    // Give the SPA one render cycle, then explicitly activate its real sidebar Dashboard item.
+    let attempts=0;
+    const timer=setInterval(()=>{
+      attempts++;
+      revealWorkspace();
+      const side=findSidebar();
+      const item=dashboardItem(side);
+      if(item){
+        try{item.click()}catch{}
+        if(side){
+          side.style.removeProperty('display');
+          side.style.removeProperty('visibility');
+          side.style.removeProperty('opacity');
+        }
+        clearInterval(timer);
+      }else if(attempts>=12){
+        clearInterval(timer);
+      }
+    },100);
   }
 
   function openDashboard(){
-    const target=findDashboardTarget();
-    if(target){
-      target.click();
-      setTimeout(()=>{
-        const layer=document.getElementById('v29-home-layer');
-        if(layer) layer.hidden=true;
-      },60);
-      return;
-    }
+    markUsed();
+    const btn=document.getElementById('v34-dashboard-entry');
+    if(btn){btn.hidden=true;btn.style.setProperty('display','none','important');}
 
-    // Safe fallback for this single-page build.
-    const layer=document.getElementById('v29-home-layer');
-    if(layer) layer.hidden=true;
-    const legacy=document.querySelector('[data-v30-legacy-home="1"]');
-    if(legacy){legacy.style.removeProperty('display');delete legacy.dataset.v30LegacyHome;}
-    location.hash='dashboard';
+    // Prefer the app's own existing dashboard control when available.
+    const native=$$('button,a,[role="button"],[tabindex]')
+      .filter(el=>el.id!=='v34-dashboard-entry'&&!el.closest('#v29-home-layer'))
+      .find(el=>/^(open dashboard|dashboard openen)$/i.test(text(el)));
+
+    revealWorkspace();
+    if(native){try{native.click()}catch{}}
+    activateDashboard();
   }
 
   function sync(){
@@ -68,7 +123,11 @@
       btn.addEventListener('click',openDashboard);
       document.body.appendChild(btn);
     }
-    btn.hidden=!onPublicHome();
+
+    // Once clicked, this entry button stays gone for the rest of this browser session.
+    btn.hidden=wasUsed() || !onPublicHome();
+    if(btn.hidden) btn.style.setProperty('display','none','important');
+    else btn.style.removeProperty('display');
   }
 
   new MutationObserver(()=>{clearTimeout(window.__v34t);window.__v34t=setTimeout(sync,70)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
