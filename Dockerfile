@@ -7,6 +7,7 @@ COPY SCHOLARK_V22_Deploy.zip /tmp/scholark.zip
 COPY scholark_v23_patch.gz.b64 /tmp/scholark_v23_patch.gz.b64
 COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
+COPY studio-ai-route.mjs /app/studio-ai-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
 # Active runtime only. Older V46-V49 workspace routers are intentionally not loaded.
@@ -32,6 +33,7 @@ COPY scholark-v24-ui.js \
      scholark-v56-sidebar-cleanup.js \
      scholark-v57-presentation-deck.js \
      scholark-v58-studio-artifact-suite.js \
+     scholark-v59-studio-ai-engine.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -51,4 +53,4 @@ RUN npm install --omit=dev
 ENV NODE_ENV=production
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "backend/server.mjs"]
