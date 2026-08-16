@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Studio AI connected server-side to GPT-5.6 with xhigh reasoning, research and structured output; UI quality badges removed
-Triggered: 2026-08-16 20:21 America/Paramaribo
+Presentation generator now requires real AI output, rejects placeholder fallback, enforces presentation-ready slide copy, notes and sources
+Triggered: 2026-08-16 20:37 America/Paramaribo
