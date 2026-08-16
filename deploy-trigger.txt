@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Definitive V51 workspace shell + V52 conflict QA
-Triggered: 2026-08-16 14:02 America/Paramaribo
+Workspace runtime cleanup: V51 primary shell + V52 QA + V53 dashboard fail-safe
+Triggered: 2026-08-16 14:21 America/Paramaribo
