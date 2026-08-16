@@ -52,6 +52,7 @@ RUN unzip /tmp/scholark.zip -d /app \
 RUN npm install --omit=dev
 
 ENV NODE_ENV=production
+ENV OPENAI_STUDIO_MODEL=gpt-5.6
 EXPOSE 10000
 
 CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "backend/server.mjs"]
