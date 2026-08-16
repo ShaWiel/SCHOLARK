@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Workspace V49 tools + V50 worldwide school finder
-Triggered: 2026-08-16 13:20 America/Paramaribo
+Definitive V51 workspace shell + V52 conflict QA
+Triggered: 2026-08-16 14:02 America/Paramaribo
