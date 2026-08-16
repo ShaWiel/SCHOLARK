@@ -8,7 +8,7 @@ COPY scholark_v23_patch.gz.b64 /tmp/scholark_v23_patch.gz.b64
 COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
 
-# Only active runtime layers are copied. Shell glob order keeps V24 -> V52 deterministic.
+# Active runtime only. Older V46-V49 workspace routers are intentionally not loaded.
 COPY scholark-v24-ui.js \
      scholark-v25-enhancements.js \
      scholark-v27-voice-hotfix.js \
@@ -23,14 +23,10 @@ COPY scholark-v24-ui.js \
      scholark-v42-route-guard.js \
      scholark-v43-studio-workspace.js \
      scholark-v45-studio-generation-brief.js \
-     scholark-v46-navigation-cleanup.js \
-     scholark-v47-dashboard-stability.js \
-     scholark-v48-workspace-runtime.js \
-     scholark-v49-workspace-tools.js \
      scholark-v50-school-finder.js \
-     scholark-v51-workspace-layout.js \
      scholark-v51-workspace-shell.js \
      scholark-v52-workspace-qa.js \
+     scholark-v53-dashboard-bootstrap.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
