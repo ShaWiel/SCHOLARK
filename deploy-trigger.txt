@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Sidebar cleanup: move Return Home into sidebar, remove duplicate Pro tools and sidebar AI quality card
-Triggered: 2026-08-16 15:16 America/Paramaribo
+Homepage topbar polish: dark/black navigation and official SCHOLARK gradient graduation logo
+Triggered: 2026-08-16 15:29 America/Paramaribo
