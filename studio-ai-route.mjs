@@ -28,11 +28,11 @@ const readBody = req => new Promise((resolve, reject) => {
 });
 
 const modeRules = {
-  presentation: 'Return a complete presentation plan. Each section is one slide. Vary the content logic across slides: opening, evidence, comparison, timeline, stats, quote, implications, conclusion when appropriate. Never invent statistics or citations.',
-  webpage: 'Return a complete responsive webpage content architecture: hero, value proposition, sections, proof, useful information, CTA and FAQ when appropriate. Write conversion-quality copy without generic filler.',
-  document: 'Return a complete professional document structure with substantive section prose, evidence-aware claims, logical transitions, conclusions and references when research is used.',
-  social: 'Return a complete social content set/carousel with strong hooks, useful body copy, caption, CTA and platform-appropriate hashtags. Avoid engagement bait and generic filler.',
-  graphic: 'Return a complete visual-content system for a poster/infographic/graphic: headline, concise supporting copy, information blocks, hierarchy, CTA and visual-direction notes.',
+  presentation: `Create a finished presentation that a competent speaker could open and present immediately. Every section is one final slide, not a planning note. Never put generator instructions, prompt fragments, labels such as "Core argument", "Evidence and analysis", "Comparison / counterargument", or phrases such as "Use this slide to..." on the slide unless the user explicitly asks for those exact words. Slide titles must be concise and meaningful (normally 3-8 words). Subtitles should normally be one short sentence. Use 0-4 concise points per slide. Build a real narrative arc, vary slide logic intentionally, and make each slide earn its place. For factual topics, use verified facts and statistics only. Include speaker notes that help someone present the slide naturally without reading the slide verbatim. Include a concrete visual brief for each slide; choose charts, timelines, comparisons, diagrams, photography, maps, quotes or strong typography when appropriate. The cover should look like a cover, evidence slides should contain actual evidence, comparison slides should contain actual compared entities, and the final slide should deliver a real conclusion or call to action.`,
+  webpage: 'Return complete publishable webpage content: a real hero, value proposition, useful sections, proof, navigation logic, CTA and FAQ when appropriate. Write specific conversion-quality copy, not wireframe instructions or generic filler. Every section must be ready to render.',
+  document: 'Return a complete professional document structure with substantive section prose, evidence-aware claims, logical transitions, conclusions and references when research is used. Do not output writing instructions as body copy; output the actual document content.',
+  social: 'Return a complete social content set/carousel with platform-ready hooks, useful body copy, caption, CTA and platform-appropriate hashtags. Avoid engagement bait, placeholders and instructions to the creator. Each item should be publishable after normal human review.',
+  graphic: 'Return a complete visual-content system for a poster/infographic/graphic: final headline, concise supporting copy, information blocks, hierarchy, CTA and a concrete visual brief. Do not put design instructions in the visible copy fields.',
 };
 
 const schema = {
@@ -47,14 +47,30 @@ const schema = {
       type: 'array',
       items: {
         type: 'object', additionalProperties: false,
-        required: ['title','body','bullets','stat','label','layoutHint'],
+        required: ['title','subtitle','body','bullets','points','label','layoutHint','visualType','visualBrief','speakerNotes','sourceRefs'],
         properties: {
           title: { type: 'string' },
+          subtitle: { type: 'string' },
           body: { type: 'string' },
           bullets: { type: 'array', items: { type: 'string' } },
-          stat: { type: 'string' },
+          points: {
+            type: 'array',
+            items: {
+              type: 'object', additionalProperties: false,
+              required: ['heading','detail','value'],
+              properties: {
+                heading: { type: 'string' },
+                detail: { type: 'string' },
+                value: { type: 'string' },
+              }
+            }
+          },
           label: { type: 'string' },
           layoutHint: { type: 'string', enum: ['hero','split','cards','timeline','compare','stats','quote','statement','grid','closing','section'] },
+          visualType: { type: 'string', enum: ['photo','chart','timeline','comparison','diagram','map','quote','numbers','typography','none'] },
+          visualBrief: { type: 'string' },
+          speakerNotes: { type: 'string' },
+          sourceRefs: { type: 'array', items: { type: 'string' } },
         }
       }
     },
@@ -84,15 +100,15 @@ function extractText(data) {
 
 async function generate(payload) {
   const key = String(process.env.OPENAI_API_KEY || '').trim();
-  if (!key) {
-    const err = new Error('OPENAI_API_KEY is not configured on the server');
+  if (!key || key === 'snyc: false' || key === 'sync: false') {
+    const err = new Error('OPENAI_API_KEY is not configured with a valid OpenAI secret key');
     err.code = 'AI_ENGINE_NOT_CONFIGURED';
     throw err;
   }
 
   const mode = String(payload.mode || '').toLowerCase();
   if (!modeRules[mode]) throw new Error('Unsupported Studio mode');
-  const model = String(process.env.OPENAI_STUDIO_MODEL || 'gpt-5.6').trim();
+  const model = String(process.env.OPENAI_STUDIO_MODEL || process.env.OPENAI_MODEL || 'gpt-5.6').trim();
   const requested = Math.max(1, Math.min(mode === 'presentation' ? 100 : 40, Number(payload.count || payload.settings?.count || 10) || 10));
   const level = payload.level || 'student';
   const outline = Array.isArray(payload.outline) ? payload.outline.slice(0, 100) : [];
@@ -108,9 +124,24 @@ async function generate(payload) {
     purpose: payload.purpose || payload.settings?.purpose || '',
     outline,
     references,
+    settings: payload.settings || {},
   };
 
-  const instructions = `You are SCHOLARK Studio AI, an elite research, writing, information-design and visual-communication engine. Produce the strongest useful first draft possible, not filler. Follow the user's exact request. Adapt complexity to the selected learner/work level without becoming childish unless the level requires it. Research factual claims when needed, prefer primary/reliable sources, never fabricate facts, URLs, quotes or statistics, and make uncertainty explicit. Think deeply about narrative, hierarchy, audience, clarity, persuasion, evidence and visual structure before writing. ${modeRules[mode]} Return exactly ${requested} sections when the mode naturally uses a count, unless doing so would materially harm quality. The JSON is consumed by an editor, so every field must be polished, specific and immediately usable.`;
+  const presentationGuard = mode === 'presentation' ? `
+PRESENTATION-READY QUALITY GATE:
+- The visible slide copy must be final audience-facing copy. Never output meta-instructions, slide-writing advice, or the user's whole prompt as a slide title.
+- Title: usually 3-8 words and under 60 characters. Subtitle: normally under 18 words. Visible body: usually under 45 words. Each bullet: usually under 12 words.
+- Speaker notes: normally 60-140 words with useful transitions, context and caveats. Notes are for the presenter and must not simply repeat the slide.
+- Use specific named entities and claims. A GOAT debate should name and compare the actual players; a climate deck should contain the actual climate evidence; a pitch deck should contain the actual business argument.
+- For statistics, verify the number with web research and cite the source. If a number cannot be verified, omit it rather than inventing a placeholder.
+- Use points.value only for real concise numbers/labels that belong visibly on the slide; leave it as an empty string when not needed.
+- sourceRefs must contain source URLs that support claims on that slide when relevant.
+- visualBrief describes what should be shown visually, but must never leak into the visible title/body/bullets.
+- Use layoutHint intentionally. Do not make every slide cards. Aim for a professionally varied deck.
+- Before returning, silently reject and rewrite any slide that still contains phrases like "Use this slide", "What to notice", "Core argument", "Evidence and analysis", "Supporting insight", "Comparison / counterargument", "Verified figure", or other template language unless those words genuinely belong to the topic.
+` : '';
+
+  const instructions = `You are SCHOLARK Studio AI, an elite research, writing, information-design and visual-communication engine. Produce the strongest useful first draft possible, not filler. Follow the user's exact request. Adapt complexity to the selected learner/work level without becoming childish unless the level requires it. Research factual claims when needed, prefer primary and highly reliable sources, never fabricate facts, URLs, quotes or statistics, and make uncertainty explicit. Think deeply about narrative, hierarchy, audience, clarity, persuasion, evidence and visual structure before writing. ${modeRules[mode]} ${presentationGuard} Return exactly ${requested} sections when the mode naturally uses a count, unless doing so would materially harm quality. The JSON is consumed directly by an editor, so every audience-facing field must already be polished, specific and immediately usable.`;
 
   const request = {
     model,
@@ -120,7 +151,7 @@ async function generate(payload) {
       verbosity: 'high',
       format: { type: 'json_schema', name: 'scholark_studio_artifact', strict: true, schema },
     },
-    tools: payload.research === false ? [] : [{ type: 'web_search' }],
+    tools: payload.research === false ? [] : [{ type: 'web_search', search_context_size: 'high' }],
     input: [
       { role: 'developer', content: [{ type: 'input_text', text: instructions }] },
       { role: 'user', content: [{ type: 'input_text', text: JSON.stringify(userInput) }] },
@@ -152,10 +183,11 @@ async function generate(payload) {
 async function handle(req, res) {
   const url = new URL(req.url || '/', 'http://localhost');
   if (url.pathname === '/api/studio/health' && req.method === 'GET') {
+    const key = String(process.env.OPENAI_API_KEY || '').trim();
     return json(res, 200, {
       ok: true,
-      configured: Boolean(String(process.env.OPENAI_API_KEY || '').trim()),
-      model: String(process.env.OPENAI_STUDIO_MODEL || 'gpt-5.6'),
+      configured: Boolean(key && key !== 'snyc: false' && key !== 'sync: false'),
+      model: String(process.env.OPENAI_STUDIO_MODEL || process.env.OPENAI_MODEL || 'gpt-5.6'),
       quality: 'highest',
     });
   }
