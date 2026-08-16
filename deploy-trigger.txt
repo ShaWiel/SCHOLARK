@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Workspace Runtime V48: sidebar, levels, home return, native tool routing and MAX AI quality
-Triggered: 2026-08-16 12:52 America/Paramaribo
+Workspace V49 tools + V50 worldwide school finder
+Triggered: 2026-08-16 13:20 America/Paramaribo
