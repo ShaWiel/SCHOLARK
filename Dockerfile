@@ -34,6 +34,7 @@ COPY scholark-v24-ui.js \
      scholark-v57-presentation-deck.js \
      scholark-v58-studio-artifact-suite.js \
      scholark-v59-studio-ai-engine.js \
+     scholark-v60-presentation-ready.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
