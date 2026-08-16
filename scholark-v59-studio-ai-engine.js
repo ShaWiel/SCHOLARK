@@ -5,19 +5,23 @@
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const clean=s=>String(s||'').replace(/\s+/g,' ').trim();
+  const cut=(s,n)=>{s=clean(s);return s.length>n?s.slice(0,n-1).trimEnd()+'…':s};
   const uid=()=>Math.random().toString(36).slice(2,9);
   const MODES=['presentation','webpage','document','social','graphic'];
+  const META=/^(core argument|evidence( and analysis)?|comparison\s*\/\s*counterargument|supporting insight|what to notice|verified figure|section\s*\d+|use this slide)/i;
 
   const style=document.createElement('style');
   style.id='scholark-v59-quality-style';
   style.textContent=`
     .v41-quality,.v51-quality,.v52-pill{display:none!important}
-    #v59-generating{position:fixed;z-index:2147483646;inset:0;background:rgba(12,14,20,.82);backdrop-filter:blur(11px);display:none;place-items:center;font-family:Inter,system-ui,sans-serif}
-    #v59-generating.open{display:grid}.v59-box{width:min(460px,88vw);border-radius:24px;background:#171a23;color:#fff;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.4)}.v59-box small{font:900 8px Inter;letter-spacing:.16em;color:#c9ff6a}.v59-box h3{font:950 25px/1 Inter;margin:8px 0 9px;letter-spacing:-.035em}.v59-box p{font:600 10px/1.5 Inter;color:#b9bdc7;margin:0}.v59-bar{height:5px;background:#292e3b;border-radius:99px;overflow:hidden;margin-top:18px}.v59-bar:after{content:'';display:block;height:100%;width:44%;background:#c9ff6a;border-radius:99px;animation:v59move 1.05s ease-in-out infinite alternate}@keyframes v59move{from{transform:translateX(-15%)}to{transform:translateX(150%)}}
+    #v59-generating{position:fixed;z-index:2147483646;inset:0;background:rgba(12,14,20,.84);backdrop-filter:blur(11px);display:none;place-items:center;font-family:Inter,system-ui,sans-serif;padding:20px}
+    #v59-generating.open{display:grid}.v59-box{width:min(500px,92vw);border-radius:24px;background:#171a23;color:#fff;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.4)}.v59-box small{font:900 8px Inter;letter-spacing:.16em;color:#c9ff6a}.v59-box h3{font:950 25px/1 Inter;margin:8px 0 9px;letter-spacing:-.035em}.v59-box p{font:600 10px/1.55 Inter;color:#b9bdc7;margin:0}.v59-bar{height:5px;background:#292e3b;border-radius:99px;overflow:hidden;margin-top:18px}.v59-bar:after{content:'';display:block;height:100%;width:44%;background:#c9ff6a;border-radius:99px;animation:v59move 1.05s ease-in-out infinite alternate}@keyframes v59move{from{transform:translateX(-15%)}to{transform:translateX(150%)}}
+    #v59-generating.error .v59-bar{display:none}#v59-generating.error .v59-box small{color:#ffb4b4}#v59-generating.error .v59-box h3{font-size:22px}.v59-close{display:none;margin-top:18px;border:0;border-radius:11px;background:#c9ff6a;color:#151821;padding:10px 14px;font:900 9px Inter;cursor:pointer}#v59-generating.error .v59-close{display:inline-block}
   `;
   document.head.appendChild(style);
 
-  const loader=document.createElement('div');loader.id='v59-generating';loader.innerHTML='<div class="v59-box"><small>SCHOLARK STUDIO AI</small><h3>Building your first draft…</h3><p>Researching, reasoning, writing and structuring the output before it enters the editor.</p><div class="v59-bar"></div></div>';document.body.appendChild(loader);
+  const loader=document.createElement('div');loader.id='v59-generating';loader.innerHTML='<div class="v59-box"><small>SCHOLARK STUDIO AI</small><h3>Building the finished output…</h3><p class="v59-message">Researching, reasoning, fact-checking, writing and structuring the final first draft before it enters the editor.</p><div class="v59-bar"></div><button class="v59-close" type="button">Back to Studio</button></div>';document.body.appendChild(loader);
+  $('.v59-close',loader).onclick=()=>{loader.classList.remove('open','error')};
 
   function studio(){return $('#v41-studio-workspace')}
   function mode(){return $('.v41-mode.active',studio())?.dataset.mode||'presentation'}
@@ -66,67 +70,99 @@
     return data;
   }
 
+  function pointItems(sec,limit){
+    const pts=Array.isArray(sec.points)?sec.points.filter(x=>x&&(x.heading||x.detail||x.value)):[];
+    if(pts.length)return pts.slice(0,limit).map((p,j)=>[clean(p.value)||String(j+1).padStart(2,'0'),cut(p.heading||`Point ${j+1}`,70),cut(p.detail||'',150)]);
+    return (sec.bullets||[]).filter(Boolean).slice(0,limit).map((b,j)=>[String(j+1).padStart(2,'0'),cut(b,72),'']);
+  }
+
+  function safeTitle(sec,i){
+    let t=cut(sec.title,64);
+    if(!t||META.test(t))t=cut(sec.subtitle||sec.body||`Slide ${i+1}`,64);
+    return t||`Slide ${i+1}`;
+  }
+
   function slideFrom(sec,i,total){
-    let layout=sec.layoutHint||'cards';if(!['hero','split','cards','timeline','compare','stats','quote','statement','grid','closing'].includes(layout))layout='cards';
-    if(i===0)layout='hero';if(i===total-1&&layout==='section')layout='closing';
-    const bullets=(sec.bullets||[]).filter(Boolean);
-    let items=bullets.slice(0,layout==='timeline'?4:layout==='compare'?2:layout==='stats'?3:4).map((b,j)=>[String(j+1).padStart(2,'0'),clean(b).slice(0,80),clean(sec.body).slice(0,180)]);
-    if(layout==='stats')items=(bullets.length?bullets:['Key metric','Evidence','Impact']).slice(0,3).map((b,j)=>[j===0&&sec.stat?sec.stat:'—',clean(b).slice(0,70),clean(sec.label||'Verified evidence')]);
-    if(layout==='compare'&&items.length<2)items=[['A','Perspective A',clean(sec.body)],['B','Perspective B',clean(bullets[0]||sec.body)]];
-    return {id:uid(),layout,kicker:clean(sec.label||'SCHOLARK'),title:clean(sec.title),subtitle:clean(sec.body),items};
+    let layout=sec.layoutHint||'cards';
+    if(!['hero','split','cards','timeline','compare','stats','quote','statement','grid','closing'].includes(layout))layout='cards';
+    if(i===0)layout='hero';
+    if(i===total-1&&!['quote','statement'].includes(layout))layout='closing';
+    const limit=layout==='timeline'?4:layout==='compare'?2:layout==='stats'?3:layout==='grid'?4:3;
+    let items=pointItems(sec,limit);
+    if(layout==='compare'&&items.length<2){const b=(sec.bullets||[]).filter(Boolean);items=[['A',cut(b[0]||'Perspective A',60),cut(sec.body,140)],['B',cut(b[1]||'Perspective B',60),cut(sec.subtitle||sec.body,140)]]}
+    if(layout==='stats'){items=items.map((x,j)=>[x[0]&&x[0]!=='0'+(j+1)?cut(x[0],18):'—',cut(x[1],58),cut(x[2],95)])}
+    if(layout==='hero')items=[];
+    return {
+      id:uid(),layout,
+      kicker:cut(sec.label||'',28),
+      title:safeTitle(sec,i),
+      subtitle:cut(sec.subtitle||sec.body,185),
+      items,
+      speakerNotes:clean(sec.speakerNotes),
+      visualType:clean(sec.visualType),
+      visualBrief:clean(sec.visualBrief),
+      sourceRefs:Array.isArray(sec.sourceRefs)?sec.sourceRefs.filter(Boolean):[]
+    };
   }
 
   function openPresentation(ai){
-    const a=ai.artifact,sections=(a.sections||[]).filter(x=>x?.title);
+    const a=ai.artifact,sections=(a.sections||[]).filter(x=>x?.title||x?.body);
+    if(!sections.length)throw new Error('AI engine returned no presentation slides');
     const slides=sections.map((s,i)=>slideFrom(s,i,sections.length));
-    if(!slides.length)return window.__SCHOLARK_V57_PRESENTATIONS__?.generate?.();
-    const deck={id:uid(),name:clean(val('v41-project-name')||a.title)||'Untitled presentation',prompt:payload('presentation').prompt,theme:'midnight',createdAt:Date.now(),updatedAt:Date.now(),slides,sources:a.sources||[],ai:{provider:ai.provider,model:ai.model}};
+    const deck={id:uid(),name:cut(val('v41-project-name')||a.title||'Untitled presentation',80),prompt:payload('presentation').prompt,theme:'midnight',createdAt:Date.now(),updatedAt:Date.now(),slides,sources:a.sources||[],ai:{provider:ai.provider,model:ai.model}};
     window.__SCHOLARK_V57_PRESENTATIONS__?.open?.(deck);
   }
 
   function mapItems(m,a){
-    const sections=(a.sections||[]).filter(x=>x?.title);
-    if(m==='webpage')return sections.map((s,i)=>({id:uid(),type:i===0?'hero':i===sections.length-1?'cta':s.layoutHint==='stats'?'stats':s.layoutHint==='split'?'split':'cards',title:clean(s.title),body:clean(s.body),items:(s.bullets||[]).slice(0,4).map(clean)}));
-    if(m==='document')return sections.map(s=>({id:uid(),type:'section',title:clean(s.title),body:[clean(s.body),...(s.bullets||[]).map(x=>clean(x)).filter(Boolean)]}));
-    if(m==='social')return sections.map((s,i)=>({id:uid(),type:i===0?'hook':i===sections.length-1?'cta':s.layoutHint==='stats'?'proof':'insight',title:clean(s.title),body:clean(s.body),caption:clean(a.caption||s.body),tags:(a.hashtags||[]).map(x=>String(x).startsWith('#')?x:'#'+String(x).replace(/\s+/g,'')).join(' ')}));
-    return sections.length?sections.map((s,i)=>({id:uid(),type:val('v41-graphictype')||'poster',title:clean(s.title),body:clean(s.body),blocks:(s.bullets||[]).slice(0,4).map((x,j)=>[String(j+1).padStart(2,'0'),clean(x)]),cta:clean(a.cta||'Learn more')})):[{id:uid(),type:'poster',title:clean(a.title),body:clean(a.summary),blocks:[],cta:clean(a.cta)}];
+    const sections=(a.sections||[]).filter(x=>x?.title||x?.body);
+    if(m==='webpage')return sections.map((s,i)=>({id:uid(),type:i===0?'hero':i===sections.length-1?'cta':s.layoutHint==='stats'?'stats':s.layoutHint==='split'?'split':'cards',title:cut(s.title,90),body:clean(s.body||s.subtitle),items:(s.points?.length?s.points.map(p=>p.heading||p.detail):s.bullets||[]).slice(0,4).map(clean),visualBrief:clean(s.visualBrief),sourceRefs:s.sourceRefs||[]}));
+    if(m==='document')return sections.map(s=>({id:uid(),type:'section',title:cut(s.title,100),body:[clean(s.body),...(s.bullets||[]).map(x=>clean(x)).filter(Boolean)],sourceRefs:s.sourceRefs||[]}));
+    if(m==='social')return sections.map((s,i)=>({id:uid(),type:i===0?'hook':i===sections.length-1?'cta':s.layoutHint==='stats'?'proof':'insight',title:cut(s.title,90),body:clean(s.body||s.subtitle),caption:clean(a.caption||s.body),tags:(a.hashtags||[]).map(x=>String(x).startsWith('#')?x:'#'+String(x).replace(/\s+/g,'')).join(' '),visualBrief:clean(s.visualBrief)}));
+    return sections.length?sections.map(s=>({id:uid(),type:val('v41-graphictype')||'poster',title:cut(s.title,90),body:clean(s.body||s.subtitle),blocks:(s.points?.length?s.points.map(p=>[cut(p.value||p.heading,24),cut(p.detail||p.heading,100)]):(s.bullets||[]).map((x,j)=>[String(j+1).padStart(2,'0'),clean(x)])).slice(0,4),cta:clean(a.cta||'Learn more'),visualBrief:clean(s.visualBrief)})):[{id:uid(),type:'poster',title:cut(a.title,90),body:clean(a.summary),blocks:[],cta:clean(a.cta)}];
   }
 
   function openArtifact(m,ai){
-    const api=window.__SCHOLARK_V58_ARTIFACTS__;if(!api?.open)return;
+    const api=window.__SCHOLARK_V58_ARTIFACTS__;if(!api?.open)throw new Error('Studio editor is unavailable');
     api.open(m);
     requestAnimationFrame(()=>{
       const x=api.get?.();if(!x)return;
       const a=ai.artifact;
-      x.name=clean(val('v41-project-name')||a.title)||x.name;
+      x.name=cut(val('v41-project-name')||a.title||x.name,90);
       x.topic=clean(a.title)||x.topic;
       x.prompt=payload(m).prompt;
       x.items=mapItems(m,a);
       x.sources=a.sources||[];
       x.ai={provider:ai.provider,model:ai.model};
-      const theme=$('.v58-theme');if(theme){theme.dispatchEvent(new Event('change',{bubbles:true}))}
+      const theme=$('.v58-theme');if(theme)theme.dispatchEvent(new Event('change',{bubbles:true}));
     });
   }
 
-  function localFallback(m,status){
-    if(status)status.textContent='AI engine is not configured on the server; opening the local draft editor instead.';
-    if(m==='presentation')window.__SCHOLARK_V57_PRESENTATIONS__?.generate?.();
-    else window.__SCHOLARK_V58_ARTIFACTS__?.open?.(m);
+  function showError(err,status){
+    const msg=err?.code==='AI_ENGINE_NOT_CONFIGURED'||err?.status===503
+      ? 'The real Studio AI engine is not connected yet. Add a valid OPENAI_API_KEY in Render, save the environment variables and redeploy. SCHOLARK will not create a low-quality placeholder output instead.'
+      : `Studio AI could not finish a presentation-ready result. ${clean(err?.message||'Please try again.')}`;
+    if(status)status.textContent=msg;
+    loader.classList.add('open','error');
+    $('.v59-box h3',loader).textContent='Generation stopped — no fake fallback';
+    $('.v59-message',loader).textContent=msg;
   }
 
   async function generate(m){
     const p=clean($('#v41-prompt',studio())?.value);if(!p){$('#v41-prompt',studio())?.focus();return}
     forceQuality();
-    const status=$('#v41-status',studio());if(status)status.textContent='Researching and building the complete output…';
-    loader.classList.add('open');
+    const status=$('#v41-status',studio());if(status)status.textContent='Researching and building the finished output…';
+    loader.classList.remove('error');loader.classList.add('open');
+    $('.v59-box h3',loader).textContent='Building the finished output…';
+    $('.v59-message',loader).textContent='Researching, reasoning, fact-checking, writing and structuring the final first draft before it enters the editor.';
     try{
       const ai=await askEngine(m);
       if(m==='presentation')openPresentation(ai);else openArtifact(m,ai);
-      if(status)status.textContent='Generated and opened in the editor.';
+      if(status)status.textContent='Finished output generated and opened in the editor.';
+      loader.classList.remove('open','error');
     }catch(err){
       console.error('[SCHOLARK Studio AI]',err);
-      localFallback(m,status);
-    }finally{loader.classList.remove('open')}
+      showError(err,status);
+    }
   }
 
   window.addEventListener('click',e=>{
