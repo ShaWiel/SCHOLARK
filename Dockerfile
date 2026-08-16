@@ -28,6 +28,7 @@ COPY scholark-v24-ui.js \
      scholark-v51-workspace-shell.js \
      scholark-v52-workspace-qa.js \
      scholark-v53-dashboard-bootstrap.js \
+     scholark-v55-home-topbar-workspace-entry.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
