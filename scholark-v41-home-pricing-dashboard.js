@@ -4,7 +4,7 @@
 
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const text=e=>(e?.textContent||'').replace(/\s+/g,' ').trim();
+  const text=e=>(e?.textContent||'').trim();
   const lower=e=>text(e).toLowerCase();
   const h=()=> (location.hash||'').toLowerCase();
   const workspace=()=>/dashboard|studio|presentation|document|report|poster|tutor|planner|progress|goal|project|education|book|schools|study/.test(h());
@@ -13,11 +13,9 @@
   const style=document.createElement('style');
   style.id='scholark-v41-style';
   style.textContent=`
-    #sv24-home,#sv24-launch,#v34-dashboard-entry,#v36-shell-home,#v40-workspace-home,#v26-sidebar-toggle,#v37-home-pricing,#v39-home-pricing,#v40-home-pricing,#v37-pro-suite{display:none!important}
+    #sv24-home,#sv24-launch,#v34-dashboard-entry,#v36-shell-home,#v40-workspace-home,#v26-sidebar-toggle,#v37-home-pricing,#v39-home-pricing,#v40-home-pricing,#v37-pro-suite,#v41-dashboard-entry{display:none!important}
     body.v41-home #v29-home-layer{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;inset:auto!important;z-index:auto!important;width:100%!important;min-height:100vh!important;overflow:visible!important}
     body.v41-home [data-v30-legacy-home="1"],body.v41-home .v41-workspace-shell{display:none!important}
-    #v41-dashboard-entry{position:fixed;top:18px;right:28px;z-index:2147483642;border:0;border-radius:14px;padding:11px 17px;background:#17191f;color:#fff;font:900 11px/1 Inter,system-ui;box-shadow:0 12px 34px rgba(0,0,0,.18);cursor:pointer}
-    #v41-dashboard-entry b{color:#c9ff6a;margin-right:6px}
     #v41-workspace-home{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 11px;margin:0 8px 0 0;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#232630;color:#fff;font:850 10px/1 Inter,system-ui;cursor:pointer;white-space:nowrap}
     #v41-sidebar-toggle{position:fixed;z-index:2147483642;top:92px;width:38px;height:38px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#17191f;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.25);cursor:pointer;font:900 18px Inter,system-ui;display:grid;place-items:center}
     body.v41-sidebar-closed .v41-sidebar-shell{display:none!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important}
@@ -41,20 +39,7 @@
   }
 
   function ensureDashboardButton(){
-    let b=$('#v41-dashboard-entry');
-    if(!b){b=document.createElement('button');b.id='v41-dashboard-entry';b.innerHTML='<b>↗</b> Dashboard';b.onclick=()=>openWorkspace();document.body.appendChild(b);}
-    b.hidden=!publicHome(); b.style.display=publicHome()?'block':'none';
-  }
-
-  function openWorkspace(){
-    setHomeVisible(false);
-    history.replaceState(null,'',location.pathname+location.search+'#dashboard');
-    document.body.classList.remove('v41-home');
-    setTimeout(()=>{
-      const side=findSidebarInner(); const item=side&&$$('button,a,[role="button"],div',side).find(el=>/^dashboard$/i.test(text(el)));
-      try{item?.click()}catch{}
-      ensureWorkspaceChrome();
-    },80);
+    $('#v41-dashboard-entry')?.remove();
   }
 
   function openHome(){
@@ -62,7 +47,7 @@
     setHomeVisible(true);
     document.body.classList.remove('v41-sidebar-closed');
     $('#v41-sidebar-toggle')?.remove();
-    ensurePricing(); ensureDashboardButton();
+    ensurePricing();
   }
 
   function findTopbar(){const terms=['uitloggen','log out','focusmodus','focus mode','demo resetten','reset demo'];return $$('header,nav,section,div').map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>o.r.top<130&&o.r.height>=36&&o.r.height<=140&&o.r.width>innerWidth*.45&&terms.some(x=>o.t.includes(x))).sort((a,b)=>a.r.height-b.r.height)[0]?.el||null;}
@@ -99,8 +84,8 @@
   function ensureStudio(){
     const ov=$('#sv24-overlay');if(!ov)return;
     const modes=$('.sv24-modes',ov);if(!modes)return;
-    if(!$('#v41-book-mode',modes)){const b=document.createElement('button');b.id='v41-book-mode';b.className='sv24-mode';b.dataset.mode='book';b.innerHTML='<b>📚</b>Book Studio';b.onclick=e=>{e.preventDefault();e.stopPropagation();ov.classList.remove('open');openTool('book');};modes.appendChild(b);}
-    if(!$('#v41-studio-note',ov)){const n=document.createElement('div');n.id='v41-studio-note';n.innerHTML='<span class="v41-lime">PRO:</span> Presentaties tot 100 dia’s • documenten/verslagen tot 100 pagina’s • Book Studio tot 900.000 woorden • alle genres + custom genre blends.';$('.sv24-controls',ov)?.insertAdjacentElement('afterend',n);}
+    $('#v41-book-mode')?.remove();
+    if(!$('#v41-studio-note',ov)){const n=document.createElement('div');n.id='v41-studio-note';n.innerHTML='<span class="v41-lime">PRO:</span> Presentaties tot 100 dia’s • documenten/verslagen tot 100 pagina’s • maximale AI-kwaliteit en research.';$('.sv24-controls',ov)?.insertAdjacentElement('afterend',n);}
     $$('.sv24-mode',modes).forEach(b=>{if(b.dataset.v41)return;b.dataset.v41='1';b.addEventListener('click',()=>{const m=b.dataset.mode;if(m==='presentation'||m==='document')replaceCount(m);if(examples[m])replaceExamples(m);},true);});
     const a=$('.sv24-mode.active',modes)?.dataset.mode;if(a){if(counts[a])replaceCount(a);if(examples[a])replaceExamples(a);}
   }
@@ -111,7 +96,7 @@
   function ensurePricing(){
     if(!publicHome())return;
     const layer=$('#v29-home-layer');if(!layer)return;
-    let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);$$('[data-plan]',p).forEach(b=>b.onclick=()=>{localStorage.setItem('scholark_selected_plan',b.dataset.plan);location.hash=b.dataset.plan==='free'?'dashboard':'pricing';});}
+    let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);$$('[data-plan]',p).forEach(b=>b.onclick=()=>{localStorage.setItem('scholark_selected_plan',b.dataset.plan);if(b.dataset.plan==='free'){history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'));}else location.hash='pricing';});}
     if(!priceTimer){let i=0;priceTimer=setInterval(()=>{const plans=$$('.v41-plan',p);plans.forEach(x=>x.classList.remove('v41-focus'));plans[i%plans.length]?.classList.add('v41-focus');i++;},2600);}
   }
 
@@ -127,8 +112,9 @@
 
   function ensureWorkspaceChrome(){if(!workspace())return;setHomeVisible(false);ensureWorkspaceHome();ensureSidebarToggle();ensureProTools();ensureStudio();}
   function sync(){
-    if(publicHome()){setHomeVisible(true);$('#v41-workspace-home')?.remove();$('#v41-sidebar-toggle')?.remove();document.body.classList.remove('v41-sidebar-closed');ensureDashboardButton();ensurePricing();}
-    else if(workspace()){ensureDashboardButton();ensureWorkspaceChrome();}
+    ensureDashboardButton();
+    if(publicHome()){setHomeVisible(true);$('#v41-workspace-home')?.remove();$('#v41-sidebar-toggle')?.remove();document.body.classList.remove('v41-sidebar-closed');ensurePricing();}
+    else if(workspace()){ensureWorkspaceChrome();}
   }
 
   interceptStudio();wirePricingNav();
