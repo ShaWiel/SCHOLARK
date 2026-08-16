@@ -22,11 +22,17 @@
     #v55-topbar .v55-brand{color:#fff!important}
     #v55-topbar .v55-brand small{color:#9f9aa9!important}
     #v55-topbar .v55-brand-mark{
-      width:38px!important;height:38px!important;border-radius:12px!important;
+      width:42px!important;height:42px!important;border-radius:0!important;
       padding:0!important;background:transparent!important;color:transparent!important;
-      overflow:visible!important;display:grid!important;place-items:center!important;
+      overflow:hidden!important;display:grid!important;place-items:center!important;
+      flex:0 0 42px!important;
     }
-    #v55-topbar .v55-brand-mark svg{display:block!important;width:38px!important;height:38px!important;overflow:visible!important}
+    #v55-topbar .v55-brand-mark img,
+    #v55-topbar .v55-brand-mark svg,
+    #v55-topbar .v55-brand-mark picture,
+    #v55-topbar .v55-brand-mark canvas{
+      display:block!important;max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;
+    }
     #v55-topbar .v55-select,#v55-topbar .v55-btn{
       background:#1b1e27!important;color:#f7f6fb!important;border-color:rgba(255,255,255,.11)!important;
     }
@@ -54,34 +60,22 @@
   `;
   document.head.appendChild(style);
 
-  function scholarkLogoSvg(){
-    return `<svg viewBox="0 0 64 64" role="img" aria-label="SCHOLARK logo" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="v56LogoBg" x1="7" y1="5" x2="57" y2="60" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#c9ff6a"/>
-          <stop offset=".46" stop-color="#a8ef68"/>
-          <stop offset="1" stop-color="#7b67ff"/>
-        </linearGradient>
-        <linearGradient id="v56Cap" x1="20" y1="12" x2="49" y2="27" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#7561ff"/>
-          <stop offset="1" stop-color="#30275d"/>
-        </linearGradient>
-      </defs>
-      <rect x="3" y="3" width="58" height="58" rx="17" fill="url(#v56LogoBg)"/>
-      <path d="M40.8 23.7c-2.4-2.1-5.2-3.1-8.5-3.1-4.9 0-8 2-8 5 0 3.6 3.5 4.5 8.4 5.5 6.6 1.4 11.4 3.6 11.4 9.7 0 7-5.9 11.3-14.5 11.3-6.1 0-11-1.8-14.8-5.5l5.1-6.1c2.9 2.7 6.2 4 10 4 4.2 0 6.6-1.3 6.6-3.6 0-2.5-2.7-3.5-7.7-4.5-7-1.5-12-3.9-12-10.7 0-7.1 6.4-11.7 15.4-11.7 5.5 0 10.1 1.7 13.8 5l-5.4 5.7Z" fill="#111319"/>
-      <path d="m18 16.1 15-7.4 15 7.4-15 7.4-15-7.4Z" fill="url(#v56Cap)"/>
-      <path d="M23.5 19.2v5.7c4.8 3.5 14.2 3.5 19 0v-5.7L33 24l-9.5-4.8Z" fill="#30275d"/>
-      <path d="M48 16.2v8.1" stroke="#c9ff6a" stroke-width="2.1" stroke-linecap="round"/>
-      <circle cx="48" cy="26.5" r="2.2" fill="#c9ff6a"/>
-    </svg>`;
-  }
+  function syncTopbarLogo(){
+    const source=$('#v51-sidebar .v51-logo');
+    const target=$('#v55-topbar .v55-brand-mark');
+    if(!source||!target)return;
 
-  function upgradeTopbar(){
-    const mark=$('#v55-topbar .v55-brand-mark');
-    if(!mark||mark.dataset.v56OfficialLogo==='1')return;
-    mark.innerHTML=scholarkLogoSvg();
-    mark.dataset.v56OfficialLogo='1';
-    mark.setAttribute('aria-label','SCHOLARK');
+    const html=source.innerHTML.trim();
+    if(!html)return;
+
+    const signature=html.replace(/\s+/g,' ');
+    if(target.dataset.v56LogoSignature===signature)return;
+
+    target.innerHTML='';
+    [...source.childNodes].forEach(node=>target.appendChild(node.cloneNode(true)));
+    target.dataset.v56LogoSignature=signature;
+    target.dataset.v56OfficialLogo='1';
+    target.setAttribute('aria-label','SCHOLARK logo');
   }
 
   function cleanup(){
@@ -96,7 +90,7 @@
         else side.prepend(home);
       }
     }
-    upgradeTopbar();
+    syncTopbarLogo();
   }
 
   cleanup();
