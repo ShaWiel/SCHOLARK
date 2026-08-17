@@ -35,6 +35,7 @@ COPY scholark-v24-ui.js \
      scholark-v58-studio-artifact-suite.js \
      scholark-v59-studio-ai-engine.js \
      scholark-v60-presentation-ready.js \
+     scholark-v61-free-provider-messaging.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -52,6 +53,7 @@ RUN unzip /tmp/scholark.zip -d /app \
 RUN npm install --omit=dev
 
 ENV NODE_ENV=production
+ENV POLLINATIONS_MODEL=qwen-large
 ENV OPENAI_STUDIO_MODEL=gpt-5.6
 EXPOSE 10000
 
