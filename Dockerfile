@@ -9,6 +9,7 @@ COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
 COPY studio-ai-route.mjs /app/studio-ai-route.mjs
 COPY studio-media-route.mjs /app/studio-media-route.mjs
+COPY studio-export-route.mjs /app/studio-export-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -43,6 +44,7 @@ COPY scholark-v24-ui.js \
      scholark-v64-projects.js \
      scholark-v65-book-studio.js \
      scholark-v66-presentation-ai-tools.js \
+     scholark-v67-professional-exports.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -57,7 +59,8 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); tags=""; for f in /tmp/scholark-v*.js; do base=$(basename "$f"); cp "$f" "$dir/$base"; tags="$tags<script src=\"$base\"></script>"; done; sed -i "s#</body>#$tags</body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev \
+    && npm install --omit=dev --no-save pptxgenjs docx pdfkit
 
 ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
@@ -68,4 +71,4 @@ ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
