@@ -25,6 +25,8 @@ async function sanitize(html){
   });
 }
 
+setTimeout(()=>{sanitize('<!doctype html><html><head><style>.x{color:red}</style></head><body><div class="x" onclick="alert(1)">safe<script>alert(1)</script><iframe src="https://evil.test"></iframe></div></body></html>').then(s=>{const ok=!/<script|onclick=|<iframe/i.test(s)&&/<style>[\\s\\S]*color:red/i.test(s);console.log('[SCHOLARK] Public page sanitizer self-test '+(ok?'PASS':'FAIL'))}).catch(e=>console.error('[SCHOLARK] Public page sanitizer self-test FAIL '+String(e?.message||e)))},450);
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
   const [req,res]=args;
