@@ -81,7 +81,7 @@ function parseText(text,provider){
 async function pollinations(mode,p){
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
   if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e;}
-  const model=String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'qwen-large').trim();
+  const model=String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol').trim();
   const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:JSON.stringify(userPayload(mode,p))}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
   const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),90000);
   let response;
@@ -104,7 +104,7 @@ async function openai(mode,p){
   const body={model,store:false,reasoning:{effort:'high'},text:{verbosity:'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),90000);
   let response;
-  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/jso'},body:JSON.stringify(body),signal:ctrl.signal});}finally{clearTimeout(timer);}
+  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});}finally{clearTimeout(timer);}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e;}
   return {ok:true,provider:'openai',model,result:parseText(extractOpenAI(data),'OpenAI')};
@@ -123,7 +123,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'qwen-large')});
+    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol')});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
