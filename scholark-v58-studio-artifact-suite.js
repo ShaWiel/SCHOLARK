@@ -79,7 +79,7 @@
     try{
       localStorage.setItem('scholark_v58_'+state.mode,JSON.stringify(state.artifact));
       localStorage.setItem('scholark_v58_last',JSON.stringify(state.artifact));
-      localStorage.setItem('scholark_v58_artifact_'+state.artifact.id,JSON.stringify(state.artifact));
+      localStorage.setItem('scholark_v58_artifact_'+state.artifact.id,JSON.stringify(state.artifact));window.dispatchEvent(new CustomEvent('scholark:project-saved',{detail:{kind:state.mode,sourceId:state.artifact.id,title:state.artifact.name,prompt:state.artifact.prompt||'',data:JSON.parse(JSON.stringify(state.artifact))}}));
       let hist=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]');
       const brief={artifactId:state.artifact.id,project:state.artifact.name,mode:state.mode,rawPrompt:state.artifact.prompt,prompt:state.artifact.prompt,at:state.artifact.updated,createdAt:new Date(state.artifact.updated).toISOString()};
       hist=[brief,...hist.filter(x=>x.artifactId!==state.artifact.id&&!(x.mode===state.mode&&(x.rawPrompt||x.prompt)===state.artifact.prompt&&(x.project||'')===state.artifact.name))].slice(0,40);
