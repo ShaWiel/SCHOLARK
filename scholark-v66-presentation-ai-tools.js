@@ -108,7 +108,7 @@
     }catch{return await rawDataURL(a.blob)}
   }
   async function collectDeckMedia(d=deck()){const out={};if(!d)return out;for(const s of d.slides||[]){if(s.mediaKey){const data=await assetDataURL(s.mediaKey);if(data)out[s.id]=data}}return out}
-  window.__SCHOLARK_V66_MEDIA__={getDataURL:assetDataURL,collectDeckMedia,remove:delAsset};
+  window.__SCHOLARK_V66_MEDIA__={getDataURL:assetDataURL,collectDeckMedia,put:putAsset,get:getAsset,remove:delAsset};
 
   const obs=new MutationObserver(()=>{clearTimeout(window.__v66sync);window.__v66sync=setTimeout(sync,55)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck,#v57-present'))setTimeout(sync,25)},true);
