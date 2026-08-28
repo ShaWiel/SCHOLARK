@@ -11,6 +11,6 @@
       status.textContent = 'Add POLLINATIONS_API_KEY in Render for free-first Studio AI generation. OpenAI is optional.';
     }
   };
-  new MutationObserver(() => queueMicrotask(rewrite)).observe(document.documentElement, {subtree:true, childList:true, characterData:true});
+  new MutationObserver(() => { clearTimeout(window.__v61rewrite); window.__v61rewrite=setTimeout(rewrite,80); }).observe(document.documentElement, {subtree:true, childList:true, characterData:true});
   setTimeout(rewrite, 100);
 })();
