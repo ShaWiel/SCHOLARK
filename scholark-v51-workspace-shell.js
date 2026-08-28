@@ -148,6 +148,6 @@
 
   addEventListener('hashchange',()=>setTimeout(cleanConflicts,20));addEventListener('popstate',()=>setTimeout(cleanConflicts,20));addEventListener('resize',()=>setTimeout(cleanConflicts,30));
   new MutationObserver(()=>{clearTimeout(window.__v51sync);window.__v51sync=setTimeout(()=>{refreshLogo();$$('#v41-studio-workspace .v41-mode[data-mode="book"]').forEach(x=>x.remove());if(workspaceRoute())forceQuality()},120)}).observe(document.documentElement,{subtree:true,childList:true});
-  setInterval(()=>{if(workspaceRoute()){forceQuality();refreshLogo();$('#v49-sidebar-toggle')?.setAttribute('hidden','')}},900);
+  addEventListener('focus',()=>{if(workspaceRoute()){forceQuality();refreshLogo();$('#v49-sidebar-toggle')?.setAttribute('hidden','')}});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
 })();
