@@ -132,18 +132,92 @@ function documentSections(body){
 }
 
 async function documentDocx(body){
-  const d=await import('docx');const {Document,Packer,Paragraph,TextRun,HeadingLevel,PageBreak,AlignmentType}=d;
-  const x=documentSections(body),children=[];
-  children.push(new Paragraph({text:x.title,heading:HeadingLevel.TITLE,alignment:AlignmentType.CENTER,spacing:{after:360}}));
-  if(x.summary)children.push(new Paragraph({children:[new TextRun({text:x.summary,italics:true,color:'666666'})],spacing:{after:420}}));
+  const d=await import('docx');
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,PageBreak,AlignmentType,Header,Footer,PageNumber,NumberFormat,TableOfContents,BorderStyle}=d;
+  const x=documentSections(body),children=[],isBook=body?.kind==='book';
+  const allRefs=[...(x.sources||[])];
+
+  // Cover page
+  children.push(new Paragraph({spacing:{before:1800,after:220},alignment:AlignmentType.CENTER,children:[new TextRun({text:x.title,bold:true,size:42,color:'17191F'})]}));
+  children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:320},children:[new TextRun({text:isBook?'SCHOLARK BOOK MANUSCRIPT':'SCHOLARK DOCUMENT',bold:true,size:18,color:'6D5DFC',characterSpacing:80})]}));
+  if(x.summary)children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:180,after:300},children:[new TextRun({text:x.summary,italics:true,size:22,color:'666666'})]}));
+  children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:620},children:[new TextRun({text:'Created in SCHOLARK',size:18,color:'888888'})]}));
+  children.push(new Paragraph({children:[new PageBreak()]}));
+
+  // Word-native table of contents. Word updates the fields when the file is opened.
+  children.push(new Paragraph({text:'Contents',heading:HeadingLevel.HEADING_1,spacing:{after:180}}));
+  children.push(new TableOfContents('Contents',{hyperlink:true,headingStyleRange:'1-3'}));
+  children.push(new Paragraph({children:[new PageBreak()]}));
+
   x.sections.forEach((s,i)=>{
-    if(i>0&&body?.kind==='book')children.push(new Paragraph({children:[new PageBreak()]}));
-    children.push(new Paragraph({text:s.title||('Section '+(i+1)),heading:HeadingLevel.HEADING_1,spacing:{before:240,after:120}}));
-    (s.paragraphs||[]).filter(Boolean).forEach((p,j)=>children.push(new Paragraph({text:String(p),heading:j===0&&/^chapter/i.test(String(p))?HeadingLevel.HEADING_2:undefined,spacing:{after:150},widowControl:true})));
-    const refs=(s.sources||[]).filter(Boolean);if(refs.length){children.push(new Paragraph({text:'Sources',heading:HeadingLevel.HEADING_2}));refs.forEach(r=>children.push(new Paragraph({text:String(r),bullet:{level:0}})))}
+    if(i>0&&isBook)children.push(new Paragraph({children:[new PageBreak()]}));
+    children.push(new Paragraph({
+      text:s.title||('Section '+(i+1)),
+      heading:HeadingLevel.HEADING_1,
+      spacing:{before:220,after:130},
+      keepNext:true
+    }));
+    (s.paragraphs||[]).filter(Boolean).forEach((p,j)=>{
+      const raw=String(p).trim();
+      const looksSubheading=j>0&&raw.length<90&&!/[.!?]$/.test(raw)&&raw.split(/\s+/).length<=12;
+      if(looksSubheading){
+        children.push(new Paragraph({text:raw,heading:HeadingLevel.HEADING_2,spacing:{before:180,after:90},keepNext:true}));
+      }else{
+        children.push(new Paragraph({
+          children:[new TextRun({text:raw,size:22,color:'2E2E33'})],
+          spacing:{after:150,line:320},
+          widowControl:true
+        }));
+      }
+    });
+    const refs=(s.sources||[]).filter(Boolean);
+    if(refs.length){
+      children.push(new Paragraph({text:'Sources',heading:HeadingLevel.HEADING_2,spacing:{before:160,after:80}}));
+      refs.forEach(r=>{
+        allRefs.push(r);
+        children.push(new Paragraph({children:[new TextRun({text:String(r),size:18,color:'55555F'})],bullet:{level:0},spacing:{after:65}}));
+      });
+    }
   });
-  if((x.sources||[]).length){children.push(new Paragraph({children:[new PageBreak()]}));children.push(new Paragraph({text:'References',heading:HeadingLevel.HEADING_1}));x.sources.forEach(r=>children.push(new Paragraph({text:typeof r==='string'?r:clean(r?.title||r?.url||JSON.stringify(r)),bullet:{level:0}})))}
-  const doc=new Document({creator:'SCHOLARK',title:x.title,description:x.summary,sections:[{properties:{page:{margin:{top:900,right:900,bottom:900,left:900}}},children}]});
+
+  const uniqueRefs=[...new Set(allRefs.map(r=>typeof r==='string'?r:clean(r?.title||r?.url||JSON.stringify(r))).map(clean).filter(Boolean))];
+  if(uniqueRefs.length){
+    children.push(new Paragraph({children:[new PageBreak()]}));
+    children.push(new Paragraph({text:'References',heading:HeadingLevel.HEADING_1,spacing:{after:150}}));
+    uniqueRefs.forEach(r=>children.push(new Paragraph({children:[new TextRun({text:r,size:19,color:'44444C'})],bullet:{level:0},spacing:{after:80}})));
+  }
+
+  const header=new Header({children:[new Paragraph({
+    border:{bottom:{color:'D9D9E3',space:5,style:BorderStyle.SINGLE,size:4}},
+    children:[new TextRun({text:x.title,bold:true,size:16,color:'68646F'})],
+    spacing:{after:80}
+  })]});
+  const footer=new Footer({children:[new Paragraph({
+    alignment:AlignmentType.CENTER,
+    border:{top:{color:'E2E0E8',space:5,style:BorderStyle.SINGLE,size:3}},
+    children:[new TextRun({text:'SCHOLARK  ·  Page ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.CURRENT],size:16,color:'77727D'}),new TextRun({text:' of ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:'77727D'})]
+  })]});
+
+  const doc=new Document({
+    creator:'SCHOLARK',
+    title:x.title,
+    description:x.summary,
+    features:{updateFields:true},
+    styles:{
+      default:{document:{run:{font:'Aptos',size:22,color:'2E2E33'},paragraph:{spacing:{line:320}}}},
+      paragraphStyles:[
+        {id:'Title',name:'Title',basedOn:'Normal',next:'Normal',quickFormat:true,run:{font:'Aptos Display',size:42,bold:true,color:'17191F'}},
+        {id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,run:{font:'Aptos Display',size:30,bold:true,color:'17191F'},paragraph:{spacing:{before:240,after:120},outlineLevel:0}},
+        {id:'Heading2',name:'Heading 2',basedOn:'Normal',next:'Normal',quickFormat:true,run:{font:'Aptos Display',size:24,bold:true,color:'4D4756'},paragraph:{spacing:{before:180,after:90},outlineLevel:1}}
+      ]
+    },
+    sections:[{
+      properties:{page:{margin:{top:900,right:900,bottom:900,left:900},pageNumbers:{start:1,formatType:NumberFormat.DECIMAL}}},
+      headers:{default:header},
+      footers:{default:footer},
+      children
+    }]
+  });
   return await Packer.toBuffer(doc);
 }
 
