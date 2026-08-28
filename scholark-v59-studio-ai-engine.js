@@ -57,6 +57,7 @@
       visualReasoning:true,
       finalPolish:true,
       references:[...($('#v41-files',studio())?.files||[])].map(f=>({name:f.name,type:f.type,size:f.size})),
+      referenceText:(window.__SCHOLARK_V45_BRIEF__?.getReferences?.()||[]).slice(0,6).map(r=>({name:r.name,text:String(r.text||'').slice(0,40000)})),
       settings:{
         ratio:val('v41-ratio'),webType:val('v41-webtype'),documentType:val('v41-doctype'),citationStyle:val('v41-cite'),platform:val('v41-platform'),socialFormat:val('v41-socialformat'),graphicType:val('v41-graphictype'),seo:checked('v41-seo'),cta:checked('v41-cta')
       }
