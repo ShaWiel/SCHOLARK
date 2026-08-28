@@ -1,6 +1,7 @@
 import http from 'node:http';
 
 const originalEmit = http.Server.prototype.emit;
+console.log('[SCHOLARK] Studio AI route ready');
 const json = (res, status, body) => {
   if (res.headersSent) return;
   res.writeHead(status, {
