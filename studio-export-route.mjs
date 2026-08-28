@@ -4,11 +4,17 @@ const originalEmit = http.Server.prototype.emit;
 console.log('[SCHOLARK] Export route ready');
 
 const THEMES={
-  midnight:{bg:'10131C',panel:'171B27',ink:'FFFFFF',muted:'B7BCC9',accent:'C9FF6A',accent2:'7667FF'},
-  editorial:{bg:'F5F1E8',panel:'FFFDF8',ink:'17191F',muted:'77706A',accent:'6D5DFC',accent2:'C9FF6A'},
-  cobalt:{bg:'0A1F44',panel:'102C5F',ink:'FFFFFF',muted:'BFD0EB',accent:'8BE8FF',accent2:'C9FF6A'},
-  plum:{bg:'24152F',panel:'352044',ink:'FFFFFF',muted:'D8C4DF',accent:'FFB4DB',accent2:'C9FF6A'},
-  paper:{bg:'F7F7F4',panel:'FFFFFF',ink:'17191F',muted:'6D6974',accent:'17191F',accent2:'6D5DFC'}
+  midnight:{bg:'10131C',panel:'171B27',ink:'FFFFFF',muted:'B7BCC9',accent:'C9FF6A',accent2:'7667FF',pptFont:'Aptos'},
+  editorial:{bg:'F5F1E8',panel:'FFFDF8',ink:'17191F',muted:'77706A',accent:'6D5DFC',accent2:'C9FF6A',pptFont:'Georgia'},
+  cobalt:{bg:'0A1F44',panel:'102C5F',ink:'FFFFFF',muted:'BFD0EB',accent:'8BE8FF',accent2:'C9FF6A',pptFont:'Aptos'},
+  plum:{bg:'24152F',panel:'352044',ink:'FFFFFF',muted:'D8C4DF',accent:'FFB4DB',accent2:'C9FF6A',pptFont:'Aptos'},
+  paper:{bg:'F7F7F4',panel:'FFFFFF',ink:'17191F',muted:'6D6974',accent:'17191F',accent2:'6D5DFC',pptFont:'Aptos'},
+  academic:{bg:'F4F0E6',panel:'FFFDFA',ink:'18221D',muted:'6D756F',accent:'1F6B50',accent2:'B28B46',pptFont:'Georgia'},
+  luxury:{bg:'0B0B0D',panel:'171619',ink:'F8F4EA',muted:'B8B0A3',accent:'D8B56B',accent2:'7B6650',pptFont:'Georgia'},
+  aurora:{bg:'10152A',panel:'171F39',ink:'F5F8FF',muted:'BCC8DF',accent:'74F3CF',accent2:'A278FF',pptFont:'Aptos'},
+  forest:{bg:'10251D',panel:'183429',ink:'F5FBF6',muted:'B8D0C1',accent:'B7E86D',accent2:'4CA982',pptFont:'Aptos'},
+  terracotta:{bg:'F4E7DC',panel:'FFF9F4',ink:'35221D',muted:'866F66',accent:'C85E3D',accent2:'E3A24D',pptFont:'Georgia'},
+  mono:{bg:'F4F4F4',panel:'FFFFFF',ink:'111111',muted:'666666',accent:'111111',accent2:'A5A5A5',pptFont:'Arial'}
 };
 
 function theme(name){return THEMES[name]||THEMES.midnight}
@@ -44,7 +50,7 @@ async function presentationPptx(body){
   const deck=body?.deck||{},media=body?.media||{},t=theme(deck.theme);
   const ST=pptx.ShapeType||{};
   const rect=ST.rect||'rect',round=ST.roundRect||'roundRect',line=ST.line||'line',ellipse=ST.ellipse||'ellipse';
-  const addText=(sl,text,opts={})=>{if(clean(text))sl.addText(String(text),{fontFace:'Aptos',margin:0,breakLine:false,fit:'shrink',valign:'mid',...opts})};
+  const addText=(sl,text,opts={})=>{if(clean(text))sl.addText(String(text),{fontFace:t.pptFont||'Aptos',margin:0,breakLine:false,fit:'shrink',valign:'mid',...opts})};
   for(let i=0;i<(deck.slides||[]).length;i++){
     const s=deck.slides[i]||{},items=itemRows(s),sl=pptx.addSlide();sl.background={color:t.bg};
     const img=safeImageData(media[s.id]);
