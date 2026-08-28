@@ -154,35 +154,55 @@ async function generatePollinations(payload) {
     throw err;
   }
   const { userInput, instructions } = buildContext(payload);
-  const model = String(process.env.POLLINATIONS_MODEL || 'qwen-large').trim();
-  const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${key}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      messages: [
-        { role: 'system', content: instructions },
-        { role: 'user', content: JSON.stringify(userInput) },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: { name: 'scholark_studio_artifact', strict: true, schema },
-      },
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const err = new Error(data?.error?.message || data?.message || `Pollinations returned HTTP ${response.status}`);
-    err.code = data?.error?.code || (response.status === 402 ? 'POLLINATIONS_BALANCE' : response.status === 429 ? 'POLLINATIONS_RATE_LIMIT' : 'POLLINATIONS_ERROR');
-    throw err;
+  const primary = String(process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol').trim();
+  const fallback = String(process.env.POLLINATIONS_FALLBACK_MODEL || 'claude-opus-4.7').trim();
+  const models = [...new Set([primary, fallback].filter(Boolean))];
+  const failures = [];
+
+  for (const model of models) {
+    try {
+      const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${key}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          messages: [
+            { role: 'system', content: instructions },
+            { role: 'user', content: JSON.stringify(userInput) },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: { name: 'scholark_studio_artifact', strict: true, schema },
+          },
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const err = new Error(data?.error?.message || data?.message || `Pollinations returned HTTP ${response.status}`);
+        err.code = data?.error?.code || (response.status === 402 ? 'POLLINATIONS_BALANCE' : response.status === 429 ? 'POLLINATIONS_RATE_LIMIT' : 'POLLINATIONS_ERROR');
+        throw err;
+      }
+      const text = data?.choices?.[0]?.message?.content;
+      const artifact = parseArtifactText(text, `Pollinations ${model}`);
+      return { ok: true, provider: 'pollinations', model, quality: 'highest-available-free-first', artifact };
+    } catch (error) {
+      failures.push({ model, code: error?.code || 'POLLINATIONS_ERROR', message: error?.message || 'Generation failed' });
+      if (error?.code === 'POLLINATIONS_BALANCE') {
+        error.models = failures;
+        throw error;
+      }
+    }
   }
-  const text = data?.choices?.[0]?.message?.content;
-  const artifact = parseArtifactText(text, 'Pollinations');
-  return { ok: true, provider: 'pollinations', model, quality: 'highest-available-free-first', artifact };
+
+  const last = failures.at(-1) || {};
+  const err = new Error(last.message || 'Pollinations models failed');
+  err.code = last.code || 'POLLINATIONS_ERROR';
+  err.models = failures;
+  throw err;
 }
 
 function extractOpenAIText(data) {
@@ -271,7 +291,7 @@ async function handle(req, res) {
       configured: pollinationsConfigured || openAIConfigured,
       primary: pollinationsConfigured ? 'pollinations' : openAIConfigured ? 'openai' : null,
       providers: {
-        pollinations: { configured: pollinationsConfigured, model: String(process.env.POLLINATIONS_MODEL || 'qwen-large') },
+        pollinations: { configured: pollinationsConfigured, model: String(process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol'), fallbackModel: String(process.env.POLLINATIONS_FALLBACK_MODEL || 'claude-opus-4.7') },
         openai: { configured: openAIConfigured, model: String(process.env.OPENAI_STUDIO_MODEL || 'gpt-5.6') },
       },
     });
