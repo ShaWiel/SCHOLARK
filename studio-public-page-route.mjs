@@ -43,6 +43,7 @@ async function sanitize(html){
     allowedTags:['html','head','meta','title','body','main','section','nav','header','footer','article','aside','div','span','p','h1','h2','h3','h4','h5','h6','small','strong','b','em','i','u','ul','ol','li','a','img','figure','figcaption','br','hr','button','table','thead','tbody','tr','th','td'],
     allowedAttributes:{html:['lang'],meta:['charset','name','property','content'],a:['href','target','rel'],img:['src','alt','loading','width','height'],button:['type'], '*':['class','id','style','role','aria-label','aria-hidden','data-index']},
     allowedSchemes:['http','https','mailto','tel','data'],allowedSchemesByTag:{img:['http','https','data'],a:['http','https','mailto','tel']},allowProtocolRelative:false,
+    parseStyleAttributes:false,nestingLimit:40,
     nonTextTags:['script','textarea','option','noscript','iframe','object','embed','form'],
     transformTags:{'*':(tag,attrs)=>{
       const out={...attrs};if(out.style){out.style=sanitizeStyleAttr(out.style);if(!out.style)delete out.style}
