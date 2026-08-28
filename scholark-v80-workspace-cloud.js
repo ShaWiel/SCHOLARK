@@ -114,7 +114,7 @@
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load mastery');rows=Array.isArray(rows)?rows:[];
       if(migrate){
         const seen=new Set(rows.map(z=>sig(z.topic,z.subject)));
-        const pending=localRead('scholark_v52_mastery').slice(0,120).filter(z=>clean(z?.topic)).map(z=>({topic:clean(z.topic),status:z.status||'New',subject:focusSubject()})).filter(z=>!seen.has(sig(z.topic,z.subject)));
+        const pendingSeen=new Set(seen),pending=localRead('scholark_v52_mastery').slice(0,120).filter(z=>clean(z?.topic)).map(z=>({topic:clean(z.topic),status:z.status||'New',subject:clean(z.subject)||focusSubject()})).filter(z=>{const k=sig(z.topic,z.subject);if(pendingSeen.has(k))return false;pendingSeen.add(k);return true});
         if(pending.length){
           const body=pending.map(z=>({user_id:x.uid,subject:z.subject.slice(0,160),topic:z.topic.slice(0,240),mastery:masteryValue(z.status),attempts:0,correct:0,incorrect:0,streak:0}));
           const ins=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
