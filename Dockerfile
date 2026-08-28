@@ -13,6 +13,7 @@ COPY studio-export-route.mjs /app/studio-export-route.mjs
 COPY studio-reference-route.mjs /app/studio-reference-route.mjs
 COPY studio-research-route.mjs /app/studio-research-route.mjs
 COPY studio-public-page-route.mjs /app/studio-public-page-route.mjs
+COPY studio-public-artifact-route.mjs /app/studio-public-artifact-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -58,6 +59,7 @@ COPY scholark-v24-ui.js \
      scholark-v75-document-pro.js \
      scholark-v76-graphic-canvas.js \
      scholark-v77-webpage-pro.js \
+     scholark-v78-artifact-sharing.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -87,4 +89,4 @@ ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
