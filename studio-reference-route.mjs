@@ -57,6 +57,8 @@ async function referenceSelftest(){
   return {ok,pdfChars:clean(pdf.text).length,docxChars:clean(docx.text).length,pptxChars:clean(pptx.text).length,pdfPages:pdf.pages,pptxSlides:pptx.slides};
 }
 
+setTimeout(()=>{referenceSelftest().then(x=>console.log('[SCHOLARK] Reference self-test '+(x.ok?'PASS':'FAIL')+' pdf='+x.pdfChars+' docx='+x.docxChars+' pptx='+x.pptxChars)).catch(e=>console.error('[SCHOLARK] Reference self-test FAIL '+String(e?.message||e)))},350);
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);const [req,res]=args;
   try{
