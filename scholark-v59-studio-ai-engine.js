@@ -137,6 +137,7 @@
       x.caption=clean(a.caption);
       x.hashtags=Array.isArray(a.hashtags)?a.hashtags.map(clean).filter(Boolean):[];
       x.summary=clean(a.summary);
+      x.settings={...(x.settings||{}),...(payload(m).settings||{})};
       x.ai={provider:ai.provider,model:ai.model};
       const theme=$('.v58-theme');if(theme)theme.dispatchEvent(new Event('change',{bubbles:true}));
     });
