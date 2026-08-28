@@ -36,7 +36,68 @@
   function openAuth(tab='signin'){modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(tab==='signin'?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(tab==='signup'?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email" required><input type="password" autocomplete="current-password" placeholder="Password · 6+ characters" minlength="6" required><button>'+(tab==='signin'?'Sign in':'Create account')+'</button></form><div class="v72-modal-status"></div></div>';modal.classList.add('open');$('.v72-x',modal).onclick=closeModal;$$('[data-tab]',modal).forEach(b=>b.onclick=()=>openAuth(b.dataset.tab));const form=$('.v72-form',modal);form.onsubmit=async e=>{e.preventDefault();const inputs=$$('input',form),email=clean(inputs[0].value),pass=inputs[1].value,st=$('.v72-modal-status',modal),mode=$('.v72-tab.active',modal)?.dataset.tab||tab;st.textContent=mode==='signin'?'Signing in…':'Creating account…';try{const d=mode==='signin'?await signIn(email,pass):await signUp(email,pass);if(mode==='signup'&&!d?.access_token){st.textContent='Account created. Check your email to confirm it, then sign in.';return}st.textContent='Connected to SCHOLARK Cloud.';setTimeout(async()=>{closeModal();await syncAllLocal();await loadCloud();enhance(true)},350)}catch(err){st.textContent=clean(err?.message||err);st.style.color='#a13d3d'}}}
   function closeModal(){modal.classList.remove('open');state.currentProject=null}
 
-  async function saveCloud(p,makeVersion=true){if(!p?.sourceId||!p?.kind||!p?.data)return null;const r=await apiFetch('/rest/v1/rpc/save_cloud_project',{method:'POST',body:JSON.stringify({p_kind:p.kind,p_title:p.title||'Untitled project',p_prompt:p.prompt||'',p_source_id:String(p.sourceId),p_data:{schema:1,payload:p.data},p_make_version:!!makeVersion})});const d=await r.json().catch(()=>null);if(!r.ok)throw new Error(d?.message||d?.error||'Cloud save failed');return d}
+  const media=()=>window.__SCHOLARK_V66_MEDIA__;
+  const MEDIA_MAP='scholark_v72_cloud_media_map_v1';
+  function mediaMap(){try{return JSON.parse(localStorage.getItem(MEDIA_MAP)||'{}')}catch{return{}}}
+  function saveMediaMap(x){try{localStorage.setItem(MEDIA_MAP,JSON.stringify(x))}catch{}}
+  function mediaNodes(data,kind){if(kind==='presentation')return Array.isArray(data?.slides)?data.slides:[];if(['social','graphic'].includes(kind))return Array.isArray(data?.items)?data.items:[];return[]}
+  function cloneData(data){try{return JSON.parse(JSON.stringify(data))}catch{return data}}
+  function storagePath(path){return String(path||'').split('/').filter(Boolean).map(encodeURIComponent).join('/')}
+  function mediaExt(type){return /png/i.test(type)?'png':/webp/i.test(type)?'webp':'jpg'}
+  async function compactBlob(blob){
+    if(!blob)return null;
+    if(blob.size<=4.4*1024*1024&&/image\/(jpeg|png|webp)/i.test(blob.type||''))return blob;
+    try{
+      const bmp=await createImageBitmap(blob),max=1800,scale=Math.min(1,max/bmp.width,max/bmp.height),w=Math.max(1,Math.round(bmp.width*scale)),h=Math.max(1,Math.round(bmp.height*scale)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bmp,0,0,w,h);bmp.close?.();const out=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.84));return out&&out.size<=5*1024*1024?out:null;
+    }catch{return blob.size<=5*1024*1024?blob:null}
+  }
+  async function uploadMediaBlob(path,blob){
+    const s=await session();if(!s?.access_token)throw new Error('Sign in to sync project media');
+    const r=await fetch(SB+'/storage/v1/object/project-media/'+storagePath(path),{method:'POST',headers:{apikey:KEY,authorization:'Bearer '+s.access_token,'x-upsert':'true','content-type':blob.type||'image/jpeg'},body:blob});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d?.message||d?.error||'Media upload failed')}
+    return path;
+  }
+  async function downloadMediaBlob(path){
+    const s=await session();if(!s?.access_token)return null;
+    const r=await fetch(SB+'/storage/v1/object/authenticated/project-media/'+storagePath(path),{headers:{apikey:KEY,authorization:'Bearer '+s.access_token}});
+    if(!r.ok)return null;return await r.blob();
+  }
+  async function prepareCloudData(p){
+    const copy=cloneData(p.data),src=mediaNodes(p.data,p.kind),dst=mediaNodes(copy,p.kind),m=mediaMap(),uid=(await session())?.user?.id;
+    if(!uid||!src.length||!media()?.get)return copy;
+    for(let i=0;i<src.length;i++){
+      const original=src[i],target=dst[i];if(!original||!target)continue;
+      let path=original.cloudMediaPath||m[original.mediaKey||'']||'';
+      if(original.mediaKey&&!path){
+        const asset=await media().get(original.mediaKey);if(asset?.blob){const blob=await compactBlob(asset.blob);if(blob){path=uid+'/'+p.kind+'/'+p.sourceId+'/'+clean(original.id||String(i+1)).replace(/[^a-z0-9_-]/gi,'-')+'.'+mediaExt(blob.type);await uploadMediaBlob(path,blob);m[original.mediaKey]=path}}
+      }else if(original.mediaKey&&path&&original.cloudMediaPath!==path){
+        const asset=await media().get(original.mediaKey);if(asset?.blob&&!m[original.mediaKey]){const blob=await compactBlob(asset.blob);if(blob){await uploadMediaBlob(path,blob);m[original.mediaKey]=path}}
+      }
+      if(path){target.cloudMediaPath=path;target.cloudMediaType=original.cloudMediaType||''}
+    }
+    saveMediaMap(m);return copy;
+  }
+  async function hydrateCloudData(kind,payload){
+    const copy=cloneData(payload),nodes=mediaNodes(copy,kind),m=mediaMap();if(!nodes.length||!media()?.put)return copy;
+    for(const node of nodes){
+      const path=node?.cloudMediaPath;if(!path)continue;
+      if(node.mediaKey){const existing=await media().get?.(node.mediaKey);if(existing?.blob)continue}
+      const blob=await downloadMediaBlob(path);if(!blob)continue;const localKey='cloud:'+path;await media().put(localKey,blob,{type:blob.type,cloudPath:path});node.mediaKey=localKey;m[localKey]=path;
+    }
+    saveMediaMap(m);return copy;
+  }
+  async function deleteCloudMedia(project){
+    try{
+      const s=await session(),uid=s?.user?.id;if(!uid||!project?.source_id)return;
+      const prefix=uid+'/'+project.kind+'/'+project.source_id;
+      const list=await fetch(SB+'/storage/v1/object/list/project-media',{method:'POST',headers:{apikey:KEY,authorization:'Bearer '+s.access_token,'content-type':'application/json'},body:JSON.stringify({prefix,limit:100,offset:0,sortBy:{column:'name',order:'asc'}})});
+      const rows=await list.json().catch(()=>[]);if(!list.ok||!Array.isArray(rows)||!rows.length)return;
+      const prefixes=rows.filter(x=>x?.name).map(x=>prefix+'/'+x.name);if(!prefixes.length)return;
+      await fetch(SB+'/storage/v1/object/project-media',{method:'DELETE',headers:{apikey:KEY,authorization:'Bearer '+s.access_token,'content-type':'application/json'},body:JSON.stringify({prefixes})});
+    }catch{}
+  }
+
+  async function saveCloud(p,makeVersion=true){if(!p?.sourceId||!p?.kind||!p?.data)return null;const prepared=await prepareCloudData(p);const r=await apiFetch('/rest/v1/rpc/save_cloud_project',{method:'POST',body:JSON.stringify({p_kind:p.kind,p_title:p.title||'Untitled project',p_prompt:p.prompt||'',p_source_id:String(p.sourceId),p_data:{schema:2,payload:prepared},p_make_version:!!makeVersion})});const d=await r.json().catch(()=>null);if(!r.ok)throw new Error(d?.message||d?.error||'Cloud save failed');return d}
   function scheduleSave(p){if(!loadSession())return;const k=p.kind+':'+p.sourceId;clearTimeout(timers.get(k));timers.set(k,setTimeout(async()=>{try{await saveCloud(p,true);status('Saved to SCHOLARK Cloud · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));loadCloud().then(()=>enhance(true)).catch(()=>{})}catch(e){status('Cloud save failed: '+clean(e?.message||e),true)}},1200))}
   window.addEventListener('scholark:project-saved',e=>scheduleSave(e.detail||{}));
 
@@ -46,10 +107,10 @@
 
   function putHistory(kind,sourceId,title,prompt){let h=[];try{h=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]')}catch{}const base={mode:kind,project:title,rawPrompt:prompt||'',prompt:prompt||'',at:Date.now()};if(kind==='presentation')base.deckId=sourceId;else if(kind==='book')base.bookId=sourceId;else base.artifactId=sourceId;const key=x=>x.deckId?'d:'+x.deckId:x.bookId?'b:'+x.bookId:x.artifactId?'a:'+x.artifactId:'';h=[base,...h.filter(x=>key(x)!==key(base))].slice(0,40);localStorage.setItem('scholark_v45_history',JSON.stringify(h))}
   function openPayload(kind,payload,sourceId,title,promptText){if(!payload)return;payload.id=payload.id||sourceId;putHistory(kind,sourceId,title||payload.name,promptText||payload.prompt||payload.concept);if(kind==='presentation'){localStorage.setItem('scholark_v57_deck_'+sourceId,JSON.stringify(payload));localStorage.setItem('scholark_v57_last_deck',JSON.stringify(payload));return window.__SCHOLARK_V57_PRESENTATIONS__?.open?.(payload)}if(kind==='book'){localStorage.setItem('scholark_v65_book',JSON.stringify(payload));return window.__SCHOLARK_V65_BOOK__?.openSaved?.(payload)}if(['webpage','document','social','graphic'].includes(kind)){localStorage.setItem('scholark_v58_artifact_'+sourceId,JSON.stringify(payload));localStorage.setItem('scholark_v58_'+kind,JSON.stringify(payload));return window.__SCHOLARK_V58_ARTIFACTS__?.openArtifact?.(payload)}}
-  function openCloud(id){const x=state.cloud.find(p=>p.id===id);if(!x)return;const payload=x.data?.payload||x.data;openPayload(x.kind,payload,x.source_id,x.title,x.prompt)}
-  async function deleteCloud(id){if(!confirm('Delete this cloud project and its version history? Your local copy is not deleted.'))return;const r=await apiFetch('/rest/v1/projects?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)throw new Error('Could not delete cloud project');state.cloud=state.cloud.filter(x=>x.id!==id);enhance(true)}
+  async function openCloud(id){const x=state.cloud.find(p=>p.id===id);if(!x)return;status('Opening cloud project…');const raw=x.data?.payload||x.data,payload=await hydrateCloudData(x.kind,raw);openPayload(x.kind,payload,x.source_id,x.title,x.prompt)}
+  async function deleteCloud(id){if(!confirm('Delete this cloud project and its version history? Your local copy is not deleted.'))return;const project=state.cloud.find(x=>x.id===id);const r=await apiFetch('/rest/v1/projects?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)throw new Error('Could not delete cloud project');await deleteCloudMedia(project);state.cloud=state.cloud.filter(x=>x.id!==id);enhance(true)}
   async function versions(id){const p=state.cloud.find(x=>x.id===id);if(!p)return;state.currentProject=p;modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><div><h2>Version history</h2><div style="font:650 8px Inter;color:#777;margin-top:4px">'+esc(p.title)+'</div></div><button class="v72-x">×</button></div><div class="v72-modal-status">Loading versions…</div><div class="v72-version-list"></div></div>';modal.classList.add('open');$('.v72-x',modal).onclick=closeModal;try{const r=await apiFetch('/rest/v1/project_versions?select=version_no,title,kind,data,created_at&project_id=eq.'+encodeURIComponent(id)+'&order=version_no.desc&limit=30',{method:'GET'}),d=await r.json();if(!r.ok)throw new Error(d?.message||'Could not load versions');$('.v72-modal-status',modal).textContent=(d.length||0)+' saved version'+(d.length===1?'':'s');$('.v72-version-list',modal).innerHTML=d.map((v,i)=>'<div class="v72-version"><div><b>Version '+v.version_no+'</b><span>'+esc(time(v.created_at))+'</span></div><button class="v72-restore" data-v72-restore="'+i+'">Restore</button></div>').join('')||'<div class="v72-empty">No version snapshots yet.</div>';$$('[data-v72-restore]',modal).forEach(b=>b.onclick=()=>restoreVersion(p,d[+b.dataset.v72Restore]))}catch(e){$('.v72-modal-status',modal).textContent=clean(e?.message||e)}}
-  async function restoreVersion(project,v){const payload=v?.data?.payload||v?.data;if(!payload)return;openPayload(project.kind,payload,project.source_id,project.title,project.prompt);closeModal();try{await saveCloud({kind:project.kind,sourceId:project.source_id,title:project.title,prompt:project.prompt,data:payload},true);status('Version '+v.version_no+' restored and saved as the current project.');await loadCloud()}catch(e){status('Restored locally; cloud save failed: '+clean(e?.message||e),true)}}
+  async function restoreVersion(project,v){const raw=v?.data?.payload||v?.data;if(!raw)return;const payload=await hydrateCloudData(project.kind,raw);openPayload(project.kind,payload,project.source_id,project.title,project.prompt);closeModal();try{await saveCloud({kind:project.kind,sourceId:project.source_id,title:project.title,prompt:project.prompt,data:payload},true);status('Version '+v.version_no+' restored and saved as the current project.');await loadCloud()}catch(e){status('Restored locally; cloud save failed: '+clean(e?.message||e),true)}}
 
   function enhance(force=false){const h=host();if(!h)return;if(force)h.querySelector('.v72-cloud')?.remove();if(h.querySelector('.v72-cloud'))return;const signed=!!loadSession(),section=document.createElement('section');section.className='v72-cloud';section.innerHTML='<div class="v72-cloud-head"><div><div class="v52-kicker">SCHOLARK CLOUD</div><h2>Cloud Projects</h2><p>Keep your Studio work across devices and restore earlier versions without losing the local autosave.</p></div><div class="v72-actions">'+(signed?'<button class="v72-btn v72-sync">Sync local projects</button><button class="v72-btn ghost v72-reload">Refresh</button>':'<button class="v72-btn v72-connect">Sign in / Create account</button>')+'</div></div><div class="v72-account">'+(signed?'<div><b>'+esc(userEmail()||'Connected account')+'</b><span>Cloud autosave and version history are active.</span></div><div class="v72-actions"><button class="v72-btn ghost v72-signout">Sign out</button></div>':'<div><b>Local-only right now</b><span>Connect an account to sync projects between devices.</span></div>')+'</div><div class="v72-status"></div>'+(signed?(state.cloud.length?'<div class="v72-grid">'+state.cloud.map(p=>'<article class="v72-card"><span class="v72-time">'+esc(time(p.updated_at))+'</span><small>'+esc(label(p.kind))+'</small><h3>'+esc(p.title||'Untitled project')+'</h3><p>'+esc(clean(p.prompt||'Cloud-saved SCHOLARK project').slice(0,150))+'</p><div class="v72-card-actions"><button class="v72-mini primary" data-v72-open="'+p.id+'">Open</button><button class="v72-mini" data-v72-versions="'+p.id+'">Versions</button><button class="v72-mini danger" data-v72-delete="'+p.id+'">Delete cloud</button></div></article>').join('')+'</div>':'<div class="v72-empty">No cloud projects yet. Click “Sync local projects” or save a Studio project while signed in.</div>'):'');h.appendChild(section);$('.v72-connect',section)?.addEventListener('click',()=>openAuth());$('.v72-sync',section)?.addEventListener('click',syncAllLocal);$('.v72-reload',section)?.addEventListener('click',async()=>{status('Refreshing…');try{await loadCloud();enhance(true)}catch(e){status(clean(e?.message||e),true)}});$('.v72-signout',section)?.addEventListener('click',signOut);$$('[data-v72-open]',section).forEach(b=>b.onclick=()=>openCloud(b.dataset.v72Open));$$('[data-v72-versions]',section).forEach(b=>b.onclick=()=>versions(b.dataset.v72Versions));$$('[data-v72-delete]',section).forEach(b=>b.onclick=async()=>{try{await deleteCloud(b.dataset.v72Delete)}catch(e){status(clean(e?.message||e),true)}})}
 
