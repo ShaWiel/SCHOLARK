@@ -51,6 +51,7 @@ COPY scholark-v24-ui.js \
      scholark-v69-reference-reader.js \
      scholark-v70-social-graphic-media.js \
      scholark-v71-research-agent.js \
+     scholark-v72-cloud-projects.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
