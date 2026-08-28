@@ -45,11 +45,24 @@ async function extract(body){
   return {ok:true,name,type:ext,text,chars:text.length,pages:result?.pages,slides:result?.slides,warnings:result?.warnings||[]};
 }
 
+async function referenceSelftest(){
+  const [{Document,Packer,Paragraph},pdfkitMod,zipMod]=await Promise.all([import('docx'),import('pdfkit'),import('jszip')]);
+  const PDFDocument=pdfkitMod.default||pdfkitMod,JSZip=zipMod.default||zipMod;
+  const docxBuffer=await Packer.toBuffer(new Document({sections:[{children:[new Paragraph('SCHOLARK DOCX reference self-test text')]}]}));
+  const pdfBuffer=await new Promise((resolve,reject)=>{const d=new PDFDocument({size:'A4'}),chunks=[];d.on('data',x=>chunks.push(x));d.on('end',()=>resolve(Buffer.concat(chunks)));d.on('error',reject);d.fontSize(16).text('SCHOLARK PDF reference self-test text');d.end()});
+  const zip=new JSZip();zip.file('ppt/slides/slide1.xml','<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><a:t>SCHOLARK PPTX reference self-test text</a:t></p:cSld></p:sld>');
+  const pptxBuffer=await zip.generateAsync({type:'nodebuffer'});
+  const [pdf,docx,pptx]=await Promise.all([extractPdf(pdfBuffer),extractDocx(docxBuffer),extractPptx(pptxBuffer)]);
+  const ok=/SCHOLARK/i.test(pdf.text||'')&&/SCHOLARK/i.test(docx.text||'')&&/SCHOLARK/i.test(pptx.text||'');
+  return {ok,pdfChars:clean(pdf.text).length,docxChars:clean(docx.text).length,pptxChars:clean(pptx.text).length,pdfPages:pdf.pages,pptxSlides:pptx.slides};
+}
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);const [req,res]=args;
   try{
     const url=new URL(req.url||'/','http://localhost');
     if(req.method==='GET'&&url.pathname==='/api/studio/reference/health'){json(res,200,{ok:true,formats:['pdf','docx','pptx'],maxFileMB:10});return true}
+    if(req.method==='GET'&&url.pathname==='/api/studio/reference/selftest'){referenceSelftest().then(x=>json(res,x.ok?200:500,x)).catch(e=>json(res,500,{ok:false,code:'REFERENCE_SELFTEST_FAILED',error:String(e?.message||e)}));return true}
     if(req.method==='POST'&&url.pathname==='/api/studio/reference/extract'){readBody(req).then(extract).then(x=>json(res,200,x)).catch(e=>{const code=e?.code||'REFERENCE_EXTRACT_FAILED',status=code==='PAYLOAD_TOO_LARGE'||code==='FILE_TOO_LARGE'?413:code==='UNSUPPORTED_REFERENCE'||code==='INVALID_FILE'||code.startsWith('INVALID_')?400:code==='EXTRACT_TIMEOUT'?504:422;json(res,status,{ok:false,code,error:String(e?.message||e)})});return true}
   }catch(e){json(res,500,{ok:false,code:'REFERENCE_ROUTE_ERROR',error:String(e?.message||e)});return true}
   return originalEmit.call(this,type,...args);
