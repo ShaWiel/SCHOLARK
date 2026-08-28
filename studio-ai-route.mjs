@@ -30,6 +30,7 @@ const readBody = req => new Promise((resolve, reject) => {
 
 const modeRules = {
   presentation: `Create a finished presentation that a competent speaker could open and present immediately. Every section is one final slide, not a planning note. Never put generator instructions, prompt fragments, labels such as "Core argument", "Evidence and analysis", "Comparison / counterargument", or phrases such as "Use this slide to..." on the slide unless the user explicitly asks for those exact words. Slide titles must be concise and meaningful (normally 3-8 words). Subtitles should normally be one short sentence. Use 0-4 concise points per slide. Build a real narrative arc, vary slide logic intentionally, and make each slide earn its place. For factual topics, never invent statistics, dates, citations, quotes, records, rankings, names or URLs. Include speaker notes that help someone present the slide naturally without reading the slide verbatim. Include a concrete visual brief for each slide; choose charts, timelines, comparisons, diagrams, photography, maps, quotes or strong typography when appropriate. The cover should look like a cover, evidence slides should contain actual evidence, comparison slides should contain actual compared entities, and the final slide should deliver a real conclusion or call to action.`,
+  presentation_slide_edit: `Return exactly one finished replacement slide for the slide-edit request. Preserve all facts and user constraints unless the edit instruction explicitly changes them. Keep visible copy concise and presentation-ready. Choose the strongest layout for the new content. Return speaker notes, visualType, visualBrief and sourceRefs. Never describe what to change; return the changed slide itself.`,
   webpage: 'Return complete publishable webpage content: a real hero, value proposition, useful sections, proof, navigation logic, CTA and FAQ when appropriate. Write specific conversion-quality copy, not wireframe instructions or generic filler. Every section must be ready to render.',
   document: 'Return a complete professional document structure with substantive section prose, evidence-aware claims, logical transitions, conclusions and references when sources are supplied. Do not output writing instructions as body copy; output the actual document content.',
   social: 'Return a complete social content set/carousel with platform-ready hooks, useful body copy, caption, CTA and platform-appropriate hashtags. Avoid engagement bait, placeholders and instructions to the creator. Each item should be publishable after normal human review.',
@@ -99,7 +100,7 @@ const validSecret = value => {
 function buildContext(payload) {
   const mode = String(payload.mode || '').toLowerCase();
   if (!modeRules[mode]) throw new Error('Unsupported Studio mode');
-  const maxItems = mode === 'presentation' ? 100 : mode === 'book' ? 60 : mode === 'book_chapter' ? 12 : 40;
+  const maxItems = mode === 'presentation' ? 100 : mode === 'presentation_slide_edit' ? 1 : mode === 'book' ? 60 : mode === 'book_chapter' ? 12 : 40;
   const requested = Math.max(1, Math.min(maxItems, Number(payload.count || payload.settings?.count || 10) || 10));
   const outline = Array.isArray(payload.outline) ? payload.outline.slice(0, 100) : [];
   const references = Array.isArray(payload.references) ? payload.references.slice(0, 20) : [];
