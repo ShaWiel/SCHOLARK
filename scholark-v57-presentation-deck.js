@@ -131,5 +131,8 @@
     requestAnimationFrame(()=>{open(deck);if(status)status.textContent='Presentation generated.'});
   },true);
 
-  window.__SCHOLARK_V57_PRESENTATIONS__={generate:()=>{const d=buildDeck();if(d)open(d);return d},open,close,getDeck:()=>state.deck};
+  function selectSlide(index){if(!state.deck)return;state.index=Math.max(0,Math.min(state.deck.slides.length-1,Number(index)||0));render()}
+  function updateSlide(index,patch){if(!state.deck)return null;const i=Math.max(0,Math.min(state.deck.slides.length-1,Number(index)||0));const cur=state.deck.slides[i];Object.assign(cur,patch||{});state.index=i;render();scheduleSave();return cur}
+  function replaceSlide(index,slide){if(!state.deck||!slide)return null;const i=Math.max(0,Math.min(state.deck.slides.length-1,Number(index)||0));state.deck.slides[i]={...state.deck.slides[i],...slide,id:state.deck.slides[i].id||slide.id||uid()};state.index=i;render();scheduleSave();return state.deck.slides[i]}
+  window.__SCHOLARK_V57_PRESENTATIONS__={generate:()=>{const d=buildDeck();if(d)open(d);return d},open,close,getDeck:()=>state.deck,getIndex:()=>state.index,selectSlide,updateSlide,replaceSlide,save,render};
 })();
