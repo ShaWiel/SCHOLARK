@@ -61,6 +61,7 @@ COPY scholark-v24-ui.js \
      scholark-v77-webpage-pro.js \
      scholark-v78-artifact-sharing.js \
      scholark-v79-collaboration.js \
+     scholark-v80-workspace-cloud.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
