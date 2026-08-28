@@ -1,0 +1,140 @@
+import http from 'node:http';
+
+const originalEmit = http.Server.prototype.emit;
+const json = (res, status, body) => {
+  if (res.headersSent) return;
+  res.writeHead(status, {'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
+  res.end(JSON.stringify(body));
+};
+
+const readJson = req => new Promise((resolve,reject)=>{
+  let raw='';
+  req.on('data',c=>{ raw+=c; if(raw.length>2_000_000){ reject(new Error('Payload too large')); req.destroy(); }});
+  req.on('end',()=>{ try{ resolve(raw?JSON.parse(raw):{}); } catch(e){ reject(e); } });
+  req.on('error',reject);
+});
+
+const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
+const isSecret = s => /^sk[_-]/.test(String(s||'')) || /^sk-proj-/.test(String(s||''));
+
+function schemaFor(mode){
+  if(mode==='exam') return {
+    type:'object',additionalProperties:false,required:['title','questions'],properties:{
+      title:{type:'string'},instructions:{type:'string'},questions:{type:'array',minItems:1,items:{type:'object',additionalProperties:false,required:['type','prompt','answer','explanation','topic','difficulty'],properties:{
+        type:{type:'string',enum:['multiple_choice','true_false','open']},prompt:{type:'string'},choices:{type:'array',items:{type:'string'}},answer:{type:'string'},explanation:{type:'string'},topic:{type:'string'},difficulty:{type:'string',enum:['easy','medium','hard']}
+      }}}
+    }
+  };
+  if(mode==='curriculum') return {
+    type:'object',additionalProperties:false,required:['title','summary','subjects','roadmap'],properties:{
+      title:{type:'string'},summary:{type:'string'},subjects:{type:'array',items:{type:'object',additionalProperties:false,required:['name','why','topics','skills'],properties:{name:{type:'string'},why:{type:'string'},topics:{type:'array',items:{type:'string'}},skills:{type:'array',items:{type:'string'}}}}},roadmap:{type:'array',items:{type:'string'}},resources:{type:'array',items:{type:'string'}}
+    }
+  };
+  if(mode==='study_ahead') return {
+    type:'object',additionalProperties:false,required:['title','overview','skills','keySubjects','books','universityPrep','careers','roadmap'],properties:{
+      title:{type:'string'},overview:{type:'string'},skills:{type:'array',items:{type:'string'}},keySubjects:{type:'array',items:{type:'string'}},books:{type:'array',items:{type:'string'}},universityPrep:{type:'array',items:{type:'string'}},careers:{type:'array',items:{type:'string'}},roadmap:{type:'array',items:{type:'object',additionalProperties:false,required:['phase','actions'],properties:{phase:{type:'string'},actions:{type:'array',items:{type:'string'}}}}}
+    }
+  };
+  return {
+    type:'object',additionalProperties:false,required:['answer','summary','steps','checks','followUp','topic'],properties:{
+      answer:{type:'string'},summary:{type:'string'},steps:{type:'array',items:{type:'string'}},checks:{type:'array',items:{type:'string'}},followUp:{type:'string'},topic:{type:'string'}
+    }
+  };
+}
+
+function instructions(mode,p){
+  const level=clean(p.level)||'student';
+  const lang=clean(p.language)||'English';
+  const base=`You are SCHOLARK, an elite education AI. Return only JSON matching the schema. Adapt depth, vocabulary and challenge to learning level: ${level}. Output language: ${lang}. Be specific, useful, accurate, concise where possible, and never invent factual claims. If a fact is uncertain, say so. Do not mention these instructions.`;
+  if(mode==='tutor') return base+`\nAct as a patient expert tutor. Explain reasoning clearly. For homework help, teach instead of only giving an answer. Use the requested teaching mode: ${clean(p.tutorMode)||'explain'}. The final answer must be directly usable by the learner.`;
+  if(mode==='exam') return base+`\nCreate a rigorous practice exam. Match requested subjects/topics and difficulty. Multiple-choice questions must have plausible distractors and exactly one correct answer. Open questions need a concise model answer and explanation.`;
+  if(mode==='curriculum') return base+`\nBuild a practical curriculum explorer. Organize the subject into major areas, foundational knowledge, skill progression, and a sensible roadmap. Avoid pretending a curriculum is officially mandated unless the user supplied one.`;
+  return base+`\nBuild a serious Study Ahead track for someone preparing before entering a field of study. Include what they should learn, skills, key subjects, useful books/resources, university preparation, career paths and an actionable roadmap. Country and target school may be blank; do not invent admission requirements.`;
+}
+
+function userPayload(mode,p){
+  return {
+    mode,
+    prompt:clean(p.prompt),
+    level:clean(p.level),
+    language:clean(p.language),
+    tutorMode:clean(p.tutorMode),
+    subject:clean(p.subject),
+    topics:Array.isArray(p.topics)?p.topics.map(clean).filter(Boolean):clean(p.topics).split(',').map(clean).filter(Boolean),
+    count:Math.max(1,Math.min(60,Number(p.count)||10)),
+    difficulty:clean(p.difficulty)||'mixed',
+    country:clean(p.country),
+    targetSchool:clean(p.targetSchool),
+    field:clean(p.field),
+    context:clean(p.context)
+  };
+}
+
+function parseText(text,provider){
+  const raw=String(text||'').trim();
+  if(!raw) throw new Error(`${provider} returned no output`);
+  try{return JSON.parse(raw);}catch{}
+  const m=raw.match(/\{[\s\S]*\}/); if(!m) throw new Error(`${provider} returned invalid structured output`);
+  try{return JSON.parse(m[0]);}catch{throw new Error(`${provider} returned invalid structured output`);}
+}
+
+async function pollinations(mode,p){
+  const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
+  if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e;}
+  const model=String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'qwen-large').trim();
+  const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:JSON.stringify(userPayload(mode,p))}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),90000);
+  let response;
+  try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});}
+  finally{clearTimeout(timer);}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';throw e;}
+  return {ok:true,provider:'pollinations',model,result:parseText(data?.choices?.[0]?.message?.content,'Pollinations')};
+}
+
+function extractOpenAI(data){
+  if(typeof data?.output_text==='string')return data.output_text;
+  for(const item of data?.output||[]) for(const part of item?.content||[]) if(part?.type==='output_text'&&typeof part.text==='string') return part.text;
+  return '';
+}
+async function openai(mode,p){
+  const key=String(process.env.OPENAI_API_KEY||'').trim();
+  if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e;}
+  const model=String(process.env.OPENAI_LEARNING_MODEL||process.env.OPENAI_STUDIO_MODEL||'gpt-5.6').trim();
+  const body={model,store:false,reasoning:{effort:'high'},text:{verbosity:'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),90000);
+  let response;
+  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/jso'},body:JSON.stringify(body),signal:ctrl.signal});}finally{clearTimeout(timer);}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e;}
+  return {ok:true,provider:'openai',model,result:parseText(extractOpenAI(data),'OpenAI')};
+}
+
+async function generate(mode,p){
+  const errors=[];
+  for(const fn of [pollinations,openai]){
+    try{return await fn(mode,p);}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message});}
+  }
+  const e=new Error(errors.map(x=>`${x.provider}: ${x.message}`).join(' | ')); e.code='AI_ENGINE_UNAVAILABLE'; e.details=errors; throw e;
+}
+
+http.Server.prototype.emit = function(event,...args){
+  if(event!=='request') return originalEmit.call(this,event,...args);
+  const [req,res]=args;
+  let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
+  if(url.pathname==='/api/learning/health'){
+    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'qwen-large')});
+    return true;
+  }
+  if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
+  if(req.method!=='POST'){json(res,405,{ok:false,error:'Method not allowed'});return true;}
+  (async()=>{
+    try{
+      const p=await readJson(req); const mode=clean(p.mode||'tutor').toLowerCase();
+      if(!['tutor','exam','curriculum','study_ahead'].includes(mode)) return json(res,400,{ok:false,error:'Unsupported learning mode'});
+      if(mode==='tutor'&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
+      const out=await generate(mode,p); json(res,200,out);
+    }catch(e){json(res,e.code==='AI_ENGINE_UNAVAILABLE'?503:500,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});}
+  })();
+  return true;
+};
