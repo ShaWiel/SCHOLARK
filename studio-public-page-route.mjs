@@ -25,7 +25,7 @@ async function sanitize(html){
   });
 }
 
-setTimeout(()=>{sanitize('<!doctype html><html><head><style>.x{color:red}</style></head><body><div class="x" onclick="alert(1)">safe<script>alert(1)</script><iframe src="https://evil.test"></iframe></div></body></html>').then(s=>{const flags={scriptGone:!/<script/i.test(s),handlerGone:!/onclick\s*=/i.test(s),iframeGone:!/<iframe/i.test(s),styleKept:/color\s*:\s*red/i.test(s)};const ok=Object.values(flags).every(Boolean);console.log('[SCHOLARK] Public page sanitizer self-test '+(ok?'PASS':'FAIL')+' '+JSON.stringify(flags))}).catch(e=>console.error('[SCHOLARK] Public page sanitizer self-test FAIL '+String(e?.message||e)))},450);
+setTimeout(()=>{sanitize('<!doctype html><html><head><meta property="og:title" content="SCHOLARK"><style>.x{color:red}</style></head><body><a href="tel:+597123456">Call</a><div class="x" onclick="alert(1)">safe<script>alert(1)</script><iframe src="https://evil.test"></iframe></div></body></html>').then(s=>{const flags={scriptGone:!/<script/i.test(s),handlerGone:!/onclick\s*=/i.test(s),iframeGone:!/<iframe/i.test(s),styleKept:/color\s*:\s*red/i.test(s),openGraphKept:/property="og:title"/i.test(s),telKept:/href="tel:\+597123456"/i.test(s)};const ok=Object.values(flags).every(Boolean);console.log('[SCHOLARK] Public page sanitizer self-test '+(ok?'PASS':'FAIL')+' '+JSON.stringify(flags))}).catch(e=>console.error('[SCHOLARK] Public page sanitizer self-test FAIL '+String(e?.message||e)))},450);
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
