@@ -14,18 +14,52 @@ async function getPage(slug){
   if(!r.ok)throw new Error('Public page lookup failed');
   const rows=await r.json();return Array.isArray(rows)?rows[0]:null;
 }
+
+function sanitizeStyleAttr(style){
+  return String(style||'').replace(/\u0000/g,'').replace(/\\/g,'').split(';').map(part=>{
+    const i=part.indexOf(':');if(i<1)return '';
+    const prop=part.slice(0,i).trim(),val=part.slice(i+1).trim();
+    if(!/^--[a-z0-9_-]+$|^-?[a-z][a-z0-9-]*$/i.test(prop)||!val)return '';
+    if(/url\s*\(|expression\s*\(|javascript\s*:|vbscript\s*:|behavior\s*:|-moz-binding|@import|<\/?style/i.test(val))return '';
+    return prop+':'+val;
+  }).filter(Boolean).join(';');
+}
+function sanitizeCss(css){
+  let s=String(css||'').replace(/\u0000/g,'').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\\/g,'');
+  s=s.replace(/<\/?style\b[^>]*>/gi,'');
+  s=s.replace(/@(?:import|charset|namespace)\b[^;{}]*;?/gi,'');
+  s=s.replace(/@font-face\b\s*{[\s\S]*?}/gi,'');
+  s=s.replace(/url\s*\([^)]*\)/gi,'none');
+  s=s.replace(/([\w-]+)\s*:\s*([^;{}]*)(;?)/g,(m,prop,val,semi)=>{
+    if(/expression\s*\(|javascript\s*:|vbscript\s*:|behavior\s*:|-moz-binding|@import|<\/?style/i.test(val))return '';
+    return prop+':'+val+(semi||'');
+  });
+  return s.slice(0,120000);
+}
 async function sanitize(html){
-  const mod=await import('sanitize-html'),sanitizeHtml=mod.default||mod;
-  return sanitizeHtml(String(html||''),{
-    allowedTags:['html','head','meta','title','style','body','main','section','nav','header','footer','article','aside','div','span','p','h1','h2','h3','h4','h5','h6','small','strong','b','em','i','u','ul','ol','li','a','img','figure','figcaption','br','hr','button','table','thead','tbody','tr','th','td'],
-    allowedAttributes:{html:['lang'],meta:['charset','name','property','content'],a:['href','target','rel'],img:['src','alt','loading','width','height'],button:['type'], '*':['class','id','style','role','aria-label','aria-hidden','data-index']},
+  const mod=await import('sanitize-html'),sanitizeHtml=mod.default||mod,styles=[];
+  let staged=String(html||'').replace(/<\/?scholark-css-slot\b[^>]*>/gi,'');
+  staged=staged.replace(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi,(_,css)=>{
+    const i=styles.push(sanitizeCss(css))-1;
+    return '<scholark-css-slot data-slot="'+i+'"></scholark-css-slot>';
+  }).replace(/<style\b[^>]*\/?\s*>/gi,'');
+  const safe=sanitizeHtml(staged,{
+    allowedTags:['html','head','meta','title','body','main','section','nav','header','footer','article','aside','div','span','p','h1','h2','h3','h4','h5','h6','small','strong','b','em','i','u','ul','ol','li','a','img','figure','figcaption','br','hr','button','table','thead','tbody','tr','th','td','scholark-css-slot'],
+    allowedAttributes:{html:['lang'],meta:['charset','name','property','content'],a:['href','target','rel'],img:['src','alt','loading','width','height'],button:['type'],'scholark-css-slot':['data-slot'], '*':['class','id','style','role','aria-label','aria-hidden','data-index']},
     allowedSchemes:['http','https','mailto','tel','data'],allowedSchemesByTag:{img:['http','https','data'],a:['http','https','mailto','tel']},allowProtocolRelative:false,
     nonTextTags:['script','textarea','option','noscript','iframe','object','embed','form'],
-    transformTags:{a:(tag,attrs)=>({tagName:'a',attribs:{...attrs,rel:'noopener noreferrer',target:attrs.target==='_blank'?'_blank':attrs.target}})}
+    transformTags:{'*':(tag,attrs)=>{
+      const out={...attrs};if(out.style){out.style=sanitizeStyleAttr(out.style);if(!out.style)delete out.style}
+      if(tag==='a'){out.rel='noopener noreferrer';if(out.target!=='_blank')delete out.target}
+      return {tagName:tag,attribs:out};
+    }}
+  });
+  return safe.replace(/<scholark-css-slot data-slot="(\d+)"><\/scholark-css-slot>/g,(_,n)=>{
+    const css=styles[Number(n)];return typeof css==='string'&&css.trim()?'<style>'+css+'</style>':'';
   });
 }
 
-setTimeout(()=>{sanitize('<!doctype html><html><head><meta property="og:title" content="SCHOLARK"><style>.x{color:red}</style></head><body><a href="tel:+597123456">Call</a><div class="x" onclick="alert(1)">safe<script>alert(1)</script><iframe src="https://evil.test"></iframe></div></body></html>').then(s=>{const flags={scriptGone:!/<script/i.test(s),handlerGone:!/onclick\s*=/i.test(s),iframeGone:!/<iframe/i.test(s),styleKept:/color\s*:\s*red/i.test(s),openGraphKept:/property="og:title"/i.test(s),telKept:/href="tel:\+597123456"/i.test(s)};const ok=Object.values(flags).every(Boolean);console.log('[SCHOLARK] Public page sanitizer self-test '+(ok?'PASS':'FAIL')+' '+JSON.stringify(flags))}).catch(e=>console.error('[SCHOLARK] Public page sanitizer self-test FAIL '+String(e?.message||e)))},450);
+setTimeout(()=>{sanitize('<!doctype html><html><head><meta property="og:title" content="SCHOLARK"><style>.x{color:red}.bad{background:url(javascript:alert(1));width:expression(alert(1))}@import url(https://evil.test/x.css)</style></head><body><a href="tel:+597123456">Call</a><div class="x" style="color:blue;background:url(javascript:alert(2))" onclick="alert(1)">safe<script>alert(1)</script><iframe src="https://evil.test"></iframe></div></body></html>').then(s=>{const flags={scriptGone:!/<script/i.test(s),handlerGone:!/onclick\s*=/i.test(s),iframeGone:!/<iframe/i.test(s),styleKept:/color\s*:\s*red/i.test(s),openGraphKept:/property="og:title"/i.test(s),telKept:/href="tel:\+597123456"/i.test(s),dangerousCssGone:!/javascript\s*:|expression\s*\(|@import|evil\.test/i.test(s),inlineStyleClean:/style="color:blue"/i.test(s)};const ok=Object.values(flags).every(Boolean);console.log('[SCHOLARK] Public page sanitizer self-test '+(ok?'PASS':'FAIL')+' '+JSON.stringify(flags))}).catch(e=>console.error('[SCHOLARK] Public page sanitizer self-test FAIL '+String(e?.message||e)))},450);
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
