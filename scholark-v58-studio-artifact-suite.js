@@ -76,7 +76,15 @@
     state.artifact.name=$('.v58-name').value||state.artifact.name;
     state.artifact.theme=state.theme;
     state.artifact.updated=Date.now();
-    try{localStorage.setItem('scholark_v58_'+state.mode,JSON.stringify(state.artifact));localStorage.setItem('scholark_v58_last',JSON.stringify(state.artifact));const hist=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]');hist.unshift({project:state.artifact.name,mode:state.mode,rawPrompt:state.artifact.prompt,createdAt:new Date().toISOString()});localStorage.setItem('scholark_v45_history',JSON.stringify(hist.slice(0,60)))}catch{}
+    try{
+      localStorage.setItem('scholark_v58_'+state.mode,JSON.stringify(state.artifact));
+      localStorage.setItem('scholark_v58_last',JSON.stringify(state.artifact));
+      localStorage.setItem('scholark_v58_artifact_'+state.artifact.id,JSON.stringify(state.artifact));
+      let hist=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]');
+      const brief={artifactId:state.artifact.id,project:state.artifact.name,mode:state.mode,rawPrompt:state.artifact.prompt,prompt:state.artifact.prompt,at:state.artifact.updated,createdAt:new Date(state.artifact.updated).toISOString()};
+      hist=[brief,...hist.filter(x=>x.artifactId!==state.artifact.id&&!(x.mode===state.mode&&(x.rawPrompt||x.prompt)===state.artifact.prompt&&(x.project||'')===state.artifact.name))].slice(0,40);
+      localStorage.setItem('scholark_v45_history',JSON.stringify(hist));
+    }catch{}
     $('.v58-saved').textContent='Saved';
   }
   function dirty(){ $('.v58-saved').textContent='Saving…'; clearTimeout(window.__v58save); window.__v58save=setTimeout(save,160); }
@@ -181,6 +189,12 @@
     $('#v41-studio-workspace')?.setAttribute('hidden','');document.body.classList.remove('v41-studio-open');
     render();save();
   }
+  function loadArtifact(artifact){
+    if(!artifact||!MODES.includes(artifact.mode))return;
+    state.mode=artifact.mode;state.index=0;state.artifact=JSON.parse(JSON.stringify(artifact));state.theme=state.artifact.theme||'midnight';
+    $('#v41-studio-workspace')?.setAttribute('hidden','');document.body.classList.remove('v41-studio-open');
+    render();save();
+  }
   function close(){syncFromCanvas();save();root.classList.remove('open');const s=$('#v41-studio-workspace');if(s){s.hidden=false;document.body.classList.add('v41-studio-open')}}
 
   function addItem(){
@@ -245,5 +259,5 @@
   },true);
 
   addEventListener('hashchange',()=>{if(!/studio|webpage|document|social|graphic/.test(String(location.hash).toLowerCase()))root.classList.remove('open')});
-  window.__SCHOLARK_V58_ARTIFACTS__={open,close,get:()=>state.artifact};
+  window.__SCHOLARK_V58_ARTIFACTS__={open,openArtifact:loadArtifact,close,get:()=>state.artifact};
 })();
