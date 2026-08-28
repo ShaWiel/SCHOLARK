@@ -55,6 +55,7 @@ COPY scholark-v24-ui.js \
      scholark-v72-cloud-projects.js \
      scholark-v73-web-publishing.js \
      scholark-v74-presenter-pro.js \
+     scholark-v75-document-pro.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
