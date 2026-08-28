@@ -11,6 +11,7 @@ COPY studio-ai-route.mjs /app/studio-ai-route.mjs
 COPY studio-media-route.mjs /app/studio-media-route.mjs
 COPY studio-export-route.mjs /app/studio-export-route.mjs
 COPY studio-reference-route.mjs /app/studio-reference-route.mjs
+COPY studio-research-route.mjs /app/studio-research-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -49,6 +50,7 @@ COPY scholark-v24-ui.js \
      scholark-v68-slide-block-editor.js \
      scholark-v69-reference-reader.js \
      scholark-v70-social-graphic-media.js \
+     scholark-v71-research-agent.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -71,8 +73,9 @@ ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
 ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_IMAGE_MODEL=flux
+ENV POLLINATIONS_RESEARCH_MODEL=perplexity-fast
 ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
