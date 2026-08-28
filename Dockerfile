@@ -8,6 +8,7 @@ COPY scholark_v23_patch.gz.b64 /tmp/scholark_v23_patch.gz.b64
 COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
 COPY studio-ai-route.mjs /app/studio-ai-route.mjs
+COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
 # Active runtime only. Older V46-V49 workspace routers are intentionally not loaded.
@@ -36,6 +37,9 @@ COPY scholark-v24-ui.js \
      scholark-v59-studio-ai-engine.js \
      scholark-v60-presentation-ready.js \
      scholark-v61-free-provider-messaging.js \
+     scholark-v62-learning-ai.js \
+     scholark-v63-presentation-visuals.js \
+     scholark-v64-projects.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -53,8 +57,10 @@ RUN unzip /tmp/scholark.zip -d /app \
 RUN npm install --omit=dev
 
 ENV NODE_ENV=production
-ENV POLLINATIONS_MODEL=qwen-large
+ENV POLLINATIONS_MODEL=gpt-5.6-sol
+ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
+ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
 ENV OPENAI_STUDIO_MODEL=gpt-5.6
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
