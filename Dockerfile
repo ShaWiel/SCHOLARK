@@ -48,6 +48,7 @@ COPY scholark-v24-ui.js \
      scholark-v67-professional-exports.js \
      scholark-v68-slide-block-editor.js \
      scholark-v69-reference-reader.js \
+     scholark-v70-social-graphic-media.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
