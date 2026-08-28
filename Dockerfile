@@ -40,6 +40,7 @@ COPY scholark-v24-ui.js \
      scholark-v62-learning-ai.js \
      scholark-v63-presentation-visuals.js \
      scholark-v64-projects.js \
+     scholark-v65-book-studio.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -60,7 +61,8 @@ ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
 ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
-ENV OPENAI_STUDIO_MODEL=gpt-5.6
+ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
+ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
 CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
