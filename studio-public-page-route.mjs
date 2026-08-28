@@ -9,8 +9,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function fallback(res,status,title,body){if(res.headersSent)return;res.writeHead(status,{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#f6f5f1;color:#17191f;font-family:Inter,Arial,sans-serif}.c{max-width:620px;padding:40px}.k{font-weight:900;color:#6d5dfc;font-size:11px;letter-spacing:.12em}.c h1{font-size:44px;letter-spacing:-.05em;margin:10px 0}.c p{color:#706c77;line-height:1.6}</style><div class="c"><div class="k">SCHOLARK</div><h1>'+esc(title)+'</h1><p>'+esc(body)+'</p></div>')}
 async function getPage(slug){
   if(!KEY)throw new Error('SUPABASE_PUBLISHABLE_KEY is not configured');
-  const u=SB+'/rest/v1/published_webpages?select=title,html,updated_at&status=eq.published&slug=eq.'+encodeURIComponent(slug)+'&limit=1';
-  const r=await fetch(u,{headers:{apikey:KEY,accept:'application/json'}});
+  const r=await fetch(SB+'/rest/v1/rpc/get_published_webpage',{method:'POST',headers:{apikey:KEY,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_slug:slug})});
   if(!r.ok)throw new Error('Public page lookup failed');
   const rows=await r.json();return Array.isArray(rows)?rows[0]:null;
 }
