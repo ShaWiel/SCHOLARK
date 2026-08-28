@@ -20,7 +20,7 @@
   function save(){
     if(!state.book)return; state.book.updated=Date.now();
     try{
-      localStorage.setItem(STORE,JSON.stringify(state.book));
+      localStorage.setItem(STORE,JSON.stringify(state.book));window.dispatchEvent(new CustomEvent('scholark:project-saved',{detail:{kind:'book',sourceId:state.book.id,title:state.book.name,prompt:state.book.concept||'',data:JSON.parse(JSON.stringify(state.book))}}));
       let h=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]');
       const x={bookId:state.book.id,project:state.book.name||state.book.plan?.title||'Untitled book',mode:'book',rawPrompt:state.book.concept,prompt:state.book.concept,at:state.book.updated};
       h=[x,...h.filter(v=>v.bookId!==state.book.id)].slice(0,40); localStorage.setItem('scholark_v45_history',JSON.stringify(h));
