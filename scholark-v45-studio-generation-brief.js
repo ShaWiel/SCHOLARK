@@ -230,5 +230,10 @@
     const modes=$('.v41-modes',root);if(modes&&!modes.dataset.v45bound){modes.dataset.v45bound='1';modes.addEventListener('click',()=>{setTimeout(()=>{ensureAdvanced(root);ensureReadiness(root);const o=$('.v41-outline',root),g=$('.v41-generate',root);if(o)o.onclick=()=>buildOutline(root);if(g)g.onclick=()=>generate(root);updateReadiness(root);state.outlinePrompt='';},30);});}
   }
 
+  window.__SCHOLARK_V45_BRIEF__={
+    getReferences:()=>state.referenceText.map(x=>({...x})),
+    setReferences:list=>{state.referenceText=(Array.isArray(list)?list:[]).map(x=>({name:String(x?.name||'reference'),text:String(x?.text||'').slice(0,40000)})).filter(x=>x.text.trim()).slice(0,6);const root=$('#v41-studio-workspace');if(root){const badge=$('#v45-reference-status',root);if(badge)badge.textContent=state.referenceText.length?` · ${state.referenceText.length} reference${state.referenceText.length===1?'':'s'} ready for AI`:' ';updateReadiness(root)}},
+    mergeReference:ref=>{if(!ref?.text)return;const rest=state.referenceText.filter(x=>x.name!==ref.name);state.referenceText=[...rest,{name:String(ref.name||'reference'),text:String(ref.text).slice(0,40000)}].slice(-6);const root=$('#v41-studio-workspace');if(root){const badge=$('#v45-reference-status',root);if(badge)badge.textContent=` · ${state.referenceText.length} reference${state.referenceText.length===1?'':'s'} ready for AI`;updateReadiness(root)}}
+  };
   const timer=setInterval(()=>{const root=$('#v41-studio-workspace');if(!root)return;clearInterval(timer);state.initialized=true;bind(root);new MutationObserver(()=>{ensureAdvanced(root);ensureReadiness(root);const o=$('.v41-outline',root),g=$('.v41-generate',root);if(o)o.onclick=()=>buildOutline(root);if(g)g.onclick=()=>generate(root);}).observe(root,{childList:true,subtree:true});},80);
 })();
