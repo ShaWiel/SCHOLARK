@@ -40,7 +40,7 @@
   const MEDIA_MAP='scholark_v72_cloud_media_map_v1';
   function mediaMap(){try{return JSON.parse(localStorage.getItem(MEDIA_MAP)||'{}')}catch{return{}}}
   function saveMediaMap(x){try{localStorage.setItem(MEDIA_MAP,JSON.stringify(x))}catch{}}
-  function mediaNodes(data,kind){if(kind==='presentation')return Array.isArray(data?.slides)?data.slides:[];if(['social','graphic'].includes(kind))return Array.isArray(data?.items)?data.items:[];return[]}
+  function mediaNodes(data,kind){if(kind==='presentation')return Array.isArray(data?.slides)?data.slides:[];if(kind==='social')return Array.isArray(data?.items)?data.items:[];if(kind==='graphic'){const items=Array.isArray(data?.items)?data.items:[];return items.flatMap(x=>[x,...(Array.isArray(x?.canvasLayers)?x.canvasLayers:[])])}return[]}
   function cloneData(data){try{return JSON.parse(JSON.stringify(data))}catch{return data}}
   function storagePath(path){return String(path||'').split('/').filter(Boolean).map(encodeURIComponent).join('/')}
   function mediaExt(type){return /png/i.test(type)?'png':/webp/i.test(type)?'webp':'jpg'}
