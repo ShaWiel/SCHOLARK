@@ -10,6 +10,7 @@ COPY server-key-shim.mjs /app/server-key-shim.mjs
 COPY studio-ai-route.mjs /app/studio-ai-route.mjs
 COPY studio-media-route.mjs /app/studio-media-route.mjs
 COPY studio-export-route.mjs /app/studio-export-route.mjs
+COPY studio-reference-route.mjs /app/studio-reference-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -46,6 +47,7 @@ COPY scholark-v24-ui.js \
      scholark-v66-presentation-ai-tools.js \
      scholark-v67-professional-exports.js \
      scholark-v68-slide-block-editor.js \
+     scholark-v69-reference-reader.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -61,7 +63,7 @@ RUN unzip /tmp/scholark.zip -d /app \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
-    && npm install --omit=dev --no-save pptxgenjs docx pdfkit
+    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip
 
 ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
@@ -72,4 +74,4 @@ ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
