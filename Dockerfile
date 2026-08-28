@@ -8,6 +8,7 @@ COPY scholark_v23_patch.gz.b64 /tmp/scholark_v23_patch.gz.b64
 COPY scholark_v23_education.gz.b64 /tmp/scholark_v23_education.gz.b64
 COPY server-key-shim.mjs /app/server-key-shim.mjs
 COPY studio-ai-route.mjs /app/studio-ai-route.mjs
+COPY studio-media-route.mjs /app/studio-media-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -41,6 +42,7 @@ COPY scholark-v24-ui.js \
      scholark-v63-presentation-visuals.js \
      scholark-v64-projects.js \
      scholark-v65-book-studio.js \
+     scholark-v66-presentation-ai-tools.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -61,8 +63,9 @@ ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
 ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
+ENV POLLINATIONS_IMAGE_MODEL=flux
 ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
