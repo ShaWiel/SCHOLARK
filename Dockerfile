@@ -12,6 +12,7 @@ COPY studio-media-route.mjs /app/studio-media-route.mjs
 COPY studio-export-route.mjs /app/studio-export-route.mjs
 COPY studio-reference-route.mjs /app/studio-reference-route.mjs
 COPY studio-research-route.mjs /app/studio-research-route.mjs
+COPY studio-public-page-route.mjs /app/studio-public-page-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 
@@ -52,6 +53,7 @@ COPY scholark-v24-ui.js \
      scholark-v70-social-graphic-media.js \
      scholark-v71-research-agent.js \
      scholark-v72-cloud-projects.js \
+     scholark-v73-web-publishing.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -67,7 +69,7 @@ RUN unzip /tmp/scholark.zip -d /app \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
-    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip
+    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
@@ -75,8 +77,10 @@ ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
 ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_IMAGE_MODEL=flux
 ENV POLLINATIONS_RESEARCH_MODEL=perplexity-fast
+ENV SUPABASE_URL=https://yhafbwdnnpvuedycdkll.supabase.co
+ENV SUPABASE_PUBLISHABLE_KEY=sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A
 ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
 ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
