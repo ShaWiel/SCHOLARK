@@ -20,7 +20,7 @@ function sendBuffer(res,buffer,type,name){
   res.writeHead(200,{'content-type':type,'content-length':String(buffer.length),'content-disposition':`attachment; filename="${safeName(name)}"`,'cache-control':'no-store'});
   res.end(buffer);
 }
-function readBody(req,limit=36*1024*1024){
+function readBody(req,limit=20*1024*1024){
   return new Promise((resolve,reject)=>{
     let raw='',size=0;req.setEncoding('utf8');
     req.on('data',chunk=>{size+=Buffer.byteLength(chunk);if(size>limit){reject(Object.assign(new Error('Export payload too large'),{code:'PAYLOAD_TOO_LARGE'}));req.destroy();return}raw+=chunk});
@@ -28,7 +28,14 @@ function readBody(req,limit=36*1024*1024){
     req.on('error',reject);
   });
 }
-function dataBuffer(data){const m=String(data||'').match(/^data:([^;,]+)?(;base64)?,(.*)$/s);if(!m)return null;try{return m[2]?Buffer.from(m[3],'base64'):Buffer.from(decodeURIComponent(m[3]))}catch{return null}}
+function safeImageData(data){
+  const s=String(data||'');if(s.length>3*1024*1024)return'';
+  const m=s.match(/^data:image\/(jpeg|jpg|png);base64,([A-Za-z0-9+/=]+)$/i);if(!m)return'';
+  let b;try{b=Buffer.from(m[2],'base64')}catch{return''}if(!b.length||b.length>2.2*1024*1024)return'';
+  const jpeg=b[0]===0xff&&b[1]===0xd8&&b[2]===0xff,png=b.length>8&&b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47&&b[4]===0x0d&&b[5]===0x0a&&b[6]===0x1a&&b[7]===0x0a;
+  return jpeg||png?s:'';
+}
+function dataBuffer(data){const safe=safeImageData(data);if(!safe)return null;try{return Buffer.from(safe.slice(safe.indexOf(',')+1),'base64')}catch{return null}}
 function itemRows(s){return Array.isArray(s?.items)?s.items.slice(0,4).map((x,i)=>Array.isArray(x)?[clean(x[0])||String(i+1),clean(x[1]),clean(x[2])]:[String(i+1),clean(x?.title||x?.heading),clean(x?.detail)]):[]}
 
 async function presentationPptx(body){
@@ -40,7 +47,7 @@ async function presentationPptx(body){
   const addText=(sl,text,opts={})=>{if(clean(text))sl.addText(String(text),{fontFace:'Aptos',margin:0,breakLine:false,fit:'shrink',valign:'mid',...opts})};
   for(let i=0;i<(deck.slides||[]).length;i++){
     const s=deck.slides[i]||{},items=itemRows(s),sl=pptx.addSlide();sl.background={color:t.bg};
-    const img=media[s.id];
+    const img=safeImageData(media[s.id]);
     addText(sl,clean(s.kicker)||'SCHOLARK',{x:.72,y:.42,w:2.2,h:.3,fontSize:9,bold:true,color:t.accent,charSpacing:1.8});
     const layout=clean(s.layout)||'cards';
     if(layout==='hero'){
