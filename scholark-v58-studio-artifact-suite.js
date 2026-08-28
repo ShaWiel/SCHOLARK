@@ -122,7 +122,7 @@
     const x=item();if(!x)return;
     const stage=$('.v58-stage');
     if(state.mode==='webpage'){
-      const s=$('.v58-web-section.selected',stage);if(s){x.title=clean($('[data-field="title"]',s)?.innerText||x.title);x.body=clean($('[data-field="body"]',s)?.innerText||x.body);x.items=$$('[data-field="item"]',s).map(el=>clean(el.innerText)).filter(Boolean)}
+      const s=$('.v58-web-section.selected',stage);if(s){x.title=clean($('[data-field="title"]',s)?.innerText||x.title);x.body=clean($('[data-field="body"]',s)?.innerText||x.body);const nodes=$('[data-v58-web-item]',s);if(nodes.length)x.items=nodes.map(el=>({title:clean($('[data-field="item-title"]',el)?.innerText||''),detail:clean($('[data-field="item-detail"]',el)?.innerText||''),value:clean($('[data-field="item-value"]',el)?.innerText||'')})).filter(v=>v.title||v.detail||v.value)}
     }else if(state.mode==='document'){
       const s=$('.v58-doc-section.selected',stage);if(s){x.title=clean($('[data-field="title"]',s)?.innerText||x.title);x.body=$$('[data-field="body"]',s).map(el=>clean(el.innerText)).filter(Boolean)}
     }else if(state.mode==='social'){
@@ -132,14 +132,16 @@
     }
   }
 
+  function webItem(v){return v&&typeof v==='object'?{title:clean(v.title||v.heading||v.detail),detail:clean(v.detail),value:clean(v.value)}:{title:clean(v),detail:'',value:''}}
+
   function webpageMarkup(){
     const a=state.artifact;
     const sections=a.items.map((x,i)=>{
       const selected=i===state.index?' selected':'';
       const common=`<div class="v58-web-kicker">${esc(x.type)}</div><h2 data-field="title" contenteditable="true">${esc(x.title)}</h2><p data-field="body" contenteditable="true">${esc(x.body)}</p>`;
       if(x.type==='hero')return `<section class="v58-web-section v58-web-hero${selected}" data-index="${i}"><div class="v58-web-kicker">SCHOLARK GENERATED</div><h1 data-field="title" contenteditable="true">${esc(x.title)}</h1><p data-field="body" contenteditable="true">${esc(x.body)}</p><div class="v58-web-actions"><span>Get started</span><span class="alt">Learn more</span></div></section>`;
-      if(x.type==='cards'||x.type==='faq')return `<section class="v58-web-section${selected}" data-index="${i}">${common}<div class="v58-web-cards">${(x.items||[]).map((v,j)=>`<div class="v58-web-card"><b data-field="item" contenteditable="true">${esc(v)}</b><span>Designed as a focused supporting point for this section.</span></div>`).join('')}</div></section>`;
-      if(x.type==='stats')return `<section class="v58-web-section${selected}" data-index="${i}">${common}<div class="v58-web-stats">${(x.items||[]).map((v,j)=>`<div class="v58-web-stat"><strong>${j+1}</strong><span data-field="item" contenteditable="true">${esc(v)}</span></div>`).join('')}</div></section>`;
+      if(x.type==='cards'||x.type==='faq')return `<section class="v58-web-section${selected}" data-index="${i}">${common}<div class="v58-web-cards">${(x.items||[]).map((raw,j)=>{const v=webItem(raw);return `<div class="v58-web-card" data-v58-web-item><b data-field="item-title" contenteditable="true">${esc(v.title||('Point '+(j+1)))}</b>${v.detail?`<span data-field="item-detail" contenteditable="true">${esc(v.detail)}</span>`:''}</div>`}).join('')}</div></section>`;
+      if(x.type==='stats')return `<section class="v58-web-section${selected}" data-index="${i}">${common}<div class="v58-web-stats">${(x.items||[]).map((raw,j)=>{const v=webItem(raw);return `<div class="v58-web-stat" data-v58-web-item><strong data-field="item-value" contenteditable="true">${esc(v.value||String(j+1).padStart(2,'0'))}</strong><b data-field="item-title" contenteditable="true">${esc(v.title)}</b>${v.detail?`<span data-field="item-detail" contenteditable="true">${esc(v.detail)}</span>`:''}</div>`}).join('')}</div></section>`;
       if(x.type==='cta')return `<section class="v58-web-section${selected}" data-index="${i}"><div class="v58-web-cta">${common}<div class="v58-web-actions"><span>Take action →</span></div></div></section>`;
       return `<section class="v58-web-section${selected}" data-index="${i}">${common}</section>`;
     }).join('');
