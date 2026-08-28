@@ -132,6 +132,10 @@
       x.prompt=payload(m).prompt;
       x.items=mapItems(m,a);
       x.sources=a.sources||[];
+      x.cta=clean(a.cta);
+      x.caption=clean(a.caption);
+      x.hashtags=Array.isArray(a.hashtags)?a.hashtags.map(clean).filter(Boolean):[];
+      x.summary=clean(a.summary);
       x.ai={provider:ai.provider,model:ai.model};
       const theme=$('.v58-theme');if(theme)theme.dispatchEvent(new Event('change',{bubbles:true}));
     });
