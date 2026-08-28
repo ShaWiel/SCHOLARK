@@ -56,5 +56,5 @@
   const obs=new MutationObserver(()=>{clearTimeout(window.__v72enhance);window.__v72enhance=setTimeout(()=>enhance(),90)});obs.observe(document.documentElement,{subtree:true,childList:true});
   modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
   loadSession();setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true)},350);
-  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,items:()=>state.cloud};
+  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,currentSession:()=>state.session};
 })();
