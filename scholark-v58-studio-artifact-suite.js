@@ -11,11 +11,17 @@
   const state={mode:null,artifact:null,index:0,theme:'midnight'};
 
   const THEMES={
-    midnight:{label:'Midnight Lime',bg:'#10131c',panel:'#171b27',ink:'#ffffff',muted:'#b8becc',accent:'#c9ff6a',accent2:'#7667ff'},
-    editorial:{label:'Editorial',bg:'#f5f1e8',panel:'#fffdf8',ink:'#17191f',muted:'#746f6a',accent:'#6d5dfc',accent2:'#c9ff6a'},
-    cobalt:{label:'Cobalt',bg:'#0a1f44',panel:'#102c5f',ink:'#ffffff',muted:'#c0d0ea',accent:'#8be8ff',accent2:'#c9ff6a'},
-    plum:{label:'Plum',bg:'#24152f',panel:'#352044',ink:'#ffffff',muted:'#d8c4df',accent:'#ffb4db',accent2:'#c9ff6a'},
-    paper:{label:'Paper',bg:'#f7f7f4',panel:'#ffffff',ink:'#17191f',muted:'#6d6974',accent:'#17191f',accent2:'#6d5dfc'}
+    midnight:{label:'Midnight Lime',bg:'#10131c',panel:'#171b27',ink:'#ffffff',muted:'#b8becc',accent:'#c9ff6a',accent2:'#7667ff',font:'Inter,system-ui'},
+    editorial:{label:'Editorial',bg:'#f5f1e8',panel:'#fffdf8',ink:'#17191f',muted:'#746f6a',accent:'#6d5dfc',accent2:'#c9ff6a',font:'Georgia,serif'},
+    cobalt:{label:'Cobalt',bg:'#0a1f44',panel:'#102c5f',ink:'#ffffff',muted:'#c0d0ea',accent:'#8be8ff',accent2:'#c9ff6a',font:'Inter,system-ui'},
+    plum:{label:'Plum',bg:'#24152f',panel:'#352044',ink:'#ffffff',muted:'#d8c4df',accent:'#ffb4db',accent2:'#c9ff6a',font:'Inter,system-ui'},
+    paper:{label:'Paper',bg:'#f7f7f4',panel:'#ffffff',ink:'#17191f',muted:'#6d6974',accent:'#17191f',accent2:'#6d5dfc',font:'Inter,system-ui'},
+    academic:{label:'Academic Journal',bg:'#f4f0e6',panel:'#fffdfa',ink:'#18221d',muted:'#6d756f',accent:'#1f6b50',accent2:'#b28b46',font:'Georgia,serif'},
+    luxury:{label:'Luxury Noir',bg:'#0b0b0d',panel:'#171619',ink:'#f8f4ea',muted:'#b8b0a3',accent:'#d8b56b',accent2:'#7b6650',font:'Georgia,serif'},
+    aurora:{label:'Aurora',bg:'#10152a',panel:'#171f39',ink:'#f5f8ff',muted:'#bcc8df',accent:'#74f3cf',accent2:'#a278ff',font:'Inter,system-ui'},
+    forest:{label:'Forest',bg:'#10251d',panel:'#183429',ink:'#f5fbf6',muted:'#b8d0c1',accent:'#b7e86d',accent2:'#4ca982',font:'Inter,system-ui'},
+    terracotta:{label:'Terracotta',bg:'#f4e7dc',panel:'#fff9f4',ink:'#35221d',muted:'#866f66',accent:'#c85e3d',accent2:'#e3a24d',font:'Georgia,serif'},
+    mono:{label:'Monochrome',bg:'#f4f4f4',panel:'#ffffff',ink:'#111111',muted:'#666666',accent:'#111111',accent2:'#a5a5a5',font:'Arial,sans-serif'}
   };
 
   const css=document.createElement('style');
@@ -38,7 +44,7 @@
     @media(max-width:1000px){.v58-work{grid-template-columns:150px minmax(0,1fr)}.v58-panel{display:none}.v58-stage{padding:15px}.v58-social-wrap{grid-template-columns:1fr}.v58-caption{max-width:620px;margin:0 auto;width:100%}}@media(max-width:700px){.v58-web-hero,.v58-web-split{grid-template-columns:1fr}.v58-web-art{min-height:230px}#v58-suite{left:0}.v58-work{grid-template-columns:1fr}.v58-nav{display:none}.v58-stage{padding:8px}.v58-top select,.v58-saved{display:none}.v58-doc{padding:35px 24px}.v58-web-cards,.v58-web-stats{grid-template-columns:1fr}.v58-webnav .v58-links{display:none}}
     @media print{body>*:not(#v58-suite){display:none!important}#v58-suite{position:static!important;display:block!important;background:#fff!important}#v58-suite .v58-top,#v58-suite .v58-nav,#v58-suite .v58-panel{display:none!important}.v58-work,.v58-stage{display:block!important;padding:0!important;background:#fff!important}.v58-doc,.v58-graphic{box-shadow:none!important;margin:0 auto!important}.v58-web{box-shadow:none!important;border-radius:0!important}}
   `;
-  document.head.appendChild(css);
+  css.textContent+=' .v58-web,.v58-social-card,.v58-graphic{font-family:var(--font,Inter,system-ui)!important}.v58-web *,.v58-social-card *,.v58-graphic *{font-family:inherit!important}';document.head.appendChild(css);
 
   const root=document.createElement('section');
   root.id='v58-suite';
@@ -70,7 +76,7 @@
     return lead;
   };
 
-  function themeVars(){const t=THEMES[state.theme]||THEMES.midnight;return `--bg:${t.bg};--panel:${t.panel};--ink:${t.ink};--muted:${t.muted};--accent:${t.accent};--accent2:${t.accent2}`}
+  function themeVars(){const t=THEMES[state.theme]||THEMES.midnight;return `--bg:${t.bg};--panel:${t.panel};--ink:${t.ink};--muted:${t.muted};--accent:${t.accent};--accent2:${t.accent2};--font:${t.font||'Inter,system-ui'}`}
   function save(){
     if(!state.artifact)return;
     state.artifact.name=$('.v58-name').value||state.artifact.name;
