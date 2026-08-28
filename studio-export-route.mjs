@@ -255,6 +255,8 @@ async function exportSelftest(){
   return {ok,pptxBytes:pptx.length,pdfBytes:pdf.length,docxBytes:docx.length};
 }
 
+setTimeout(()=>{exportSelftest().then(x=>console.log('[SCHOLARK] Export self-test '+(x.ok?'PASS':'FAIL')+' pptx='+x.pptxBytes+' pdf='+x.pdfBytes+' docx='+x.docxBytes)).catch(e=>console.error('[SCHOLARK] Export self-test FAIL '+String(e?.message||e)))},250);
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
   const [req,res]=args;
