@@ -125,34 +125,38 @@ async function presentationPdf(body){
 function documentSections(body){
   if(body?.kind==='book'){
     const b=body.book||{},plan=b.plan||{},chapters=plan.sections||[];
-    return {title:b.name||plan.title||'Untitled book',summary:plan.summary||b.concept||'',sections:chapters.map((ch,i)=>{const d=b.drafts?.[i];return {title:'Chapter '+(i+1)+': '+clean(ch.title),paragraphs:d?(d.sections||[]).flatMap(x=>[clean(x.title),String(x.body||'').trim()]):[clean(ch.body||ch.subtitle)]}}),sources:[]};
+    return {title:b.name||plan.title||'Untitled book',summary:plan.summary||b.concept||'',sections:chapters.map((ch,i)=>{const d=b.drafts?.[i];return {title:'Chapter '+(i+1)+': '+clean(ch.title),paragraphs:d?(d.sections||[]).flatMap(x=>[clean(x.title),String(x.body||'').trim()]):[clean(ch.body||ch.subtitle)]}}),sources:[],settings:{cover:true,toc:true,headingNumbers:false,header:true,footer:true,pageNumbers:true,headerText:b.name||plan.title||'SCHOLARK Book',footerText:'Created in SCHOLARK',citationStyle:'APA'}};
   }
   const a=body?.artifact||{},items=a.items||[];
-  return {title:a.name||a.title||'SCHOLARK Document',summary:a.summary||a.prompt||'',sections:items.map(x=>({title:clean(x.title),paragraphs:Array.isArray(x.body)?x.body.map(v=>String(v||'').trim()).filter(Boolean):[String(x.body||'').trim()].filter(Boolean),sources:x.sourceRefs||[]})),sources:a.sources||[]};
+  return {title:a.name||a.title||'SCHOLARK Document',summary:a.summary||a.prompt||'',sections:items.map(x=>({title:clean(x.title),paragraphs:Array.isArray(x.body)?x.body.map(v=>String(v||'').trim()).filter(Boolean):[String(x.body||'').trim()].filter(Boolean),sources:x.sourceRefs||[]})),sources:a.sources||[],settings:a.documentSettings||{}};
 }
 
 async function documentDocx(body){
   const d=await import('docx');
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,PageBreak,AlignmentType,Header,Footer,PageNumber,NumberFormat,TableOfContents,BorderStyle}=d;
-  const x=documentSections(body),children=[],isBook=body?.kind==='book';
+  const x=documentSections(body),children=[],isBook=body?.kind==='book',cfg=x.settings||{};
   const allRefs=[...(x.sources||[])];
 
   // Cover page
-  children.push(new Paragraph({spacing:{before:1800,after:220},alignment:AlignmentType.CENTER,children:[new TextRun({text:x.title,bold:true,size:42,color:'17191F'})]}));
-  children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:320},children:[new TextRun({text:isBook?'SCHOLARK BOOK MANUSCRIPT':'SCHOLARK DOCUMENT',bold:true,size:18,color:'6D5DFC',characterSpacing:80})]}));
-  if(x.summary)children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:180,after:300},children:[new TextRun({text:x.summary,italics:true,size:22,color:'666666'})]}));
-  children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:620},children:[new TextRun({text:'Created in SCHOLARK',size:18,color:'888888'})]}));
-  children.push(new Paragraph({children:[new PageBreak()]}));
+  if(cfg.cover!==false){
+    children.push(new Paragraph({spacing:{before:1800,after:220},alignment:AlignmentType.CENTER,children:[new TextRun({text:x.title,bold:true,size:42,color:'17191F'})]}));
+    children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:320},children:[new TextRun({text:isBook?'SCHOLARK BOOK MANUSCRIPT':'SCHOLARK DOCUMENT',bold:true,size:18,color:'6D5DFC',characterSpacing:80})]}));
+    if(x.summary)children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:180,after:300},children:[new TextRun({text:x.summary,italics:true,size:22,color:'666666'})]}));
+    children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:620},children:[new TextRun({text:cfg.footerText||'Created in SCHOLARK',size:18,color:'888888'})]}));
+    children.push(new Paragraph({children:[new PageBreak()]}));
+  }
 
   // Word-native table of contents. Word updates the fields when the file is opened.
-  children.push(new Paragraph({text:'Contents',heading:HeadingLevel.HEADING_1,spacing:{after:180}}));
-  children.push(new TableOfContents('Contents',{hyperlink:true,headingStyleRange:'1-3'}));
-  children.push(new Paragraph({children:[new PageBreak()]}));
+  if(cfg.toc!==false){
+    children.push(new Paragraph({text:'Contents',heading:HeadingLevel.HEADING_1,spacing:{after:180}}));
+    children.push(new TableOfContents('Contents',{hyperlink:true,headingStyleRange:'1-3'}));
+    children.push(new Paragraph({children:[new PageBreak()]}));
+  }
 
   x.sections.forEach((s,i)=>{
     if(i>0&&isBook)children.push(new Paragraph({children:[new PageBreak()]}));
     children.push(new Paragraph({
-      text:s.title||('Section '+(i+1)),
+      text:(cfg.headingNumbers!==false?(i+1)+'. ':'')+(s.title||('Section '+(i+1))),
       heading:HeadingLevel.HEADING_1,
       spacing:{before:220,after:130},
       keepNext:true
@@ -183,19 +187,23 @@ async function documentDocx(body){
   const uniqueRefs=[...new Set(allRefs.map(r=>typeof r==='string'?r:clean(r?.title||r?.url||JSON.stringify(r))).map(clean).filter(Boolean))];
   if(uniqueRefs.length){
     children.push(new Paragraph({children:[new PageBreak()]}));
-    children.push(new Paragraph({text:'References',heading:HeadingLevel.HEADING_1,spacing:{after:150}}));
+    children.push(new Paragraph({text:'References'+(cfg.citationStyle?' · '+cfg.citationStyle:''),heading:HeadingLevel.HEADING_1,spacing:{after:150}}));
     uniqueRefs.forEach(r=>children.push(new Paragraph({children:[new TextRun({text:r,size:19,color:'44444C'})],bullet:{level:0},spacing:{after:80}})));
   }
 
-  const header=new Header({children:[new Paragraph({
+  const header=cfg.header===false?null:new Header({children:[new Paragraph({
     border:{bottom:{color:'D9D9E3',space:5,style:BorderStyle.SINGLE,size:4}},
-    children:[new TextRun({text:x.title,bold:true,size:16,color:'68646F'})],
+    children:[new TextRun({text:cfg.headerText||x.title,bold:true,size:16,color:'68646F'})],
     spacing:{after:80}
   })]});
-  const footer=new Footer({children:[new Paragraph({
+  const footer=(cfg.footer===false&&cfg.pageNumbers===false)?null:new Footer({children:[new Paragraph({
     alignment:AlignmentType.CENTER,
     border:{top:{color:'E2E0E8',space:5,style:BorderStyle.SINGLE,size:3}},
-    children:[new TextRun({text:'SCHOLARK  ·  Page ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.CURRENT],size:16,color:'77727D'}),new TextRun({text:' of ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:'77727D'})]
+    children:[
+      ...(cfg.footer===false?[]:[new TextRun({text:cfg.footerText||'Created in SCHOLARK',size:16,color:'77727D'})]),
+      ...(cfg.footer!==false&&cfg.pageNumbers!==false?[new TextRun({text:'  ·  ',size:16,color:'77727D'})]:[]),
+      ...(cfg.pageNumbers===false?[]:[new TextRun({text:'Page ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.CURRENT],size:16,color:'77727D'}),new TextRun({text:' of ',size:16,color:'77727D'}),new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:'77727D'})])
+    ]
   })]});
 
   const doc=new Document({
@@ -213,8 +221,8 @@ async function documentDocx(body){
     },
     sections:[{
       properties:{page:{margin:{top:900,right:900,bottom:900,left:900},pageNumbers:{start:1,formatType:NumberFormat.DECIMAL}}},
-      headers:{default:header},
-      footers:{default:footer},
+      ...(header?{headers:{default:header}}:{}),
+      ...(footer?{footers:{default:footer}}:{}),
       children
     }]
   });
