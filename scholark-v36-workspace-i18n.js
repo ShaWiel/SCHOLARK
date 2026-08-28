@@ -146,6 +146,6 @@
   new MutationObserver(()=>{clearTimeout(window.__v36t);window.__v36t=setTimeout(sync,80)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
   addEventListener('hashchange',()=>setTimeout(sync,20));
   addEventListener('popstate',()=>setTimeout(sync,20));
-  setInterval(sync,450);
+  addEventListener('focus',()=>setTimeout(sync,20)); document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(sync,20)});
   setTimeout(sync,40);
 })();
