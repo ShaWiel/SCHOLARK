@@ -31,7 +31,8 @@ function fallback(res,status,title,body){
 }
 async function getShare(token){
   if(!KEY)throw new Error('SUPABASE_PUBLISHABLE_KEY is not configured');
-  const r=await fetch(SB+'/rest/v1/rpc/get_shared_artifact',{method:'POST',headers:{apikey:KEY,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_token:token})});
+  const u=SB+'/rest/v1/shared_artifacts?select=kind,title,payload,updated_at&status=eq.published&token=eq.'+encodeURIComponent(token)+'&limit=1';
+  const r=await fetch(u,{headers:{apikey:KEY,accept:'application/json','x-scholark-share-token':token}});
   if(!r.ok)throw new Error('Shared artifact lookup failed');
   const rows=await r.json();return Array.isArray(rows)?rows[0]||null:null;
 }
