@@ -263,5 +263,7 @@
   },true);
 
   addEventListener('hashchange',()=>{if(!/studio|webpage|document|social|graphic/.test(String(location.hash).toLowerCase()))root.classList.remove('open')});
-  window.__SCHOLARK_V58_ARTIFACTS__={open,openArtifact:loadArtifact,close,get:()=>state.artifact};
+  function selectItem(index){if(!state.artifact)return;syncFromCanvas();state.index=Math.max(0,Math.min(state.artifact.items.length-1,Number(index)||0));render()}
+  function updateItem(index,patch){if(!state.artifact)return null;syncFromCanvas();const i=Math.max(0,Math.min(state.artifact.items.length-1,Number(index)||0));Object.assign(state.artifact.items[i],patch||{});state.index=i;render();save();return state.artifact.items[i]}
+  window.__SCHOLARK_V58_ARTIFACTS__={open,openArtifact:loadArtifact,close,get:()=>state.artifact,getIndex:()=>state.index,getMode:()=>state.mode,getTheme:()=>state.theme,selectItem,updateItem,save,render};
 })();
