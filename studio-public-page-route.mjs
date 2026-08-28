@@ -18,8 +18,8 @@ async function sanitize(html){
   const mod=await import('sanitize-html'),sanitizeHtml=mod.default||mod;
   return sanitizeHtml(String(html||''),{
     allowedTags:['html','head','meta','title','style','body','main','section','nav','header','footer','article','aside','div','span','p','h1','h2','h3','h4','h5','h6','small','strong','b','em','i','u','ul','ol','li','a','img','figure','figcaption','br','hr','button','table','thead','tbody','tr','th','td'],
-    allowedAttributes:{html:['lang'],meta:['charset','name','content'],a:['href','target','rel'],img:['src','alt','loading','width','height'],button:['type'], '*':['class','id','style','role','aria-label','aria-hidden','data-index']},
-    allowedSchemes:['http','https','mailto','data'],allowedSchemesByTag:{img:['http','https','data'],a:['http','https','mailto']},allowProtocolRelative:false,
+    allowedAttributes:{html:['lang'],meta:['charset','name','property','content'],a:['href','target','rel'],img:['src','alt','loading','width','height'],button:['type'], '*':['class','id','style','role','aria-label','aria-hidden','data-index']},
+    allowedSchemes:['http','https','mailto','tel','data'],allowedSchemesByTag:{img:['http','https','data'],a:['http','https','mailto','tel']},allowProtocolRelative:false,
     nonTextTags:['script','textarea','option','noscript','iframe','object','embed','form'],
     transformTags:{a:(tag,attrs)=>({tagName:'a',attribs:{...attrs,rel:'noopener noreferrer',target:attrs.target==='_blank'?'_blank':attrs.target}})}
   });
