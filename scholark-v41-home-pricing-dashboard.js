@@ -119,5 +119,5 @@
 
   interceptStudio();wirePricingNav();
   new MutationObserver(()=>{clearTimeout(window.__v41sync);window.__v41sync=setTimeout(sync,70)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,20));addEventListener('resize',()=>setTimeout(sync,60));setInterval(sync,600);setTimeout(sync,50);
+  addEventListener('hashchange',()=>setTimeout(sync,20));addEventListener('resize',()=>setTimeout(sync,60));addEventListener('focus',()=>setTimeout(sync,30));setTimeout(sync,50);
 })();
