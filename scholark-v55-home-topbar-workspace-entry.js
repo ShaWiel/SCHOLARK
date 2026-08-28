@@ -86,5 +86,5 @@
 
   addEventListener('hashchange',()=>setTimeout(sync,10));addEventListener('popstate',()=>setTimeout(sync,10));
   new MutationObserver(()=>{clearTimeout(window.__v55sync);window.__v55sync=setTimeout(sync,80)}).observe(document.documentElement,{subtree:true,childList:true});
-  setInterval(sync,900);setTimeout(sync,40);
+  addEventListener('focus',()=>setTimeout(sync,20));setTimeout(sync,40);
 })();
