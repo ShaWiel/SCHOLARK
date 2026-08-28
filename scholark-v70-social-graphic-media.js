@@ -24,7 +24,37 @@
   function wrap(ctx,text,maxWidth){const words=clean(text).split(' '),lines=[];let line='';for(const w of words){const test=line?line+' '+w:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test}if(line)lines.push(line);return lines}
   function cover(ctx,img,w,h){const s=Math.max(w/img.width,h/img.height),dw=img.width*s,dh=img.height*s;ctx.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh)}
   async function loadImage(data){if(!data)return null;return await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=data})}
-  async function renderCanvas(x,i){const a=artifact(),m=mode(),t=theme(),c=document.createElement('canvas');c.width=1080;c.height=1350;const ctx=c.getContext('2d');ctx.fillStyle=t.bg;ctx.fillRect(0,0,c.width,c.height);let has=false;if(x.mediaKey){const data=await media()?.getDataURL?.(x.mediaKey);try{const im=await loadImage(data);if(im){cover(ctx,im,c.width,c.height);has=true}}catch{}}if(has){const g=ctx.createLinearGradient(0,120,0,1350);g.addColorStop(0,'rgba(8,8,12,.08)');g.addColorStop(.48,'rgba(8,8,12,.25)');g.addColorStop(1,'rgba(8,8,12,.84)');ctx.fillStyle=g;ctx.fillRect(0,0,1080,1350)}else{ctx.fillStyle=t.accent2+'38';ctx.beginPath();ctx.arc(930,180,310,0,Math.PI*2);ctx.fill();ctx.fillStyle=t.accent+'26';ctx.beginPath();ctx.arc(760,440,180,0,Math.PI*2);ctx.fill()}const ink=has?'#ffffff':t.ink,muted=has?'rgba(255,255,255,.82)':t.muted;ctx.fillStyle=has?'rgba(255,255,255,.86)':t.accent;ctx.font='800 24px Arial';ctx.fillText((m==='social'?'SCHOLARK SOCIAL':'SCHOLARK GRAPHIC')+' · '+String(i+1).padStart(2,'0'),72,90);ctx.fillStyle=ink;ctx.font='900 72px Arial';let y=240;for(const line of wrap(ctx,x.title,900).slice(0,5)){ctx.fillText(line,72,y);y+=78}ctx.fillStyle=muted;ctx.font='500 30px Arial';y+=30;for(const line of wrap(ctx,x.body,860).slice(0,7)){ctx.fillText(line,72,y);y+=42}if(m==='graphic'&&Array.isArray(x.blocks)){y=Math.max(y+35,870);ctx.font='800 22px Arial';for(const b of x.blocks.slice(0,4)){ctx.fillStyle=has?'#c9ff6a':t.accent;ctx.fillText(clean(b[0]),72,y);ctx.fillStyle=ink;ctx.font='700 24px Arial';for(const ln of wrap(ctx,b[1],760).slice(0,2)){ctx.fillText(ln,190,y);y+=32}y+=22;ctx.font='800 22px Arial'}}ctx.fillStyle=has?'#c9ff6a':t.accent;ctx.font='800 24px Arial';ctx.fillText(m==='graphic'?clean(x.cta||'Learn more'):'SWIPE →',72,1260);ctx.fillStyle=has?'rgba(255,255,255,.76)':t.muted;ctx.font='600 19px Arial';ctx.fillText(clean(a.name||'SCHOLARK'),72,1305);return c}
+  async function drawCanvasLayers(ctx,x){
+    const layers=(Array.isArray(x?.canvasLayers)?x.canvasLayers:[]).slice().sort((a,b)=>(a.z||0)-(b.z||0));
+    for(const layer of layers){
+      const px=(Number(layer.x)||0)/100*1080,py=(Number(layer.y)||0)/100*1350,pw=Math.max(1,(Number(layer.w)||10)/100*1080),ph=Math.max(1,(Number(layer.h)||10)/100*1350);
+      ctx.save();ctx.globalAlpha=Math.max(.05,Math.min(1,Number(layer.opacity)??1));
+      if(layer.type==='text'){
+        const size=Math.max(14,Math.min(180,(Number(layer.fontSize)||34)*1.45));ctx.fillStyle=layer.color||'#ffffff';ctx.font='900 '+size+'px Arial';ctx.textBaseline='top';let y=py;for(const line of wrap(ctx,layer.text||'',pw).slice(0,10)){if(y+size>py+ph)break;ctx.fillText(line,px,y);y+=size*1.08}
+      }else if(layer.type==='rect'){
+        ctx.fillStyle=layer.bg||'#6d5dfc';if(ctx.roundRect){ctx.beginPath();ctx.roundRect(px,py,pw,ph,18);ctx.fill()}else ctx.fillRect(px,py,pw,ph);
+      }else if(layer.type==='circle'){
+        ctx.fillStyle=layer.bg||'#c9ff6a';ctx.beginPath();ctx.ellipse(px+pw/2,py+ph/2,pw/2,ph/2,0,0,Math.PI*2);ctx.fill();
+      }else if(layer.type==='image'&&layer.mediaKey){
+        try{const data=await media()?.getDataURL?.(layer.mediaKey),im=await loadImage(data);if(im){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(px,py,pw,ph,18);else ctx.rect(px,py,pw,ph);ctx.clip();const scale=Math.max(pw/im.width,ph/im.height),dw=im.width*scale,dh=im.height*scale;ctx.drawImage(im,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh)}}catch{}
+      }
+      ctx.restore();
+    }
+  }
+  async function renderCanvas(x,i){
+    const a=artifact(),m=mode(),t=theme(),c=document.createElement('canvas');c.width=1080;c.height=1350;const ctx=c.getContext('2d');ctx.fillStyle=t.bg;ctx.fillRect(0,0,c.width,c.height);
+    let has=false;
+    if(x.mediaKey){const data=await media()?.getDataURL?.(x.mediaKey);try{const im=await loadImage(data);if(im){cover(ctx,im,c.width,c.height);has=true}}catch{}}
+    if(has){const g=ctx.createLinearGradient(0,120,0,1350);g.addColorStop(0,'rgba(8,8,12,.08)');g.addColorStop(.48,'rgba(8,8,12,.25)');g.addColorStop(1,'rgba(8,8,12,.84)');ctx.fillStyle=g;ctx.fillRect(0,0,1080,1350)}
+    else{ctx.fillStyle=t.accent2+'38';ctx.beginPath();ctx.arc(930,180,310,0,Math.PI*2);ctx.fill();ctx.fillStyle=t.accent+'26';ctx.beginPath();ctx.arc(760,440,180,0,Math.PI*2);ctx.fill()}
+    const ink=has?'#ffffff':t.ink,muted=has?'rgba(255,255,255,.82)':t.muted;ctx.fillStyle=has?'rgba(255,255,255,.86)':t.accent;ctx.font='800 24px Arial';ctx.fillText((m==='social'?'SCHOLARK SOCIAL':'SCHOLARK GRAPHIC')+' · '+String(i+1).padStart(2,'0'),72,90);
+    ctx.fillStyle=ink;ctx.font='900 72px Arial';let y=240;for(const line of wrap(ctx,x.title,900).slice(0,5)){ctx.fillText(line,72,y);y+=78}
+    ctx.fillStyle=muted;ctx.font='500 30px Arial';y+=30;for(const line of wrap(ctx,x.body,860).slice(0,7)){ctx.fillText(line,72,y);y+=42}
+    if(m==='graphic'&&Array.isArray(x.blocks)){y=Math.max(y+35,870);ctx.font='800 22px Arial';for(const b of x.blocks.slice(0,4)){ctx.fillStyle=has?'#c9ff6a':t.accent;ctx.fillText(clean(b[0]),72,y);ctx.fillStyle=ink;ctx.font='700 24px Arial';for(const ln of wrap(ctx,b[1],760).slice(0,2)){ctx.fillText(ln,190,y);y+=32}y+=22;ctx.font='800 22px Arial'}}
+    ctx.fillStyle=has?'#c9ff6a':t.accent;ctx.font='800 24px Arial';ctx.fillText(m==='graphic'?clean(x.cta||'Learn more'):'SWIPE →',72,1260);ctx.fillStyle=has?'rgba(255,255,255,.76)':t.muted;ctx.font='600 19px Arial';ctx.fillText(clean(a.name||'SCHOLARK'),72,1305);
+    if(m==='graphic')await drawCanvasLayers(ctx,x);
+    return c;
+  }
   function dl(data,name){const a=document.createElement('a');a.href=data;a.download=name;document.body.appendChild(a);a.click();a.remove()}
   async function currentRaster(type){const x=item(),a=artifact();if(!x||!a)return;menuStatus('Rendering '+type.toUpperCase()+'…');const c=await renderCanvas(x,idx()),mime=type==='jpg'?'image/jpeg':'image/png',data=c.toDataURL(mime,type==='jpg'?.9:1);dl(data,(a.name||'scholark')+'-'+String(idx()+1).padStart(2,'0')+'.'+type);menuStatus('Download started.');setTimeout(closeMenu,700)}
   async function allFiles(){const a=artifact(),files=[];for(let i=0;i<(a?.items||[]).length;i++){menuStatus('Rendering '+(i+1)+' / '+a.items.length+'…');const c=await renderCanvas(a.items[i],i);files.push({name:(a.name||'scholark')+'-'+String(i+1).padStart(2,'0'),data:c.toDataURL('image/png')})}return files}
