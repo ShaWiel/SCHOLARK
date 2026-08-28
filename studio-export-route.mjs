@@ -230,12 +230,67 @@ async function documentDocx(body){
 }
 
 async function documentPdf(body){
-  const mod=await import('pdfkit'),PDFDocument=mod.default||mod,x=documentSections(body);
+  const mod=await import('pdfkit'),PDFDocument=mod.default||mod,x=documentSections(body),cfg=x.settings||{},isBook=body?.kind==='book';
   return await new Promise((resolve,reject)=>{
-    const doc=new PDFDocument({size:'A4',margin:58,info:{Title:x.title,Author:'SCHOLARK'}}),chunks=[];doc.on('data',d=>chunks.push(d));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);
-    doc.font('Helvetica-Bold').fontSize(24).fillColor('#17191F').text(x.title,{align:'left'});if(x.summary){doc.moveDown(.6);doc.font('Helvetica-Oblique').fontSize(11).fillColor('#666666').text(x.summary,{lineGap:3})}
-    x.sections.forEach((s,i)=>{if(body?.kind==='book'&&i>0)doc.addPage();else doc.moveDown(1);doc.font('Helvetica-Bold').fontSize(17).fillColor('#17191F').text(s.title||('Section '+(i+1)));doc.moveDown(.45);(s.paragraphs||[]).filter(Boolean).forEach(p=>{doc.font('Helvetica').fontSize(10.5).fillColor('#333333').text(String(p),{lineGap:3});doc.moveDown(.55)});const refs=(s.sources||[]).filter(Boolean);if(refs.length){doc.font('Helvetica-Bold').fontSize(9).text('Sources');refs.forEach(r=>doc.font('Helvetica').fontSize(8).fillColor('#666666').text('• '+r))}});
-    if((x.sources||[]).length){doc.addPage();doc.font('Helvetica-Bold').fontSize(17).fillColor('#17191F').text('References');doc.moveDown();x.sources.forEach(r=>doc.font('Helvetica').fontSize(9).fillColor('#444444').text('• '+(typeof r==='string'?r:clean(r?.title||r?.url||JSON.stringify(r))),{lineGap:2}))}
+    const doc=new PDFDocument({size:'A4',margin:58,bufferPages:true,info:{Title:x.title,Author:'SCHOLARK'}}),chunks=[];
+    doc.on('data',d=>chunks.push(d));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);
+
+    const heading=(text,size=17)=>{doc.font('Helvetica-Bold').fontSize(size).fillColor('#17191F').text(text,{lineGap:2});doc.moveDown(.45)};
+    const para=text=>{doc.font('Helvetica').fontSize(10.5).fillColor('#33333A').text(String(text),{lineGap:3});doc.moveDown(.55)};
+
+    if(cfg.cover!==false){
+      doc.moveDown(7);
+      doc.font('Helvetica-Bold').fontSize(28).fillColor('#17191F').text(x.title,{align:'center'});
+      doc.moveDown(.65);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#6D5DFC').text(isBook?'SCHOLARK BOOK MANUSCRIPT':'SCHOLARK DOCUMENT',{align:'center',characterSpacing:1.4});
+      if(x.summary){doc.moveDown(1.25);doc.font('Helvetica-Oblique').fontSize(11).fillColor('#66666F').text(x.summary,{align:'center',lineGap:4})}
+      doc.moveDown(3);doc.font('Helvetica').fontSize(9).fillColor('#88838D').text(cfg.footerText||'Created in SCHOLARK',{align:'center'});
+      doc.addPage();
+    }
+
+    if(cfg.toc!==false){
+      heading('Contents',20);
+      x.sections.forEach((s,i)=>{
+        const title=(cfg.headingNumbers!==false?(i+1)+'. ':'')+(s.title||('Section '+(i+1)));
+        doc.font('Helvetica').fontSize(10.5).fillColor('#44444C').text(title,{lineGap:3});doc.moveDown(.3);
+      });
+      doc.addPage();
+    }
+
+    x.sections.forEach((s,i)=>{
+      if(i>0&&isBook)doc.addPage();
+      const title=(cfg.headingNumbers!==false?(i+1)+'. ':'')+(s.title||('Section '+(i+1)));
+      heading(title,17);
+      (s.paragraphs||[]).filter(Boolean).forEach(p=>para(p));
+      const refs=(s.sources||[]).filter(Boolean);
+      if(refs.length){
+        doc.moveDown(.25);doc.font('Helvetica-Bold').fontSize(9).fillColor('#4E4955').text('Sources');doc.moveDown(.2);
+        refs.forEach(r=>{doc.font('Helvetica').fontSize(8).fillColor('#66616C').text('• '+String(r),{lineGap:2});doc.moveDown(.15)});
+      }
+      if(!isBook)doc.moveDown(.75);
+    });
+
+    const uniqueRefs=[...new Set((x.sources||[]).map(r=>typeof r==='string'?r:clean(r?.title||r?.url||JSON.stringify(r))).map(clean).filter(Boolean))];
+    if(uniqueRefs.length){
+      doc.addPage();heading('References'+(cfg.citationStyle?' · '+cfg.citationStyle:''),18);
+      uniqueRefs.forEach(r=>{doc.font('Helvetica').fontSize(9).fillColor('#44444C').text('• '+r,{lineGap:3});doc.moveDown(.35)});
+    }
+
+    const range=doc.bufferedPageRange();
+    for(let p=range.start;p<range.start+range.count;p++){
+      doc.switchToPage(p);
+      const pageNo=p-range.start+1,total=range.count;
+      if(cfg.header!==false){
+        doc.save();doc.font('Helvetica-Bold').fontSize(7).fillColor('#77727D').text(cfg.headerText||x.title,58,24,{width:479,ellipsis:true});doc.moveTo(58,39).lineTo(537,39).lineWidth(.4).strokeColor('#DEDBE3').stroke();doc.restore();
+      }
+      if(cfg.footer!==false||cfg.pageNumbers!==false){
+        doc.save();doc.moveTo(58,802).lineTo(537,802).lineWidth(.4).strokeColor('#E2DFE6').stroke();
+        const left=cfg.footer===false?'':(cfg.footerText||'Created in SCHOLARK');
+        const right=cfg.pageNumbers===false?'':('Page '+pageNo+' of '+total);
+        doc.font('Helvetica').fontSize(7).fillColor('#77727D').text(left,58,811,{width:300});
+        doc.text(right,370,811,{width:167,align:'right'});doc.restore();
+      }
+    }
     doc.end();
   });
 }
