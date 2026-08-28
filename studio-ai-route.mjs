@@ -33,6 +33,8 @@ const modeRules = {
   document: 'Return a complete professional document structure with substantive section prose, evidence-aware claims, logical transitions, conclusions and references when sources are supplied. Do not output writing instructions as body copy; output the actual document content.',
   social: 'Return a complete social content set/carousel with platform-ready hooks, useful body copy, caption, CTA and platform-appropriate hashtags. Avoid engagement bait, placeholders and instructions to the creator. Each item should be publishable after normal human review.',
   graphic: 'Return a complete visual-content system for a poster/infographic/graphic: final headline, concise supporting copy, information blocks, hierarchy, CTA and a concrete visual brief. Do not put design instructions in the visible copy fields.',
+  book: 'Create a serious book blueprint, not a generic writing checklist. Each section is one actual chapter plan with a chapter title, a concrete synopsis in body, scene/argument beats in bullets, structural points, continuity notes in speakerNotes, and a visualBrief used as mood or research direction. The sequence must build logically from first chapter to last. Adapt to fiction or nonfiction based on the request. Never pretend an entire long manuscript has been written when only a plan was requested.',
+  book_chapter: 'Write an actual polished chapter draft based on the supplied book and chapter context. Each returned section is a continuous subsection of the same chapter. The body field must contain finished prose, not an outline, instruction, summary of what to write, or meta-commentary. Preserve voice, POV, chronology, character/argument continuity and audience. Bullets should normally be empty unless the requested book format genuinely needs them. speakerNotes may contain private revision/continuity notes and must not be part of the manuscript prose.',
 };
 
 const schema = {
@@ -96,7 +98,8 @@ const validSecret = value => {
 function buildContext(payload) {
   const mode = String(payload.mode || '').toLowerCase();
   if (!modeRules[mode]) throw new Error('Unsupported Studio mode');
-  const requested = Math.max(1, Math.min(mode === 'presentation' ? 100 : 40, Number(payload.count || payload.settings?.count || 10) || 10));
+  const maxItems = mode === 'presentation' ? 100 : mode === 'book' ? 60 : mode === 'book_chapter' ? 12 : 40;
+  const requested = Math.max(1, Math.min(maxItems, Number(payload.count || payload.settings?.count || 10) || 10));
   const outline = Array.isArray(payload.outline) ? payload.outline.slice(0, 100) : [];
   const references = Array.isArray(payload.references) ? payload.references.slice(0, 20) : [];
   const userInput = {
