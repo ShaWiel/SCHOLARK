@@ -158,6 +158,18 @@ async function documentPdf(body){
   });
 }
 
+async function mediaZip(body){
+  const mod=await import('jszip'),JSZip=mod.default||mod,zip=new JSZip();let count=0;
+  for(const f of (body?.files||[]).slice(0,60)){const data=safeImageData(f?.data);if(!data)continue;const b=dataBuffer(data);if(!b)continue;const ext=data.startsWith('data:image/png')?'png':'jpg';zip.file(safeName(f?.name||('asset-'+(count+1)))+'.'+ext,b);count++}
+  if(!count){const e=new Error('No safe images supplied for ZIP export');e.code='NO_MEDIA';throw e}
+  return await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE',compressionOptions:{level:6}});
+}
+async function mediaPdf(body){
+  const mod=await import('pdfkit'),PDFDocument=mod.default||mod,files=(body?.files||[]).slice(0,60).map(f=>({name:safeName(f?.name||'asset'),buffer:dataBuffer(f?.data)})).filter(x=>x.buffer);
+  if(!files.length){const e=new Error('No safe images supplied for PDF export');e.code='NO_MEDIA';throw e}
+  return await new Promise((resolve,reject)=>{const doc=new PDFDocument({autoFirstPage:false,margin:0}),chunks=[];doc.on('data',d=>chunks.push(d));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);for(const f of files){doc.addPage({size:[810,1012.5],margin:0});try{doc.image(f.buffer,0,0,{width:810,height:1012.5,fit:[810,1012.5],align:'center',valign:'center'})}catch{}}doc.end()});
+}
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
   const [req,res]=args;
@@ -168,7 +180,9 @@ http.Server.prototype.emit=function(type,...args){
       '/api/export/presentation/pptx':async b=>({buffer:await presentationPptx(b),type:'application/vnd.openxmlformats-officedocument.presentationml.presentation',name:safeName(b?.deck?.name,'scholark-presentation')+'.pptx'}),
       '/api/export/presentation/pdf':async b=>({buffer:await presentationPdf(b),type:'application/pdf',name:safeName(b?.deck?.name,'scholark-presentation')+'.pdf'}),
       '/api/export/document/docx':async b=>({buffer:await documentDocx(b),type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',name:safeName(b?.artifact?.name||b?.book?.name,'scholark-document')+'.docx'}),
-      '/api/export/document/pdf':async b=>({buffer:await documentPdf(b),type:'application/pdf',name:safeName(b?.artifact?.name||b?.book?.name,'scholark-document')+'.pdf'})
+      '/api/export/document/pdf':async b=>({buffer:await documentPdf(b),type:'application/pdf',name:safeName(b?.artifact?.name||b?.book?.name,'scholark-document')+'.pdf'}),
+      '/api/export/media/zip':async b=>({buffer:await mediaZip(b),type:'application/zip',name:safeName(b?.name,'scholark-visuals')+'.zip'}),
+      '/api/export/media/pdf':async b=>({buffer:await mediaPdf(b),type:'application/pdf',name:safeName(b?.name,'scholark-visuals')+'.pdf'})
     };
     if(req.method==='POST'&&routes[url.pathname]){
       readBody(req).then(routes[url.pathname]).then(out=>sendBuffer(res,out.buffer,out.type,out.name)).catch(error=>{const code=error?.code||'EXPORT_FAILED';json(res,code==='PAYLOAD_TOO_LARGE'?413:code==='INVALID_JSON'?400:500,{ok:false,code,error:String(error?.message||error)})});return true;
