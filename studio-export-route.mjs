@@ -244,12 +244,24 @@ async function mediaPdf(body){
   return await new Promise((resolve,reject)=>{const doc=new PDFDocument({autoFirstPage:false,margin:0}),chunks=[];doc.on('data',d=>chunks.push(d));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject);for(const f of files){doc.addPage({size:[810,1012.5],margin:0});try{doc.image(f.buffer,0,0,{width:810,height:1012.5,fit:[810,1012.5],align:'center',valign:'center'})}catch{}}doc.end()});
 }
 
+async function exportSelftest(){
+  const deck={id:'selftest',name:'SCHOLARK Export Self-Test',theme:'editorial',prompt:'Verify export engines',slides:[
+    {id:'s1',layout:'hero',kicker:'SCHOLARK',title:'Export engine ready',subtitle:'This file is generated entirely in memory.',items:[],speakerNotes:'Self-test speaker note.',sourceRefs:[]},
+    {id:'s2',layout:'cards',kicker:'QA',title:'Structured output',subtitle:'PPTX, PDF and DOCX should all produce non-empty buffers.',items:[['01','PowerPoint','Editable deck'],['02','PDF','Portable output']],speakerNotes:'Second self-test note.',sourceRefs:[]}
+  ]};
+  const artifact={id:'doc-selftest',mode:'document',name:'SCHOLARK Document Self-Test',summary:'Verifies Word export structure.',prompt:'Self test',items:[{id:'a1',title:'Introduction',body:['This paragraph verifies the document body.','Quality controls'],sourceRefs:[]},{id:'a2',title:'Conclusion',body:['The export engine produced a real document structure.'],sourceRefs:[]}]};
+  const [pptx,pdf,docx]=await Promise.all([presentationPptx({deck,media:{}}),presentationPdf({deck,media:{}}),documentDocx({kind:'document',artifact})]);
+  const ok=pptx.length>3000&&pdf.length>1000&&docx.length>3000;
+  return {ok,pptxBytes:pptx.length,pdfBytes:pdf.length,docxBytes:docx.length};
+}
+
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);
   const [req,res]=args;
   try{
     const url=new URL(req.url||'/','http://localhost');
     if(req.method==='GET'&&url.pathname==='/api/export/health'){json(res,200,{ok:true,pptx:true,pdf:true,docx:true});return true}
+    if(req.method==='GET'&&url.pathname==='/api/export/selftest'){exportSelftest().then(x=>json(res,x.ok?200:500,x)).catch(e=>json(res,500,{ok:false,code:'EXPORT_SELFTEST_FAILED',error:String(e?.message||e)}));return true}
     const routes={
       '/api/export/presentation/pptx':async b=>({buffer:await presentationPptx(b),type:'application/vnd.openxmlformats-officedocument.presentationml.presentation',name:safeName(b?.deck?.name,'scholark-presentation')+'.pptx'}),
       '/api/export/presentation/pdf':async b=>({buffer:await presentationPdf(b),type:'application/pdf',name:safeName(b?.deck?.name,'scholark-presentation')+'.pdf'}),
