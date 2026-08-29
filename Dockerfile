@@ -76,6 +76,7 @@ COPY scholark-v24-ui.js \
      scholark-v92-foundation-health.js \
      scholark-v93-language-learner.js \
      scholark-v94-performance-foundation.js \
+     scholark-v95-experience-polish.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -87,7 +88,7 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && sed -i "s/h.includes('pricing')||/h.includes('dashboard')||h.includes('education')||h.includes('language')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('document')||h.includes('graphic')||h.includes('social')||h.includes('studio')||h.includes('pricing')||/" /tmp/scholark-v30-native-home-autodemo.js \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); tags=""; for f in /tmp/scholark-v*.js; do base=$(basename "$f"); cp "$f" "$dir/$base"; tags="$tags<script src=\"$base\"></script>"; done; sed -i "s#</body>#$tags</body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); tags=""; for f in /tmp/scholark-v*.js; do base=$(basename "$f"); cp "$f" "$dir/$base"; tags="$tags<script src=\"$base?v=20260829-r95\"></script>"; done; sed -i "s#</body>#$tags</body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
@@ -97,6 +98,7 @@ ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
 ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
+ENV POLLINATIONS_TRANSLATION_MODEL=openai-fast
 ENV POLLINATIONS_IMAGE_MODEL=flux
 ENV POLLINATIONS_RESEARCH_MODEL=perplexity-fast
 ENV SUPABASE_URL=https://yhafbwdnnpvuedycdkll.supabase.co
