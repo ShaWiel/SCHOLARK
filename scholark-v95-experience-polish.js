@@ -53,10 +53,10 @@
     }
   }
 
-  addEventListener('scholark-language-ready',e=>notify('<b>Language ready:</b> '+(window.__SCHOLARK_I18N__?.nativeName?.(e.detail?.code)||e.detail?.code||'')));
+  addEventListener('scholark-language-ready',e=>{harden();notify('<b>Language ready:</b> '+(window.__SCHOLARK_I18N__?.nativeName?.(e.detail?.code)||e.detail?.code||''))});
   addEventListener('scholark-language-failed',e=>notify('<b>Language switch could not finish.</b> SCHOLARK kept your previous language instead of leaving the interface half-translated.'));
-  addEventListener('hashchange',()=>setTimeout(harden,40));addEventListener('resize',()=>setTimeout(harden,80),{passive:true});
-  new MutationObserver(()=>{clearTimeout(window.__v95t);window.__v95t=setTimeout(harden,120)}).observe(document.documentElement,{subtree:true,childList:true});
+  addEventListener('hashchange',()=>setTimeout(harden,80));
+  addEventListener('resize',()=>setTimeout(harden,120),{passive:true});
   setTimeout(harden,180);
   window.__SCHOLARK_V95__={harden,notify};
 })();
