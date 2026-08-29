@@ -50,7 +50,7 @@
     const visual=$('#v60-presenter-tools .v60-visual-copy');if(visual)visual.textContent=s.visualBrief?`${s.visualType?clean(s.visualType)+': ':''}${clean(s.visualBrief)}`:'No special visual direction.';
     const src=$('#v60-presenter-tools .v60-source-copy');if(src)src.innerHTML=(s.sourceRefs||[]).length?(s.sourceRefs||[]).slice(0,6).map(x=>esc(x)).join('<br>'):'No slide-specific sources.';
   }
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v60sync);window.__v60sync=setTimeout(sync,35)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-  addEventListener('click',e=>{if(e.target.closest?.('#v57-deck,#v57-present'))setTimeout(sync,20)},true);
-  setTimeout(sync,250);
+  addEventListener('click',e=>{if(e.target.closest?.('#v57-deck,#v57-present'))setTimeout(sync,30)},true);
+  addEventListener('hashchange',()=>setTimeout(sync,120));
+  [250,700].forEach(ms=>setTimeout(sync,ms));
 })();
