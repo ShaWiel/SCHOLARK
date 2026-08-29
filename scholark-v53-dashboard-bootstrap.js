@@ -5,7 +5,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const hash=()=>String(location.hash||'').toLowerCase();
-  const workspaceRx=/dashboard|studio|tutor|education|planner|progress|goal|project|schools|study|book|presentation|webpage|document|report|graphic|social/;
+  const workspaceRx=/dashboard|studio|tutor|education|planner|progress|goal|project|files|schools|study|book|presentation|webpage|document|report|graphic|social/;
   const isWorkspace=()=>workspaceRx.test(hash());
   const isDashboard=()=>hash()==='#dashboard';
   const isPublicHome=()=>!isWorkspace()&&!/pricing/.test(hash());
