@@ -332,24 +332,24 @@
   async function translateCurrentPage(showOverlay=false){
     const target=code(),epoch=translationEpoch;
     if(target==='en'||STATIC_UI[target]){upgradeSelectors();applyVisible();overlay.classList.remove('open');return}
-    if(navigator.onLine===false){applyKnown();overlay.classList.remove('open');return}
+    if(navigator.onLine===false){applyVisible();overlay.classList.remove('open');return}
     if(translating)return;translating=true;
     if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across SCHOLARK…'}
     try{
       for(let pass=0;pass<3&&epoch===translationEpoch;pass++){
-        upgradeSelectors();applyKnown();
+        upgradeSelectors();applyVisible();
         const strings=[...new Set(collectDom(1100))].filter(eligibleText);
         const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
-        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()});
+        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()});
         if(epoch!==translationEpoch)break;
         if(!Object.keys(add).length)break;
-        map={...map,...add};saveMap(target,map);applyKnown();
+        map={...map,...add};saveMap(target,map);applyVisible();
         await new Promise(r=>setTimeout(r,70));
       }
     }catch(e){console.warn('[SCHOLARK] full-page localization:',clean(e?.message||e))}
     finally{
-      translating=false;if(epoch===translationEpoch)applyKnown();
+      translating=false;if(epoch===translationEpoch)applyVisible();
       if(showOverlay&&epoch===translationEpoch){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}
       try{sessionStorage.removeItem('scholark_i18n_pending')}catch{}
     }
@@ -403,7 +403,7 @@
         const strings=[...new Set(collectDom(700))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
         if(missing.length){
           const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map)},'ui',primed);
-          if(epoch===translationEpoch){map={...map,...add};saveMap(target,map);applyKnown()}
+          if(epoch===translationEpoch){map={...map,...add};saveMap(target,map);applyVisible()}
         }
       }
       if(epoch===translationEpoch)window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':STATIC_UI[target]?'static-locale':'translated'}}));
