@@ -4,6 +4,7 @@
 
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+  const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const style=document.createElement('style');
@@ -132,7 +133,7 @@
     layer=document.createElement('main');layer.id='v29-home-layer';layer.innerHTML=html(copy.en);document.body.appendChild(layer);builtLang='base';
     $$('.v29-type',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$$('.v29-tab',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
     $('#v29-create',layer).onclick=()=>{const val=$('#v29-prompt',layer).value.trim();if(val)localStorage.setItem('scholark_v24_intent',JSON.stringify({mode:active,prompt:val,at:Date.now()}));openStudio(active)};
-    $('#v29-open-studio',layer).onclick=()=>openStudio(active);$('#v29-final-open',layer).onclick=()=>openStudio('presentation');syncPresenterLanguage();$('#v29-speak',layer).onclick=speak;
+    $('#v29-open-studio',layer).onclick=()=>openStudio(active);$('#v29-final-open',layer).onclick=()=>openStudio('presentation');syncPresenterLanguage();setTimeout(syncPresenterLanguage,700);$('#v29-speak',layer).onclick=speak;
     $('[data-future]',layer).forEach(b=>b.onclick=()=>{const route=b.dataset.future==='schools'?'schools':'study';const oldUrl=location.href;history.replaceState(null,'',location.pathname+location.search+'#'+route);window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL:oldUrl,newURL:location.href}));});
     setMode('presentation');
   }
