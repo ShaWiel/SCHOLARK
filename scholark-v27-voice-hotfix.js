@@ -44,6 +44,6 @@
       let b=$('.v25-play',sec);if(!b)return;if(b.dataset.v27==='1'){b.firstChild&&(b.firstChild.textContent=copy[lang].play+' ');return;}const n=b.cloneNode(false);n.className=b.className;n.dataset.v27='1';n.textContent=copy[lang].play;n.onclick=()=>talk(sec,kind);b.replaceWith(n);
     });
   }
-  new MutationObserver(()=>{clearTimeout(window.__v27t);window.__v27t=setTimeout(bind,120)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','lang']});
-  setInterval(bind,700);setTimeout(bind,150);
+  addEventListener('scholark-language-ready',()=>setTimeout(bind,80));
+  [150,700].forEach(ms=>setTimeout(bind,ms));
 })();
