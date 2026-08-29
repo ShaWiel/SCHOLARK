@@ -81,9 +81,8 @@
   }
 
   function currentHome(){
-    const h=(location.hash||'').toLowerCase();
-    if(h.includes('studio-')||h.includes('presentation')||h.includes('report')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('files')) return false;
-    return location.pathname==='/' || location.pathname==='';
+    const h=String(location.hash||'').toLowerCase();
+    return (location.pathname==='/'||location.pathname==='') && (h===''||h==='#home'||h==='#pricing');
   }
 
   function sidebarWidth(){
