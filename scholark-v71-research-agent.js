@@ -28,5 +28,8 @@
   async function runResearch(){if(busy)return;const q=prompt();if(!q){$('#v41-prompt',studio())?.focus();return}busy=true;$$('#v71-research button').forEach(b=>b.disabled=true);setStatus('Searching and checking sources…');
     try{const r=await fetch('/api/studio/research',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:q,mode:mode(),language:language()})});const data=await r.json().catch(()=>({}));if(!r.ok||!data?.ok)throw new Error(data?.error||'Research failed');const stored={...data,prompt:q,mode:mode()};save(stored);removeMerged();merge(stored);renderResult(stored);setStatus('Research attached · '+(data.result?.sources?.length||0)+' source'+((data.result?.sources?.length||0)===1?'':'s')+' · '+data.model)}catch(e){setStatus('Research failed: '+clean(e?.message||e),true)}finally{busy=false;$$('#v71-research button').forEach(b=>b.disabled=false)}}
   function watchPrompt(){const p=$('#v41-prompt',studio());if(!p||p.dataset.v71bound)return;p.dataset.v71bound='1';p.addEventListener('input',()=>{clearTimeout(window.__v71prompt);window.__v71prompt=setTimeout(()=>{const now=prompt(),saved=load();if(saved&&saved.prompt!==now){removeMerged();setStatus('Research is from an older prompt. Run Research again before Generate.');}lastPrompt=now},350)})}
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v71sync);window.__v71sync=setTimeout(()=>{ensure();watchPrompt()},90)});obs.observe(document.documentElement,{subtree:true,childList:true});setTimeout(()=>{ensure();watchPrompt()},220);
+  const sync=()=>{ensure();watchPrompt()};
+  addEventListener('hashchange',()=>{setTimeout(sync,100);setTimeout(sync,320)});
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v51-tool="studio"],#v41-studio-workspace'))setTimeout(sync,120)},true);
+  [220,700].forEach(ms=>setTimeout(sync,ms));
 })();
