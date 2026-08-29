@@ -8,7 +8,7 @@
   const lower=e=>text(e).toLowerCase();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const route=()=>String(location.hash||'').toLowerCase();
-  const workspaceRoute=()=>/dashboard|studio|tutor|education|planner|progress|goal|project|schools|study|book|presentation|webpage|document|report|graphic|social/.test(route());
+  const workspaceRoute=()=>/dashboard|studio|tutor|education|planner|progress|goal|project|files|schools|study|book|presentation|webpage|document|report|graphic|social/.test(route());
 
   const LEVELS=[
     ['young','🧸','Young learner','Playful foundations, language and number sense'],
@@ -18,7 +18,7 @@
     ['adult','💼','Adult','Digital skills, work skills and practical help']
   ];
   const TOOLS=[
-    ['dashboard','⌂','Dashboard'],['studio','✦','Studio AI'],['tutor','AI','AI Tutor'],['education','◎','Education & Learning'],['planner','▦','Planner'],['progress','↗','Progress'],['goal','◉','Goals'],['project','▧','My Projects']
+    ['dashboard','⌂','Dashboard'],['studio','✦','Studio AI'],['tutor','AI','AI Tutor'],['education','◎','Education & Learning'],['planner','▦','Planner'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
   ];
   const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','🚀','Study Ahead','PRO'],['book','📚','Book Studio','PRO']];
   const ALIASES={
