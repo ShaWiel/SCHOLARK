@@ -106,16 +106,17 @@
   }
   async function translateBatch(target,strings){
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
-    const result={};
-    for(let i=0;i<strings.length;i+=60){
-      const chunk=strings.slice(i,i+60),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),95000);
+    const chunks=[];for(let i=0;i<strings.length;i+=70)chunks.push(strings.slice(i,i+70));
+    const parts=await Promise.all(chunks.map(async chunk=>{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),65000),result={};
       try{
         const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),strings:chunk}),signal:ctrl.signal});
-        const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Translation failed');
+        const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)return result;
         for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated))result[x.source]=x.translated;
-      }finally{clearTimeout(timer)}
-    }
-    return result;
+      }catch(e){console.warn('[SCHOLARK] translation chunk:',clean(e?.message||e))}finally{clearTimeout(timer)}
+      return result;
+    }));
+    return Object.assign({},...parts);
   }
   function applyKnown(root=document){
     const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';
