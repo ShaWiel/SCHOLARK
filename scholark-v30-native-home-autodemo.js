@@ -108,7 +108,7 @@
   function autoType(mode){
     const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
     clearInterval(typingTimer);input.value='';input.classList.add('v30-typing-cursor');
-    const isDutch=(document.body.innerText||'').toLowerCase().includes('nederlands');
+    const isDutch=(localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase().startsWith('nl');
     const p=prompts[mode][isDutch?1:0];let i=0;
     typingTimer=setInterval(()=>{
       if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
@@ -199,4 +199,5 @@
   addEventListener('popstate',()=>setTimeout(sync,50));
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
+  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync};
 })();
