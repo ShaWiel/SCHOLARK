@@ -95,9 +95,7 @@
 
   cleanup();
   document.addEventListener('DOMContentLoaded',cleanup,{once:true});
-  new MutationObserver(()=>{
-    clearTimeout(window.__scholarkV56Cleanup);
-    window.__scholarkV56Cleanup=setTimeout(cleanup,40);
-  }).observe(document.documentElement,{subtree:true,childList:true});
-  setTimeout(cleanup,80);
+  addEventListener('hashchange',()=>setTimeout(cleanup,120));
+  addEventListener('scholark-language-ready',()=>setTimeout(cleanup,120));
+  [80,500].forEach(ms=>setTimeout(cleanup,ms));
 })();
