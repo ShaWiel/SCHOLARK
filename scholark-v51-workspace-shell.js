@@ -20,7 +20,7 @@
   const TOOLS=[
     ['dashboard','⌂','Dashboard'],['studio','✦','Studio AI'],['tutor','AI','AI Tutor'],['education','◎','Education & Learning'],['language','Aa','Language Learner'],['planner','▦','Planner'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
   ];
-  const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','🚀','Study Ahead','PRO'],['book','📚','Book Studio','PRO']];
+  const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','🚀','Study Ahead','PRO'],['book','📚','Book Studio','BETA']];
   const ALIASES={
     tutor:['ai tutor','tutor ai','tutor'],education:['education & learning','educatie & leren','onderwijs & leren','education'],language:['language learner','language learning','talen leren','taal leren'],planner:['planner'],progress:['progress','voortgang'],goal:['goals','doelen','goal'],project:['my projects','mijn projecten','projects','projecten']
   };
