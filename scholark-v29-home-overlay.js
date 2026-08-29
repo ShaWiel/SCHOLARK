@@ -123,7 +123,7 @@
     const target=sel?.value||lang(),rows=$$('.v29-host',layer).map(host=>({name:clean(host.querySelector('b')?.textContent),source:clean(host.querySelector('p')?.dataset.presenterSource||host.querySelector('p')?.textContent)})).filter(x=>x.source);
     if(!rows.length)return;
     if(button){button.disabled=true;button.textContent='Preparing presenters…'}if(caption){caption.classList.add('open');caption.textContent='Preparing '+(window.__SCHOLARK_I18N__?.nativeName?.(target)||target)+' presenter audio…'}
-    let translated={};try{translated=await window.__SCHOLARK_I18N__?.translateStrings?.(target,rows.map(x=>x.source))||{}}catch{}
+    let translated={};try{translated=await window.__SCHOLARK_I18N__?.translateStrings?.(target,rows.map(x=>x.source),'ui')||{}}catch{}
     speechSynthesis.cancel();const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase().startsWith(target.toLowerCase()));let i=0;
     const next=()=>{if(i>=rows.length){if(button){button.disabled=false;button.textContent='▶ Let the AI presenters explain'}setTimeout(()=>caption?.classList.remove('open'),1600);return}const row=rows[i++],text=translated[row.source]||row.source;if(caption){caption.classList.add('open');caption.textContent=row.name+': '+text}const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||target;u.rate=.93;if(voice)u.voice=voice;u.onend=next;u.onerror=next;speechSynthesis.speak(u)};next();
   }
