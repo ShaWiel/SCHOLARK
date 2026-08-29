@@ -109,6 +109,7 @@
     const tools=document.createElement('div');tools.className='v82-tools';tools.innerHTML='<button class="v82-new" type="button">+ New chat</button><span>Ctrl/Cmd + Enter to send</span>';body.insertBefore(tools,$('#v52-tutor-q',body));
     $('.v82-new',tools).onclick=newChat;renderHistory();loadChats();
   }
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v82sync);window.__v82sync=setTimeout(enhance,90)});obs.observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',()=>{enhance();loadChats()});setTimeout(enhance,250);
+  addEventListener('hashchange',()=>{setTimeout(enhance,100);setTimeout(enhance,320)});
+  addEventListener('scholark:tutor-user',()=>setTimeout(enhance,50));
+  [250,700].forEach(ms=>setTimeout(enhance,ms));
 })();
