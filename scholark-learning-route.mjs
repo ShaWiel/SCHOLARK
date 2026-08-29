@@ -168,73 +168,80 @@ function parseText(text,provider){
   try{return JSON.parse(m[0]);}catch{throw new Error(`${provider} returned invalid structured output`);}
 }
 
+
+function learningTier(mode,p={}){
+  if(mode==='translate_ui')return'light';
+  if(mode==='language_learning')return'light';
+  if(mode==='tutor'){
+    const q=clean(p.prompt||'');return q.length>1400||p.deep===true?'balanced':'light';
+  }
+  if(mode==='exam'||mode==='study_ahead'||mode==='curriculum')return'balanced';
+  return'light';
+}
+function learningModels(mode,p={}){
+  const tier=learningTier(mode,p);
+  return{
+    tier,
+    pollinations:tier==='light'
+      ? [process.env.POLLINATIONS_FAST_MODEL||'openai-fast',process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra']
+      : [process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra',process.env.POLLINATIONS_PREMIUM_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'],
+    openai:tier==='light'?(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'):(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra'),
+    gemini:process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite'
+  };
+}
 async function pollinations(mode,p){
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
-  if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e;}
-  const primary=String(mode==='translate_ui'?(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'):(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol')).trim();
-  const fallback=String(process.env.POLLINATIONS_FALLBACK_MODEL||'claude-opus-4.7').trim();
-  const models=[...new Set([primary,fallback].filter(Boolean))], failures=[];
+  if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e}
+  const route=learningModels(mode,p),models=[...new Set(route.pollinations.map(String).filter(Boolean))],failures=[];
   for(const model of models){
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:JSON.stringify(userPayload(mode,p))}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),90000);
-    let response;
-    try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});}
-    finally{clearTimeout(timer);}
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+    try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
     const data=await response.json().catch(()=>({}));
-    if(!response.ok){
-      const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);
-      e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';
-      failures.push({model,code:e.code,message:e.message});
-      if(e.code==='POLLINATIONS_BALANCE'){e.models=failures;throw e}
-      continue;
-    }
-    try{return {ok:true,provider:'pollinations',model,result:parseText(data?.choices?.[0]?.message?.content,`Pollinations ${model}`)}}
-    catch(e){failures.push({model,code:'POLLINATIONS_PARSE',message:e.message})}
+    if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
+    try{return{ok:true,provider:'pollinations',model,tier:route.tier,result:parseText(data?.choices?.[0]?.message?.content,`Pollinations ${model}`)}}catch(e){failures.push({model,code:'POLLINATIONS_PARSE',message:e.message})}
   }
-  const last=failures.at(-1)||{};const e=new Error(last.message||'Pollinations learning models failed');e.code=last.code||'POLLINATIONS_ERROR';e.models=failures;throw e;
+  const last=failures.at(-1)||{},e=new Error(last.message||'Pollinations learning models failed');e.code=last.code||'POLLINATIONS_ERROR';e.models=failures;throw e;
 }
-
 function extractOpenAI(data){
   if(typeof data?.output_text==='string')return data.output_text;
-  for(const item of data?.output||[]) for(const part of item?.content||[]) if(part?.type==='output_text'&&typeof part.text==='string') return part.text;
-  return '';
+  for(const item of data?.output||[])for(const part of item?.content||[])if(part?.type==='output_text'&&typeof part.text==='string')return part.text;
+  return'';
 }
 async function openai(mode,p){
   const key=String(process.env.OPENAI_API_KEY||'').trim();
-  if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e;}
-  const model=String(process.env.OPENAI_LEARNING_MODEL||process.env.OPENAI_STUDIO_MODEL||'gpt-5.6').trim();
-  const body={model,store:false,reasoning:{effort:'high'},text:{verbosity:(mode==='tutor'||mode==='language_learning')?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
-  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),90000);
-  let response;
-  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});}finally{clearTimeout(timer);}
+  if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e}
+  const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
+  const body={model,store:false,reasoning:{effort},text:{verbosity:(mode==='tutor'||mode==='language_learning')?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
-  if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e;}
-  return {ok:true,provider:'openai',model,result:parseText(extractOpenAI(data),'OpenAI')};
+  if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
+  return{ok:true,provider:'openai',model,tier:route.tier,result:parseText(extractOpenAI(data),'OpenAI')};
 }
-
+async function gemini(mode,p){
+  const key=String(process.env.GEMINI_API_KEY||'').trim();
+  if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
+  const route=learningModels(mode,p),model=route.gemini,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+  try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts:[{text:JSON.stringify(userPayload(mode,p))}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const e=new Error(data?.error?.message||`Gemini HTTP ${response.status}`);e.code='GEMINI_ERROR';throw e}
+  const text=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
+  return{ok:true,provider:'gemini',model,tier:route.tier,result:parseText(text,'Gemini')};
+}
 async function generate(mode,p){
-  const errors=[];
-  for(const fn of [pollinations,openai]){
-    try{return await fn(mode,p);}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message});}
-  }
-  const e=new Error(errors.map(x=>`${x.provider}: ${x.message}`).join(' | ')); e.code='AI_ENGINE_UNAVAILABLE'; e.details=errors; throw e;
+  const route=learningModels(mode,p),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
+  const order=route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasOpenAI,openai],[hasGemini,gemini]];
+  for(const [ok,fn] of order){if(!ok)continue;try{return await fn(mode,p)}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}}
+  const e=new Error(errors.length?errors.map(x=>`${x.provider}: ${x.message}`).join(' | '):'No learning AI provider configured');e.code='AI_ENGINE_UNAVAILABLE';e.details=errors;throw e;
 }
-
-async function translationSmokeTest(){
-  const source=['Go to Workspace','Choose how much advantage you want.'];
-  try{
-    const got=await freeUiTranslate(source,'es'),ok=source.every(s=>clean(got[s])&&clean(got[s])!==s);
-    console.log('[SCHOLARK] Free translation smoke '+(ok?'PASS':'FAIL')+' provider=free-ui rows='+Object.keys(got).length);
-  }catch(e){console.error('[SCHOLARK] Free translation smoke FAIL '+String(e?.message||e))}
-}
-setTimeout(()=>translationSmokeTest(),1800);
 
 http.Server.prototype.emit = function(event,...args){
   if(event!=='request') return originalEmit.call(this,event,...args);
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'),translationModel:String(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'),fallbackModel:String(process.env.POLLINATIONS_FALLBACK_MODEL||'claude-opus-4.7'),translationCache:translationMemory.size});
+    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
