@@ -163,6 +163,19 @@ async function generate(mode,p){
   const e=new Error(errors.map(x=>`${x.provider}: ${x.message}`).join(' | ')); e.code='AI_ENGINE_UNAVAILABLE'; e.details=errors; throw e;
 }
 
+async function translationSmokeTest(){
+  const source=['Go to Workspace','Choose how much advantage you want.'];
+  try{
+    const out=await generate('translate_ui',{language:'Spanish',strings:source});
+    const rows=out?.result?.translations||[];
+    const ok=source.every(s=>{const r=rows.find(x=>x.source===s);return clean(r?.translated)&&clean(r.translated)!==s});
+    console.log('[SCHOLARK] Translation smoke '+(ok?'PASS':'FAIL')+' provider='+(out?.provider||'?')+' model='+(out?.model||'?')+' rows='+rows.length);
+  }catch(e){
+    console.error('[SCHOLARK] Translation smoke FAIL '+String(e?.code||'ERROR')+' '+String(e?.message||e));
+  }
+}
+setTimeout(()=>translationSmokeTest(),1800);
+
 http.Server.prototype.emit = function(event,...args){
   if(event!=='request') return originalEmit.call(this,event,...args);
   const [req,res]=args;
