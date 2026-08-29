@@ -127,7 +127,7 @@
   }
   async function fillUnknown(){
     const c=code();if(c==='en'||translating||navigator.onLine===false)return;
-    const missing=[...new Set([...CORE,...collectDom(140)])].filter(s=>eligibleText(s)&&!map[s]).slice(0,80);if(!missing.length)return;
+    const translated=new Set(Object.values(map));const missing=[...new Set([...CORE,...collectDom(140)])].filter(s=>eligibleText(s)&&!map[s]&&!translated.has(s)).slice(0,80);if(!missing.length)return;
     translating=true;
     try{const add=await translateBatch(c,missing);map={...map,...add};saveMap(c,map);applyKnown()}catch(e){console.warn('[SCHOLARK] background UI translation:',clean(e?.message||e))}finally{translating=false}
   }
