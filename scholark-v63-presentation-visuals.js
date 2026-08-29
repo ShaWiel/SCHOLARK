@@ -43,7 +43,7 @@
     try{
       const t=clean(slide.title);canvas.classList.toggle('v63-long-title',t.length>46);canvas.classList.toggle('v63-xlong-title',t.length>58);
       const sig=[slide.id||'',slide.layout||'',slide.visualType||'',slide.title||'',JSON.stringify(slide.items||[])].join('|');if(canvas.dataset.v63Sig===sig)return;canvas.dataset.v63Sig=sig;
-      $('.v63-hero-visual',canvas).forEach(x=>x.remove());
+      $$('.v63-hero-visual',canvas).forEach(x=>x.remove());
       if(slide.layout==='hero'){const ks=words(slide);if(ks.length){const v=document.createElement('div');v.className='v63-hero-visual';v.innerHTML=ks.map(x=>'<div class="v63-hero-chip">'+esc(x)+'</div>').join('');canvas.appendChild(v)}}
       if(slide.layout==='split'){const host=$('.v57-visual',canvas);if(host){host.innerHTML=visualMarkup(slide);host.classList.add('v63-enhanced')}}
     }finally{delete canvas.dataset.v63Busy}
