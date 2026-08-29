@@ -459,7 +459,12 @@
         if(n.nodeType===1&&(n.matches?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')||n.querySelector?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')))selectorPending=true;
       }
     }
-    if(pendingRoots.size){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
+    if(code()==='en'){
+      pendingRoots.clear();
+      if(selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,90)}
+      return;
+    }
+    if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
   });
   obs.observe(document.body||document.documentElement,{subtree:true,childList:true});
   addEventListener('hashchange',()=>setTimeout(()=>{upgradeSelectors();applyVisible()},100));
