@@ -414,5 +414,18 @@
   addEventListener('focus',()=>{upgradeSelectors();applyKnown();scheduleUnknown()});addEventListener('scholark-language-change',()=>setTimeout(boot,20));
   setTimeout(boot,80);
 
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,count:LANGS.length};
+  function i18nSelftest(){
+    const required=['Dashboard','Your learning & creation workspace.','Learn faster. Create better.','Get ahead.','Know where you are going before you get there.','SCHOLARK PLANS','Choose how much advantage you want.','Go to Workspace','AI QUALITY · MAX'];
+    const localeCoverage={};
+    for(const [lc] of LANGS){
+      if(lc==='en'){localeCoverage[lc]=1;continue}
+      const m=loadMap(lc),hit=required.filter(x=>clean(m[x])&&clean(m[x])!==x).length;
+      localeCoverage[lc]=hit/required.length;
+    }
+    const ok=LANGS.length===7&&!LANGS.some(x=>x[0]==='srn')&&Object.values(localeCoverage).every(x=>x>=.88);
+    const report={ok,count:LANGS.length,code:code(),localeCoverage};
+    console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
+    return report;
+  }
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,selftest:i18nSelftest,count:LANGS.length};
 })();
