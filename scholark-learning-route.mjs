@@ -52,14 +52,26 @@ async function libreOne(source,targetCode,start=0){
   }
   throw last||new Error('LibreTranslate unavailable');
 }
+async function myMemoryOne(source,targetCode){
+  const target=lingvaTarget(targetCode);if(!source||!target||target==='en')return source;
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7000);
+  try{
+    const u=new URL('https://api.mymemory.translated.net/get');u.searchParams.set('q',source);u.searchParams.set('langpair','en|'+target);u.searchParams.set('mt','1');
+    const r=await fetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 UI-localization'},signal:ctrl.signal});
+    const d=await r.json().catch(()=>({}));const tr=clean(d?.responseData?.translatedText);
+    if(r.ok&&tr&&tr!==source&&String(d?.responseStatus||200)!=='403')return tr;
+    throw new Error(d?.responseDetails||('HTTP '+r.status));
+  }finally{clearTimeout(timer)}
+}
 async function freeOne(source,targetCode,start=0){
+  try{return await myMemoryOne(source,targetCode)}catch{}
   try{return await libreOne(source,targetCode,start)}catch{}
   return lingvaOne(source,targetCode,start);
 }
 async function freeUiTranslate(strings,targetCode){
   const src=[...new Set((strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))],out={},queue=[...src.entries()];
   const worker=async()=>{while(queue.length){const [i,s]=queue.shift(),k=translationKey(targetCode,s),hit=translationMemory.get(k);if(hit){out[s]=hit;continue}try{const tr=await freeOne(s,targetCode,i);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}}};
-  await Promise.all(Array.from({length:Math.min(6,src.length)},()=>worker()));
+  await Promise.all(Array.from({length:Math.min(4,src.length)},()=>worker()));
   return out;
 }
 
