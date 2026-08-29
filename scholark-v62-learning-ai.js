@@ -8,7 +8,7 @@
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const LANG={nl:'Dutch',en:'English',es:'Spanish',fr:'French',de:'German',pt:'Portuguese',it:'Italian',srn:'Sranan Tongo',ar:'Arabic',hi:'Hindi',zh:'Chinese',ja:'Japanese',ko:'Korean',id:'Indonesian',tr:'Turkish',pl:'Polish',sw:'Swahili'};
   const level=()=>localStorage.getItem('scholark_learning_level')||'secondary';
-  const language=()=>LANG[localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en']||'English';
+  const language=()=>{const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';return window.__SCHOLARK_I18N__?.languageName?.(code)||LANG[code]||code||'English'};
 
   const css=document.createElement('style');
   css.id='scholark-v62-style';
@@ -37,6 +37,26 @@
     host.innerHTML='<div class="v62-error"><b>Could not finish this request.</b><br>'+esc(msg)+'</div>';
   }
   function list(items,ordered=false){const a=(items||[]).filter(Boolean);if(!a.length)return'';return '<'+(ordered?'ol':'ul')+'>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</'+(ordered?'ol':'ul')+'>';}
+  function paragraphs(s){return String(s||'').split(/\n{2,}|\n(?=[A-ZÀ-Ž0-9])/).map(x=>clean(x)).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('')}
+  function tutorPlain(r){
+    const parts=[clean(r.answer||r.summary)];
+    if(r.steps?.length)parts.push('How to work through it:\n'+r.steps.map((x,i)=>(i+1)+'. '+clean(x)).join('\n'));
+    if(r.examples?.length)parts.push('Worked examples:\n'+r.examples.map((x,i)=>(i+1)+'. '+clean(x.title)+'\n'+clean(x.setup)+'\n'+clean(x.walkthrough)+'\nAnswer: '+clean(x.answer)).join('\n\n'));
+    if(r.keyPoints?.length)parts.push('Key points:\n- '+r.keyPoints.map(clean).join('\n- '));
+    if(r.commonMistakes?.length)parts.push('Common mistakes:\n- '+r.commonMistakes.map(clean).join('\n- '));
+    if(r.checks?.length)parts.push('Check yourself:\n- '+r.checks.map(clean).join('\n- '));
+    if(r.followUp)parts.push('Next: '+clean(r.followUp));
+    return parts.filter(Boolean).join('\n\n');
+  }
+  function tutorHtml(r,data){
+    return '<div class="v62-answer-card"><h3>'+esc(r.topic||'SCHOLARK Tutor')+'</h3>'+paragraphs(r.answer||r.summary||'')+'</div>'+
+      (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4>'+list(r.steps,true)+'</div>':'')+
+      (r.examples?.length?'<div class="v62-answer-card"><h4>Worked examples</h4>'+r.examples.map((x,i)=>'<div style="padding:11px 0;border-top:'+(i?'1px solid #eee':'0')+'"><b>'+esc(x.title||('Example '+(i+1)))+'</b>'+paragraphs(x.setup)+(x.walkthrough?'<p><b>Walkthrough:</b> '+esc(x.walkthrough)+'</p>':'')+(x.answer?'<p><b>Answer:</b> '+esc(x.answer)+'</p>':'')+'</div>').join('')+'</div>':'')+
+      (r.keyPoints?.length?'<div class="v62-answer-card"><h4>Key points to remember</h4>'+list(r.keyPoints)+'</div>':'')+
+      (r.commonMistakes?.length?'<div class="v62-answer-card"><h4>Common mistakes</h4>'+list(r.commonMistakes)+'</div>':'')+
+      (r.checks?.length?'<div class="v62-answer-card"><h4>Check yourself</h4>'+list(r.checks,true)+'</div>':'')+
+      (r.followUp?'<div class="v62-answer-card"><h4>Next step</h4><p>'+esc(r.followUp)+'</p><div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div>':'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div>');
+  }
 
   function readTutorHistory(){try{return JSON.parse(localStorage.getItem('scholark_v62_tutor_history')||'[]')}catch{return[]}}
   function writeTutorHistory(a){try{localStorage.setItem('scholark_v62_tutor_history',JSON.stringify(a.slice(-12)))}catch{}}
@@ -52,10 +72,10 @@
       const hist=readTutorHistory();
       const context=hist.slice(-6).map(x=>x.role+': '+x.text).join('\n');
       const data=await call('tutor',{prompt,context,tutorMode:'teach'});
-      const r=data.result;
-      wait.innerHTML='<b>'+esc(r.topic||'SCHOLARK Tutor')+'</b><br>'+esc(r.answer||r.summary||'')+(r.steps?.length?'<br><br><b>How to work through it</b>'+list(r.steps,true):'')+(r.checks?.length?'<br><br><b>Check yourself</b>'+list(r.checks):'')+(r.followUp?'<br><br><b>Next:</b> '+esc(r.followUp):'')+'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div>';
-      hist.push({role:'user',text:prompt},{role:'assistant',text:clean(r.answer||r.summary)});writeTutorHistory(hist);
-      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:clean(r.answer||r.summary),result:r,provider:data.provider||'',model:data.model||''}}));
+      const r=data.result,full=tutorPlain(r);
+      wait.innerHTML=tutorHtml(r,data);
+      hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist);
+      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:full,result:r,provider:data.provider||'',model:data.model||''}}));
     }catch(e){wait.remove();const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}finally{busy(btn,false)}
   }
 
@@ -139,4 +159,5 @@
   const sync=()=>{ensureExamControls();if(String(location.hash).toLowerCase()==='#study'&&!$('#v62-field'))openStudyAhead()};
   new MutationObserver(()=>{clearTimeout(window.__v62sync);window.__v62sync=setTimeout(sync,35)}).observe(document.documentElement,{subtree:true,childList:true});
   addEventListener('hashchange',sync);setTimeout(sync,80);
+  window.__SCHOLARK_V62_LEARNING_API__={openStudyAhead,runStudyAhead,runTutor,runExam,runCurriculum};
 })();
