@@ -69,6 +69,7 @@ COPY scholark-v24-ui.js \
      scholark-v85-credits-hud.js \
      scholark-v86-file-intelligence.js \
      scholark-v87-exam-mastery.js \
+     scholark-v88-learning-engine.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
