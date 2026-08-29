@@ -32,7 +32,7 @@
     const d=deck(),i=index();if(!d?.slides?.length||!('speechSynthesis'in window))return;
     const s=d.slides[i],source=clean(s.speakerNotes||s.subtitle||s.title||'');if(!source)return;
     const code=presenterLanguages().some(x=>x[0]===target)?target:(window.__SCHOLARK_I18N__?.code?.()||'en');
-    let text=source;try{const m=await window.__SCHOLARK_I18N__?.translateStrings?.(code,[source]);text=m?.[source]||source}catch{}
+    let text=source;try{const m=await window.__SCHOLARK_I18N__?.translateStrings?.(code,[source],'content');text=m?.[source]||source}catch{}
     speechSynthesis.cancel();const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase().startsWith(code.toLowerCase()));const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||code;u.rate=.92;if(voice)u.voice=voice;speechSynthesis.speak(u);
   }
   function updatePopup(){if(!popup||popup.closed)return;syncPopupLanguages();const d=deck(),i=index();if(!d?.slides?.length)return;const s=d.slides[i],n=d.slides[i+1];try{const clone=$('#v57-deck .v57-slide')?.cloneNode(true);if(clone){clone.querySelectorAll('[contenteditable]').forEach(x=>x.removeAttribute('contenteditable'));const h=popup.document.getElementById('preview');if(h){h.innerHTML='';h.appendChild(popup.document.importNode(clone,true))}}const set=(id,v)=>{const e=popup.document.getElementById(id);if(e)e.textContent=v||''};set('current-title',s.title);set('slide-count','Slide '+(i+1)+' of '+d.slides.length);set('notes',s.speakerNotes||'No speaker notes for this slide.');set('sources',(s.sourceRefs||[]).join('\n')||'No slide-specific sources.');set('next-title',n?.title||'End of presentation');set('next-sub',n?.subtitle||'')}catch{}}
