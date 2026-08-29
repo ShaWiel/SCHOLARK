@@ -95,7 +95,7 @@
     return /[A-Za-zÀ-žͰ-ϿЀ-ӿ]/.test(t);
   }
   function protectedNode(el){
-    return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],.v52-msg.user,.v65-prose,[data-v65-body],#v86-output .v62-solution,input[type="password"]');
+    return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],.v52-msg.user,.v52-msg.ai,#v52-chat,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview');
   }
   function collectDom(limit=180){
     const out=new Set();
