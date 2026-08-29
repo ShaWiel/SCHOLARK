@@ -160,7 +160,7 @@
   document.addEventListener('keydown',e=>{if(e.target?.id==='v52-tutor-q'&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runTutor()}});
 
   const sync=()=>{ensureExamControls();if(String(location.hash).toLowerCase()==='#study'&&!$('#v62-field'))openStudyAhead()};
-  new MutationObserver(()=>{clearTimeout(window.__v62sync);window.__v62sync=setTimeout(sync,35)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('hashchange',sync);setTimeout(sync,80);
+  addEventListener('hashchange',()=>{setTimeout(sync,60);setTimeout(sync,240)});
+  [80,500].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_V62_LEARNING_API__={openStudyAhead,runStudyAhead,runTutor,runExam,runCurriculum};
 })();
