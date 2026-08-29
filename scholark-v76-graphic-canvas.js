@@ -32,6 +32,6 @@
   function pointerMove(e){if(!drag)return;const x=layers().find(v=>v.id===drag.id);if(!x)return;const dx=(e.clientX-drag.startX)/drag.r.width*100,dy=(e.clientY-drag.startY)/drag.r.height*100;if(drag.resize){x.w=Math.max(4,Math.min(100-x.x,drag.w+dx));x.h=Math.max(4,Math.min(100-x.y,drag.h+dy))}else{x.x=Math.max(0,Math.min(100-x.w,drag.x+dx));x.y=Math.max(0,Math.min(100-x.h,drag.y+dy))}const el=$('.v76-layer[data-id="'+x.id+'"]');if(el){el.style.left=x.x+'%';el.style.top=x.y+'%';el.style.width=x.w+'%';el.style.height=x.h+'%';el.style.zIndex=String(x.z);el.style.opacity=String(x.opacity??1)}}
   function pointerUp(e){if(!drag)return;const el=e.currentTarget;el.onpointermove=null;el.onpointerup=null;drag=null;directSave();renderCanvas()}
   function sync(){if(!$('#v58-suite.open'))return;ensurePanel();if(isGraphic())renderCanvas()}
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v76sync);window.__v76sync=setTimeout(sync,85)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});document.addEventListener('click',e=>{if(e.target.closest?.('#v58-suite'))setTimeout(sync,35)},true);setTimeout(sync,450);
+  document.addEventListener('click',e=>{if(e.target.closest?.('#v58-suite'))setTimeout(sync,45)},true);addEventListener('hashchange',()=>setTimeout(sync,150));[450,1000].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_V76_CANVAS__={layers:()=>layers()};
 })();
