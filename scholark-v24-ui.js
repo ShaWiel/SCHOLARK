@@ -67,5 +67,4 @@
     host.insertBefore(section,host.firstChild);$('#sv24-ad-start',section).onclick=()=>overlay.classList.add('open');$('#sv24-ad-more',section).onclick=()=>overlay.classList.add('open');}
   injectExplainer();autofillIntent();
   addEventListener('hashchange',()=>{setTimeout(()=>{injectExplainer();autofillIntent()},250)});
-  const mo=new MutationObserver(()=>{injectExplainer();});mo.observe(document.documentElement,{childList:true,subtree:true});
 })();
