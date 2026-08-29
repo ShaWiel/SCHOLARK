@@ -70,7 +70,7 @@
       const x=await ctx();if(!x)return;setCurrent(id);renderHistory();
       const r=await x.c.request('/rest/v1/ai_messages?select=id,role,content,meta,created_at&chat_id=eq.'+encodeURIComponent(id)+'&order=created_at.asc&limit=200',{method:'GET'});
       const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not load messages');
-      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'">'+esc(m.content)+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight}
+      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'">'+esc(m.content).replace(/\n/g,'<br>')+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight}
       const hist=rows.filter(m=>m.role==='user'||m.role==='assistant').slice(-12).map(m=>({role:m.role,text:m.content}));localStorage.setItem('scholark_v62_tutor_history',JSON.stringify(hist));
     }catch(e){console.warn('[SCHOLARK] Open Tutor chat:',clean(e?.message||e))}
   }
