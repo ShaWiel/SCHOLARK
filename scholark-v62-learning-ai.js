@@ -70,7 +70,7 @@
     busy(btn,true,'Thinking…');
     try{
       const hist=readTutorHistory();
-      const context=hist.slice(-6).map(x=>x.role+': '+x.text).join('\n');
+      const context=hist.slice(-6).map(x=>x.role+': '+String(x.text||'').slice(0,x.role==='assistant'?4200:1800)).join('\n');
       const data=await call('tutor',{prompt,context,tutorMode:'teach'});
       const r=data.result,full=tutorPlain(r);
       wait.innerHTML=tutorHtml(r,data);
