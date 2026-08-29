@@ -187,7 +187,8 @@
   },true);
 
   const sync=()=>{forceQuality();$$('.v41-badge,.v51-badge').forEach(el=>{if(/highest ai quality|ai quality\s*[·:]?\s*max|deep quality pipeline/i.test(el.textContent||''))el.style.display='none'})};
-  new MutationObserver(()=>{clearTimeout(window.__v59sync);window.__v59sync=setTimeout(sync,80)}).observe(document.documentElement,{subtree:true,childList:true});
-  setTimeout(sync,80);
+  const v59root=document.getElementById('v41-studio-workspace');
+  if(v59root)new MutationObserver(()=>{clearTimeout(window.__v59sync);window.__v59sync=setTimeout(sync,120)}).observe(v59root,{subtree:true,childList:true});
+  setTimeout(sync,120);
   window.__SCHOLARK_V59_STUDIO_AI__={generate,health:()=>fetch('/api/studio/health').then(r=>r.json())};
 })();
