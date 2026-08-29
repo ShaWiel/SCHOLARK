@@ -132,14 +132,14 @@
     if(state.loading.has('mastery'))return;state.loading.add('mastery');
     try{
       const x=await ctx(),form=$('#v52-m-topic')?.closest('.v52-form');note(form,!!x);if(!x)return;
-      let r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at&order=updated_at.desc&limit=300',{method:'GET'});
+      let r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at&order=updated_at.desc&limit=300',{method:'GET'});
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load mastery');rows=Array.isArray(rows)?rows:[];
       if(migrate){
         const seen=new Set(rows.map(z=>sig(z.topic,z.subject)));
         const pendingSeen=new Set(seen),pending=localRead('scholark_v52_mastery').slice(0,120).filter(z=>clean(z?.topic)).map(z=>({topic:clean(z.topic),status:z.status||'New',subject:clean(z.subject)||focusSubject()})).filter(z=>{const k=sig(z.topic,z.subject);if(pendingSeen.has(k))return false;pendingSeen.add(k);return true});
         if(pending.length){
           const body=pending.map(z=>({user_id:x.uid,subject:z.subject.slice(0,160),topic:z.topic.slice(0,240),mastery:masteryValue(z.status),attempts:0,correct:0,incorrect:0,streak:0}));
-          const ins=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
+          const ins=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
@@ -149,8 +149,8 @@
   function mirrorMastery(){localWrite('scholark_v52_mastery',state.mastery.map(z=>({topic:z.topic,status:masteryStatus(z.mastery),subject:z.subject})))}
   function renderMastery(){
     const host=$('#v52-m-list');if(!host||!awaitableSigned())return;
-    host.innerHTML=state.mastery.length?state.mastery.map(z=>'<div class="v52-item"><button data-v80-mastery-del="'+esc(z.id)+'">×</button><b>'+esc(z.topic)+'</b><span class="v52-status">'+esc(masteryStatus(z.mastery))+'</span><span class="v80-cloud-tag">CLOUD</span></div>').join(''):'<div class="v52-item">No mastery topics yet.</div>';
-    $$('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
+    host.innerHTML=state.mastery.length?state.mastery.map(z=>{const m=Math.max(0,Math.min(100,Number(z.mastery)||0)),acc=(Number(z.attempts)||0)>0?Math.round((Number(z.correct)||0)/(Number(z.attempts)||1)*100):null;return '<div class="v52-item"><button class="v80-del" data-v80-mastery-del="'+esc(z.id)+'">×</button><b>'+esc(z.topic)+'</b><span class="v52-status">'+esc(masteryStatus(m))+'</span><span class="v80-cloud-tag">CLOUD</span><span class="v80-mastery-meta">'+esc(z.subject||'General')+' · Mastery '+Math.round(m)+'%'+(acc!=null?' · Accuracy '+acc+'%':' · no quiz data yet')+' · '+esc(z.attempts||0)+' attempts'+(z.streak?' · streak '+esc(z.streak):'')+(z.last_practiced_at?' · practised '+esc(new Date(z.last_practiced_at).toLocaleDateString()):'')+'</span><div class="v80-mastery-bar"><i style="width:'+m+'%"></i></div></div>'}).join(''):'<div class="v52-item">No mastery topics yet.</div>';
+    $('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
   }
   async function addMastery(){
     const input=$('#v52-m-topic'),topic=clean(input?.value);if(!topic){input?.focus();return}
@@ -158,7 +158,7 @@
     const existing=state.mastery.find(z=>clean(z.topic).toLowerCase()===topic.toLowerCase()&&clean(z.subject).toLowerCase()===subject.toLowerCase());
     let r,d;
     if(existing){
-      r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(existing.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({mastery:masteryValue(status),updated_at:new Date().toISOString()})});
+      r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(existing.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({mastery:masteryValue(status),updated_at:new Date().toISOString()})});
       d=await r.json().catch(()=>[]);if(r.ok){const row=Array.isArray(d)?d[0]:d;state.mastery=state.mastery.map(z=>z.id===existing.id&&row?row:z)}
     }else{
       r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:masteryValue(status),attempts:0,correct:0,incorrect:0,streak:0})});
