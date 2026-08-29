@@ -156,139 +156,83 @@ function parseArtifactText(text, providerName) {
   return artifact;
 }
 
+
+function studioTier(payload={}) {
+  const mode=String(payload.mode||'').toLowerCase();
+  const count=Math.max(1,Number(payload.count||payload.settings?.count||10)||10);
+  const explicitResearch=payload.research===true||payload.settings?.research===true||payload.settings?.citations===true;
+  if(['presentation_block_edit','presentation_slide_edit','webpage_section_edit','document_section_edit','social','graphic'].includes(mode)&&count<=12&&!explicitResearch)return'light';
+  if(mode==='presentation'&&(count>30||explicitResearch)||mode==='document'&&count>25||mode==='book_chapter'&&Number(payload.settings?.targetWords||0)>7000)return'high';
+  if(mode==='book'||mode==='presentation'||mode==='document'||explicitResearch)return'balanced';
+  return'light';
+}
+function tierModels(payload={}) {
+  const tier=studioTier(payload);
+  return {
+    tier,
+    pollinations:tier==='high'
+      ? [process.env.POLLINATIONS_PREMIUM_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol',process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra']
+      : tier==='balanced'
+        ? [process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra',process.env.POLLINATIONS_FAST_MODEL||'openai-fast']
+        : [process.env.POLLINATIONS_FAST_MODEL||'openai-fast',process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'],
+    openai:tier==='high'?(process.env.OPENAI_PREMIUM_MODEL||'gpt-5.6-sol'):tier==='balanced'?(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra'):(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),
+    gemini:process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite'
+  };
+}
 async function generatePollinations(payload) {
-  const key = String(process.env.POLLINATIONS_API_KEY || '').trim();
-  if (!validSecret(key)) {
-    const err = new Error('POLLINATIONS_API_KEY is not configured');
-    err.code = 'POLLINATIONS_NOT_CONFIGURED';
-    throw err;
+  const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
+  if(!validSecret(key)){const err=new Error('POLLINATIONS_API_KEY is not configured');err.code='POLLINATIONS_NOT_CONFIGURED';throw err}
+  const {userInput,instructions}=buildContext(payload),route=tierModels(payload);
+  const models=[...new Set(route.pollinations.map(x=>String(x||'').trim()).filter(Boolean))],failures=[];
+  for(const model of models){
+    try{
+      const response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify({model,stream:false,messages:[{role:'system',content:instructions},{role:'user',content:JSON.stringify(userInput)}],response_format:{type:'json_schema',json_schema:{name:'scholark_studio_artifact',strict:true,schema}}})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok){const err=new Error(data?.error?.message||data?.message||`Pollinations returned HTTP ${response.status}`);err.code=data?.error?.code||(response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR');throw err}
+      const artifact=parseArtifactText(data?.choices?.[0]?.message?.content,`Pollinations ${model}`);
+      return{ok:true,provider:'pollinations',model,tier:route.tier,quality:route.tier==='high'?'premium':'cost-routed',artifact};
+    }catch(error){failures.push({model,code:error?.code||'POLLINATIONS_ERROR',message:error?.message||'Generation failed'});if(error?.code==='POLLINATIONS_BALANCE')break}
   }
-  const { userInput, instructions } = buildContext(payload);
-  const primary = String(process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol').trim();
-  const fallback = String(process.env.POLLINATIONS_FALLBACK_MODEL || 'claude-opus-4.7').trim();
-  const models = [...new Set([primary, fallback].filter(Boolean))];
-  const failures = [];
-
-  for (const model of models) {
-    try {
-      const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${key}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          stream: false,
-          messages: [
-            { role: 'system', content: instructions },
-            { role: 'user', content: JSON.stringify(userInput) },
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: { name: 'scholark_studio_artifact', strict: true, schema },
-          },
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const err = new Error(data?.error?.message || data?.message || `Pollinations returned HTTP ${response.status}`);
-        err.code = data?.error?.code || (response.status === 402 ? 'POLLINATIONS_BALANCE' : response.status === 429 ? 'POLLINATIONS_RATE_LIMIT' : 'POLLINATIONS_ERROR');
-        throw err;
-      }
-      const text = data?.choices?.[0]?.message?.content;
-      const artifact = parseArtifactText(text, `Pollinations ${model}`);
-      return { ok: true, provider: 'pollinations', model, quality: 'highest-available-free-first', artifact };
-    } catch (error) {
-      failures.push({ model, code: error?.code || 'POLLINATIONS_ERROR', message: error?.message || 'Generation failed' });
-      if (error?.code === 'POLLINATIONS_BALANCE') {
-        error.models = failures;
-        throw error;
-      }
-    }
-  }
-
-  const last = failures.at(-1) || {};
-  const err = new Error(last.message || 'Pollinations models failed');
-  err.code = last.code || 'POLLINATIONS_ERROR';
-  err.models = failures;
-  throw err;
+  const last=failures.at(-1)||{},err=new Error(last.message||'Pollinations models failed');err.code=last.code||'POLLINATIONS_ERROR';err.models=failures;throw err;
 }
-
-function extractOpenAIText(data) {
-  if (typeof data?.output_text === 'string') return data.output_text;
-  for (const item of data?.output || []) {
-    for (const part of item?.content || []) {
-      if (part?.type === 'output_text' && typeof part.text === 'string') return part.text;
-    }
-  }
-  return '';
+function extractOpenAIText(data){
+  if(typeof data?.output_text==='string')return data.output_text;
+  for(const item of data?.output||[])for(const part of item?.content||[])if(part?.type==='output_text'&&typeof part.text==='string')return part.text;
+  return'';
 }
-
-async function generateOpenAI(payload) {
-  const key = String(process.env.OPENAI_API_KEY || '').trim();
-  if (!validSecret(key)) {
-    const err = new Error('OPENAI_API_KEY is not configured');
-    err.code = 'OPENAI_NOT_CONFIGURED';
-    throw err;
-  }
-  const { userInput, instructions } = buildContext(payload);
-  const model = String(process.env.OPENAI_STUDIO_MODEL || 'gpt-5.6').trim();
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${key}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      store: false,
-      reasoning: { effort: 'xhigh' },
-      text: {
-        verbosity: 'high',
-        format: { type: 'json_schema', name: 'scholark_studio_artifact', strict: true, schema },
-      },
-      tools: payload.research === false ? [] : [{ type: 'web_search', search_context_size: 'high' }],
-      input: [
-        { role: 'developer', content: [{ type: 'input_text', text: instructions }] },
-        { role: 'user', content: [{ type: 'input_text', text: JSON.stringify(userInput) }] },
-      ],
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const err = new Error(data?.error?.message || `OpenAI returned HTTP ${response.status}`);
-    err.code = data?.error?.code || 'OPENAI_ERROR';
-    throw err;
-  }
-  const artifact = parseArtifactText(extractOpenAIText(data), 'OpenAI');
-  return { ok: true, provider: 'openai', model, quality: 'highest', artifact };
+async function generateOpenAI(payload){
+  const key=String(process.env.OPENAI_API_KEY||'').trim();
+  if(!validSecret(key)){const err=new Error('OPENAI_API_KEY is not configured');err.code='OPENAI_NOT_CONFIGURED';throw err}
+  const {userInput,instructions}=buildContext(payload),route=tierModels(payload),model=route.openai;
+  const effort=route.tier==='high'?'high':route.tier==='balanced'?'medium':'low';
+  const useWeb=payload.research===true||payload.settings?.research===true||payload.settings?.citations===true;
+  const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify({model,store:false,reasoning:{effort},text:{verbosity:route.tier==='light'?'medium':'high',format:{type:'json_schema',name:'scholark_studio_artifact',strict:true,schema}},tools:useWeb?[{type:'web_search',search_context_size:route.tier==='high'?'high':'medium'}]:[],input:[{role:'developer',content:[{type:'input_text',text:instructions}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userInput)}]}]})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const err=new Error(data?.error?.message||`OpenAI returned HTTP ${response.status}`);err.code=data?.error?.code||'OPENAI_ERROR';throw err}
+  return{ok:true,provider:'openai',model,tier:route.tier,quality:route.tier==='high'?'premium':'cost-routed',artifact:parseArtifactText(extractOpenAIText(data),'OpenAI')};
 }
-
-async function generate(payload) {
-  const pollinationsConfigured = validSecret(process.env.POLLINATIONS_API_KEY);
-  const openAIConfigured = validSecret(process.env.OPENAI_API_KEY);
-  const errors = [];
-
-  if (pollinationsConfigured) {
-    try { return await generatePollinations(payload); }
-    catch (error) { errors.push({ provider: 'pollinations', code: error?.code, message: error?.message }); }
-  }
-  if (openAIConfigured) {
-    try { return await generateOpenAI(payload); }
-    catch (error) { errors.push({ provider: 'openai', code: error?.code, message: error?.message }); }
-  }
-
-  if (!pollinationsConfigured && !openAIConfigured) {
-    const err = new Error('No Studio AI provider is configured. Add POLLINATIONS_API_KEY for free-first generation, or OPENAI_API_KEY for the optional paid fallback.');
-    err.code = 'AI_ENGINE_NOT_CONFIGURED';
-    throw err;
-  }
-  const last = errors.at(-1) || {};
-  const err = new Error(last.message || 'All configured Studio AI providers failed');
-  err.code = last.code || 'STUDIO_AI_PROVIDERS_FAILED';
-  err.providers = errors;
-  throw err;
+async function generateGemini(payload){
+  const key=String(process.env.GEMINI_API_KEY||'').trim();
+  if(!key){const err=new Error('GEMINI_API_KEY is not configured');err.code='GEMINI_NOT_CONFIGURED';throw err}
+  const {userInput,instructions}=buildContext(payload),route=tierModels(payload),model=route.gemini;
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);
+  let response;
+  try{
+    response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions}]},contents:[{role:'user',parts:[{text:JSON.stringify(userInput)}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schema}}),signal:ctrl.signal});
+  }finally{clearTimeout(timer)}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const err=new Error(data?.error?.message||`Gemini returned HTTP ${response.status}`);err.code='GEMINI_ERROR';throw err}
+  const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+  return{ok:true,provider:'gemini',model,tier:route.tier,quality:'cost-routed',artifact:parseArtifactText(text,'Gemini')};
+}
+async function generate(payload){
+  const route=tierModels(payload),pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY),openAIConfigured=validSecret(process.env.OPENAI_API_KEY),geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),errors=[];
+  const providers=route.tier==='light'
+    ? [[geminiConfigured,generateGemini,'gemini'],[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai']]
+    : [[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai'],[geminiConfigured,generateGemini,'gemini']];
+  for(const [configured,fn,name] of providers){if(!configured)continue;try{return await fn(payload)}catch(error){errors.push({provider:name,code:error?.code,message:error?.message})}}
+  if(!pollinationsConfigured&&!openAIConfigured&&!geminiConfigured){const err=new Error('No Studio AI provider is configured. Configure Gemini for cheap high-volume work and/or Pollinations/OpenAI for stronger tiers.');err.code='AI_ENGINE_NOT_CONFIGURED';throw err}
+  const last=errors.at(-1)||{},err=new Error(last.message||'All configured Studio AI providers failed');err.code=last.code||'STUDIO_AI_PROVIDERS_FAILED';err.providers=errors;throw err;
 }
 
 async function handle(req, res) {
@@ -296,13 +240,15 @@ async function handle(req, res) {
   if (url.pathname === '/api/studio/health' && req.method === 'GET') {
     const pollinationsConfigured = validSecret(process.env.POLLINATIONS_API_KEY);
     const openAIConfigured = validSecret(process.env.OPENAI_API_KEY);
+    const geminiConfigured = Boolean(String(process.env.GEMINI_API_KEY || '').trim());
     return json(res, 200, {
       ok: true,
-      configured: pollinationsConfigured || openAIConfigured,
-      primary: pollinationsConfigured ? 'pollinations' : openAIConfigured ? 'openai' : null,
+      configured: pollinationsConfigured || openAIConfigured || geminiConfigured,
+      primary: geminiConfigured ? 'gemini(light)' : pollinationsConfigured ? 'pollinations' : openAIConfigured ? 'openai' : null,
       providers: {
-        pollinations: { configured: pollinationsConfigured, model: String(process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol'), fallbackModel: String(process.env.POLLINATIONS_FALLBACK_MODEL || 'claude-opus-4.7') },
-        openai: { configured: openAIConfigured, model: String(process.env.OPENAI_STUDIO_MODEL || 'gpt-5.6') },
+        pollinations: { configured: pollinationsConfigured, fast: String(process.env.POLLINATIONS_FAST_MODEL || 'openai-fast'), balanced: String(process.env.POLLINATIONS_BALANCED_MODEL || 'gpt-5.6-terra'), premium: String(process.env.POLLINATIONS_PREMIUM_MODEL || process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol') },
+        openai: { configured: openAIConfigured, fast: String(process.env.OPENAI_FAST_MODEL || 'gpt-5.6-luna'), balanced: String(process.env.OPENAI_BALANCED_MODEL || 'gpt-5.6-terra'), premium: String(process.env.OPENAI_PREMIUM_MODEL || 'gpt-5.6-sol') },
+        gemini: { configured: geminiConfigured, fast: String(process.env.GEMINI_FAST_MODEL || 'gemini-3.1-flash-lite') },
       },
     });
   }
