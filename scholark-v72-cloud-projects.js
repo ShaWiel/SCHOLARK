@@ -23,6 +23,7 @@
   async function refresh(){const s=loadSession();if(!s?.refresh_token)return null;try{const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});const d=await r.json();if(!r.ok||!d?.access_token)throw 0;d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);return d}catch{saveSession(null);return null}}
   async function session(){let s=loadSession();if(!s)return null;const exp=Number(s.expires_at||0);if(exp&&exp<Math.floor(Date.now()/1000)+60)s=await refresh();return s}
   async function apiFetch(path,opts={}){let s=await session();if(!s){const e=new Error('Sign in to use SCHOLARK Cloud');e.code='AUTH_REQUIRED';throw e}let r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}});if(r.status===401&&await refresh()){s=state.session;r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}})}return r}
+  async function publicFetch(path,opts={}){return fetch(SB+path,{...opts,headers:{'apikey':KEY,'content-type':'application/json','accept':'application/json',...(opts.headers||{})}})}
   function userEmail(){return clean(state.session?.user?.email||state.session?.email||'')}
   function time(v){try{return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return clean(v)}}
   function label(k){return ({presentation:'Presentation',webpage:'Webpage',document:'Document',social:'Social',graphic:'Graphic',book:'Book'}[k]||k||'Project')}
@@ -117,5 +118,5 @@
   const obs=new MutationObserver(()=>{clearTimeout(window.__v72enhance);window.__v72enhance=setTimeout(()=>enhance(),90)});obs.observe(document.documentElement,{subtree:true,childList:true});
   modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
   loadSession();setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true)},350);
-  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,currentSession:()=>state.session};
+  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session};
 })();
