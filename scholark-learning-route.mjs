@@ -2,6 +2,8 @@ import http from 'node:http';
 
 const originalEmit = http.Server.prototype.emit;
 console.log('[SCHOLARK] Learning AI route ready');
+const _polliPrefix=String(process.env.POLLINATIONS_API_KEY||'').startsWith('pk_')?'publishable':String(process.env.POLLINATIONS_API_KEY||'').startsWith('sk_')?'secret':'none';
+console.log('[SCHOLARK] Pollinations key type '+_polliPrefix+' · translation model '+String(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'));
 const json = (res, status, body) => {
   if (res.headersSent) return;
   res.writeHead(status, {'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
