@@ -67,6 +67,6 @@
   },true);
   document.addEventListener('change',e=>{if(root()?.contains(e.target))clearTimeout(window.__v84save),window.__v84save=setTimeout(saveProfile,900)},true);
   function sync(){if(root()){hydrate()}}
-  new MutationObserver(()=>{clearTimeout(window.__v84sync);window.__v84sync=setTimeout(sync,120)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',sync);setTimeout(sync,500);
+  addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
+  [500,1200].forEach(ms=>setTimeout(sync,ms));
 })();
