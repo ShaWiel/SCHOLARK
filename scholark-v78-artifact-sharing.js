@@ -50,6 +50,6 @@
     const v58=$('#v58-suite.open');if(v58&&window.__SCHOLARK_V58_ARTIFACTS__?.getMode?.()==='document'){const t=$('.v58-top',v58);if(t&&!$('.v78-share-btn',t)){const b=document.createElement('button');b.className='v78-share-btn';b.textContent='Share';$('.v58-export',t)?.insertAdjacentElement('afterend',b);b.onclick=()=>open('document')}}
     const book=$('.v65-book');if(book){const ex=$('#v65-export',book);if(ex&&!$('.v78-book-share',book)){const b=document.createElement('button');b.className='v65-btn v78-book-share';b.textContent='Share book';ex.insertAdjacentElement('afterend',b);b.onclick=()=>open('book')}}
   }
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v78sync);window.__v78sync=setTimeout(ensureButtons,90)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});modal.addEventListener('click',e=>{if(e.target===modal)close()});setTimeout(ensureButtons,350);
+  document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck,#v58-suite,.v65-book'))setTimeout(ensureButtons,70)},true);addEventListener('hashchange',()=>setTimeout(ensureButtons,160));modal.addEventListener('click',e=>{if(e.target===modal)close()});[350,1000].forEach(ms=>setTimeout(ensureButtons,ms));
   window.__SCHOLARK_V78_SHARE__={open};
 })();
