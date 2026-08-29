@@ -6,9 +6,9 @@
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const text=e=>(e?.textContent||'').trim();
   const lower=e=>text(e).toLowerCase();
-  const h=()=> (location.hash||'').toLowerCase();
-  const workspace=()=>/dashboard|studio|presentation|document|report|poster|tutor|language|planner|progress|goal|project|education|book|schools|study/.test(h());
-  const publicHome=()=>!workspace();
+  const h=()=>String(location.hash||'').toLowerCase();
+  const publicHome=()=> (location.pathname==='/'||location.pathname==='') && (h()===''||h()==='#home'||h()==='#pricing');
+  const workspace=()=>!publicHome();
 
   const style=document.createElement('style');
   style.id='scholark-v41-style';
