@@ -37,7 +37,7 @@
     const row=$('#v52-plan-date')?.closest('.v52-row');
     const extra=document.createElement('div');extra.className='v80-plan-controls';extra.innerHTML='<input id="v80-plan-subject" placeholder="Subject / project (optional)"><select id="v80-plan-duration"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="90">90 min</option></select><select id="v80-plan-priority"><option value="low">Low priority</option><option value="medium" selected>Medium priority</option><option value="high">High priority</option></select>';
     if(row)form.insertBefore(extra,row);else form.appendChild(extra);
-    const list=$('#v52-plan-list');if(list){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
+    const list=$('#v52-plan-list');if(list){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
   }
   function plannerFiltered(){
     const today=new Date();today.setHours(0,0,0,0);const t=today.getTime();
@@ -74,8 +74,8 @@
   function renderPlanner(){
     const host=$('#v52-plan-list');if(!host||!awaitableSigned())return;ensurePlannerControls();const rows=plannerFiltered();
     host.innerHTML=rows.length?rows.map(z=>'<div class="v52-item v80-plan-item '+(z.status==='done'?'done':'')+'"><button class="v80-plan-check '+(z.status==='done'?'done':'')+'" data-v80-plan-toggle="'+esc(z.id)+'">'+(z.status==='done'?'✓':'')+'</button><div><b class="v80-plan-title">'+esc(z.title)+'</b><span class="v80-plan-meta">'+esc(z.subject||'General')+(z.due_at?' · '+esc(dateOnly(z.due_at)):' · no deadline')+' · '+esc(z.priority||'medium')+(z.duration_minutes?' · '+esc(z.duration_minutes)+' min':'')+'</span></div><button class="v80-del" data-v80-plan-del="'+esc(z.id)+'">×</button></div>').join(''):'<div class="v52-item">No '+esc(state.plannerView)+' planner items.</div>';
-    $('[data-v80-plan-del]',host).forEach(b=>b.onclick=()=>deletePlanner(b.dataset.v80PlanDel));
-    $('[data-v80-plan-toggle]',host).forEach(b=>b.onclick=()=>togglePlanner(b.dataset.v80PlanToggle));
+    $$('[data-v80-plan-del]',host).forEach(b=>b.onclick=()=>deletePlanner(b.dataset.v80PlanDel));
+    $$('[data-v80-plan-toggle]',host).forEach(b=>b.onclick=()=>togglePlanner(b.dataset.v80PlanToggle));
   }
   function awaitableSigned(){return !!cloud()?.currentSession?.()?.access_token}
   async function addPlanner(){
@@ -152,7 +152,7 @@
   function renderMastery(){
     const host=$('#v52-m-list');if(!host||!awaitableSigned())return;
     host.innerHTML=state.mastery.length?state.mastery.map(z=>{const m=Math.max(0,Math.min(100,Number(z.mastery)||0)),acc=(Number(z.attempts)||0)>0?Math.round((Number(z.correct)||0)/(Number(z.attempts)||1)*100):null;return '<div class="v52-item"><button class="v80-del" data-v80-mastery-del="'+esc(z.id)+'">×</button><b>'+esc(z.topic)+'</b><span class="v52-status">'+esc(masteryStatus(m))+'</span><span class="v80-cloud-tag">CLOUD</span><span class="v80-mastery-meta">'+esc(z.subject||'General')+' · Mastery '+Math.round(m)+'%'+(acc!=null?' · Accuracy '+acc+'%':' · no quiz data yet')+' · '+esc(z.attempts||0)+' attempts'+(z.streak?' · streak '+esc(z.streak):'')+(z.last_practiced_at?' · practised '+esc(new Date(z.last_practiced_at).toLocaleDateString()):'')+'</span><div class="v80-mastery-bar"><i style="width:'+m+'%"></i></div></div>'}).join(''):'<div class="v52-item">No mastery topics yet.</div>';
-    $('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
+    $$('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
   }
   async function addMastery(){
     const input=$('#v52-m-topic'),topic=clean(input?.value);if(!topic){input?.focus();return}
