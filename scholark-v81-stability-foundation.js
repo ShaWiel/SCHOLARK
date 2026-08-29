@@ -161,8 +161,7 @@
     routeCleanup();fixOnboarding();labelBookFields();
     clearTimeout(window.__v81blank);window.__v81blank=setTimeout(rescueBlankWorkspace,350);
   }
-  addEventListener('hashchange',()=>setTimeout(sync,20));
-  addEventListener('popstate',()=>setTimeout(sync,20));
-  new MutationObserver(()=>{clearTimeout(window.__v81sync);window.__v81sync=setTimeout(sync,100)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','class']});
-  setTimeout(sync,120);
+  addEventListener('hashchange',()=>{setTimeout(sync,40);setTimeout(sync,220)});
+  addEventListener('popstate',()=>{setTimeout(sync,40);setTimeout(sync,220)});
+  [120,600].forEach(ms=>setTimeout(sync,ms));
 })();
