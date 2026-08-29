@@ -39,7 +39,7 @@
   function sync(){ensureTop();ensureAudience();syncAudience()}
   document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck .v57-present-btn,#v57-deck .v57-thumb,#v57-present'))setTimeout(sync,35)},true);
   addEventListener('keydown',e=>{const p=$('#v57-present');if(!p?.classList.contains('open'))return;if(e.key===' '||e.key==='PageDown'){e.preventDefault();next()}else if(e.key==='PageUp'){e.preventDefault();prev()}else if(e.key==='Home'){e.preventDefault();first()}else if(e.key==='End'){e.preventDefault();last()}},true);
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v74sync);window.__v74sync=setTimeout(sync,75)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-  setTimeout(sync,350);
+  addEventListener('hashchange',()=>setTimeout(sync,140));
+  [350,900].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_V74_PRESENTER__={open:openPresenter,next,prev,first,last,goto,update:updatePopup,speakCurrent};
 })();
