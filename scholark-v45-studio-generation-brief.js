@@ -235,5 +235,12 @@
     setReferences:list=>{state.referenceText=(Array.isArray(list)?list:[]).map(x=>({name:String(x?.name||'reference'),text:String(x?.text||'').slice(0,40000)})).filter(x=>x.text.trim()).slice(0,6);const root=$('#v41-studio-workspace');if(root){const badge=$('#v45-reference-status',root);if(badge)badge.textContent=state.referenceText.length?` · ${state.referenceText.length} reference${state.referenceText.length===1?'':'s'} ready for AI`:' ';updateReadiness(root)}},
     mergeReference:ref=>{if(!ref?.text)return;const rest=state.referenceText.filter(x=>x.name!==ref.name);state.referenceText=[...rest,{name:String(ref.name||'reference'),text:String(ref.text).slice(0,40000)}].slice(-6);const root=$('#v41-studio-workspace');if(root){const badge=$('#v45-reference-status',root);if(badge)badge.textContent=` · ${state.referenceText.length} reference${state.referenceText.length===1?'':'s'} ready for AI`;updateReadiness(root)}}
   };
-  const timer=setInterval(()=>{const root=$('#v41-studio-workspace');if(!root)return;clearInterval(timer);state.initialized=true;bind(root);new MutationObserver(()=>{ensureAdvanced(root);ensureReadiness(root);const o=$('.v41-outline',root),g=$('.v41-generate',root);if(o)o.onclick=()=>buildOutline(root);if(g)g.onclick=()=>generate(root);}).observe(root,{childList:true,subtree:true});},80);
+  let initTries=0;
+  function init(){
+    const root=$('#v41-studio-workspace');
+    if(!root){if(++initTries<20)setTimeout(init,120);return}
+    state.initialized=true;bind(root);
+    new MutationObserver(()=>{clearTimeout(window.__v45root);window.__v45root=setTimeout(()=>{ensureAdvanced(root);ensureReadiness(root);const o=$('.v41-outline',root),g=$('.v41-generate',root);if(o)o.onclick=()=>buildOutline(root);if(g)g.onclick=()=>generate(root);},60)}).observe(root,{childList:true,subtree:true});
+  }
+  setTimeout(init,100);
 })();
