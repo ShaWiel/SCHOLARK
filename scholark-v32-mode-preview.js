@@ -89,8 +89,7 @@
   }
 
   function sync(){cleanPublicHome();render();}
-  new MutationObserver(()=>{clearTimeout(window.__v32t);window.__v32t=setTimeout(sync,70);}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,30));
-  setInterval(sync,350);
-  setTimeout(sync,40);
+  addEventListener('hashchange',()=>setTimeout(sync,80));
+  addEventListener('scholark-language-ready',()=>setTimeout(sync,80));
+  [80,500].forEach(ms=>setTimeout(sync,ms));
 })();
