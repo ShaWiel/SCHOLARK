@@ -148,8 +148,8 @@
   function rescueBlankWorkspace(){
     if(!document.body.classList.contains('v51-workspace'))return;
     const h=hash();
-    if(!/^#(dashboard|studio|tutor|education|planner|progress|goal|project|files|schools|study|book)$/.test(h))return;
-    const candidates=[$('#v51-main'),$('#v41-studio-workspace'),$('#v50-school'),$('#v25-book')].filter(Boolean);
+    if(!/^#(dashboard|studio|tutor|education|language|planner|progress|goal|project|files|schools|study|book)$/.test(h))return;
+    const candidates=[$('#v51-main'),$('#v41-studio-workspace'),$('#v50-school'),$('#v25-book'),$('.v93')].filter(Boolean);
     const visible=candidates.some(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>80&&r.height>80});
     if(!visible){
       console.warn('[SCHOLARK] Route rescue for '+h);
