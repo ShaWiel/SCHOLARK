@@ -112,6 +112,27 @@
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
   let map=loadMap(code()),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
+  const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
+  const deviceTranslators=new Map();
+  function primeDeviceTranslator(target,onProgress){
+    if(target==='en'||!DEVICE_LANGS.has(target)||!('Translator' in window))return null;
+    if(deviceTranslators.has(target))return deviceTranslators.get(target);
+    const options={sourceLanguage:'en',targetLanguage:target};
+    let promise;
+    try{
+      promise=window.Translator.create({...options,monitor(m){m.addEventListener('downloadprogress',e=>{try{onProgress?.(Math.max(0,Math.min(100,Math.round(Number(e.loaded||0)*100))))}catch{}})}});
+    }catch(e){return null}
+    const guarded=Promise.resolve(promise).catch(e=>{deviceTranslators.delete(target);throw e});
+    deviceTranslators.set(target,guarded);return guarded;
+  }
+  async function deviceTranslate(target,strings,onChunk,primed){
+    const promise=primed||primeDeviceTranslator(target);if(!promise)return {translated:{},missing:[...strings]};
+    let translator;try{translator=await promise}catch{return {translated:{},missing:[...strings]}}
+    const translated={},queue=[...strings.entries()];
+    const worker=async()=>{while(queue.length){const [,source]=queue.shift();try{const tr=clean(await translator.translate(source));if(tr&&tr!==source){translated[source]=tr;if(typeof onChunk==='function')onChunk({[source]:tr})}}catch{}}};
+    await Promise.all(Array.from({length:Math.min(6,strings.length)},()=>worker()));
+    return {translated,missing:strings.filter(s=>!translated[s])};
+  }
   const rememberText=n=>{if(!textSource.has(n))textSource.set(n,clean(n.nodeValue));return textSource.get(n)||clean(n.nodeValue)};
   const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=v}attrSource.set(el,o)}return o};
 
@@ -131,17 +152,20 @@
     $$('input[placeholder],textarea[placeholder],[aria-label],[title]').forEach(el=>{const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
     return [...out];
   }
-  async function translateBatch(target,strings,onChunk){
+  async function translateBatch(target,strings,onChunk,purpose='ui',primed=null){
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
-    const chunks=[];for(let i=0;i<strings.length;i+=70)chunks.push(strings.slice(i,i+70));
-    const result={};let cursor=0;
+    const result={};
+    const local=await deviceTranslate(target,strings,part=>{Object.assign(result,part);onChunk?.(part)},primed);
+    if(!local.missing.length)return result;
+    const chunks=[];for(let i=0;i<local.missing.length;i+=70)chunks.push(local.missing.slice(i,i+70));
+    let cursor=0;
     const worker=async()=>{
       while(cursor<chunks.length){
         const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000);
         try{
-          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),strings:chunk}),signal:ctrl.signal});
+          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
-          const part={};for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated)){result[x.source]=x.translated;part[x.source]=x.translated}
+          const part={};for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated)&&clean(x.translated)!==String(x.source||'')){result[x.source]=x.translated;part[x.source]=x.translated}
           if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part);
         }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
       }
@@ -166,7 +190,7 @@
     try{
       for(let pass=0;pass<3&&epoch===translationEpoch;pass++){
         upgradeSelectors();applyKnown();
-        const strings=[...new Set([...CORE,...collectDom(1100)])].filter(eligibleText);
+        const strings=[...new Set(collectDom(1100))].filter(eligibleText);
         const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
         const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()});
@@ -206,15 +230,16 @@
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
     const epoch=++translationEpoch;translating=true;
+    overlay.classList.add('open');overlay.style.removeProperty('opacity');$('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
+    const primed=primeDeviceTranslator(target,p=>{$('#v90-switch-copy').textContent='Preparing '+nativeName(target)+' on this device… '+p+'%'});
     localStorage.setItem('scholark_ui_language',target);map=loadMap(target);
     document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';upgradeSelectors();applyKnown();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
-    if(target==='en'){translating=false;overlay.classList.remove('open');return}
-    overlay.classList.add('open');overlay.style.removeProperty('opacity');$('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
-    const strings=[...new Set([...CORE,...collectDom(1200)])].filter(eligibleText),missing=strings.filter(s=>!map[s]);
+    if(target==='en'){translating=false;overlay.classList.remove('open');window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:'source'}}));return}
+    const strings=[...new Set(collectDom(1200))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
     try{
       if(missing.length){
-        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()});
+        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()},'ui',primed);
         if(epoch===translationEpoch){map={...map,...add};saveMap(target,map)}
       }
       if(epoch===translationEpoch){applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target}}))}
@@ -222,12 +247,12 @@
     finally{if(epoch===translationEpoch){translating=false;overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
   }
 
-  async function translateStrings(target,strings){
+  async function translateStrings(target,strings,purpose='content'){
     if(!LANGS.some(x=>x[0]===target))target='en';
     const src=[...new Set((strings||[]).map(clean).filter(eligibleText))];
     if(target==='en')return Object.fromEntries(src.map(s=>[s,s]));
     let m=loadMap(target),missing=src.filter(s=>!m[s]);
-    if(missing.length){const add=await translateBatch(target,missing);m={...m,...add};saveMap(target,m)}
+    if(missing.length){const add=await translateBatch(target,missing,null,purpose);m={...m,...add};saveMap(target,m)}
     return Object.fromEntries(src.map(s=>[s,m[s]||s]));
   }
 
