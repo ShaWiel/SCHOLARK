@@ -16,7 +16,9 @@ const readJson = req => new Promise((resolve,reject)=>{
 });
 
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
-const isSecret = s => /^sk[_-]/.test(String(s||'')) || /^sk-proj-/.test(String(s||''));
+const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
+const translationMemory=new Map();
+const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
 
 function schemaFor(mode){
   if(mode==='exam') return {
@@ -112,7 +114,7 @@ function parseText(text,provider){
 async function pollinations(mode,p){
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
   if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e;}
-  const primary=String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol').trim();
+  const primary=String(mode==='translate_ui'?(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'):(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol')).trim();
   const fallback=String(process.env.POLLINATIONS_FALLBACK_MODEL||'claude-opus-4.7').trim();
   const models=[...new Set([primary,fallback].filter(Boolean))], failures=[];
   for(const model of models){
@@ -166,7 +168,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'),fallbackModel:String(process.env.POLLINATIONS_FALLBACK_MODEL||'claude-opus-4.7')});
+    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),model:String(process.env.POLLINATIONS_LEARNING_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'),translationModel:String(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'),fallbackModel:String(process.env.POLLINATIONS_FALLBACK_MODEL||'claude-opus-4.7'),translationCache:translationMemory.size});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
@@ -178,6 +180,27 @@ http.Server.prototype.emit = function(event,...args){
       if(mode==='tutor'&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
       if(mode==='translate_ui'&&(!Array.isArray(p.strings)||!p.strings.length)) return json(res,400,{ok:false,error:'Strings required'});
       if(mode==='language_learning'&&!clean(p.targetLanguage)) return json(res,400,{ok:false,error:'Target language required'});
+      if(mode==='translate_ui'){
+        const language=clean(p.language)||'English';
+        const strings=[...new Set((p.strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))].slice(0,900);
+        const cached={},missing=[];
+        for(const source of strings){
+          const hit=translationMemory.get(translationKey(language,source));
+          if(hit)cached[source]=hit; else missing.push(source);
+        }
+        let provider='memory',model='translation-memory';
+        if(missing.length){
+          const out=await generate(mode,{...p,language,strings:missing});
+          provider=out.provider||provider;model=out.model||model;
+          for(const row of out.result?.translations||[]){
+            const source=String(row?.source||''),translated=clean(row?.translated);
+            if(source&&translated){translationMemory.set(translationKey(language,source),translated);cached[source]=translated}
+          }
+        }
+        const translations=strings.map(source=>({source,translated:cached[source]||source}));
+        json(res,200,{ok:true,provider,model,result:{translations},cacheHits:strings.length-missing.length,generated:missing.length});
+        return;
+      }
       const out=await generate(mode,p); json(res,200,out);
     }catch(e){json(res,e.code==='AI_ENGINE_UNAVAILABLE'?503:500,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});}
   })();
