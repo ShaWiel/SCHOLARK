@@ -6,7 +6,7 @@
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
-  const LANG={nl:'Dutch',en:'English',es:'Spanish',fr:'French',de:'German',pt:'Portuguese',it:'Italian',srn:'Sranan Tongo',ar:'Arabic',hi:'Hindi',zh:'Chinese',ja:'Japanese',ko:'Korean',id:'Indonesian',tr:'Turkish',pl:'Polish',sw:'Swahili'};
+  const LANG={nl:'Dutch',en:'English',es:'Spanish',fr:'French',de:'German',pt:'Portuguese',it:'Italian',ar:'Arabic',hi:'Hindi',zh:'Chinese',ja:'Japanese',ko:'Korean',id:'Indonesian',tr:'Turkish',pl:'Polish',sw:'Swahili'};
   const level=()=>localStorage.getItem('scholark_learning_level')||'secondary';
   const language=()=>{const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';return window.__SCHOLARK_I18N__?.languageName?.(code)||LANG[code]||code||'English'};
 
