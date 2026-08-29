@@ -20,8 +20,8 @@
 
   cleanup();
   addEventListener('hashchange', cleanup);
-  new MutationObserver(() => {
-    clearTimeout(window.__scholarkV42Compat);
-    window.__scholarkV42Compat = setTimeout(cleanup, 120);
-  }).observe(document.documentElement, { subtree: true, childList: true });
+  // Compatibility cleanup is deterministic; a global DOM observer caused needless
+  // work for every card, translation and demo mutation on the homepage.
+  setTimeout(cleanup, 250);
+  setTimeout(cleanup, 1200);
 })();
