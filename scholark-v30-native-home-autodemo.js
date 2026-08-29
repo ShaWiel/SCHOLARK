@@ -114,7 +114,7 @@
       if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
       input.value=p.slice(0,++i);
       if(i>=p.length){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');}
-    },42);
+    },58);
   }
 
   function cycleStudio(){
@@ -181,14 +181,22 @@
     const input=$('#v29-prompt');input?.addEventListener('input',()=>{pausedUntil=Date.now()+20000;});
   }
 
+  function stopDemo(){
+    clearInterval(typingTimer);typingTimer=null;
+    clearInterval(rotateTimer);rotateTimer=null;
+    clearInterval(statusTimer);statusTimer=null;
+    $('#v29-prompt')?.classList.remove('v30-typing-cursor');
+  }
   function ensureDemo(){
-    if(!isHome())return;mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
-    if(!rotateTimer){setAutoMode('presentation');rotateTimer=setInterval(cycleStudio,5200);}
-    if(!statusTimer){animateLearning();animateFuture();animateQualitySteps();animateHosts();statusTimer=setInterval(()=>{animateLearning();animateFuture();animateQualitySteps();animateHosts();},2800);}
+    if(!isHome()){stopDemo();return}
+    mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
+    if(!rotateTimer){setAutoMode('presentation');rotateTimer=setInterval(cycleStudio,9000);}
+    if(!statusTimer){animateLearning();animateFuture();animateQualitySteps();animateHosts();statusTimer=setInterval(()=>{if(document.hidden||!isHome())return;animateLearning();animateFuture();animateQualitySteps();animateHosts();},4800);}
   }
 
-  function sync(){restoreLegacy();if(isHome())ensureDemo();}
-  new MutationObserver(()=>{clearTimeout(window.__v30sync);window.__v30sync=setTimeout(sync,100);}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','lang']});
-  addEventListener('hashchange',()=>setTimeout(sync,40));addEventListener('popstate',()=>setTimeout(sync,40));addEventListener('resize',()=>setTimeout(sync,60));
-  setInterval(sync,900);setTimeout(sync,120);
+  function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
+  addEventListener('hashchange',()=>setTimeout(sync,50));
+  addEventListener('popstate',()=>setTimeout(sync,50));
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
+  setTimeout(sync,120);
 })();
