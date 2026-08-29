@@ -37,7 +37,7 @@
     const checks={
       sidebar:!!$('#v51-sidebar'),workspaceMain:!!$('#v51-main'),
       learningApi:!!window.__SCHOLARK_V62_LEARNING_API__,bookApi:!!window.__SCHOLARK_V65_BOOK__,
-      cloudApi:!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,workspacePolish:!!window.__SCHOLARK_V91__,languageLearner:!!window.__SCHOLARK_V93_LANGUAGE__,
+      cloudApi:!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,workspacePolish:!!window.__SCHOLARK_V91__,languageLearner:!!window.__SCHOLARK_V93_LANGUAGE__,performanceFoundation:!!window.__SCHOLARK_PERF__,
       duplicateIds:duplicateIds()
     };
     const [learning,exporter]=await Promise.all([endpoint('/api/learning/health'),endpoint('/api/export/health')]);
