@@ -52,7 +52,7 @@
       style:val('v41-style')||'modern',
       purpose:val('v45-purpose'),
       outline:outline(),
-      research:true,
+      research:checked('v41-citations')||checked('v41-sources'),
       factCheck:true,
       visualReasoning:true,
       finalPolish:true,
@@ -64,6 +64,12 @@
     };
   }
 
+  function creditFeature(m){
+    const count=Math.max(1,Number(val('v41-count'))||10),research=checked('v41-citations')||checked('v41-sources');
+    if(m==='presentation')return count>30||research?'premium_presentation':'presentation';
+    if(m==='document')return count>25?'long_report':'document';
+    return ({webpage:'webpage',social:'social',graphic:'graphic'}[m]||'document');
+  }
   async function askEngine(m){
     const r=await fetch('/api/studio/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload(m))});
     const data=await r.json().catch(()=>({}));
@@ -161,9 +167,11 @@
     $('.v59-box h3',loader).textContent='Building the finished output…';
     $('.v59-message',loader).textContent='Researching, reasoning, fact-checking, writing and structuring the final first draft before it enters the editor.';
     try{
+      const feature=creditFeature(m);await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
       const ai=await askEngine(m);
+      await window.__SCHOLARK_CREDITS__?.consume?.(feature,{mode:m,tier:ai.tier||'',provider:ai.provider||'',model:ai.model||''});
       if(m==='presentation')openPresentation(ai);else openArtifact(m,ai);
-      if(status)status.textContent='Finished output generated and opened in the editor.';
+      if(status)status.textContent='Finished output generated · '+(ai.tier||'routed')+' tier · '+(ai.model||ai.provider||'AI')+'.';
       loader.classList.remove('open','error');
     }catch(err){
       console.error('[SCHOLARK Studio AI]',err);
