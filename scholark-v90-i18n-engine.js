@@ -331,7 +331,7 @@
   }
   async function translateCurrentPage(showOverlay=false){
     const target=code(),epoch=translationEpoch;
-    if(target==='en'||STATIC_UI[target]){upgradeSelectors();applyKnown();overlay.classList.remove('open');return}
+    if(target==='en'||STATIC_UI[target]){upgradeSelectors();applyVisible();overlay.classList.remove('open');return}
     if(navigator.onLine===false){applyKnown();overlay.classList.remove('open');return}
     if(translating)return;translating=true;
     if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across SCHOLARK…'}
@@ -372,6 +372,20 @@
     }
   }
 
+  function visibleRoots(){
+    const h=String(location.hash||'').toLowerCase(),publicRoute=h===''||h==='#home'||h==='#pricing',roots=[];
+    const push=el=>{if(el&&el.isConnected&&!roots.includes(el))roots.push(el)};
+    push($('#v55-topbar'));
+    if(publicRoute&&!document.body.classList.contains('v51-workspace')){
+      push($('#v29-home-layer:not([hidden])'));
+    }else{
+      push($('#v51-sidebar'));push($('#v51-main'));
+      push($('.v41-studio-workspace:not([hidden])'));push($('#v58-suite.open'));push($('#v57-deck.open'));push($('#v57-present.open'));
+    }
+    return roots.length?roots:[document.body];
+  }
+  function applyVisible(){visibleRoots().forEach(applyKnown)}
+
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
     const epoch=++translationEpoch;translating=true;
@@ -381,7 +395,7 @@
     $('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
     localStorage.setItem('scholark_ui_language',target);map=loadMap(target);mapCode=target;
     document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
-    upgradeSelectors();applyKnown();
+    upgradeSelectors();applyVisible();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
     try{
       if(target!=='en'&&!STATIC_UI[target]){
@@ -424,15 +438,17 @@
   function boot(){
     const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
-    upgradeSelectors();applyKnown();
+    upgradeSelectors();applyVisible();
   }
   const pendingRoots=new Set();let mutationTimer=null,selectorPending=false;
-  const activeRoot=()=>document.querySelector('#v58-suite.open,#v57-deck.open,.v41-studio-workspace:not([hidden]),#v51-main,#v29-home-layer:not([hidden])')||document.body;
+  const activeRoot=()=>visibleRoots().find(r=>r!==$('#v55-topbar'))||visibleRoots()[0]||document.body;
   function flushMutations(){
     mutationTimer=null;
     const roots=[...pendingRoots];pendingRoots.clear();
-    if(roots.length>18)applyKnown(activeRoot());
-    else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
+    if(code()!=='en'){
+      if(roots.length>18)applyKnown(activeRoot());
+      else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
+    }
     if(selectorPending){selectorPending=false;upgradeSelectors()}
   }
   const obs=new MutationObserver(muts=>{
@@ -446,8 +462,8 @@
     if(pendingRoots.size){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
   });
   obs.observe(document.body||document.documentElement,{subtree:true,childList:true});
-  addEventListener('hashchange',()=>setTimeout(()=>{upgradeSelectors();applyKnown(activeRoot())},100));
-  addEventListener('popstate',()=>setTimeout(()=>{upgradeSelectors();applyKnown(activeRoot())},100));
+  addEventListener('hashchange',()=>setTimeout(()=>{upgradeSelectors();applyVisible()},100));
+  addEventListener('popstate',()=>setTimeout(()=>{upgradeSelectors();applyVisible()},100));
   addEventListener('scholark-language-change',()=>setTimeout(boot,30));
   setTimeout(boot,80);
 
