@@ -117,6 +117,6 @@
 
   function installAPI(){const a=api();if(!a)return;a.getStandaloneHTML=()=>isWeb()?standaloneHTML():'';a.getWebSettings=()=>isWeb()?settings():null}
   function sync(){if(!$('#v58-suite.open'))return;installAPI();ensure();if(isWeb()){applyPreview();decorate()}}
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v77sync);window.__v77sync=setTimeout(sync,85)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-  document.addEventListener('click',e=>{if(e.target.closest?.('#v58-suite'))setTimeout(sync,35)},true);setTimeout(sync,360);
+  document.addEventListener('click',e=>{if(e.target.closest?.('#v58-suite'))setTimeout(sync,45)},true);
+  addEventListener('hashchange',()=>setTimeout(sync,150));[360,950].forEach(ms=>setTimeout(sync,ms));
 })();
