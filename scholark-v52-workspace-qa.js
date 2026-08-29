@@ -95,6 +95,8 @@
         <button class="v52-action" data-edu="curriculum"><b>Curriculum Explorer</b><span>Map a subject into clear strands, units and learning priorities for your level.</span></button>
         <button class="v52-action" data-edu="mastery"><b>Mastery Map</b><span>Track topics as New, Learning, Practising or Mastered.</span></button>
         <button class="v52-action" data-edu="exam"><b>Exam Prep Center</b><span>Break an upcoming exam into topics, question types and revision priorities.</span></button>
+        <button class="v52-action" data-edu="diagnostic"><b>Diagnostic Check</b><span>Find what you know, what is weak and what should enter your Mastery Map next.</span></button>
+        <button class="v52-action" data-edu="review"><b>Spaced Review Queue</b><span>Review weak topics at the right time instead of rereading everything.</span></button>
         <button class="v52-action" data-edu="methods"><b>Study Methods Lab</b><span>Use active recall, Feynman, blurting, interleaving and other study methods correctly.</span></button>
       </div><div class="v52-detail" id="v52-edu-detail"></div>`);
     $$('[data-edu]',h).forEach(b=>b.onclick=()=>renderEducationModule(b.dataset.edu));
