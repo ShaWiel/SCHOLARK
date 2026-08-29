@@ -65,6 +65,7 @@ COPY scholark-v24-ui.js \
      scholark-v81-stability-foundation.js \
      scholark-v82-tutor-cloud.js \
      scholark-v83-study-ahead-cloud.js \
+     scholark-v84-profile-cloud.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
