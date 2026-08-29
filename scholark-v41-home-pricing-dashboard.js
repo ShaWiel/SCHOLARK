@@ -68,7 +68,7 @@
     if(!workspace())return;
     const inner=findSidebarInner(),shell=findSidebarShell(inner);if(!shell)return;
     shell.classList.add('v41-sidebar-shell');const main=findMain(shell);main?.classList.add('v41-workspace-main');
-    let b=$('#v41-sidebar-toggle');if(!b){b=document.createElement('button');b.id='v41-sidebar-toggle';document.body.appendChild(b);b.onclick=()=>{document.body.classList.toggle('v41-sidebar-closed');localStorage.setItem('scholark_sidebar_closed',document.body.classList.contains('v41-sidebar-closed')?'1':'0');syncSidebarButton();};}
+    let b=$('#v41-sidebar-toggle');if(!b){b=document.createElement('button');b.id='v41-sidebar-toggle';document.body.appendChild(b);b.onclick=()=>{document.body.classList.toggle('v41-sidebar-closed');localStorage.setItem('scholark_sidebar_closed',document.body.classList.contains('v41-sidebar-closed')?'1':'0');syncSidebarButton();window.dispatchEvent(new CustomEvent('scholark-layout-change'));};}
     if(localStorage.getItem('scholark_sidebar_closed')==='1')document.body.classList.add('v41-sidebar-closed');
     syncSidebarButton();
   }
@@ -108,7 +108,6 @@
     let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$$('[data-plan]',p).forEach(b=>b.onclick=()=>{localStorage.setItem('scholark_selected_plan',b.dataset.plan);if(b.dataset.plan==='free'){history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'));}else location.hash='pricing';});}
     if(p){p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity');const shell=$('.v29-shell',layer)||layer,final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);if(final&&p.nextElementSibling!==final)shell.insertBefore(p,final)}
     if((location.hash||'').toLowerCase().includes('pricing'))setTimeout(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}),120);
-    if(!priceTimer){let i=0;priceTimer=setInterval(()=>{const plans=$$('.v41-plan',p);plans.forEach(x=>x.classList.remove('v41-focus'));plans[i%plans.length]?.classList.add('v41-focus');i++;},2600);}
   }
 
   function wirePricingNav(){
@@ -129,6 +128,8 @@
   }
 
   interceptStudio();wirePricingNav();
-  new MutationObserver(()=>{clearTimeout(window.__v41sync);window.__v41sync=setTimeout(sync,70)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,20));addEventListener('resize',()=>setTimeout(sync,60));addEventListener('focus',()=>setTimeout(sync,30));setTimeout(sync,50);
+  addEventListener('hashchange',()=>{setTimeout(sync,50);setTimeout(sync,220)});
+  addEventListener('popstate',()=>{setTimeout(sync,50);setTimeout(sync,220)});
+  addEventListener('resize',()=>setTimeout(()=>{syncSidebarButton();if(publicHome())ensurePricing()},120),{passive:true});
+  [70,420,1000].forEach(ms=>setTimeout(sync,ms));
 })();
