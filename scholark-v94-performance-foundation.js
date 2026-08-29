@@ -36,7 +36,7 @@
   }
   function fitText(root=activeRoot()){
     state.lastLayout=Date.now();
-    const candidates=$('.v51-nav,.v51-level,.v91-quick button,.v29-tab,.v29-future-card button,.v55-entry strong,.v41-plan button',root);
+    const candidates=$$('.v51-nav,.v51-level,.v91-quick button,.v29-tab,.v29-future-card button,.v55-entry strong,.v41-plan button',root);
     for(const el of candidates){
       el.classList.remove('v94-compact-text');
       const r=el.getBoundingClientRect();
