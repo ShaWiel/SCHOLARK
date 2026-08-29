@@ -60,7 +60,7 @@
     try{
       if(type==='tutor'){
         const prompt='Teach me the foundations I should know before studying '+clean(last.field)+'. Start at my current level, explain everything step by step, use worked examples, and connect the lesson to these key subjects: '+(last.result?.keySubjects||[]).slice(0,8).join(', ')+'.';
-        window.__SCHOLARK_V91__?.openTool?.('tutor')||$('#v51-sidebar [data-v51-tool="tutor"]')?.click();
+        if(window.__SCHOLARK_V91__?.openTool)window.__SCHOLARK_V91__.openTool('tutor');else $('#v51-sidebar [data-v51-tool="tutor"]')?.click();
         setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},180);return;
       }
       const x=await ctx();if(!x){cloud()?.openAuth?.();throw new Error('Sign in to sync Study Ahead with Planner or Mastery.')}
