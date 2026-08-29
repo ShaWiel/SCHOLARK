@@ -80,8 +80,7 @@
       }
     }catch(e){if(st)st.textContent=clean(e?.message||e)}finally{btn.disabled=false}
   }
-  addEventListener('scholark:study-ahead-generated',e=>persist(e.detail||{}));
+  addEventListener('scholark:study-ahead-generated',e=>{persist(e.detail||{});setTimeout(sync,80)});
   function sync(){if(location.hash.toLowerCase()==='#study'){ensureSavedHost();loadSaved();try{last=last||JSON.parse(localStorage.getItem('scholark_v83_study_ahead')||'null')}catch{}if(last)decorate()}}
-  new MutationObserver(()=>{clearTimeout(window.__v83sync);window.__v83sync=setTimeout(sync,100)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('hashchange',()=>setTimeout(sync,60));setTimeout(sync,300);
+  addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,280)});setTimeout(sync,300);
 })();
