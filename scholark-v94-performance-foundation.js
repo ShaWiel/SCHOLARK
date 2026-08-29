@@ -36,19 +36,18 @@
   }
   function routeTransition(){
     state.routeChanges++;state.lastRoute=String(location.hash||'#home');document.documentElement.classList.add('v94-route-fade');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitText();tuneImages();window.__SCHOLARK_I18N__?.apply?.();setTimeout(()=>document.documentElement.classList.remove('v94-route-fade'),120)}));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitText();tuneImages();setTimeout(()=>document.documentElement.classList.remove('v94-route-fade'),120)}));
   }
   let raf=0;function scheduleLayout(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{fitText();tuneImages()})}
 
   addEventListener('hashchange',routeTransition);addEventListener('popstate',routeTransition);addEventListener('resize',scheduleLayout,{passive:true});
-  new MutationObserver(m=>{let added=false;for(const x of m)if(x.addedNodes?.length){added=true;break}if(added)scheduleLayout()}).observe(document.documentElement,{subtree:true,childList:true});
 
   if('PerformanceObserver'in window){
     try{const po=new PerformanceObserver(list=>{for(const e of list.getEntries())if(e.duration>80)state.longTasks++});po.observe({type:'longtask',buffered:true})}catch{}
   }
 
   const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,600));
-  idle(()=>{tuneImages();fitText();fetch('/api/learning/health',{cache:'no-store'}).catch(()=>{});fetch('/api/export/health',{cache:'no-store'}).catch(()=>{});window.__SCHOLARK_I18N__?.translateMissing?.()});
+  idle(()=>{tuneImages();fitText();fetch('/api/learning/health',{cache:'no-store'}).catch(()=>{});fetch('/api/export/health',{cache:'no-store'}).catch(()=>{})});
   setTimeout(routeTransition,350);
 
   window.__SCHOLARK_PERF__={state,fitText,routeTransition};
