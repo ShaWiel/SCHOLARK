@@ -127,9 +127,13 @@
 
   function upgradeSelectors(){
     const options=LANGS.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
-    for(const sel of [$('#v55-language'),$('#v36-language'),$('#v89-lang')].filter(Boolean)){
+    for(const sel of [$('#v55-language'),$('#v36-language'),$('#v89-lang'),$('#v41-language'),$('#v65-language')].filter(Boolean)){
       const val=code();if(sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options}
       if([...sel.options].some(o=>o.value===val))sel.value=val;
+    }
+    const legacyStudio=$('#sv24-lang');if(legacyStudio){
+      const val=code(),name=languageName(val);if(legacyStudio.dataset.v90!=='1'){legacyStudio.dataset.v90='1';legacyStudio.innerHTML=LANGS.map(([v,n,en])=>'<option value="'+en+'">'+n+'</option>').join('')}
+      legacyStudio.value=name;
     }
     const side=$('#v51-sidebar');if(side){
       let box=$('.v90-langbox',side);if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>';$('.v85-wallet',side)?.insertAdjacentElement('beforebegin',box)||$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
