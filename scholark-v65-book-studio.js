@@ -27,10 +27,14 @@
     }catch{}
   }
   async function call(mode,payload){
+    const feature=mode==='book_chapter'?'book_chapter':'book_plan';
+    await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
     const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(),120000);
     try{
       const r=await fetch('/api/studio/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,level:localStorage.getItem('scholark_learning_level')||'student',language:localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'auto',...payload}),signal:ctrl.signal});
-      const d=await r.json().catch(()=>({})); if(!r.ok||!d?.ok||!d?.artifact)throw new Error(d?.error||'Book Studio AI is unavailable'); return d;
+      const d=await r.json().catch(()=>({})); if(!r.ok||!d?.ok||!d?.artifact)throw new Error(d?.error||'Book Studio AI is unavailable');
+      await window.__SCHOLARK_CREDITS__?.consume?.(feature,{mode,tier:d.tier||'',provider:d.provider||'',model:d.model||''});
+      return d;
     }finally{clearTimeout(timer)}
   }
   function shell(){
