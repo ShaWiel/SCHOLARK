@@ -80,7 +80,8 @@
     dashboard();
     const study=location.hash.toLowerCase()==='#study';if(study){$('#v25-study')?.classList.remove('open');const form=$('.v62-study .v62-form');if(form){form.style.display='grid';form.style.visibility='visible';form.style.opacity='1'}}
   }
-  new MutationObserver(()=>{clearTimeout(window.__v91sync);window.__v91sync=setTimeout(sync,90)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,40));setTimeout(sync,260);
+  addEventListener('hashchange',()=>{setTimeout(sync,60);setTimeout(sync,240)});
+  addEventListener('scholark-language-ready',()=>setTimeout(sync,100));
+  [260,800].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_V91__={openPalette,openTool};
 })();
