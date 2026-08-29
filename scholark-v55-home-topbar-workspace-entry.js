@@ -9,7 +9,7 @@
   const workspace=()=>/dashboard|studio|tutor|education|planner|progress|goal|project|files|schools|study|book|presentation|webpage|document|report|graphic|social/.test(String(location.hash||'').toLowerCase());
   const publicHome=()=>!workspace()&&!/pricing|login|signin|account/.test(String(location.hash||'').toLowerCase());
 
-  const LANGS=[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano'],['srn','Sranan Tongo'],['ar','العربية'],['hi','हिन्दी'],['zh','中文'],['ja','日本語'],['ko','한국어'],['id','Bahasa Indonesia'],['tr','Türkçe'],['pl','Polski'],['sw','Kiswahili']];
+  const LANGS=[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano'],['srn','Sranan Tongo'],['ar','العربية'],['hi','हिन्दी'],['zh','中文'],['ja','日本語'],['ko','한국어'],['id','Bahasa Indonesia'],['tr','Türkçe'],['pl','Polski'],['sw','Kiswahili'],['ru','Русский'],['uk','Українська'],['ro','Română'],['cs','Čeština'],['hu','Magyar'],['el','Ελληνικά'],['sv','Svenska'],['da','Dansk'],['no','Norsk'],['fi','Suomi'],['th','ไทย'],['vi','Tiếng Việt'],['ms','Bahasa Melayu'],['fil','Filipino'],['bn','বাংলা'],['ur','اردو'],['fa','فارسی'],['he','עברית'],['ta','தமிழ்'],['te','తెలుగు'],['mr','मराठी']];
 
   const style=document.createElement('style');
   style.id='scholark-v55-style';
