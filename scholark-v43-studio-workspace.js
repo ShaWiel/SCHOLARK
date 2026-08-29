@@ -103,7 +103,7 @@
 
   window.addEventListener('click',e=>{const el=e.target.closest('button,a,[role="button"],div,span');if(!el||el.closest('#v41-studio-workspace')||el.closest('#sv24-overlay'))return;const t=lower(el);if(t==='studio ai'||t==='ai studio'||t==='studio ia'||t==='ki studio'||t==='ai stüdyosu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openStudio();}},true);
   window.addEventListener('hashchange',()=>{if(/^#studio/.test((location.hash||'').toLowerCase()))openStudio();else if(!/studio|presentation|document|report|graphic|social|book/.test((location.hash||'').toLowerCase()))closeStudio();});
-  new MutationObserver(()=>{if(!root.hidden)syncGeometry();}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('resize',syncGeometry);setInterval(()=>{if(!root.hidden)syncGeometry();},600);
+  addEventListener('resize',()=>{if(!root.hidden)requestAnimationFrame(syncGeometry)},{passive:true});
+  addEventListener('scholark-layout-change',()=>{if(!root.hidden)requestAnimationFrame(syncGeometry)});
   renderModes();setMode(active);
 })();
