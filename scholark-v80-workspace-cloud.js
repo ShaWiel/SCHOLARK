@@ -37,13 +37,15 @@
     const row=$('#v52-plan-date')?.closest('.v52-row');
     const extra=document.createElement('div');extra.className='v80-plan-controls';extra.innerHTML='<input id="v80-plan-subject" placeholder="Subject / project (optional)"><select id="v80-plan-duration"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="90">90 min</option></select><select id="v80-plan-priority"><option value="low">Low priority</option><option value="medium" selected>Medium priority</option><option value="high">High priority</option></select>';
     if(row)form.insertBefore(extra,row);else form.appendChild(extra);
-    const list=$('#v52-plan-list');if(list){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
+    const list=$('#v52-plan-list');if(list){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
   }
   function plannerFiltered(){
     const today=new Date();today.setHours(0,0,0,0);const t=today.getTime();
     return state.planner.filter(z=>{const done=z.status==='done',d=z.due_at?new Date(z.due_at):null,day=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():null;
       if(state.plannerView==='done')return done;
       if(state.plannerView==='today')return !done&&day===t;
+      if(state.plannerView==='tomorrow')return !done&&day===t+86400000;
+      if(state.plannerView==='week')return !done&&day!=null&&day>=t&&day<=t+6*86400000;
       if(state.plannerView==='overdue')return !done&&day!=null&&day<t;
       if(state.plannerView==='upcoming')return !done&&(day==null||day>=t);
       return true;
