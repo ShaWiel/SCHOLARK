@@ -48,7 +48,7 @@
   addEventListener('hashchange',routeTransition);addEventListener('popstate',routeTransition);addEventListener('resize',scheduleLayout,{passive:true});
 
   const lowPower=(Number(navigator.hardwareConcurrency)||8)<=4||(Number(navigator.deviceMemory)||8)<=4;
-  if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe')}
+  if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');window.__SCHOLARK_V30_DEMO__?.stop?.()}
 
   if('PerformanceObserver'in window){
     try{
