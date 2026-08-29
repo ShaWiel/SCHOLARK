@@ -73,6 +73,7 @@ COPY scholark-v24-ui.js \
      scholark-v89-account-settings.js \
      scholark-v90-i18n-engine.js \
      scholark-v91-workspace-polish.js \
+     scholark-v92-foundation-health.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
