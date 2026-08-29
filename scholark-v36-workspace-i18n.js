@@ -50,7 +50,7 @@
 
   function isWorkspace(){
     const h=(location.hash||'').toLowerCase();
-    return h.includes('dashboard')||h.includes('studio-')||h.includes('presentation')||h.includes('report')||h.includes('document')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('education');
+    return h.includes('dashboard')||h.includes('studio')||h.includes('presentation')||h.includes('report')||h.includes('document')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('education')||h.includes('files')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('graphic')||h.includes('social');
   }
 
   function forceWorkspace(){
@@ -89,7 +89,11 @@
     if(!langs.some(x=>x[0]===code))code='en';
     localStorage.setItem('scholark_ui_language',code);
     document.documentElement.lang=code;
-    document.documentElement.dir=code==='ar'?'rtl':'ltr';
+    document.documentElement.dir=['ar','ur','fa','he'].includes(code)?'rtl':'ltr';
+    if(window.__SCHOLARK_I18N__){
+      const sel=$('#v36-language');if(sel&&[...sel.options].some(o=>o.value===code))sel.value=code;
+      return;
+    }
 
     const d=labels[code]||labels.en;
     const exactMap={
