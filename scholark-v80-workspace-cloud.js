@@ -32,12 +32,29 @@
   async function request(path,opts={}){const x=await ctx();if(!x)throw Object.assign(new Error('Sign in to SCHOLARK Cloud'),{code:'AUTH_REQUIRED'});const r=await x.c.request(path,opts);return {r,...x}}
   function sig(title,date){return clean(title).toLowerCase()+'|'+String(date||'')}
 
+  function ensurePlannerControls(){
+    const form=$('#v52-plan')?.closest('.v52-form');if(!form||form.dataset.v80planner)return;form.dataset.v80planner='1';
+    const row=$('#v52-plan-date')?.closest('.v52-row');
+    const extra=document.createElement('div');extra.className='v80-plan-controls';extra.innerHTML='<input id="v80-plan-subject" placeholder="Subject / project (optional)"><select id="v80-plan-duration"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="90">90 min</option></select><select id="v80-plan-priority"><option value="low">Low priority</option><option value="medium" selected>Medium priority</option><option value="high">High priority</option></select>';
+    if(row)form.insertBefore(extra,row);else form.appendChild(extra);
+    const list=$('#v52-plan-list');if(list){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
+  }
+  function plannerFiltered(){
+    const today=new Date();today.setHours(0,0,0,0);const t=today.getTime();
+    return state.planner.filter(z=>{const done=z.status==='done',d=z.due_at?new Date(z.due_at):null,day=d?new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime():null;
+      if(state.plannerView==='done')return done;
+      if(state.plannerView==='today')return !done&&day===t;
+      if(state.plannerView==='overdue')return !done&&day!=null&&day<t;
+      if(state.plannerView==='upcoming')return !done&&(day==null||day>=t);
+      return true;
+    });
+  }
   async function loadPlanner(migrate=true){
     if(state.loading.has('planner'))return;state.loading.add('planner');
     try{
-      const x=await ctx(),form=$('#v52-plan')?.closest('.v52-form');note(form,!!x);
+      const x=await ctx(),form=$('#v52-plan')?.closest('.v52-form');ensurePlannerControls();note(form,!!x);
       if(!x)return;
-      let r=await x.c.request('/rest/v1/planner_tasks?select=id,title,due_at,status,priority,created_at&order=created_at.asc&limit=250',{method:'GET'});
+      let r=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at&order=created_at.asc&limit=250',{method:'GET'});
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load planner');
       rows=Array.isArray(rows)?rows:[];
       if(migrate){
@@ -45,7 +62,7 @@
         const pending=localRead('scholark_v51_planner').slice(0,100).map(z=>typeof z==='string'?{text:z,date:''}:z).filter(z=>clean(z?.text)).filter(z=>!seen.has(sig(z.text,z.date)));
         if(pending.length){
           const body=pending.map(z=>({user_id:x.uid,title:clean(z.text).slice(0,240),due_at:dueIso(z.date),priority:'medium',status:'todo',source:'manual'}));
-          const ins=await x.c.request('/rest/v1/planner_tasks?select=id,title,due_at,status,priority,created_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
+          const ins=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
@@ -53,17 +70,22 @@
     }catch(e){console.warn('[SCHOLARK] Planner cloud sync:',clean(e?.message||e))}finally{state.loading.delete('planner')}
   }
   function renderPlanner(){
-    const host=$('#v52-plan-list');if(!host||!state.planner.length&&!(awaitableSigned()))return;
-    host.innerHTML=state.planner.length?state.planner.map(z=>'<div class="v52-item"><button data-v80-plan-del="'+esc(z.id)+'">×</button>'+esc(z.title)+(z.due_at?' · '+esc(dateOnly(z.due_at)):'')+'<span class="v80-cloud-tag">CLOUD</span></div>').join(''):'<div class="v52-item">No planner items yet.</div>';
-    $$('[data-v80-plan-del]',host).forEach(b=>b.onclick=()=>deletePlanner(b.dataset.v80PlanDel));
+    const host=$('#v52-plan-list');if(!host||!awaitableSigned())return;ensurePlannerControls();const rows=plannerFiltered();
+    host.innerHTML=rows.length?rows.map(z=>'<div class="v52-item v80-plan-item '+(z.status==='done'?'done':'')+'"><button class="v80-plan-check '+(z.status==='done'?'done':'')+'" data-v80-plan-toggle="'+esc(z.id)+'">'+(z.status==='done'?'✓':'')+'</button><div><b class="v80-plan-title">'+esc(z.title)+'</b><span class="v80-plan-meta">'+esc(z.subject||'General')+(z.due_at?' · '+esc(dateOnly(z.due_at)):' · no deadline')+' · '+esc(z.priority||'medium')+(z.duration_minutes?' · '+esc(z.duration_minutes)+' min':'')+'</span></div><button class="v80-del" data-v80-plan-del="'+esc(z.id)+'">×</button></div>').join(''):'<div class="v52-item">No '+esc(state.plannerView)+' planner items.</div>';
+    $('[data-v80-plan-del]',host).forEach(b=>b.onclick=()=>deletePlanner(b.dataset.v80PlanDel));
+    $('[data-v80-plan-toggle]',host).forEach(b=>b.onclick=()=>togglePlanner(b.dataset.v80PlanToggle));
   }
   function awaitableSigned(){return !!cloud()?.currentSession?.()?.access_token}
   async function addPlanner(){
     const input=$('#v52-plan'),title=clean(input?.value);if(!title){input?.focus();return}
-    const date=$('#v52-plan-date')?.value||'',x=await ctx();if(!x)return false;
-    const r=await x.c.request('/rest/v1/planner_tasks?select=id,title,due_at,status,priority,created_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),due_at:dueIso(date),priority:'medium',status:'todo',source:'manual'})});
+    const date=$('#v52-plan-date')?.value||'',subject=clean($('#v80-plan-subject')?.value),duration=Math.max(15,Math.min(240,Number($('#v80-plan-duration')?.value)||45)),priority=$('#v80-plan-priority')?.value||'medium',x=await ctx();if(!x)return false;
+    const r=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),subject:subject.slice(0,160)||null,due_at:dueIso(date),duration_minutes:duration,priority,status:'todo',source:'manual'})});
     const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not add planner item');
     if(input)input.value='';state.planner.push(...(Array.isArray(d)?d:[d]).filter(Boolean));localWrite('scholark_v51_planner',state.planner.map(z=>({text:z.title,date:dateOnly(z.due_at)})));renderPlanner();return true;
+  }
+  async function togglePlanner(id){
+    const x=await ctx();if(!x)return;const item=state.planner.find(z=>z.id===id);if(!item)return;const status=item.status==='done'?'todo':'done';
+    const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id)+'&select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status,updated_at:new Date().toISOString()})});const d=await r.json().catch(()=>[]);if(!r.ok)return;const row=Array.isArray(d)?d[0]:d;if(row)state.planner=state.planner.map(z=>z.id===id?row:z);renderPlanner();
   }
   async function deletePlanner(id){
     const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)return;
