@@ -31,7 +31,13 @@
     return $$('button,a,[role="button"],[tabindex],div,span').filter(el=>!el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main,#v53-emergency')&&text(el).length>0&&text(el).length<70).map(el=>({el,t:lower(el),n:el.querySelectorAll('*').length})).filter(o=>regex.test(o.t)).sort((a,b)=>{const aa=['BUTTON','A'].includes(a.el.tagName)||a.el.getAttribute('role')==='button'?0:1,bb=['BUTTON','A'].includes(b.el.tagName)||b.el.getAttribute('role')==='button'?0:1;return aa-bb||a.n-b.n})[0]?.el||null;
   }
   function clickNative(regex){const el=findNative(regex);if(!el)return false;const hit=el.closest('button,a,[role="button"],[tabindex]')||el;try{hit.click();return true}catch{return false}}
-  function signedIn(){return !!findNative(/^(uitloggen|log out|sign out|logout)$/i)}
+  function signedIn(){
+    try{
+      if(window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token)return true;
+      const s=JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null');
+      return !!s?.access_token;
+    }catch{return false}
+  }
 
   function applyLanguage(code){
     if(!LANGS.some(x=>x[0]===code))code='nl';
