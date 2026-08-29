@@ -74,6 +74,7 @@ COPY scholark-v24-ui.js \
      scholark-v90-i18n-engine.js \
      scholark-v91-workspace-polish.js \
      scholark-v92-foundation-health.js \
+     scholark-v93-language-learner.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
@@ -83,7 +84,7 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
-    && sed -i "s/h.includes('pricing')||/h.includes('dashboard')||h.includes('education')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('document')||h.includes('graphic')||h.includes('social')||h.includes('studio')||h.includes('pricing')||/" /tmp/scholark-v30-native-home-autodemo.js \
+    && sed -i "s/h.includes('pricing')||/h.includes('dashboard')||h.includes('education')||h.includes('language')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('document')||h.includes('graphic')||h.includes('social')||h.includes('studio')||h.includes('pricing')||/" /tmp/scholark-v30-native-home-autodemo.js \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
     && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); tags=""; for f in /tmp/scholark-v*.js; do base=$(basename "$f"); cp "$f" "$dir/$base"; tags="$tags<script src=\"$base\"></script>"; done; sed -i "s#</body>#$tags</body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
