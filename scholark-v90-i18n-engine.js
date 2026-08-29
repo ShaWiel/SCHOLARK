@@ -321,7 +321,7 @@
         if(protectedNode(n.parentElement))continue;
         const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail;
       }
-      $('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{
+      $$('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{
         const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){
           const src=clean(srcs[a]);if(!src)continue;const tr=c==='en'?src:map[src];if(!tr)continue;
           if(clean(el.getAttribute(a))!==clean(tr))el.setAttribute(a,tr);
