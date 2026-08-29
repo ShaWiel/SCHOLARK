@@ -5,26 +5,104 @@
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const LANGS=[
-    ['nl','Nederlands','Dutch'],['en','English','English'],['es','Español','Spanish'],['fr','Français','French'],['de','Deutsch','German'],
-    ['pt','Português','Portuguese'],['it','Italiano','Italian'],['ar','العربية','Arabic'],['hi','हिन्दी','Hindi'],
-    ['zh','中文','Chinese'],['ja','日本語','Japanese'],['ko','한국어','Korean'],['id','Bahasa Indonesia','Indonesian'],['tr','Türkçe','Turkish'],
-    ['pl','Polski','Polish'],['sw','Kiswahili','Swahili'],['ru','Русский','Russian'],['uk','Українська','Ukrainian'],['ro','Română','Romanian'],
-    ['cs','Čeština','Czech'],['hu','Magyar','Hungarian'],['el','Ελληνικά','Greek'],['sv','Svenska','Swedish'],['da','Dansk','Danish'],
-    ['no','Norsk','Norwegian'],['fi','Suomi','Finnish'],['th','ไทย','Thai'],['vi','Tiếng Việt','Vietnamese'],['ms','Bahasa Melayu','Malay'],
-    ['fil','Filipino','Filipino'],['bn','বাংলা','Bengali'],['ur','اردو','Urdu'],['fa','فارسی','Persian'],['he','עברית','Hebrew'],
-    ['ta','தமிழ்','Tamil'],['te','తెలుగు','Telugu'],['mr','मराठी','Marathi'],
-    ['af','Afrikaans','Afrikaans'],['sq','Shqip','Albanian'],['hy','Հայերեն','Armenian'],['az','Azərbaycan dili','Azerbaijani'],['eu','Euskara','Basque'],
-    ['be','Беларуская','Belarusian'],['bs','Bosanski','Bosnian'],['bg','Български','Bulgarian'],['ca','Català','Catalan'],['hr','Hrvatski','Croatian'],
-    ['et','Eesti','Estonian'],['ka','ქართული','Georgian'],['gu','ગુજરાતી','Gujarati'],['ht','Kreyòl ayisyen','Haitian Creole'],['ha','Hausa','Hausa'],
-    ['is','Íslenska','Icelandic'],['ga','Gaeilge','Irish'],['jv','Basa Jawa','Javanese'],['kn','ಕನ್ನಡ','Kannada'],['kk','Қазақ тілі','Kazakh'],
-    ['km','ខ្មែរ','Khmer'],['lo','ລາວ','Lao'],['lv','Latviešu','Latvian'],['lt','Lietuvių','Lithuanian'],['mk','Македонски','Macedonian'],
-    ['ml','മലയാളം','Malayalam'],['mt','Malti','Maltese'],['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],
-    ['pa','ਪੰਜਾਬੀ','Punjabi'],['sr','Српски','Serbian'],['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],
-    ['su','Basa Sunda','Sundanese'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],['xh','isiXhosa','Xhosa'],['am','አማርኛ','Amharic'],
-    ['my','မြန်မာ','Burmese'],['si','සිංහල','Sinhala'],['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['gl','Galego','Galician'],
-    ['ceb','Cebuano','Cebuano'],['eo','Esperanto','Esperanto'],['gd','Gàidhlig','Scottish Gaelic'],['ku','Kurdî','Kurdish'],['ky','Кыргызча','Kyrgyz']
-  ];
-  const RTL=new Set(['ar','ur','fa','he','ps']);
+    ['nl','Nederlands','Dutch'],['en','English','English'],['es','Español','Spanish'],['fr','Français','French'],
+    ['de','Deutsch','German'],['pt','Português','Portuguese'],['it','Italiano','Italian']
+  ]
+
+  const STATIC_UI={nl:{},es:{},fr:{},de:{},pt:{},it:{}};
+  const add=(en,nl,es,fr,de,pt,it)=>{for(const [k,v] of Object.entries({nl,es,fr,de,pt,it}))if(v)STATIC_UI[k][en]=v};
+  [
+    ['Dashboard','Dashboard','Panel de control','Tableau de bord','Dashboard','Painel','Dashboard'],
+    ['Studio AI','Studio AI','Studio IA','Studio IA','KI-Studio','Studio de IA','Studio IA'],
+    ['AI Tutor','AI Tutor','Tutor de IA','Tuteur IA','KI-Tutor','Tutor de IA','Tutor IA'],
+    ['Education & Learning','Educatie & Leren','Educación y aprendizaje','Éducation et apprentissage','Bildung & Lernen','Educação e aprendizagem','Istruzione e apprendimento'],
+    ['Language Learner','Talen leren','Aprendizaje de idiomas','Apprentissage des langues','Sprachen lernen','Aprender idiomas','Apprendimento lingue'],
+    ['Planner','Planner','Planificador','Planificateur','Planer','Planejador','Pianificatore'],
+    ['Progress','Voortgang','Progreso','Progression','Fortschritt','Progresso','Progresso'],
+    ['Goals','Doelen','Objetivos','Objectifs','Ziele','Metas','Obiettivi'],
+    ['Files & Notes','Bestanden & Notities','Archivos y notas','Fichiers et notes','Dateien & Notizen','Arquivos e notas','File e note'],
+    ['My Projects','Mijn projecten','Mis proyectos','Mes projets','Meine Projekte','Meus projetos','I miei progetti'],
+    ['Schools Near Me','Scholen in de buurt','Escuelas cerca de mí','Écoles à proximité','Schulen in meiner Nähe','Escolas perto de mim','Scuole vicino a me'],
+    ['Study Ahead','Vooruit leren','Prepárate con antelación','Prendre de l’avance','Vorauslernen','Estudar com antecedência','Studia in anticipo'],
+    ['Book Studio','Boekstudio','Estudio de libros','Studio Livre','Buchstudio','Estúdio de livros','Studio Libro'],
+    ['WORKSPACE','WERKRUIMTE','ESPACIO DE TRABAJO','ESPACE DE TRAVAIL','ARBEITSBEREICH','ESPAÇO DE TRABALHO','AREA DI LAVORO'],
+    ['FUTURE & PRO','TOEKOMST & PRO','FUTURO & PRO','AVENIR & PRO','ZUKUNFT & PRO','FUTURO & PRO','FUTURO & PRO'],
+    ['Return to homepage','Terug naar de homepage','Volver al inicio','Retour à l’accueil','Zur Startseite','Voltar ao início','Torna alla home'],
+    ['CHOOSE HOW SCHOLARK SHOULD WORK & TEACH','KIES HOE SCHOLARK MOET WERKEN EN LESGEVEN','ELIGE CÓMO DEBE TRABAJAR Y ENSEÑAR SCHOLARK','CHOISISSEZ COMMENT SCHOLARK DOIT TRAVAILLER ET ENSEIGNER','WÄHLE, WIE SCHOLARK ARBEITEN UND LEHREN SOLL','ESCOLHA COMO O SCHOLARK DEVE TRABALHAR E ENSINAR','SCEGLI COME SCHOLARK DEVE LAVORARE E INSEGNARE'],
+    ['Young learner','Jonge leerling','Estudiante joven','Jeune apprenant','Junger Lernender','Jovem aluno','Giovane studente'],
+    ['Primary school','Basisschool','Primaria','École primaire','Grundschule','Ensino primário','Scuola primaria'],
+    ['Student','Student','Estudiante','Étudiant','Student','Estudante','Studente'],
+    ['Adult','Volwassene','Adulto','Adulte','Erwachsener','Adulto','Adulto'],
+    ['Your learning & creation workspace.','Jouw leer- en creatiewerkruimte.','Tu espacio de aprendizaje y creación.','Votre espace d’apprentissage et de création.','Dein Lern- und Kreativbereich.','Seu espaço de aprendizagem e criação.','Il tuo spazio di apprendimento e creazione.'],
+    ['Open the tool you need. Your selected level changes how SCHOLARK should explain, structure and challenge you, while every AI workflow uses the highest available quality.','Open de tool die je nodig hebt. Je gekozen niveau bepaalt hoe SCHOLARK uitlegt, structureert en je uitdaagt, terwijl elke AI-workflow de hoogst beschikbare kwaliteit gebruikt.','Abre la herramienta que necesites. El nivel seleccionado cambia cómo SCHOLARK explica, estructura y te desafía, mientras cada flujo de IA usa la máxima calidad disponible.','Ouvrez l’outil dont vous avez besoin. Le niveau choisi adapte les explications, la structure et le défi, tandis que chaque flux IA utilise la meilleure qualité disponible.','Öffne das benötigte Werkzeug. Dein Niveau bestimmt, wie SCHOLARK erklärt, strukturiert und fordert; jeder KI-Workflow nutzt die höchste verfügbare Qualität.','Abra a ferramenta que precisa. O nível escolhido ajusta como o SCHOLARK explica, estrutura e desafia, enquanto cada fluxo de IA usa a melhor qualidade disponível.','Apri lo strumento che ti serve. Il livello scelto adatta spiegazioni, struttura e difficoltà, mentre ogni flusso IA usa la migliore qualità disponibile.'],
+    ['Create presentations, webpages, documents, social content and graphics from a structured brief.','Maak presentaties, webpagina’s, documenten, social content en graphics vanuit een gestructureerde briefing.','Crea presentaciones, páginas web, documentos, contenido social y gráficos a partir de un brief estructurado.','Créez des présentations, pages web, documents, contenus sociaux et visuels à partir d’un brief structuré.','Erstelle Präsentationen, Webseiten, Dokumente, Social Content und Grafiken aus einem strukturierten Briefing.','Crie apresentações, páginas web, documentos, conteúdo social e gráficos a partir de um briefing estruturado.','Crea presentazioni, pagine web, documenti, contenuti social e grafiche da un brief strutturato.'],
+    ['Ask, learn, practice and get explanations adapted to your selected level.','Vraag, leer, oefen en krijg uitleg die past bij jouw gekozen niveau.','Pregunta, aprende, practica y recibe explicaciones adaptadas a tu nivel.','Posez des questions, apprenez, pratiquez et obtenez des explications adaptées à votre niveau.','Frage, lerne, übe und erhalte Erklärungen passend zu deinem Niveau.','Pergunte, aprenda, pratique e receba explicações adaptadas ao seu nível.','Chiedi, impara, esercitati e ricevi spiegazioni adatte al tuo livello.'],
+    ['Diagnostics, learning paths, mastery and study support in one place.','Diagnostiek, leerpaden, beheersing en studieondersteuning op één plek.','Diagnósticos, rutas de aprendizaje, dominio y apoyo al estudio en un solo lugar.','Diagnostics, parcours d’apprentissage, maîtrise et soutien scolaire au même endroit.','Diagnostik, Lernpfade, Beherrschung und Lernhilfe an einem Ort.','Diagnósticos, trilhas de aprendizagem, domínio e apoio ao estudo em um só lugar.','Diagnostica, percorsi di apprendimento, padronanza e supporto allo studio in un unico posto.'],
+    ['Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.','Leer woordenschat, grammatica, uitspraak en gesprekken met adaptieve lessen.','Aprende vocabulario, gramática, pronunciación y conversación con lecciones adaptativas.','Apprenez le vocabulaire, la grammaire, la prononciation et la conversation avec des leçons adaptatives.','Lerne Wortschatz, Grammatik, Aussprache und Konversation mit adaptiven Lektionen.','Aprenda vocabulário, gramática, pronúncia e conversação com aulas adaptativas.','Impara vocabolario, grammatica, pronuncia e conversazione con lezioni adattive.'],
+    ['Organize goals, study sessions, deadlines and what to work on next.','Organiseer doelen, studiesessies, deadlines en wat je hierna moet aanpakken.','Organiza objetivos, sesiones de estudio, fechas límite y lo que debes trabajar después.','Organisez objectifs, séances d’étude, échéances et prochaines priorités.','Organisiere Ziele, Lernsitzungen, Fristen und deine nächsten Aufgaben.','Organize metas, sessões de estudo, prazos e o que fazer em seguida.','Organizza obiettivi, sessioni di studio, scadenze e prossime attività.'],
+    ['See what is improving, what is weak and where to focus next.','Zie wat verbetert, wat zwak is en waar je je hierna op moet richten.','Mira qué mejora, qué está débil y dónde enfocarte después.','Voyez ce qui progresse, ce qui reste faible et où vous concentrer ensuite.','Sieh, was besser wird, wo Schwächen liegen und worauf du dich als Nächstes konzentrieren solltest.','Veja o que está melhorando, o que está fraco e onde focar depois.','Vedi cosa migliora, cosa è debole e dove concentrarti dopo.'],
+    ['Set learning, school and creation goals and connect them to your plan.','Stel leer-, school- en creatiedoelen in en verbind ze met je plan.','Define objetivos de aprendizaje, escuela y creación y conéctalos con tu plan.','Fixez des objectifs d’apprentissage, scolaires et créatifs et reliez-les à votre plan.','Setze Lern-, Schul- und Kreativziele und verknüpfe sie mit deinem Plan.','Defina metas de aprendizagem, escola e criação e conecte-as ao seu plano.','Imposta obiettivi di apprendimento, scuola e creazione e collegali al tuo piano.'],
+    ['Return to saved Studio work, documents, research and ongoing projects.','Ga terug naar opgeslagen Studio-werk, documenten, onderzoek en lopende projecten.','Vuelve a trabajos de Studio, documentos, investigaciones y proyectos guardados.','Retrouvez vos travaux Studio, documents, recherches et projets en cours enregistrés.','Kehre zu gespeicherten Studio-Arbeiten, Dokumenten, Recherchen und laufenden Projekten zurück.','Volte aos trabalhos do Studio, documentos, pesquisas e projetos salvos.','Torna ai lavori Studio, documenti, ricerche e progetti salvati.'],
+    ['Find education options for the study you actually want.','Vind onderwijsopties voor de studie die je echt wilt doen.','Encuentra opciones educativas para los estudios que realmente quieres.','Trouvez des options d’études pour la formation que vous voulez vraiment suivre.','Finde Bildungsangebote für das Studium, das du wirklich willst.','Encontre opções de ensino para o curso que você realmente deseja.','Trova opzioni formative per il percorso di studi che vuoi davvero.'],
+    ['YOUR AI LEARNING + CREATION OS','JOUW AI LEER- + CREATIE-OS','TU SISTEMA DE APRENDIZAJE + CREACIÓN CON IA','VOTRE OS D’APPRENTISSAGE + CRÉATION IA','DEIN KI-LERN- + KREATIV-OS','SEU OS DE APRENDIZAGEM + CRIAÇÃO COM IA','IL TUO OS DI APPRENDIMENTO + CREAZIONE IA'],
+    ['Learn faster. Create better. Get ahead.','Leer sneller. Maak beter. Loop vooruit.','Aprende más rápido. Crea mejor. Toma ventaja.','Apprenez plus vite. Créez mieux. Prenez de l’avance.','Lerne schneller. Erstelle besser. Sei voraus.','Aprenda mais rápido. Crie melhor. Saia na frente.','Impara più velocemente. Crea meglio. Parti in vantaggio.'],
+    ['Describe what you want to learn or create…','Beschrijf wat je wilt leren of maken…','Describe lo que quieres aprender o crear…','Décrivez ce que vous voulez apprendre ou créer…','Beschreibe, was du lernen oder erstellen möchtest…','Descreva o que você quer aprender ou criar…','Descrivi cosa vuoi imparare o creare…'],
+    ['Create with SCHOLARK AI','Maak met SCHOLARK AI','Crear con SCHOLARK AI','Créer avec SCHOLARK AI','Mit SCHOLARK AI erstellen','Criar com SCHOLARK AI','Crea con SCHOLARK AI'],
+    ['One studio. Every format.','Eén studio. Elk formaat.','Un estudio. Todos los formatos.','Un studio. Tous les formats.','Ein Studio. Jedes Format.','Um estúdio. Todos os formatos.','Uno studio. Ogni formato.'],
+    ['A learning system that adapts to you.','Een leersysteem dat zich aan jou aanpast.','Un sistema de aprendizaje que se adapta a ti.','Un système d’apprentissage qui s’adapte à vous.','Ein Lernsystem, das sich an dich anpasst.','Um sistema de aprendizagem que se adapta a você.','Un sistema di apprendimento che si adatta a te.'],
+    ['Know where you are going before you get there.','Weet waar je naartoe gaat vóór je er bent.','Sabe adónde vas antes de llegar.','Sachez où vous allez avant d’y arriver.','Wisse, wohin du gehst, bevor du dort bist.','Saiba para onde vai antes de chegar lá.','Sai dove stai andando prima di arrivarci.'],
+    ['Your next advantage can start today.','Je volgende voorsprong kan vandaag beginnen.','Tu próxima ventaja puede empezar hoy.','Votre prochain avantage peut commencer aujourd’hui.','Dein nächster Vorsprung kann heute beginnen.','Sua próxima vantagem pode começar hoje.','Il tuo prossimo vantaggio può iniziare oggi.'],
+    ['Open SCHOLARK Studio','Open SCHOLARK Studio','Abrir SCHOLARK Studio','Ouvrir SCHOLARK Studio','SCHOLARK Studio öffnen','Abrir SCHOLARK Studio','Apri SCHOLARK Studio'],
+    ['Presentation','Presentatie','Presentación','Présentation','Präsentation','Apresentação','Presentazione'],
+    ['Webpage','Webpagina','Página web','Page web','Webseite','Página web','Pagina web'],
+    ['Document','Document','Documento','Document','Dokument','Documento','Documento'],
+    ['Social','Social','Social','Social','Social','Social','Social'],
+    ['Graphic','Graphic','Gráfico','Visuel','Grafik','Gráfico','Grafica'],
+    ['Mastery that moves with you.','Beheersing die met je meegroeit.','Dominio que evoluciona contigo.','Une maîtrise qui progresse avec vous.','Beherrschung, die mit dir wächst.','Domínio que evolui com você.','Padronanza che cresce con te.'],
+    ['Diagnostics','Diagnostiek','Diagnósticos','Diagnostics','Diagnostik','Diagnósticos','Diagnostica'],
+    ['Study plans that respond to progress.','Studieplannen die reageren op je voortgang.','Planes de estudio que responden a tu progreso.','Des plans d’étude qui s’adaptent à vos progrès.','Lernpläne, die auf deinen Fortschritt reagieren.','Planos de estudo que respondem ao seu progresso.','Piani di studio che rispondono ai tuoi progressi.'],
+    ['Let the AI presenters explain','Laat de AI-presentatoren het uitleggen','Deja que los presentadores de IA lo expliquen','Laissez les présentateurs IA expliquer','Lass die KI-Moderatoren erklären','Deixe os apresentadores de IA explicarem','Lascia spiegare ai presentatori IA'],
+    ['Explore nearby schools','Verken scholen in de buurt','Explorar escuelas cercanas','Explorer les écoles à proximité','Schulen in der Nähe erkunden','Explorar escolas próximas','Esplora le scuole vicine'],
+    ['Build my head start','Bouw mijn voorsprong','Crear mi ventaja inicial','Construire mon avance','Meinen Vorsprung aufbauen','Criar minha vantagem inicial','Costruisci il mio vantaggio'],
+    ['Account','Account','Cuenta','Compte','Konto','Conta','Account'],
+    ['Sign in','Inloggen','Iniciar sesión','Se connecter','Anmelden','Entrar','Accedi'],
+    ['Sign out','Uitloggen','Cerrar sesión','Se déconnecter','Abmelden','Sair','Esci'],
+    ['Plans & billing','Abonnementen & facturering','Planes y facturación','Offres et facturation','Tarife & Abrechnung','Planos e cobrança','Piani e fatturazione'],
+    ['Go to Workspace','Ga naar Werkruimte','Ir al espacio de trabajo','Aller à l’espace de travail','Zum Arbeitsbereich','Ir para o espaço de trabalho','Vai all’area di lavoro'],
+    ['Continue where you left off','Ga verder waar je was gebleven','Continúa donde lo dejaste','Reprendre là où vous vous étiez arrêté','Dort weitermachen, wo du aufgehört hast','Continue de onde parou','Continua da dove eri rimasto'],
+    ['Continue →','Doorgaan →','Continuar →','Continuer →','Weiter →','Continuar →','Continua →'],
+    ['Usage foundation','Gebruiksbasis','Base de uso','Base d’utilisation','Nutzungsbasis','Base de uso','Base di utilizzo'],
+    ['Available AI credits','Beschikbare AI-credits','Créditos de IA disponibles','Crédits IA disponibles','Verfügbare KI-Credits','Créditos de IA disponíveis','Crediti IA disponibili'],
+    ['SCHOLARK CREDITS','SCHOLARK CREDITS','CRÉDITOS SCHOLARK','CRÉDITS SCHOLARK','SCHOLARK CREDITS','CRÉDITOS SCHOLARK','CREDITI SCHOLARK'],
+    ['Plans & limits','Abonnementen & limieten','Planes y límites','Offres et limites','Tarife & Limits','Planos e limites','Piani e limiti'],
+    ['SCHOLARK PLANS','SCHOLARK ABONNEMENTEN','PLANES SCHOLARK','OFFRES SCHOLARK','SCHOLARK TARIFE','PLANOS SCHOLARK','PIANI SCHOLARK'],
+    ['Choose how much advantage you want.','Kies hoeveel voorsprong je wilt.','Elige cuánta ventaja quieres.','Choisissez l’avance que vous souhaitez.','Wähle, wie viel Vorsprung du willst.','Escolha quanta vantagem você quer.','Scegli quanto vantaggio vuoi.'],
+    ['Free','Gratis','Gratis','Gratuit','Kostenlos','Grátis','Gratis'],
+    ['MOST POPULAR','MEEST POPULAIR','MÁS POPULAR','LE PLUS POPULAIRE','AM BELIEBTESTEN','MAIS POPULAR','PIÙ POPOLARE'],
+    ['No payment method required.','Geen betaalmethode nodig.','No se requiere método de pago.','Aucun moyen de paiement requis.','Keine Zahlungsmethode erforderlich.','Nenhum método de pagamento necessário.','Nessun metodo di pagamento richiesto.'],
+    ['Start free','Start gratis','Empezar gratis','Commencer gratuitement','Kostenlos starten','Começar grátis','Inizia gratis'],
+    ['For everyday learning, practice and planning.','Voor dagelijks leren, oefenen en plannen.','Para aprender, practicar y planificar cada día.','Pour apprendre, pratiquer et planifier au quotidien.','Für tägliches Lernen, Üben und Planen.','Para aprender, praticar e planejar todos os dias.','Per imparare, esercitarsi e pianificare ogni giorno.'],
+    ['Everything in Free','Alles uit Gratis','Todo lo de Gratis','Tout ce qui est inclus dans Gratuit','Alles aus Kostenlos','Tudo do Grátis','Tutto di Gratis'],
+    ['Everything in Plus','Alles uit Plus','Todo lo de Plus','Tout ce qui est inclus dans Plus','Alles aus Plus','Tudo do Plus','Tutto di Plus'],
+    ['7-language interface','Interface in 7 talen','Interfaz en 7 idiomas','Interface en 7 langues','Oberfläche in 7 Sprachen','Interface em 7 idiomas','Interfaccia in 7 lingue'],
+    ['/ month','/ maand','/ mes','/ mois','/ Monat','/ mês','/ mese'],
+    ['Ask Tutor','Vraag Tutor','Preguntar al Tutor','Demander au tuteur','Tutor fragen','Perguntar ao Tutor','Chiedi al Tutor'],
+    ['Use my files','Gebruik mijn bestanden','Usar mis archivos','Utiliser mes fichiers','Meine Dateien verwenden','Usar meus arquivos','Usa i miei file'],
+    ['Create in Studio','Maak in Studio','Crear en Studio','Créer dans Studio','Im Studio erstellen','Criar no Studio','Crea in Studio'],
+    ['Run diagnostic','Diagnose starten','Iniciar diagnóstico','Lancer le diagnostic','Diagnose starten','Executar diagnóstico','Avvia diagnostica'],
+    ['Target language','Doeltaal','Idioma objetivo','Langue cible','Zielsprache','Idioma de destino','Lingua di destinazione'],
+    ['Support language','Ondersteuningstaal','Idioma de apoyo','Langue d’aide','Unterstützungssprache','Idioma de apoio','Lingua di supporto'],
+    ['Current level','Huidig niveau','Nivel actual','Niveau actuel','Aktuelles Niveau','Nível atual','Livello attuale'],
+    ['Learning goal','Leerdoel','Objetivo de aprendizaje','Objectif d’apprentissage','Lernziel','Objetivo de aprendizagem','Obiettivo di apprendimento'],
+    ['Conversation','Gesprek','Conversación','Conversation','Konversation','Conversação','Conversazione'],
+    ['Travel','Reizen','Viajes','Voyage','Reisen','Viagem','Viaggio'],
+    ['School','School','Escuela','École','Schule','Escola','Scuola'],
+    ['Work','Werk','Trabajo','Travail','Arbeit','Trabalho','Lavoro'],
+    ['Grammar','Grammatica','Gramática','Grammaire','Grammatik','Gramática','Grammatica'],
+    ['Vocabulary','Woordenschat','Vocabulario','Vocabulaire','Wortschatz','Vocabulário','Vocabolario'],
+    ['Pronunciation','Uitspraak','Pronunciación','Prononciation','Aussprache','Pronúncia','Pronuncia']
+  ].forEach(r=>add(...r));
+  const RTL=new Set();
   const CORE=[
     'Dashboard','Studio AI','AI Tutor','Education & Learning','Planner','Progress','Goals','Files & Notes','My Projects','Schools Near Me','Study Ahead','Book Studio',
     'WORKSPACE','FUTURE & PRO','Return to homepage','AI QUALITY · MAX','Highest available quality, expert depth, research, source checking and final polish.',
@@ -84,7 +162,7 @@
     'Lesson complete','Listen','Practice speaking','Show answer','Hide answer','Vocabulary & phrases','Grammar made clear','Practice dialogue','Exercises','Culture tip','Next lesson','Your language progress','Lessons completed','Current streak','XP',
     'SCHOLARK PLANS','Choose how much advantage you want.','Free','Plus','Pro','SCHOLARK Free','SCHOLARK Plus','SCHOLARK Pro','MOST POPULAR','No payment method required.','Start free','Start Plus free trial','Start Pro free trial',
     'For everyday learning, practice and planning.','For learners and creators who use Studio AI regularly.','Maximum AI quality, large projects and future-study tools.',
-    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','87-language interface','100 AI text requests/day','8 AI images/day',
+    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','7-language interface','100 AI text requests/day','8 AI images/day',
     'Everything in Free','Studio AI: Presentation, Webpage, Document, Social & Graphic','Research + citations and web sources','Cloud projects + version history','Advanced Files & Notes: Ask Files, worksheets and study tools','Natural Rewrite — 2/day','350 AI text requests/day','25 AI images/day',
     'Everything in Plus','Highest-quality SCHOLARK AI','Unlimited Studio + Natural Rewrite','Presentations up to 100 slides','Documents/reports up to 100 pages','Book Studio up to 900,000 words','All genres + custom blends','Schools Near Me + Study Ahead','1,000 AI text requests/day','60 AI images/day',
     '/ month','7 days free, then $14.99/month. Cancel anytime.','7 days free, then $19.99/month. Cancel anytime.','Plans & limits',
@@ -106,9 +184,9 @@
   const code=()=>{const v=localStorage.getItem('scholark_ui_language')||'nl';return LANGS.some(x=>x[0]===v)?v:'nl'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
-  const CACHE_VERSION='v2-complete-ui';
+  const CACHE_VERSION='v3-seven-ui';
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
-  function loadMap(c){try{return JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{return{}}}
+  function loadMap(c){let saved={};try{saved=JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{}return {...(STATIC_UI[c]||{}),...saved}}
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
   let map=loadMap(code()),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
@@ -156,7 +234,7 @@
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
     const result={};
     const local=await deviceTranslate(target,strings,part=>{Object.assign(result,part);onChunk?.(part)},primed);
-    if(!local.missing.length)return result;
+    if(!local.missing.length||purpose==='ui'&&STATIC_UI[target])return result;
     const chunks=[];for(let i=0;i<local.missing.length;i+=70)chunks.push(local.missing.slice(i,i+70));
     let cursor=0;
     const worker=async()=>{
@@ -245,7 +323,7 @@
       }
       if(epoch!==translationEpoch)return;
       const coverage=strings.length?Math.min(1,(already+added)/strings.length):1;
-      if(strings.length>=8&&coverage<.45){
+      if(!STATIC_UI[target]&&strings.length>=8&&coverage<.45){
         localStorage.setItem('scholark_ui_language',previous);map=loadMap(previous);document.documentElement.lang=previous;document.documentElement.dir=RTL.has(previous)?'rtl':'ltr';upgradeSelectors();applyKnown();
         window.dispatchEvent(new CustomEvent('scholark-language-failed',{detail:{requested:target,restored:previous,coverage}}));return;
       }
