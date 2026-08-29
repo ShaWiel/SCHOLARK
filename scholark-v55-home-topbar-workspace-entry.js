@@ -84,7 +84,8 @@
     if(home){ensureWorkspaceCTA();syncAuth()}else accountWrap?.classList.remove('open');
   }
 
-  addEventListener('hashchange',()=>setTimeout(sync,10));addEventListener('popstate',()=>setTimeout(sync,10));
-  new MutationObserver(()=>{clearTimeout(window.__v55sync);window.__v55sync=setTimeout(sync,80)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',()=>setTimeout(sync,20));setTimeout(sync,40);
+  addEventListener('hashchange',()=>{setTimeout(sync,30);setTimeout(sync,220)});
+  addEventListener('popstate',()=>{setTimeout(sync,30);setTimeout(sync,220)});
+  addEventListener('scholark-language-ready',()=>{const lang=$('#v55-language');const current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncAuth()});
+  [40,180,650].forEach(ms=>setTimeout(sync,ms));
 })();
