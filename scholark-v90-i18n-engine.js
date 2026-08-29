@@ -240,7 +240,7 @@
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   function loadMap(c){let saved={};try{saved=JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{}return {...(STATIC_UI[c]||{}),...saved}}
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
-  let map=loadMap(code()),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
+  let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
@@ -305,7 +305,7 @@
     return result;
   }
   function applyKnown(root=document){
-    const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';map=loadMap(c);
+    const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';if(mapCode!==c){map=loadMap(c);mapCode=c;}
     const base=root.nodeType===1?root:document;applying=true;
     try{
       const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
@@ -361,7 +361,7 @@
     const epoch=++translationEpoch;translating=true;
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
     $('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
-    localStorage.setItem('scholark_ui_language',target);map=loadMap(target);
+    localStorage.setItem('scholark_ui_language',target);map=loadMap(target);mapCode=target;
     document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
     upgradeSelectors();applyKnown();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
@@ -405,17 +405,26 @@
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
     upgradeSelectors();applyKnown();
   }
+  const pendingRoots=new Set();let mutationTimer=null,selectorPending=false;
+  function flushMutations(){
+    mutationTimer=null;
+    const roots=[...pendingRoots];pendingRoots.clear();
+    if(roots.length>12){
+      const active=document.querySelector('#v29-home-layer:not([hidden]),#v51-main,.v41-studio-workspace:not([hidden]),#v58-suite.open,#v57-deck.open')||document.body;
+      applyKnown(active);
+    }else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
+    if(selectorPending){selectorPending=false;upgradeSelectors()}
+  }
   const obs=new MutationObserver(muts=>{
-    let selectorAdded=false;
     for(const m of muts){
-      for(const n of m.addedNodes||[]){
-        if(n.nodeType===1){
-          applyKnown(n);
-          if(n.matches?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')||n.querySelector?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls'))selectorAdded=true;
-        }else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement);
+      if(!m.addedNodes?.length)continue;
+      const root=m.target?.nodeType===1?m.target:m.target?.parentElement;
+      if(root)pendingRoots.add(root);
+      for(const n of m.addedNodes){
+        if(n.nodeType===1&&(n.matches?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')||n.querySelector?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')))selectorPending=true;
       }
     }
-    if(selectorAdded){clearTimeout(window.__v90selectors);window.__v90selectors=setTimeout(upgradeSelectors,80)}
+    if(pendingRoots.size){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,32)}
   });
   obs.observe(document.body||document.documentElement,{subtree:true,childList:true});
   addEventListener('hashchange',()=>{setTimeout(()=>{upgradeSelectors();applyKnown()},70);setTimeout(()=>applyKnown(),240)});
