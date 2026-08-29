@@ -346,12 +346,6 @@
       const val=code();if(sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options}
       if([...sel.options].some(o=>o.value===val))sel.value=val;
     }
-    for(const sel of [$('#v41-language'),$('#v65-language')].filter(Boolean)){
-      if(sel.dataset.v90!=='1'){const val=sel.value||code();sel.dataset.v90='1';sel.innerHTML=options;if([...sel.options].some(o=>o.value===val))sel.value=val;else sel.value=code()}
-    }
-    const legacyStudio=$('#sv24-lang');if(legacyStudio&&legacyStudio.dataset.v90!=='1'){
-      const oldValue=legacyStudio.value,name=languageName(code());legacyStudio.dataset.v90='1';legacyStudio.innerHTML=LANGS.map(([v,n,en])=>'<option value="'+en+'">'+n+'</option>').join('');legacyStudio.value=[...legacyStudio.options].some(o=>o.value===oldValue)?oldValue:name;
-    }
     const side=$('#v51-sidebar');if(side){
       let box=$('.v90-langbox',side);if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>';$('.v85-wallet',side)?.insertAdjacentElement('beforebegin',box)||$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
       const sel=$('#v90-language',box);if(sel&&sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options;sel.value=code();sel.onchange=()=>changeLanguage(sel.value)}
