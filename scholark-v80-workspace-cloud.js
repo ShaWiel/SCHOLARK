@@ -204,8 +204,8 @@
     if($('#v52-m-list'))loadMastery();
     syncProgress();
   }
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v80sync);window.__v80sync=setTimeout(sync,120)});
-  obs.observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',sync);addEventListener('hashchange',()=>setTimeout(sync,80));setTimeout(sync,700);
+  addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
+  addEventListener('scholark:workspace-cloud-refresh',()=>setTimeout(sync,80));
+  setTimeout(sync,700);
   window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress};
 })();
