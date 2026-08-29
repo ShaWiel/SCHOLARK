@@ -70,6 +70,8 @@
     const book=$('.v65-book');if(book&&!$('.v79-comment-btn',book)){const ex=$('.v78-book-share',book)||$('#v65-export',book);if(ex){const b=document.createElement('button');b.className='v65-btn v79-comment-btn';b.textContent='Comments';ex.insertAdjacentElement('afterend',b);b.onclick=openLocalComments}}
   }
   function sync(){enhanceCards();enhanceEditors();const code=pendingInvite();if(code)acceptInvite(code)}
-  const obs=new MutationObserver(m=>{if(!m.some(x=>x.addedNodes?.length))return;clearTimeout(window.__v79sync);window.__v79sync=setTimeout(sync,180)});obs.observe(document.body||document.documentElement,{subtree:true,childList:true});modal.addEventListener('click',e=>{if(e.target===modal)close()});setTimeout(sync,500);
+  const obs=new MutationObserver(m=>{if(!m.some(x=>x.addedNodes?.length))return;clearTimeout(window.__v79sync);window.__v79sync=setTimeout(sync,220)});
+  ['v51-main','v57-deck','v58-suite','v41-studio-workspace'].map(id=>document.getElementById(id)).filter(Boolean).forEach(root=>obs.observe(root,{subtree:true,childList:true}));
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});setTimeout(sync,550);
   window.__SCHOLARK_V79_COLLAB__={openOwner,openLocalComments,acceptInvite};
 })();
