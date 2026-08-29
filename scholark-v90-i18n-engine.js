@@ -175,8 +175,8 @@
     document.documentElement.lang=code();document.documentElement.dir=RTL.has(code())?'rtl':'ltr';
     upgradeSelectors();applyKnown();scheduleUnknown();
   }
-  const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts)for(const n of m.addedNodes||[])if(n.nodeType===1)applyKnown(n);scheduleUnknown()});
-  obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
+  const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts){if(m.type==='characterData'&&m.target?.parentElement)applyKnown(m.target.parentElement);for(const n of m.addedNodes||[]){if(n.nodeType===1)applyKnown(n);else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement)}}scheduleUnknown()});
+  obs.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
   addEventListener('focus',()=>{upgradeSelectors();applyKnown();scheduleUnknown()});addEventListener('scholark-language-change',()=>setTimeout(boot,20));
   setTimeout(boot,80);
 
