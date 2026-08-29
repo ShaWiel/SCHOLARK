@@ -87,10 +87,13 @@
   }
 
   async function call(payload){
+    await window.__SCHOLARK_CREDITS__?.authorize?.('language_lesson');
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),100000);
     try{
       const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'language_learning',...payload}),signal:ctrl.signal});
-      const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok||!d.result)throw new Error(d?.error||'Language Learner AI is unavailable');return d;
+      const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok||!d.result)throw new Error(d?.error||'Language Learner AI is unavailable');
+      await window.__SCHOLARK_CREDITS__?.consume?.('language_lesson',{tier:d.tier||'',provider:d.provider||'',model:d.model||''});
+      return d;
     }finally{clearTimeout(timer)}
   }
 
