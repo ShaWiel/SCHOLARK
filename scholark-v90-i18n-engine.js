@@ -205,11 +205,11 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    const epoch=++translationEpoch;
+    const epoch=++translationEpoch;translating=true;
     localStorage.setItem('scholark_ui_language',target);map=loadMap(target);
     document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';upgradeSelectors();applyKnown();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
-    if(target==='en'){overlay.classList.remove('open');return}
+    if(target==='en'){translating=false;overlay.classList.remove('open');return}
     overlay.classList.add('open');overlay.style.removeProperty('opacity');$('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
     const strings=[...new Set([...CORE,...collectDom(1200)])].filter(eligibleText),missing=strings.filter(s=>!map[s]);
     try{
@@ -219,7 +219,7 @@
       }
       if(epoch===translationEpoch){applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target}}))}
     }catch(e){console.warn('[SCHOLARK] language switch:',clean(e?.message||e))}
-    finally{if(epoch===translationEpoch){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
+    finally{if(epoch===translationEpoch){translating=false;overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
   }
 
   async function translateStrings(target,strings){
