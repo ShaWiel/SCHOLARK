@@ -19,6 +19,30 @@ const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
 const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
 const translationMemory=new Map();
 const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
+const LINGVA_INSTANCES=['https://translate.dr460nf1r3.org','https://lingva.garudalinux.org','https://translate.jae.fi'];
+const LINGVA_CODE={fil:'tl',zh:'zh-CN'};
+const lingvaTarget=code=>LINGVA_CODE[String(code||'').toLowerCase()]||String(code||'').toLowerCase();
+async function lingvaOne(source,targetCode,start=0){
+  const target=lingvaTarget(targetCode);if(!source||!target||target==='en')return source;
+  let last=null;
+  for(let step=0;step<LINGVA_INSTANCES.length;step++){
+    const base=LINGVA_INSTANCES[(start+step)%LINGVA_INSTANCES.length],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7000);
+    try{
+      const url=base+'/api/v1/auto/'+encodeURIComponent(target)+'/'+encodeURIComponent(source);
+      const r=await fetch(url,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 UI-localization'},signal:ctrl.signal});
+      const d=await r.json().catch(()=>({}));const tr=clean(d?.translation);
+      if(r.ok&&tr&&tr!==source)return tr;
+      last=new Error(d?.error||('HTTP '+r.status));
+    }catch(e){last=e}finally{clearTimeout(timer)}
+  }
+  throw last||new Error('Free translation provider unavailable');
+}
+async function freeUiTranslate(strings,targetCode){
+  const src=[...new Set((strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))],out={},queue=[...src.entries()];
+  const worker=async()=>{while(queue.length){const [i,s]=queue.shift(),k=translationKey(targetCode,s),hit=translationMemory.get(k);if(hit){out[s]=hit;continue}try{const tr=await lingvaOne(s,targetCode,i);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}}};
+  await Promise.all(Array.from({length:Math.min(6,src.length)},()=>worker()));
+  return out;
+}
 
 function schemaFor(mode){
   if(mode==='exam') return {
@@ -166,13 +190,9 @@ async function generate(mode,p){
 async function translationSmokeTest(){
   const source=['Go to Workspace','Choose how much advantage you want.'];
   try{
-    const out=await generate('translate_ui',{language:'Spanish',strings:source});
-    const rows=out?.result?.translations||[];
-    const ok=source.every(s=>{const r=rows.find(x=>x.source===s);return clean(r?.translated)&&clean(r.translated)!==s});
-    console.log('[SCHOLARK] Translation smoke '+(ok?'PASS':'FAIL')+' provider='+(out?.provider||'?')+' model='+(out?.model||'?')+' rows='+rows.length);
-  }catch(e){
-    console.error('[SCHOLARK] Translation smoke FAIL '+String(e?.code||'ERROR')+' '+String(e?.message||e));
-  }
+    const got=await freeUiTranslate(source,'es'),ok=source.every(s=>clean(got[s])&&clean(got[s])!==s);
+    console.log('[SCHOLARK] Free translation smoke '+(ok?'PASS':'FAIL')+' provider=lingva rows='+Object.keys(got).length);
+  }catch(e){console.error('[SCHOLARK] Free translation smoke FAIL '+String(e?.message||e))}
 }
 setTimeout(()=>translationSmokeTest(),1800);
 
@@ -194,24 +214,35 @@ http.Server.prototype.emit = function(event,...args){
       if(mode==='translate_ui'&&(!Array.isArray(p.strings)||!p.strings.length)) return json(res,400,{ok:false,error:'Strings required'});
       if(mode==='language_learning'&&!clean(p.targetLanguage)) return json(res,400,{ok:false,error:'Target language required'});
       if(mode==='translate_ui'){
-        const language=clean(p.language)||'English';
+        const language=clean(p.language)||'English',languageCode=clean(p.languageCode)||'',purpose=clean(p.purpose||'ui').toLowerCase();
         const strings=[...new Set((p.strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))].slice(0,900);
         const cached={},missing=[];
         for(const source of strings){
-          const hit=translationMemory.get(translationKey(language,source));
+          const hit=translationMemory.get(translationKey(languageCode||language,source));
           if(hit)cached[source]=hit; else missing.push(source);
         }
-        let provider='memory',model='translation-memory';
-        if(missing.length){
-          const out=await generate(mode,{...p,language,strings:missing});
-          provider=out.provider||provider;model=out.model||model;
-          for(const row of out.result?.translations||[]){
-            const source=String(row?.source||''),translated=clean(row?.translated);
-            if(source&&translated){translationMemory.set(translationKey(language,source),translated);cached[source]=translated}
+        let provider='memory',model='translation-memory',remaining=[...missing];
+        if(remaining.length&&purpose==='ui'&&languageCode){
+          const free=await freeUiTranslate(remaining,languageCode);
+          for(const [source,translated] of Object.entries(free)){if(clean(translated)){cached[source]=translated;translationMemory.set(translationKey(languageCode||language,source),translated)}}
+          remaining=remaining.filter(s=>!cached[s]);
+          if(Object.keys(free).length){provider='lingva';model='public-ui-translation'}
+        }
+        if(remaining.length){
+          try{
+            const out=await generate(mode,{...p,language,strings:remaining});
+            provider=out.provider||provider;model=out.model||model;
+            for(const row of out.result?.translations||[]){
+              const source=String(row?.source||''),translated=clean(row?.translated);
+              if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
+            }
+          }catch(e){
+            if(!Object.keys(cached).length)throw e;
           }
         }
         const translations=strings.map(source=>({source,translated:cached[source]||source}));
-        json(res,200,{ok:true,provider,model,result:{translations},cacheHits:strings.length-missing.length,generated:missing.length});
+        const translatedCount=translations.filter(x=>clean(x.translated)&&x.translated!==x.source).length;
+        json(res,200,{ok:true,provider,model,result:{translations},cacheHits:strings.length-missing.length,translated:translatedCount,untranslated:strings.length-translatedCount});
         return;
       }
       const out=await generate(mode,p); json(res,200,out);
