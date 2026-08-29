@@ -44,6 +44,7 @@
     const q=$('#v52-tutor-q'),chat=$('#v52-chat'),btn=$('#v52-tutor-send');
     const prompt=clean(q?.value); if(!prompt){q?.focus();return}
     chat?.insertAdjacentHTML('beforeend','<div class="v52-msg user">'+esc(prompt)+'</div>');
+    window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt}}));
     if(q)q.value='';
     const wait=document.createElement('div');wait.className='v52-msg ai';wait.innerHTML='<span class="v62-loading"><i class="v62-spin"></i>SCHOLARK is thinking…</span>';chat?.appendChild(wait);
     busy(btn,true,'Thinking…');
@@ -54,6 +55,7 @@
       const r=data.result;
       wait.innerHTML='<b>'+esc(r.topic||'SCHOLARK Tutor')+'</b><br>'+esc(r.answer||r.summary||'')+(r.steps?.length?'<br><br><b>How to work through it</b>'+list(r.steps,true):'')+(r.checks?.length?'<br><br><b>Check yourself</b>'+list(r.checks):'')+(r.followUp?'<br><br><b>Next:</b> '+esc(r.followUp):'')+'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div>';
       hist.push({role:'user',text:prompt},{role:'assistant',text:clean(r.answer||r.summary)});writeTutorHistory(hist);
+      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:clean(r.answer||r.summary),result:r,provider:data.provider||'',model:data.model||''}}));
     }catch(e){wait.remove();const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}finally{busy(btn,false)}
   }
 
