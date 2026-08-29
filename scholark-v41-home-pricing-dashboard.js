@@ -8,7 +8,7 @@
   const lower=e=>text(e).toLowerCase();
   const h=()=>String(location.hash||'').toLowerCase();
   const publicHome=()=> (location.pathname==='/'||location.pathname==='') && (h()===''||h()==='#home'||h()==='#pricing');
-  const workspace=()=>!publicHome();
+  const workspace=()=>/^#?(dashboard|studio|presentation|document|report|poster|tutor|language|planner|progress|goal|project|education|book|schools|study|files|webpage|graphic|social)(?:$|[-/])/.test(h());
 
   const style=document.createElement('style');
   style.id='scholark-v41-style';
