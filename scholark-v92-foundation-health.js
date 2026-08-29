@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V92_FOUNDATION__)return;
   window.__SCHOLARK_V92_FOUNDATION__=true;
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
-  const modern=new Set(['dashboard','studio','tutor','education','language','planner','progress','goal','project','files','schools','study','book']);
+  const modern=new Set(['dashboard','studio','tutor','education','language','planner','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
   const route=()=>String(location.hash||'').replace(/^#/,'').split('-')[0].toLowerCase();
 
   function reconcile(){
