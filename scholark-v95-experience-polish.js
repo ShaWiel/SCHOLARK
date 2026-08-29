@@ -43,7 +43,7 @@
 
   function harden(){
     if(localStorage.getItem('scholark_ui_language')==='srn')localStorage.setItem('scholark_ui_language','nl');
-    $('option').forEach(o=>{const v=String(o.value||'').toLowerCase(),t=String(o.textContent||'').trim().toLowerCase();if(v==='srn'||t==='sranan tongo')o.remove()});
+    $$('option').forEach(o=>{const v=String(o.value||'').toLowerCase(),t=String(o.textContent||'').trim().toLowerCase();if(v==='srn'||t==='sranan tongo')o.remove()});
     reveal();
     $$('img').forEach(img=>{if(!img.decoding)img.decoding='async'});
     $$('[id$="status"],[class*="status"]').forEach(el=>{if(!el.getAttribute('aria-live'))el.setAttribute('aria-live','polite')});
