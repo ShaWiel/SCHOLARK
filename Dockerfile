@@ -71,6 +71,8 @@ COPY scholark-v24-ui.js \
      scholark-v87-exam-mastery.js \
      scholark-v88-learning-engine.js \
      scholark-v89-account-settings.js \
+     scholark-v90-i18n-engine.js \
+     scholark-v91-workspace-polish.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
