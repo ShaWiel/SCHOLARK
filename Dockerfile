@@ -95,15 +95,22 @@ RUN npm install --omit=dev \
 
 ENV NODE_ENV=production
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
-ENV POLLINATIONS_FALLBACK_MODEL=claude-opus-4.7
-ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-sol
+ENV POLLINATIONS_FAST_MODEL=openai-fast
+ENV POLLINATIONS_BALANCED_MODEL=gpt-5.6-terra
+ENV POLLINATIONS_PREMIUM_MODEL=gpt-5.6-sol
+ENV POLLINATIONS_FALLBACK_MODEL=gpt-5.6-terra
+ENV POLLINATIONS_LEARNING_MODEL=gpt-5.6-terra
 ENV POLLINATIONS_TRANSLATION_MODEL=openai-fast
 ENV POLLINATIONS_IMAGE_MODEL=flux
 ENV POLLINATIONS_RESEARCH_MODEL=perplexity-fast
 ENV SUPABASE_URL=https://yhafbwdnnpvuedycdkll.supabase.co
 ENV SUPABASE_PUBLISHABLE_KEY=sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A
-ENV OPENAI_STUDIO_MODEL=gpt-5.6-sol
-ENV OPENAI_LEARNING_MODEL=gpt-5.6-sol
+ENV OPENAI_STUDIO_MODEL=gpt-5.6-terra
+ENV OPENAI_LEARNING_MODEL=gpt-5.6-luna
+ENV OPENAI_FAST_MODEL=gpt-5.6-luna
+ENV OPENAI_BALANCED_MODEL=gpt-5.6-terra
+ENV OPENAI_PREMIUM_MODEL=gpt-5.6-sol
+ENV GEMINI_FAST_MODEL=gemini-3.1-flash-lite
 EXPOSE 10000
 
 CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
