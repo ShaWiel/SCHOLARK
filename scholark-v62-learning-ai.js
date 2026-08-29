@@ -88,6 +88,7 @@
       if(out)out.innerHTML='<div class="v62-answer"><div class="v62-answer-card"><h3>'+esc(r.title||name)+'</h3><p>'+esc(r.instructions||'')+'</p></div>'+
         (r.questions||[]).map((q,i)=>'<div class="v62-question"><div class="v62-meta">Question '+(i+1)+' · '+esc(q.difficulty||'')+'</div><h4>'+esc(q.prompt)+'</h4>'+((q.choices||[]).map((c,j)=>'<span class="v62-choice">'+String.fromCharCode(65+j)+'. '+esc(c)+'</span>').join(''))+'<button class="v62-reveal" type="button">Show answer</button><div class="v62-solution"><b>Answer:</b> '+esc(q.answer)+'<br><b>Why:</b> '+esc(q.explanation||'')+'</div></div>').join('')+
         '<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div>';
+      window.dispatchEvent(new CustomEvent('scholark:exam-generated',{detail:{name,topics,difficulty,result:r,provider:data.provider||'',model:data.model||'',startedAt:Date.now()}}));
     }catch(e){error(out,e)}finally{busy(btn,false)}
   }
 
