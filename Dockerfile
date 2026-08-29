@@ -75,6 +75,7 @@ COPY scholark-v24-ui.js \
      scholark-v91-workspace-polish.js \
      scholark-v92-foundation-health.js \
      scholark-v93-language-learner.js \
+     scholark-v94-performance-foundation.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
