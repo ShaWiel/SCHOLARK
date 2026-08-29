@@ -106,7 +106,8 @@
   const code=()=>localStorage.getItem('scholark_ui_language')||'nl';
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
-  const key=c=>'scholark_v90_i18n_'+c;
+  const CACHE_VERSION='v2-complete-ui';
+  const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   function loadMap(c){try{return JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{return{}}}
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
   let map=loadMap(code()),translating=false,unknownTimer=null;
@@ -217,9 +218,11 @@
   function boot(){
     document.documentElement.lang=code();document.documentElement.dir=RTL.has(code())?'rtl':'ltr';
     upgradeSelectors();applyKnown();
-    const pending=sessionStorage.getItem('scholark_i18n_pending')==='1';
-    setTimeout(()=>translateCurrentPage(pending),pending?90:260);
-    setTimeout(()=>translateCurrentPage(false),900);
+    const cached=loadMap(code()),needsInitial=code()!=='en'&&Object.keys(cached).length<40;
+    const pending=sessionStorage.getItem('scholark_i18n_pending')==='1'||needsInitial;
+    if(pending){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(code())+' across the entire SCHOLARK interface…'}
+    setTimeout(()=>translateCurrentPage(pending),pending?60:220);
+    setTimeout(()=>translateCurrentPage(false),700);
   }
   const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts){if(m.type==='characterData'&&m.target?.parentElement)applyKnown(m.target.parentElement);for(const n of m.addedNodes||[]){if(n.nodeType===1)applyKnown(n);else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement)}}scheduleUnknown()});
   obs.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
