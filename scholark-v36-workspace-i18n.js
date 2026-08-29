@@ -86,38 +86,13 @@
 
   function applyLanguage(code){
     if(!langs.some(x=>x[0]===code))code='en';
-    localStorage.setItem('scholark_ui_language',code);
-    document.documentElement.lang=code;
-    document.documentElement.dir=['ar','ur','fa','he','ps'].includes(code)?'rtl':'ltr';
-    if(window.__SCHOLARK_I18N__){
-      const sel=$('#v36-language');if(sel&&[...sel.options].some(o=>o.value===code))sel.value=code;
+    const sel=$('#v36-language');if(sel&&sel.value!==code)sel.value=code;
+    if(window.__SCHOLARK_I18N__?.changeLanguage){
+      window.__SCHOLARK_I18N__.changeLanguage(code);
       return;
     }
-
-    const d=labels[code]||labels.en;
-    const exactMap={
-      'Dashboard':d.dashboard,'Education & Learning':d.education,'Educatie & Leren':d.education,
-      'My Projects':d.projects,'Mijn projecten':d.projects,'AI Tutor':d.tutor,'Studio AI':d.studio,
-      'Planner':d.planner,'Progress':d.progress,'Voortgang':d.progress,'Goals':d.goals,'Doelen':d.goals,
-      'Uitloggen':d.logout,'Log out':d.logout,'Focus mode':d.focus,'Focusmodus':d.focus,
-      'Reset demo':d.reset,'Demo resetten':d.reset
-    };
-    $$('button,a,span,div').forEach(el=>{
-      if(el.children.length>0||el.closest('#v29-home-layer'))return;
-      const t=text(el);if(exactMap[t])el.textContent=exactMap[t];
-    });
-
-    const home=$('#v36-shell-home');if(home)home.innerHTML=`⌂ <span>${d.home}</span>`;
-    const sel=$('#v36-language');if(sel&&sel.value!==code)sel.value=code;
-
-    // Keep Studio generation language in sync and expand the options there too.
-    const studioSel=$('#sv24-lang');
-    if(studioSel){
-      langs.forEach(([v,n])=>{if(![...studioSel.options].some(o=>o.value===n||o.textContent===n)){const o=document.createElement('option');o.value=n;o.textContent=n;studioSel.appendChild(o);}});
-      const name=langs.find(x=>x[0]===code)?.[1];
-      if(name){studioSel.value=name;studioSel.dispatchEvent(new Event('change',{bubbles:true}));}
-    }
-    window.dispatchEvent(new CustomEvent('scholark-language-change',{detail:{code}}));
+    localStorage.setItem('scholark_ui_language',code);
+    document.documentElement.lang=code;
   }
 
   function buildShellControls(){
@@ -133,7 +108,7 @@
       anchor.parentElement?.insertBefore(wrap,anchor);
     }
     anchor.dataset.v36HiddenLanguage='1';
-    applyLanguage(selectedLang());
+    const current=selectedLang();if(sel&&sel.value!==current)sel.value=current;
   }
 
   function sync(){
@@ -142,9 +117,8 @@
     else document.querySelector('.v36-shell-controls')?.remove();
   }
 
-  new MutationObserver(()=>{clearTimeout(window.__v36t);window.__v36t=setTimeout(sync,80)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,20));
-  addEventListener('popstate',()=>setTimeout(sync,20));
-  addEventListener('focus',()=>setTimeout(sync,20)); document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(sync,20)});
-  setTimeout(sync,40);
+  addEventListener('hashchange',()=>{setTimeout(sync,30);setTimeout(sync,220)});
+  addEventListener('popstate',()=>{setTimeout(sync,30);setTimeout(sync,220)});
+  addEventListener('scholark-language-ready',()=>{const sel=$('#v36-language');const current=selectedLang();if(sel&&sel.value!==current)sel.value=current});
+  [40,220,700,1500].forEach(ms=>setTimeout(sync,ms));
 })();
