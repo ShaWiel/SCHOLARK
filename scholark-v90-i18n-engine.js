@@ -12,9 +12,19 @@
     ['cs','Čeština','Czech'],['hu','Magyar','Hungarian'],['el','Ελληνικά','Greek'],['sv','Svenska','Swedish'],['da','Dansk','Danish'],
     ['no','Norsk','Norwegian'],['fi','Suomi','Finnish'],['th','ไทย','Thai'],['vi','Tiếng Việt','Vietnamese'],['ms','Bahasa Melayu','Malay'],
     ['fil','Filipino','Filipino'],['bn','বাংলা','Bengali'],['ur','اردو','Urdu'],['fa','فارسی','Persian'],['he','עברית','Hebrew'],
-    ['ta','தமிழ்','Tamil'],['te','తెలుగు','Telugu'],['mr','मराठी','Marathi']
+    ['ta','தமிழ்','Tamil'],['te','తెలుగు','Telugu'],['mr','मराठी','Marathi'],
+    ['af','Afrikaans','Afrikaans'],['sq','Shqip','Albanian'],['hy','Հայերեն','Armenian'],['az','Azərbaycan dili','Azerbaijani'],['eu','Euskara','Basque'],
+    ['be','Беларуская','Belarusian'],['bs','Bosanski','Bosnian'],['bg','Български','Bulgarian'],['ca','Català','Catalan'],['hr','Hrvatski','Croatian'],
+    ['et','Eesti','Estonian'],['ka','ქართული','Georgian'],['gu','ગુજરાતી','Gujarati'],['ht','Kreyòl ayisyen','Haitian Creole'],['ha','Hausa','Hausa'],
+    ['is','Íslenska','Icelandic'],['ga','Gaeilge','Irish'],['jv','Basa Jawa','Javanese'],['kn','ಕನ್ನಡ','Kannada'],['kk','Қазақ тілі','Kazakh'],
+    ['km','ខ្មែរ','Khmer'],['lo','ລາວ','Lao'],['lv','Latviešu','Latvian'],['lt','Lietuvių','Lithuanian'],['mk','Македонски','Macedonian'],
+    ['ml','മലയാളം','Malayalam'],['mt','Malti','Maltese'],['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],
+    ['pa','ਪੰਜਾਬੀ','Punjabi'],['sr','Српски','Serbian'],['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],
+    ['su','Basa Sunda','Sundanese'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],['xh','isiXhosa','Xhosa'],['am','አማርኛ','Amharic'],
+    ['my','မြန်မာ','Burmese'],['si','සිංහල','Sinhala'],['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['gl','Galego','Galician'],
+    ['ceb','Cebuano','Cebuano'],['eo','Esperanto','Esperanto'],['gd','Gàidhlig','Scottish Gaelic'],['ku','Kurdî','Kurdish'],['ky','Кыргызча','Kyrgyz']
   ];
-  const RTL=new Set(['ar','ur','fa','he']);
+  const RTL=new Set(['ar','ur','fa','he','ps']);
   const CORE=[
     'Dashboard','Studio AI','AI Tutor','Education & Learning','Planner','Progress','Goals','Files & Notes','My Projects','Schools Near Me','Study Ahead','Book Studio',
     'WORKSPACE','FUTURE & PRO','Return to homepage','AI QUALITY · MAX','Highest available quality, expert depth, research, source checking and final polish.',
@@ -67,7 +77,20 @@
     'AI TUTOR','Explain photosynthesis like I am 13.','Simplifying concept…','Quick check: Why do plants need sunlight?','adaptive question ready','Weak topic detected','adding a shorter practice set for tomorrow',
     '“Explain photosynthesis like I am 13.” → Simplifying concept…','Quick check: “Why do plants need sunlight?” → adaptive question ready','Weak topic detected → adding a shorter practice set for tomorrow',
     'DIAGNOSTICS','Scanning 12 skills…','3 weak areas found','prioritizing practice','Mastered topics moved to spaced review','3 weak areas found → prioritizing practice',
-    'Profile & preferences','Your learning profile should follow you across devices and improve how SCHOLARK teaches and creates.','Display name','Role','Country','City','School / university','Study field','Learning level','Language','Important subjects / topics','Save profile','Open Workspace','New homepage'
+    'Profile & preferences','Your learning profile should follow you across devices and improve how SCHOLARK teaches and creates.','Display name','Role','Country','City','School / university','Study field','Learning level','Language','Important subjects / topics','Save profile','Open Workspace','New homepage',
+    'Go to Workspace','Open your dashboard, Studio AI, Tutor, learning tools, planning, goals and Pro tools.','Continue where you left off','Continue →',
+    'Ask Tutor','Deep explanation + examples','Use my files','Summaries, quizzes and notes','Run diagnostic','Find weak topics fast','Create in Studio','Build a polished artifact','Prepare for a future field',
+    'Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.','Learn a language','Build a language lesson','Target language','Support language','Current level','Learning goal','Topic or situation','Conversation','Travel','School','Work','Grammar','Vocabulary','Pronunciation','Exam preparation',
+    'Lesson complete','Listen','Practice speaking','Show answer','Hide answer','Vocabulary & phrases','Grammar made clear','Practice dialogue','Exercises','Culture tip','Next lesson','Your language progress','Lessons completed','Current streak','XP',
+    'SCHOLARK PLANS','Choose how much advantage you want.','Free','Plus','Pro','SCHOLARK Free','SCHOLARK Plus','SCHOLARK Pro','MOST POPULAR','No payment method required.','Start free','Start Plus free trial','Start Pro free trial',
+    'For everyday learning, practice and planning.','For learners and creators who use Studio AI regularly.','Maximum AI quality, large projects and future-study tools.',
+    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner basics','88-language interface','100 AI text requests/day','8 AI images/day',
+    'Everything in Free','Studio AI: Presentation, Webpage, Document, Social & Graphic','Research + citations and web sources','Cloud projects + version history','Advanced Files & Notes: Ask Files, worksheets and study tools','Natural Rewrite — 2/day','350 AI text requests/day','25 AI images/day',
+    'Everything in Plus','Highest-quality SCHOLARK AI','Unlimited Studio + Natural Rewrite','Presentations up to 100 slides','Documents/reports up to 100 pages','Book Studio up to 900,000 words','All genres + custom blends','Schools Near Me + Study Ahead','Advanced Language Learner: conversation + pronunciation practice','1,000 AI text requests/day','60 AI images/day',
+    '/ month','7 days free, then $14.99/month. Cancel anytime.','7 days free, then $19.99/month. Cancel anytime.','Plans & limits',
+    'Presentation Builder','Webpage Builder','Document Builder','Social Builder','Graphic Builder','Research-first','Facts, structure and visuals are checked before the first draft is shown.','Evidence, narrative and strong slide logic generated together.',
+    'GENERATOR-FIRST','LEARNING OS','SCHOLARK FUTURE','Study Ahead explains what your future study may demand before you enroll.','Schools Near Me helps you find nearby education options around your location.',
+    'Use your location to discover schools nearby and compare the options around you.','Choose a future study or career and build a learning head start before your first class.'
   ];
 
   const css=document.createElement('style');css.id='scholark-v90-style';css.textContent=`
@@ -92,7 +115,7 @@
     const t=clean(s);if(!t||t.length<2||t.length>420)return false;
     if(/^https?:|^[\d\s.,:%+$€£¥/\-–—()]+$/.test(t))return false;
     if(/^[A-Z0-9_\-.]{2,18}$/.test(t)&&!t.includes(' '))return false;
-    return /[A-Za-zÀ-žͰ-ϿЀ-ӿ]/.test(t);
+    return /[\p{L}\p{N}]/u.test(t);
   }
   function protectedNode(el){
     return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],.v52-msg.user,.v52-msg.ai,#v52-chat,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview');
@@ -106,17 +129,20 @@
   }
   async function translateBatch(target,strings){
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
-    const chunks=[];for(let i=0;i<strings.length;i+=70)chunks.push(strings.slice(i,i+70));
-    const parts=await Promise.all(chunks.map(async chunk=>{
-      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),65000),result={};
-      try{
-        const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),strings:chunk}),signal:ctrl.signal});
-        const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)return result;
-        for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated))result[x.source]=x.translated;
-      }catch(e){console.warn('[SCHOLARK] translation chunk:',clean(e?.message||e))}finally{clearTimeout(timer)}
-      return result;
-    }));
-    return Object.assign({},...parts);
+    const chunks=[];for(let i=0;i<strings.length;i+=90)chunks.push(strings.slice(i,i+90));
+    const result={};let cursor=0;
+    const worker=async()=>{
+      while(cursor<chunks.length){
+        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),50000);
+        try{
+          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),strings:chunk}),signal:ctrl.signal});
+          const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
+          for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated))result[x.source]=x.translated;
+        }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(5,chunks.length)},()=>worker()));
+    return result;
   }
   function applyKnown(root=document){
     const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';
@@ -127,13 +153,29 @@
     let n;while((n=walker.nextNode())){const el=n.parentElement;if(protectedNode(el))continue;const raw=n.nodeValue,t=clean(raw),tr=map[t];if(!tr||tr===t)continue;const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail}
     $$('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{for(const a of ['placeholder','aria-label','title']){const t=clean(el.getAttribute(a)),tr=map[t];if(tr)el.setAttribute(a,tr)}});
   }
-  async function fillUnknown(){
-    const c=code();if(c==='en'||translating||navigator.onLine===false)return;
-    const translated=new Set(Object.values(map));const missing=[...new Set([...CORE,...collectDom(140)])].filter(s=>eligibleText(s)&&!map[s]&&!translated.has(s)).slice(0,80);if(!missing.length)return;
-    translating=true;
-    try{const add=await translateBatch(c,missing);map={...map,...add};saveMap(c,map);applyKnown()}catch(e){console.warn('[SCHOLARK] background UI translation:',clean(e?.message||e))}finally{translating=false}
+  async function translateCurrentPage(showOverlay=false){
+    const target=code();if(target==='en'||navigator.onLine===false){applyKnown();overlay.classList.remove('open');return}
+    if(translating)return;translating=true;
+    if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across the entire SCHOLARK interface…'}
+    try{
+      for(let pass=0;pass<3;pass++){
+        upgradeSelectors();applyKnown();
+        const translated=new Set(Object.values(map)),strings=[...new Set([...CORE,...collectDom(900)])].filter(eligibleText);
+        const missing=strings.filter(s=>!map[s]&&!translated.has(s));
+        if(!missing.length)break;
+        const add=await translateBatch(target,missing);if(!Object.keys(add).length)break;
+        map={...map,...add};saveMap(target,map);applyKnown();
+        await new Promise(r=>setTimeout(r,90));
+      }
+    }catch(e){console.warn('[SCHOLARK] full-page localization:',clean(e?.message||e))}
+    finally{
+      translating=false;applyKnown();
+      if(showOverlay){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},180)}
+      try{sessionStorage.removeItem('scholark_i18n_pending')}catch{}
+    }
   }
-  function scheduleUnknown(){clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,700)}
+  async function fillUnknown(){return translateCurrentPage(false)}
+  function scheduleUnknown(){clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,180)}
 
   function upgradeSelectors(){
     const options=LANGS.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
@@ -155,15 +197,15 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    if(target===code()){applyKnown();return}
-    overlay.classList.add('open');$('#v90-switch-copy').textContent='Preparing '+nativeName(target)+' across SCHOLARK. The page will reload when the interface is ready.';
-    const existing=loadMap(target),strings=[...new Set([...CORE,...collectDom(220)])].filter(eligibleText),missing=strings.filter(s=>!existing[s]);
-    let next={...existing};
+    if(target===code()){applyKnown();translateCurrentPage(false);return}
+    overlay.classList.add('open');overlay.style.removeProperty('opacity');
+    $('#v90-switch-copy').textContent='Preparing '+nativeName(target)+' across the homepage, Workspace, pricing and live demos…';
+    const existing=loadMap(target),strings=[...new Set([...CORE,...collectDom(1000)])].filter(eligibleText),missing=strings.filter(s=>!existing[s]&&!Object.values(existing).includes(s));
     try{
-      if(missing.length){const add=await translateBatch(target,missing);next={...next,...add};saveMap(target,next)}
+      if(missing.length){const add=await translateBatch(target,missing);saveMap(target,{...existing,...add})}
     }catch(e){console.warn('[SCHOLARK] language pre-translation:',clean(e?.message||e))}
     localStorage.setItem('scholark_ui_language',target);document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
-    try{localStorage.setItem('scholark_language_changed_at',String(Date.now()))}catch{}
+    try{localStorage.setItem('scholark_language_changed_at',String(Date.now()));sessionStorage.setItem('scholark_i18n_pending','1')}catch{}
     location.reload();
   }
 
@@ -174,12 +216,15 @@
 
   function boot(){
     document.documentElement.lang=code();document.documentElement.dir=RTL.has(code())?'rtl':'ltr';
-    upgradeSelectors();applyKnown();scheduleUnknown();
+    upgradeSelectors();applyKnown();
+    const pending=sessionStorage.getItem('scholark_i18n_pending')==='1';
+    setTimeout(()=>translateCurrentPage(pending),pending?90:260);
+    setTimeout(()=>translateCurrentPage(false),900);
   }
   const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts){if(m.type==='characterData'&&m.target?.parentElement)applyKnown(m.target.parentElement);for(const n of m.addedNodes||[]){if(n.nodeType===1)applyKnown(n);else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement)}}scheduleUnknown()});
   obs.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
   addEventListener('focus',()=>{upgradeSelectors();applyKnown();scheduleUnknown()});addEventListener('scholark-language-change',()=>setTimeout(boot,20));
   setTimeout(boot,80);
 
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,count:LANGS.length};
 })();
