@@ -42,5 +42,5 @@
     if(menu.classList.contains('open')&&!e.target.closest?.('#v67-export-menu'))close();
   },true);
   addEventListener('resize',()=>{if(current?.anchor&&menu.classList.contains('open'))position(current.anchor)});
-  const syncLabel=()=>{const b=$('#v57-deck .v57-export');if(b&&b.textContent!=='Export')b.textContent='Export'};new MutationObserver(()=>{clearTimeout(window.__v67label);window.__v67label=setTimeout(syncLabel,80)}).observe(document.documentElement,{subtree:true,childList:true});setTimeout(syncLabel,180);
+  const syncLabel=()=>{const b=$('#v57-deck .v57-export');if(b&&b.textContent!=='Export')b.textContent='Export'};document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck'))setTimeout(syncLabel,60)},true);addEventListener('hashchange',()=>setTimeout(syncLabel,150));setTimeout(syncLabel,180);
 })();
