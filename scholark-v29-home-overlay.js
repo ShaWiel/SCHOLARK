@@ -127,7 +127,7 @@
     $$('.v29-type',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$$('.v29-tab',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
     $('#v29-create',layer).onclick=()=>{const val=$('#v29-prompt',layer).value.trim();if(val)localStorage.setItem('scholark_v24_intent',JSON.stringify({mode:active,prompt:val,at:Date.now()}));openStudio(active)};
     $('#v29-open-studio',layer).onclick=()=>openStudio(active);$('#v29-final-open',layer).onclick=()=>openStudio('presentation');$('#v29-speak',layer).onclick=speak;
-    $$('[data-future]',layer).forEach(b=>b.onclick=()=>{const id=b.dataset.future==='schools'?'v25-schools':'v25-study';const t=document.getElementById(id);if(t)t.click();else alert(b.dataset.future==='schools'?'Open SCHOLARK Studio → Schools Near Me':'Open SCHOLARK Studio → Study Ahead');});
+    $('[data-future]',layer).forEach(b=>b.onclick=()=>{const route=b.dataset.future==='schools'?'schools':'study';const oldUrl=location.href;history.replaceState(null,'',location.pathname+location.search+'#'+route);window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL:oldUrl,newURL:location.href}));});
     setMode('presentation');
   }
 
