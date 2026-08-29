@@ -50,7 +50,7 @@
 
   function isWorkspace(){
     const h=(location.hash||'').toLowerCase();
-    return h.includes('dashboard')||h.includes('studio')||h.includes('presentation')||h.includes('report')||h.includes('document')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('education')||h.includes('files')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('graphic')||h.includes('social');
+    return h.includes('dashboard')||h.includes('studio')||h.includes('presentation')||h.includes('report')||h.includes('document')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('education')||h.includes('language')||h.includes('files')||h.includes('schools')||h.includes('study')||h.includes('book')||h.includes('webpage')||h.includes('graphic')||h.includes('social');
   }
 
   function forceWorkspace(){
