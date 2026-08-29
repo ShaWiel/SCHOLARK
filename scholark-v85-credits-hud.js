@@ -36,6 +36,12 @@
     await load();window.dispatchEvent(new CustomEvent('scholark:credits-changed',{detail:d}));return d;
   }
   async function quote(feature){return{feature,credits:await cost(feature),wallet}}
+  async function authorize(feature){
+    const x=await ctx();if(!x)return{ok:true,guest:true,cost:await cost(feature)};
+    await load();const needed=await cost(feature),balance=Math.max(0,Number(wallet?.balance)||0);
+    if(needed>0&&balance<needed){const e=new Error('Not enough SCHOLARK credits for this action.');e.code='INSUFFICIENT_CREDITS';e.balance=balance;e.needed=needed;throw e}
+    return{ok:true,cost:needed,balance};
+  }
 
   function pricing(){const old=location.href;history.replaceState(null,'',location.pathname+location.search+'#pricing');dispatchEvent(new HashChangeEvent('hashchange',{oldURL:old,newURL:location.href}))}
   function render(){
