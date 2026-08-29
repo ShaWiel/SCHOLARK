@@ -143,7 +143,9 @@
     else if(layer){layer.hidden=true;}
   }
 
-  window.addEventListener('hashchange',()=>setTimeout(sync,40));window.addEventListener('popstate',()=>setTimeout(sync,40));window.addEventListener('resize',sync);window.addEventListener('scholark-language-applied',()=>{setTimeout(()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer)},30)});
-  new MutationObserver(()=>{clearTimeout(window.__v29t);window.__v29t=setTimeout(sync,100)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','lang','style']});
-  setInterval(sync,700);setTimeout(sync,80);
+  window.addEventListener('hashchange',()=>setTimeout(sync,40));
+  window.addEventListener('popstate',()=>setTimeout(sync,40));
+  window.addEventListener('resize',()=>setTimeout(sync,80),{passive:true});
+  window.addEventListener('scholark-language-ready',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer)});
+  setTimeout(sync,80);
 })();
