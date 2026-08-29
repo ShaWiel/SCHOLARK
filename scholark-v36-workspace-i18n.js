@@ -26,11 +26,7 @@
   `;
   document.head.appendChild(style);
 
-  const langs=[
-    ['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],
-    ['pt','Português'],['it','Italiano'],['srn','Sranan Tongo'],['ar','العربية'],['hi','हिन्दी'],
-    ['zh','中文'],['ja','日本語'],['ko','한국어'],['id','Bahasa Indonesia'],['tr','Türkçe'],['pl','Polski'],['sw','Kiswahili']
-  ];
+  const langs=[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano'],['srn','Sranan Tongo'],['ar','العربية'],['hi','हिन्दी'],['zh','中文'],['ja','日本語'],['ko','한국어'],['id','Bahasa Indonesia'],['tr','Türkçe'],['pl','Polski'],['sw','Kiswahili'],['ru','Русский'],['uk','Українська'],['ro','Română'],['cs','Čeština'],['hu','Magyar'],['el','Ελληνικά'],['sv','Svenska'],['da','Dansk'],['no','Norsk'],['fi','Suomi'],['th','ไทย'],['vi','Tiếng Việt'],['ms','Bahasa Melayu'],['fil','Filipino'],['bn','বাংলা'],['ur','اردو'],['fa','فارسی'],['he','עברית'],['ta','தமிழ்'],['te','తెలుగు'],['mr','मराठी']];
 
   const labels={
     nl:{home:'Home',dashboard:'Dashboard',education:'Educatie & Leren',projects:'Mijn projecten',tutor:'AI Tutor',studio:'Studio AI',planner:'Planner',progress:'Voortgang',goals:'Doelen',logout:'Uitloggen',focus:'Focusmodus',reset:'Demo resetten'},
