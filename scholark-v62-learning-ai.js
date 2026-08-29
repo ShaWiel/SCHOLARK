@@ -16,12 +16,15 @@
   document.head.appendChild(css);
 
   async function call(mode,payload={}) {
+    const feature=({tutor:'tutor_message',curriculum:'curriculum',exam:'quiz',study_ahead:'study_ahead',language_learning:'language_lesson'}[mode]||'tutor_message');
+    await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),90000);
     try {
       const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,level:level(),language:language(),...payload}),signal:ctrl.signal});
       const data=await r.json().catch(()=>({}));
       if(!r.ok||!data?.ok||!data?.result){const e=new Error(data?.error||'SCHOLARK learning AI is unavailable');e.code=data?.code;e.status=r.status;throw e}
+      await window.__SCHOLARK_CREDITS__?.consume?.(feature,{mode,tier:data.tier||'',provider:data.provider||'',model:data.model||''});
       return data;
     } finally { clearTimeout(timer); }
   }
