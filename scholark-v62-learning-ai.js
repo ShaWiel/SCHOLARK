@@ -92,7 +92,12 @@
   function studyHost(){
     document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-book','v41-studio-open');
     document.body.classList.add('v51-workspace','v51-study');
-    $('#v41-studio-workspace')?.setAttribute('hidden','');$('#v25-study')?.classList.remove('open');
+    $('#v41-studio-workspace')?.setAttribute('hidden','');
+    $('#v50-school')?.classList.remove('open');
+    $('#v25-schools')?.classList.remove('open');
+    $('#v25-study')?.classList.remove('open');
+    $('#v25-book')?.classList.remove('open');
+    $('#sv24-overlay')?.classList.remove('open');
     $$('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='study'));
     history.replaceState(null,'',location.pathname+location.search+'#study');
     const main=$('#v51-main');if(!main)return null;main.classList.add('v52-fast-main');main.style.setProperty('display','block','important');
