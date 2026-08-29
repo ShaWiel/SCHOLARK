@@ -16,6 +16,7 @@ COPY studio-public-page-route.mjs /app/studio-public-page-route.mjs
 COPY studio-public-artifact-route.mjs /app/studio-public-artifact-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
+COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 
 # Active runtime only. Older V46-V49 workspace routers are intentionally not loaded.
 COPY scholark-v24-ui.js \
@@ -87,8 +88,8 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); tags=""; for f in /tmp/scholark-v*.js; do base=$(basename "$f"); cp "$f" "$dir/$base"; tags="$tags<script defer src=\"$base?v=20260829-r107\"></script>"; done; sed -i "s#</body>#$tags</body>#" "$1"' sh {} \; \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-v*.js
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260829-r108\"></script></body>#" "$1"' sh {} \; \
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
     && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip sanitize-html
