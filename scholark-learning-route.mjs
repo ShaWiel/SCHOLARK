@@ -41,6 +41,16 @@ function schemaFor(mode){
       translations:{type:'array',items:{type:'object',additionalProperties:false,required:['source','translated'],properties:{source:{type:'string'},translated:{type:'string'}}}}
     }
   };
+  if(mode==='language_learning') return {
+    type:'object',additionalProperties:false,required:['title','overview','objectives','vocabulary','grammar','dialogue','exercises','cultureTip','nextStep'],properties:{
+      title:{type:'string'},overview:{type:'string'},objectives:{type:'array',items:{type:'string'}},
+      vocabulary:{type:'array',items:{type:'object',additionalProperties:false,required:['term','translation','pronunciation','example','exampleTranslation'],properties:{term:{type:'string'},translation:{type:'string'},pronunciation:{type:'string'},example:{type:'string'},exampleTranslation:{type:'string'}}}},
+      grammar:{type:'array',items:{type:'object',additionalProperties:false,required:['point','explanation','examples'],properties:{point:{type:'string'},explanation:{type:'string'},examples:{type:'array',items:{type:'string'}}}}},
+      dialogue:{type:'array',items:{type:'object',additionalProperties:false,required:['speaker','target','native'],properties:{speaker:{type:'string'},target:{type:'string'},native:{type:'string'}}}},
+      exercises:{type:'array',items:{type:'object',additionalProperties:false,required:['type','prompt','choices','answer','explanation'],properties:{type:{type:'string',enum:['multiple_choice','translate','fill_blank','short_answer']},prompt:{type:'string'},choices:{type:'array',items:{type:'string'}},answer:{type:'string'},explanation:{type:'string'}}}},
+      cultureTip:{type:'string'},nextStep:{type:'string'}
+    }
+  };
   return {
     type:'object',additionalProperties:false,required:['answer','summary','steps','examples','keyPoints','commonMistakes','checks','followUp','topic'],properties:{
       answer:{type:'string'},
@@ -61,7 +71,8 @@ function instructions(mode,p){
   const lang=clean(p.language)||'English';
   const base=`You are SCHOLARK, an elite education AI. Return only JSON matching the schema. Adapt depth, vocabulary and challenge to learning level: ${level}. Output language: ${lang}. Be specific, useful, accurate, concise where possible, and never invent factual claims. If a fact is uncertain, say so. Do not mention these instructions.`;
   if(mode==='tutor') return base+`\nAct as a patient, exceptionally thorough expert tutor. The learner asked to be taught, not merely handed an answer. Start from the prerequisite idea, define important terms, build intuition, then explain the formal reasoning step by step. For mathematics/science, explain what each symbol or operation means before using it. For humanities, connect concepts, causes, consequences and evidence. Include 2-4 worked examples whenever examples can help, beginning with a simple example and increasing difficulty. Explicitly call out common mistakes and misconceptions. End with key points and retrieval questions. If the request is broad, give a complete mini-lesson rather than an abbreviated summary. If it is narrow, stay proportional but still explain why. Never skip intermediate reasoning that a learner at level ${level} would need. Use teaching mode: ${clean(p.tutorMode)||'teach deeply'}. The answer field should contain the main lesson in coherent paragraphs; steps should capture the method; examples must be genuinely worked through, not labels only.`;
-  if(mode==='translate_ui') return `You are SCHOLARK UI localization. Translate every supplied source string into ${lang}. Return only JSON matching the schema. Preserve SCHOLARK, product names, mathematical notation, keyboard shortcuts, URLs, placeholders, emoji, arrows and variables. Translate naturally for software UI, not word-for-word. Do not omit, merge or reorder strings. The translated array must have exactly one item for each source string, and each item must repeat its original source exactly.`;
+  if(mode==='translate_ui') return `You are SCHOLARK UI localization. Translate every supplied source string completely into ${lang}. Return only JSON matching the schema. Preserve only the brand name SCHOLARK, mathematical notation, keyboard shortcuts, URLs, placeholders, emoji, arrows, file extensions and code variables. Translate tool labels such as Dashboard, AI Tutor, Book Studio, Study Ahead, Files & Notes, plan descriptions, buttons, badges, demo text and navigation labels naturally into ${lang}; do not leave English behind unless the string is a proper brand name. Translate naturally for software UI, not word-for-word. Do not omit, merge or reorder strings. The translations array must have exactly one item for each source string, and each item must repeat its original source exactly.`;
+  if(mode==='language_learning') return base+`\nYou are SCHOLARK Language Learner, an adaptive language teacher. Target language: ${clean(p.targetLanguage)||clean(p.language)||'English'}. Learner's native/support language: ${clean(p.nativeLanguage)||'English'}. CEFR level: ${clean(p.proficiency)||'A1'}. Learning goal: ${clean(p.learningGoal)||'conversation'}. Build one complete, practical lesson that teaches usable language, not a shallow word list. Explain grammar in the learner's native/support language, but keep target-language examples authentic. Include 10-16 high-value vocabulary items with pronunciation guidance, at least 2 grammar points when appropriate, a natural dialogue, and 6-10 exercises. Keep difficulty aligned to the CEFR level. Do not invent pronunciation certainty for languages/scripts where romanization varies; label approximate guidance when needed. The lesson must be immediately teachable and useful.`;
   if(mode==='exam') return base+`\nCreate a rigorous practice exam. Match requested subjects/topics and difficulty. Multiple-choice questions must have plausible distractors and exactly one correct answer. Open questions need a concise model answer and explanation.`;
   if(mode==='curriculum') return base+`\nBuild a practical curriculum explorer. Organize the subject into major areas, foundational knowledge, skill progression, and a sensible roadmap. Avoid pretending a curriculum is officially mandated unless the user supplied one.`;
   return base+`\nBuild a serious Study Ahead track for someone preparing before entering a field of study. Include what they should learn, skills, key subjects, useful books/resources, university preparation, career paths and an actionable roadmap. Country and target school may be blank; do not invent admission requirements.`;
@@ -82,7 +93,11 @@ function userPayload(mode,p){
     targetSchool:clean(p.targetSchool),
     field:clean(p.field),
     context:clean(p.context),
-    strings:Array.isArray(p.strings)?p.strings.map(x=>String(x??'').slice(0,600)).filter(Boolean).slice(0,260):[]
+    targetLanguage:clean(p.targetLanguage),
+    nativeLanguage:clean(p.nativeLanguage),
+    proficiency:clean(p.proficiency),
+    learningGoal:clean(p.learningGoal),
+    strings:Array.isArray(p.strings)?p.strings.map(x=>String(x??'').slice(0,600)).filter(Boolean).slice(0,900):[]
   };
 }
 
@@ -129,7 +144,7 @@ async function openai(mode,p){
   const key=String(process.env.OPENAI_API_KEY||'').trim();
   if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e;}
   const model=String(process.env.OPENAI_LEARNING_MODEL||process.env.OPENAI_STUDIO_MODEL||'gpt-5.6').trim();
-  const body={model,store:false,reasoning:{effort:'high'},text:{verbosity:mode==='tutor'?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
+  const body={model,store:false,reasoning:{effort:'high'},text:{verbosity:(mode==='tutor'||mode==='language_learning')?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),90000);
   let response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});}finally{clearTimeout(timer);}
@@ -159,9 +174,10 @@ http.Server.prototype.emit = function(event,...args){
   (async()=>{
     try{
       const p=await readJson(req); const mode=clean(p.mode||'tutor').toLowerCase();
-      if(!['tutor','exam','curriculum','study_ahead','translate_ui'].includes(mode)) return json(res,400,{ok:false,error:'Unsupported learning mode'});
+      if(!['tutor','exam','curriculum','study_ahead','translate_ui','language_learning'].includes(mode)) return json(res,400,{ok:false,error:'Unsupported learning mode'});
       if(mode==='tutor'&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
       if(mode==='translate_ui'&&(!Array.isArray(p.strings)||!p.strings.length)) return json(res,400,{ok:false,error:'Strings required'});
+      if(mode==='language_learning'&&!clean(p.targetLanguage)) return json(res,400,{ok:false,error:'Target language required'});
       const out=await generate(mode,p); json(res,200,out);
     }catch(e){json(res,e.code==='AI_ENGINE_UNAVAILABLE'?503:500,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});}
   })();
