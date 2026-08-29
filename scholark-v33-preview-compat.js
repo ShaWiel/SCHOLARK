@@ -5,7 +5,6 @@
     const title=document.querySelector('.v29-preview .v32-title');
     if(title && title.id!=='v29-preview-title') title.id='v29-preview-title';
   }
-  new MutationObserver(()=>{clearTimeout(window.__v33t);window.__v33t=setTimeout(sync,20);}).observe(document.documentElement,{subtree:true,childList:true});
-  setInterval(sync,200);
-  setTimeout(sync,20);
+  addEventListener('hashchange',()=>setTimeout(sync,100));
+  [40,500].forEach(ms=>setTimeout(sync,ms));
 })();
