@@ -71,12 +71,9 @@
 
   function findLanguageAnchor(){
     const names=langs.map(x=>x[1].toLowerCase());
-    return $$('button,span,div,select').find(el=>{
+    return $('header select,nav select,header button,nav button').find(el=>{
       if(el.closest('#v29-home-layer')||el.id==='v36-language')return false;
-      const t=text(el).toLowerCase();
-      if(!names.includes(t))return false;
-      const r=el.getBoundingClientRect();
-      return r.top<120&&r.right>innerWidth*.45&&r.width>25&&r.height>15;
+      return names.includes(text(el).toLowerCase())||[...el.options||[]].some(o=>names.includes(text(o).toLowerCase()));
     })||null;
   }
 
@@ -97,6 +94,8 @@
 
   function buildShellControls(){
     if(!isWorkspace())return;
+    // V51/V90 own the modern workspace navigation and language selector.
+    if($('#v51-sidebar')){$('.v36-shell-controls')?.remove();return}
     const anchor=findLanguageAnchor();
     if(!anchor)return;
     let wrap=$('.v36-shell-controls');
