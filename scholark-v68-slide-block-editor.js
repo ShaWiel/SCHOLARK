@@ -34,7 +34,7 @@
     try{const prompt='EDIT INSTRUCTION: '+instruction+'\nSLIDE TITLE: '+clean(s.title)+'\nCURRENT BLOCK JSON: '+JSON.stringify({value:x[0],heading:x[1],detail:x[2]})+'\nReturn one section with exactly one point containing the finished replacement block.';const r=await fetch('/api/studio/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'presentation_block_edit',prompt,count:1})});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Block edit failed');const sec=d.artifact?.sections?.[0]||{},p=sec.points?.[0]||{};const next=[clean(p.value)||x[0],clean(p.heading||sec.title)||x[1],clean(p.detail||sec.body)||x[2]],items=a.slice();items[selected]=next;api()?.updateSlide?.(idx(),{items});$('#v68-block-editor .v68-prompt').value='';status('Block updated with AI.');renderList()}catch(e){status('AI rewrite failed: '+clean(e?.message||e))}finally{busy=false;$('.v68-rewrite').disabled=false}
   }
   function sync(){if(!$('#v57-deck.open'))return;ensure();renderList()}
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v68sync);window.__v68sync=setTimeout(sync,75)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-  document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck .v57-thumb,#v57-deck .v57-layout,#v57-deck .v57-up,#v57-deck .v57-down,#v57-deck .v57-dup,#v57-deck .v57-new,#v57-deck .v57-del'))setTimeout(sync,40)},true);
-  setTimeout(sync,350);
+  document.addEventListener('click',e=>{if(e.target.closest?.('#v57-deck .v57-thumb,#v57-deck .v57-layout,#v57-deck .v57-up,#v57-deck .v57-down,#v57-deck .v57-dup,#v57-deck .v57-new,#v57-deck .v57-del'))setTimeout(sync,45)},true);
+  addEventListener('hashchange',()=>setTimeout(sync,140));
+  [350,900].forEach(ms=>setTimeout(sync,ms));
 })();
