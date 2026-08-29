@@ -31,7 +31,7 @@
   function renderSaved(){
     const host=$('#v83-saved');if(!host)return;
     host.innerHTML=saved.length?'<div class="v52-kicker">SAVED STUDY AHEAD TRACKS</div><div class="v83-saved">'+saved.map((x,i)=>'<button type="button" class="v83-saved-card" data-v83-saved="'+i+'"><b>'+esc(x.field)+(x.target_school?' · '+esc(x.target_school):'')+'</b><span>'+esc(x.country||'')+(x.updated_at?' · '+esc(new Date(x.updated_at).toLocaleDateString()):'')+' · open track</span></button>').join('')+'</div>':'';
-    $('[data-v83-saved]',host).forEach(b=>b.onclick=()=>openSaved(saved[+b.dataset.v83Saved]));
+    $$('[data-v83-saved]',host).forEach(b=>b.onclick=()=>openSaved(saved[+b.dataset.v83Saved]));
   }
   function list(items){const a=(items||[]).filter(Boolean);return a.length?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
   function renderTrack(detail){
