@@ -68,9 +68,9 @@
     const settings=document.createElement('div');settings.id='v35-book-settings';settings.className='v35-book-settings';
     settings.innerHTML=`
       <div class="v35-field"><label>Genre / verhaaltype</label><select id="v35-book-genre">${genres.map(g=>`<option>${g}</option>`).join('')}</select></div>
-      <div class="v35-field"><label>Doellengte in woorden</label><input id="v35-book-words" type="number" min="1000" max="900000" step="1000" value="80000"></div>
+      <div class="v35-field"><label>Doellengte in woorden</label><input id="v35-book-words" type="number" min="1000" max="150000" step="1000" value="80000"></div>
       <div class="v35-field" id="v35-custom-genre-wrap" style="display:none"><label>Custom genre of combinatie</label><input id="v35-custom-genre" placeholder="Bijv. Afro-futuristische legal thriller + romance"></div>
-      <div class="v35-book-limit"><strong>PRO maximum: 900.000 woorden.</strong> Lange boeken worden hoofdstuk-voor-hoofdstuk gebouwd met een vaste story bible voor personages, wereldregels, tijdlijn, stijl, plot en continuity.</div>
+      <div class="v35-book-limit"><strong>BOOK STUDIO BETA: maximaal 150.000 doelwoorden.</strong> Lange boeken worden hoofdstuk-voor-hoofdstuk gebouwd met een vaste story bible voor personages, wereldregels, tijdlijn, stijl, plot en continuity.</div>
       <button class="v35-book-save" type="button">Gebruik deze Book Studio-instellingen</button>`;
     const textarea=$('.v25-input',content);textarea?.insertAdjacentElement('afterend',settings);
 
@@ -92,7 +92,7 @@
   function updatePricing(){
     const pro=$('#v25-pricing .v25-plan.pro');if(!pro)return;
     const ul=$('ul',pro);if(!ul||ul.dataset.v35)return;ul.dataset.v35='1';
-    ['Presentaties tot 100 dia’s','Documenten & verslagen tot 100 pagina’s','Book Studio tot 900.000 woorden','Alle boek- en verhaalgenres + custom genre blends'].forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+    ['Presentaties tot 100 dia’s','Documenten & verslagen tot 100 pagina’s','Book Studio beta: hoofdstuk-voor-hoofdstuk','Alle boek- en verhaalgenres + custom genre blends'].forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
   }
 
   function sync(){enhanceStudio();enhanceBook();updatePricing();}
@@ -100,7 +100,6 @@
     if(e.target.closest('.sv24-mode'))setTimeout(enhanceStudio,30);
     if(e.target.closest('[data-tool="book"]'))setTimeout(enhanceBook,30);
   },true);
-  new MutationObserver(()=>{clearTimeout(window.__v35t);window.__v35t=setTimeout(sync,70)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});
-  addEventListener('hashchange',()=>setTimeout(sync,40));
-  setInterval(sync,700);setTimeout(sync,60);
+  addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,260)});
+  [80,600].forEach(ms=>setTimeout(sync,ms));
 })();
