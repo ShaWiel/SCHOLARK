@@ -63,5 +63,5 @@
   function closeMenu(){menu.classList.remove('open')}function menuStatus(t,err=false){const x=$('.v70-menu-status',menu);if(x){x.textContent=t||'';x.style.color=err?'#ffb9b9':'#c9ff6a'}}
   function sync(){if(!$('#v58-suite.open'))return;ensure();decorate()}
   document.addEventListener('click',e=>{const ex=e.target.closest?.('#v58-suite .v58-export');if(ex&&['social','graphic'].includes(mode())){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openMenu(ex);return}const o=e.target.closest?.('[data-v70]');if(o){e.preventDefault();const k=o.dataset.v70;if(k==='png'||k==='jpg')currentRaster(k);else batchExport(k);return}if(menu.classList.contains('open')&&!e.target.closest?.('#v70-menu'))closeMenu();if(e.target.closest?.('#v58-suite'))setTimeout(sync,35)},true);
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v70sync);window.__v70sync=setTimeout(sync,80)});obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});setTimeout(sync,350);
+  addEventListener('hashchange',()=>setTimeout(sync,140));[350,900].forEach(ms=>setTimeout(sync,ms));
 })();
