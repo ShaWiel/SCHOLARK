@@ -60,5 +60,6 @@
     }catch(e){const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · cloud save failed: '+clean(e?.message||e)}
   }
   addEventListener('scholark:exam-generated',e=>{exam=e.detail||null;marks=new Map();saved=false;setTimeout(decorate,30)});
-  new MutationObserver(()=>{if(exam&&$('#v52-exam-out .v62-question'))setTimeout(decorate,50)}).observe(document.documentElement,{subtree:true,childList:true});
+  // Exam generation emits scholark:exam-generated, so a page-wide observer is unnecessary.
+  document.addEventListener('click',e=>{if(exam&&e.target.closest?.('#v52-exam-out'))setTimeout(decorate,30)},true);
 })();
