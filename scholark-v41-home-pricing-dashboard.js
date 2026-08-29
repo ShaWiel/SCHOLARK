@@ -120,7 +120,14 @@
     },true);
   }
 
-  function ensureWorkspaceChrome(){if(!workspace())return;setHomeVisible(false);ensureWorkspaceHome();ensureSidebarToggle();ensureProTools();ensureStudio();}
+  function ensureWorkspaceChrome(){
+    if(!workspace())return;
+    setHomeVisible(false);
+    // V51 is the authoritative modern workspace shell. Do not rediscover its
+    // topbar/sidebar with expensive whole-page layout scans.
+    if($('#v51-sidebar')){ensureStudio();return}
+    ensureWorkspaceHome();ensureSidebarToggle();ensureProTools();ensureStudio();
+  }
   function sync(){
     ensureDashboardButton();
     if(publicHome()){setHomeVisible(true);$('#v41-workspace-home')?.remove();$('#v41-sidebar-toggle')?.remove();document.body.classList.remove('v41-sidebar-closed');ensurePricing();}
