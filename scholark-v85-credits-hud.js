@@ -59,6 +59,8 @@
     }
   }
   function sync(){render();loadCosts();load()}
-  new MutationObserver(()=>{clearTimeout(window.__v85sync);window.__v85sync=setTimeout(render,120)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',load);addEventListener('hashchange',()=>setTimeout(render,80));setTimeout(sync,600);
+  addEventListener('hashchange',()=>{setTimeout(render,100);setTimeout(render,320)});
+  addEventListener('scholark:credits-changed',()=>{setTimeout(load,40);setTimeout(render,100)});
+  addEventListener('scholark-language-ready',()=>setTimeout(render,100));
+  setTimeout(sync,600);
 })();
