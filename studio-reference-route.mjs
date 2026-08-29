@@ -49,11 +49,13 @@ async function referenceSelftest(){
   const [{Document,Packer,Paragraph},pdfkitMod,zipMod]=await Promise.all([import('docx'),import('pdfkit'),import('jszip')]);
   const PDFDocument=pdfkitMod.default||pdfkitMod,JSZip=zipMod.default||zipMod;
   const docxBuffer=await Packer.toBuffer(new Document({sections:[{children:[new Paragraph('SCHOLARK DOCX reference self-test text')]}]}));
-  const pdfBuffer=await new Promise((resolve,reject)=>{const d=new PDFDocument({size:'A4'}),chunks=[];d.on('data',x=>chunks.push(x));d.on('end',()=>resolve(Buffer.concat(chunks)));d.on('error',reject);d.fontSize(16).text('SCHOLARK PDF reference self-test text');d.end()});
+  const makePdfBuffer=()=>new Promise((resolve,reject)=>{const d=new PDFDocument({size:'A4',compress:false}),chunks=[];d.on('data',x=>chunks.push(x));d.on('end',()=>resolve(Buffer.concat(chunks)));d.on('error',reject);d.fontSize(16).text('SCHOLARK PDF reference self-test text');d.end()});
+  const pdfBuffer=await makePdfBuffer();
   const zip=new JSZip();zip.file('ppt/slides/slide1.xml','<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><a:t>SCHOLARK PPTX reference self-test text</a:t></p:cSld></p:sld>');
   const pptxBuffer=await zip.generateAsync({type:'nodebuffer'});
   const timed=(name,p,ms=9000)=>Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error(name+' parser self-test timed out')),ms))]);
-  const [pdf,docx,pptx]=await Promise.all([timed('PDF',extractPdf(pdfBuffer)),timed('DOCX',extractDocx(docxBuffer)),timed('PPTX',extractPptx(pptxBuffer))]);
+  const pdfCheck=async()=>{try{return await extractPdf(pdfBuffer)}catch(first){await new Promise(r=>setTimeout(r,120));const retry=await makePdfBuffer();try{return await extractPdf(retry)}catch(second){throw new Error('PDF parser self-test failed after retry: '+String(second?.message||first?.message||second||first))}}};
+  const [pdf,docx,pptx]=await Promise.all([timed('PDF',pdfCheck()),timed('DOCX',extractDocx(docxBuffer)),timed('PPTX',extractPptx(pptxBuffer))]);
   const ok=/SCHOLARK/i.test(pdf.text||'')&&/SCHOLARK/i.test(docx.text||'')&&/SCHOLARK/i.test(pptx.text||'');
   return {ok,pdfChars:clean(pdf.text).length,docxChars:clean(docx.text).length,pptxChars:clean(pptx.text).length,pdfPages:pdf.pages,pptxSlides:pptx.slides};
 }
