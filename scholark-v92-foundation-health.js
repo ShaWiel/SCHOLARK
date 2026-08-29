@@ -40,9 +40,9 @@
       cloudApi:!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,workspacePolish:!!window.__SCHOLARK_V91__,languageLearner:!!window.__SCHOLARK_V93_LANGUAGE__,performanceFoundation:!!window.__SCHOLARK_PERF__,
       duplicateIds:duplicateIds()
     };
-    const [learning,exporter]=await Promise.all([endpoint('/api/learning/health'),endpoint('/api/export/health')]);
-    checks.learningEndpoint=learning;checks.exportEndpoint=exporter;
-    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.i18n&&learning.ok&&exporter.ok&&checks.duplicateIds.length===0;
+    const [rootHealth,studio,learning,exporter]=await Promise.all([endpoint('/api/health'),endpoint('/api/studio/health'),endpoint('/api/learning/health'),endpoint('/api/export/health')]);
+    checks.rootEndpoint=rootHealth;checks.studioEndpoint=studio;checks.learningEndpoint=learning;checks.exportEndpoint=exporter;checks.i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null;
+    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.i18n&&rootHealth.ok&&studio.ok&&learning.ok&&exporter.ok&&(checks.i18nReport?.ok!==false)&&checks.duplicateIds.length===0;
     const report={ok,at:new Date().toISOString(),route:route(),checks};
     try{sessionStorage.setItem('scholark_foundation_health',JSON.stringify(report))}catch{}
     console[ok?'log':'warn']('[SCHOLARK] Client foundation self-test '+(ok?'PASS':'WARN'),report);
