@@ -171,8 +171,8 @@
     forceQuality();const h=route();let id='dashboard';if(h.includes('studio')||h.includes('presentation')||h.includes('webpage')||h.includes('document')||h.includes('report')||h.includes('graphic')||h.includes('social'))id='studio';else if(h.includes('schools'))id='schools';else if(h.includes('study'))id='study';else if(h.includes('book'))id='book';else if(h.includes('tutor'))id='tutor';else if(h.includes('education'))id='education';else if(h.includes('language'))id='language';else if(h.includes('planner'))id='planner';else if(h.includes('progress'))id='progress';else if(h.includes('goal'))id='goal';else if(h.includes('project'))id='project';state.active=id;syncNav(id);if(id==='dashboard'&&!document.body.classList.contains('v51-native')&&!document.body.classList.contains('v51-studio')&&!document.body.classList.contains('v51-pro'))showPage('dashboard');refreshLogo()
   }
 
-  addEventListener('hashchange',()=>setTimeout(cleanConflicts,20));addEventListener('popstate',()=>setTimeout(cleanConflicts,20));addEventListener('resize',()=>setTimeout(cleanConflicts,30));
-  new MutationObserver(()=>{clearTimeout(window.__v51sync);window.__v51sync=setTimeout(()=>{refreshLogo();$$('#v41-studio-workspace .v41-mode[data-mode="book"]').forEach(x=>x.remove());if(workspaceRoute())forceQuality()},120)}).observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('focus',()=>{if(workspaceRoute()){forceQuality();refreshLogo();$('#v49-sidebar-toggle')?.setAttribute('hidden','')}});
+  addEventListener('hashchange',()=>{setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
+  addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
+  addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
 })();
