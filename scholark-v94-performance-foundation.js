@@ -32,7 +32,7 @@
     return document.querySelector('#v58-suite.open,#v57-deck.open,#v57-present.open,.v41-studio-workspace:not([hidden]),#v51-main')||document.body;
   };
   function tuneImages(root=activeRoot()){
-    $('img',root).forEach(img=>{if(!img.decoding)img.decoding='async';if(!img.loading)img.loading='lazy'});
+    $$('img',root).forEach(img=>{if(!img.decoding)img.decoding='async';if(!img.loading)img.loading='lazy'});
   }
   function fitText(root=activeRoot()){
     state.lastLayout=Date.now();
