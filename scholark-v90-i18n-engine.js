@@ -6,7 +6,7 @@
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const LANGS=[
     ['nl','Nederlands','Dutch'],['en','English','English'],['es','Español','Spanish'],['fr','Français','French'],['de','Deutsch','German'],
-    ['pt','Português','Portuguese'],['it','Italiano','Italian'],['srn','Sranan Tongo','Sranan Tongo'],['ar','العربية','Arabic'],['hi','हिन्दी','Hindi'],
+    ['pt','Português','Portuguese'],['it','Italiano','Italian'],['ar','العربية','Arabic'],['hi','हिन्दी','Hindi'],
     ['zh','中文','Chinese'],['ja','日本語','Japanese'],['ko','한국어','Korean'],['id','Bahasa Indonesia','Indonesian'],['tr','Türkçe','Turkish'],
     ['pl','Polski','Polish'],['sw','Kiswahili','Swahili'],['ru','Русский','Russian'],['uk','Українська','Ukrainian'],['ro','Română','Romanian'],
     ['cs','Čeština','Czech'],['hu','Magyar','Hungarian'],['el','Ελληνικά','Greek'],['sv','Svenska','Swedish'],['da','Dansk','Danish'],
@@ -84,7 +84,7 @@
     'Lesson complete','Listen','Practice speaking','Show answer','Hide answer','Vocabulary & phrases','Grammar made clear','Practice dialogue','Exercises','Culture tip','Next lesson','Your language progress','Lessons completed','Current streak','XP',
     'SCHOLARK PLANS','Choose how much advantage you want.','Free','Plus','Pro','SCHOLARK Free','SCHOLARK Plus','SCHOLARK Pro','MOST POPULAR','No payment method required.','Start free','Start Plus free trial','Start Pro free trial',
     'For everyday learning, practice and planning.','For learners and creators who use Studio AI regularly.','Maximum AI quality, large projects and future-study tools.',
-    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','88-language interface','100 AI text requests/day','8 AI images/day',
+    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','87-language interface','100 AI text requests/day','8 AI images/day',
     'Everything in Free','Studio AI: Presentation, Webpage, Document, Social & Graphic','Research + citations and web sources','Cloud projects + version history','Advanced Files & Notes: Ask Files, worksheets and study tools','Natural Rewrite — 2/day','350 AI text requests/day','25 AI images/day',
     'Everything in Plus','Highest-quality SCHOLARK AI','Unlimited Studio + Natural Rewrite','Presentations up to 100 slides','Documents/reports up to 100 pages','Book Studio up to 900,000 words','All genres + custom blends','Schools Near Me + Study Ahead','1,000 AI text requests/day','60 AI images/day',
     '/ month','7 days free, then $14.99/month. Cancel anytime.','7 days free, then $19.99/month. Cancel anytime.','Plans & limits',
@@ -103,14 +103,17 @@
 
   const overlay=document.createElement('div');overlay.id='v90-language-overlay';overlay.innerHTML='<div class="v90-switch-card"><small>SCHOLARK LANGUAGE ENGINE</small><h2>Adapting SCHOLARK…</h2><p id="v90-switch-copy">Translating the homepage, workspace and live product demo before reload.</p><div class="v90-progress"><i></i></div></div>';document.body.appendChild(overlay);
 
-  const code=()=>localStorage.getItem('scholark_ui_language')||'nl';
+  const code=()=>{const v=localStorage.getItem('scholark_ui_language')||'nl';return LANGS.some(x=>x[0]===v)?v:'nl'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
   const CACHE_VERSION='v2-complete-ui';
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   function loadMap(c){try{return JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{return{}}}
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
-  let map=loadMap(code()),translating=false,unknownTimer=null;
+  let map=loadMap(code()),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
+  const textSource=new WeakMap(),attrSource=new WeakMap();
+  const rememberText=n=>{if(!textSource.has(n))textSource.set(n,clean(n.nodeValue));return textSource.get(n)||clean(n.nodeValue)};
+  const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=v}attrSource.set(el,o)}return o};
 
   function eligibleText(s){
     const t=clean(s);if(!t||t.length<2||t.length>420)return false;
@@ -124,54 +127,58 @@
   function collectDom(limit=180){
     const out=new Set();
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,t=clean(n.nodeValue);if(!protectedNode(el)&&eligibleText(t))out.add(t)}
-    $$('input[placeholder],textarea[placeholder],[aria-label],[title]').forEach(el=>{for(const a of ['placeholder','aria-label','title']){const t=clean(el.getAttribute(a));if(eligibleText(t))out.add(t)}});
+    let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
+    $$('input[placeholder],textarea[placeholder],[aria-label],[title]').forEach(el=>{const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
     return [...out];
   }
-  async function translateBatch(target,strings){
+  async function translateBatch(target,strings,onChunk){
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
-    const chunks=[];for(let i=0;i<strings.length;i+=90)chunks.push(strings.slice(i,i+90));
+    const chunks=[];for(let i=0;i<strings.length;i+=70)chunks.push(strings.slice(i,i+70));
     const result={};let cursor=0;
     const worker=async()=>{
       while(cursor<chunks.length){
-        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),50000);
+        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000);
         try{
           const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
-          for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated))result[x.source]=x.translated;
+          const part={};for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated)){result[x.source]=x.translated;part[x.source]=x.translated}
+          if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part);
         }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
       }
     };
-    await Promise.all(Array.from({length:Math.min(5,chunks.length)},()=>worker()));
+    await Promise.all(Array.from({length:Math.min(2,chunks.length)},()=>worker()));
     return result;
   }
   function applyKnown(root=document){
-    const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';
-    map=loadMap(c);
-    if(c==='en')return;
-    const base=root.nodeType===1?root:document;
-    const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
-    let n;while((n=walker.nextNode())){const el=n.parentElement;if(protectedNode(el))continue;const raw=n.nodeValue,t=clean(raw),tr=map[t];if(!tr||tr===t)continue;const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail}
-    $$('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{for(const a of ['placeholder','aria-label','title']){const t=clean(el.getAttribute(a)),tr=map[t];if(tr)el.setAttribute(a,tr)}});
+    const c=code();document.documentElement.lang=c;document.documentElement.dir=RTL.has(c)?'rtl':'ltr';map=loadMap(c);
+    const base=root.nodeType===1?root:document;applying=true;
+    try{
+      const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
+      let n;while((n=walker.nextNode())){const el=n.parentElement;if(protectedNode(el))continue;const src=rememberText(n);if(!eligibleText(src))continue;const tr=c==='en'?src:(map[src]||src);const raw=n.nodeValue,lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';if(clean(raw)!==clean(tr))n.nodeValue=lead+tr+tail}
+      $$('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const src=clean(srcs[a]);if(!src)continue;const tr=c==='en'?src:(map[src]||src);if(clean(el.getAttribute(a))!==clean(tr))el.setAttribute(a,tr)}});
+    }finally{applying=false}
   }
   async function translateCurrentPage(showOverlay=false){
-    const target=code();if(target==='en'||navigator.onLine===false){applyKnown();overlay.classList.remove('open');return}
+    const target=code(),epoch=translationEpoch;if(navigator.onLine===false){applyKnown();overlay.classList.remove('open');return}
+    if(target==='en'){applyKnown();overlay.classList.remove('open');return}
     if(translating)return;translating=true;
-    if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across the entire SCHOLARK interface…'}
+    if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across SCHOLARK…'}
     try{
-      for(let pass=0;pass<3;pass++){
+      for(let pass=0;pass<3&&epoch===translationEpoch;pass++){
         upgradeSelectors();applyKnown();
-        const translated=new Set(Object.values(map)),strings=[...new Set([...CORE,...collectDom(900)])].filter(eligibleText);
-        const missing=strings.filter(s=>!map[s]&&!translated.has(s));
+        const strings=[...new Set([...CORE,...collectDom(1100)])].filter(eligibleText);
+        const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
-        const add=await translateBatch(target,missing);if(!Object.keys(add).length)break;
+        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()});
+        if(epoch!==translationEpoch)break;
+        if(!Object.keys(add).length)break;
         map={...map,...add};saveMap(target,map);applyKnown();
-        await new Promise(r=>setTimeout(r,90));
+        await new Promise(r=>setTimeout(r,70));
       }
     }catch(e){console.warn('[SCHOLARK] full-page localization:',clean(e?.message||e))}
     finally{
-      translating=false;applyKnown();
-      if(showOverlay){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},180)}
+      translating=false;if(epoch===translationEpoch)applyKnown();
+      if(showOverlay&&epoch===translationEpoch){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}
       try{sessionStorage.removeItem('scholark_i18n_pending')}catch{}
     }
   }
@@ -198,16 +205,30 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    if(target===code()){applyKnown();translateCurrentPage(false);return}
-    overlay.classList.add('open');overlay.style.removeProperty('opacity');
-    $('#v90-switch-copy').textContent='Preparing '+nativeName(target)+' across the homepage, Workspace, pricing and live demos…';
-    const existing=loadMap(target),strings=[...new Set([...CORE,...collectDom(1000)])].filter(eligibleText),missing=strings.filter(s=>!existing[s]&&!Object.values(existing).includes(s));
+    const epoch=++translationEpoch;
+    localStorage.setItem('scholark_ui_language',target);map=loadMap(target);
+    document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';upgradeSelectors();applyKnown();
+    window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
+    if(target==='en'){overlay.classList.remove('open');return}
+    overlay.classList.add('open');overlay.style.removeProperty('opacity');$('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
+    const strings=[...new Set([...CORE,...collectDom(1200)])].filter(eligibleText),missing=strings.filter(s=>!map[s]);
     try{
-      if(missing.length){const add=await translateBatch(target,missing);saveMap(target,{...existing,...add})}
-    }catch(e){console.warn('[SCHOLARK] language pre-translation:',clean(e?.message||e))}
-    localStorage.setItem('scholark_ui_language',target);document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
-    try{localStorage.setItem('scholark_language_changed_at',String(Date.now()));sessionStorage.setItem('scholark_i18n_pending','1')}catch{}
-    location.reload();
+      if(missing.length){
+        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()});
+        if(epoch===translationEpoch){map={...map,...add};saveMap(target,map)}
+      }
+      if(epoch===translationEpoch){applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target}}))}
+    }catch(e){console.warn('[SCHOLARK] language switch:',clean(e?.message||e))}
+    finally{if(epoch===translationEpoch){overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
+  }
+
+  async function translateStrings(target,strings){
+    if(!LANGS.some(x=>x[0]===target))target='en';
+    const src=[...new Set((strings||[]).map(clean).filter(eligibleText))];
+    if(target==='en')return Object.fromEntries(src.map(s=>[s,s]));
+    let m=loadMap(target),missing=src.filter(s=>!m[s]);
+    if(missing.length){const add=await translateBatch(target,missing);m={...m,...add};saveMap(target,m)}
+    return Object.fromEntries(src.map(s=>[s,m[s]||s]));
   }
 
   document.addEventListener('change',e=>{
@@ -216,18 +237,17 @@
   },true);
 
   function boot(){
-    document.documentElement.lang=code();document.documentElement.dir=RTL.has(code())?'rtl':'ltr';
+    const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
+    document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
     upgradeSelectors();applyKnown();
-    const cached=loadMap(code()),needsInitial=code()!=='en'&&Object.keys(cached).length<40;
-    const pending=sessionStorage.getItem('scholark_i18n_pending')==='1'||needsInitial;
-    if(pending){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(code())+' across the entire SCHOLARK interface…'}
-    setTimeout(()=>translateCurrentPage(pending),pending?60:220);
-    setTimeout(()=>translateCurrentPage(false),700);
+    const cached=loadMap(normalized),needsInitial=normalized!=='en'&&Object.keys(cached).length<20;
+    setTimeout(()=>translateCurrentPage(needsInitial),needsInitial?70:180);
+    setTimeout(()=>translateCurrentPage(false),750);
   }
-  const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts){if(m.type==='characterData'&&m.target?.parentElement)applyKnown(m.target.parentElement);for(const n of m.addedNodes||[]){if(n.nodeType===1)applyKnown(n);else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement)}}scheduleUnknown()});
+  const obs=new MutationObserver(muts=>{upgradeSelectors();for(const m of muts){if(m.type==='characterData'&&m.target?.parentElement){if(!applying)textSource.set(m.target,clean(m.target.nodeValue));applyKnown(m.target.parentElement)}for(const n of m.addedNodes||[]){if(n.nodeType===1)applyKnown(n);else if(n.nodeType===3&&n.parentElement)applyKnown(n.parentElement)}}scheduleUnknown()});
   obs.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
   addEventListener('focus',()=>{upgradeSelectors();applyKnown();scheduleUnknown()});addEventListener('scholark-language-change',()=>setTimeout(boot,20));
   setTimeout(boot,80);
 
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,count:LANGS.length};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,count:LANGS.length};
 })();
