@@ -8,6 +8,7 @@
     ['studio','Studio AI','Presentations, documents, webpages, graphics and social'],
     ['tutor','AI Tutor','Deep explanations, examples and guided learning'],
     ['education','Education & Learning','Diagnostics, mastery, exams and spaced review'],
+    ['language','Language Learner','Vocabulary, grammar, pronunciation and conversation'],
     ['planner','Planner','Tasks, deadlines and study sessions'],
     ['progress','Progress','See what is improving and what is weak'],
     ['goal','Goals','Learning, school and creation goals'],
@@ -34,11 +35,11 @@
     .v82-tutor-layout{grid-template-columns:minmax(210px,260px) minmax(0,1fr)!important;align-items:start!important}.v82-chatbody{overflow:hidden}.v82-chatbody #v52-chat{max-height:58vh!important;scroll-behavior:smooth}.v82-chatbody .v52-msg.ai{white-space:normal;line-height:1.6}.v82-chatbody .v62-answer-card{margin:8px 0;max-width:none}.v82-chatbody .v62-answer-card p{white-space:pre-wrap}
     .v65-form .v81-field label{font-size:7.5px!important}.v65-form input,.v65-form select,.v65-form textarea{min-height:42px}
     .v86-output{overflow:auto;max-height:72vh}.v86-output .v62-question{white-space:normal}.v86-file{overflow-wrap:anywhere}
-    .v91-quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 18px}.v91-quick button{border:1px solid rgba(23,25,31,.09);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer;min-width:0}.v91-quick button b{display:block;font:900 9px Inter;color:#17191f}.v91-quick button span{display:block;margin-top:4px;font:650 7px/1.35 Inter;color:#777}.v91-quick button:hover{border-color:#6d5dfc;background:#f7f5ff}
+    .v91-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:0 0 18px}.v91-quick button{border:1px solid rgba(23,25,31,.09);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer;min-width:0}.v91-quick button b{display:block;font:900 9px Inter;color:#17191f}.v91-quick button span{display:block;margin-top:4px;font:650 7px/1.35 Inter;color:#777}.v91-quick button:hover{border-color:#6d5dfc;background:#f7f5ff}
     .v91-resume{margin:0 0 22px;padding:14px 16px;border-radius:17px;background:linear-gradient(135deg,#eeecff,#fbfaf7);border:1px solid rgba(109,93,252,.13);display:flex;align-items:center;justify-content:space-between;gap:14px}.v91-resume b{display:block;font:900 10px Inter}.v91-resume span{display:block;margin-top:4px;font:650 8px/1.4 Inter;color:#746f7b}.v91-resume button{border:0;border-radius:10px;background:#17191f;color:#c9ff6a;padding:9px 11px;font:900 8px Inter;cursor:pointer;white-space:nowrap}
     #v91-command{position:fixed;inset:0;z-index:2147483647;display:none;align-items:flex-start;justify-content:center;padding-top:min(16vh,150px);background:rgba(11,13,18,.64);backdrop-filter:blur(8px)}#v91-command.open{display:flex}
     .v91-command-card{width:min(680px,92vw);max-height:70vh;overflow:hidden;background:#fff;border-radius:22px;box-shadow:0 30px 110px rgba(0,0,0,.34);padding:12px}.v91-command-card input{width:100%;box-sizing:border-box;border:0;background:#f4f3f1;border-radius:14px;padding:15px;font:750 12px Inter;outline:0}.v91-results{max-height:52vh;overflow:auto;padding-top:8px}.v91-result{width:100%;border:0;background:transparent;border-radius:12px;padding:11px 12px;text-align:left;cursor:pointer}.v91-result:hover,.v91-result.active{background:#eeecff}.v91-result b{display:block;font:900 9px Inter}.v91-result span{display:block;margin-top:3px;color:#777;font:650 7.5px/1.35 Inter}.v91-hint{padding:7px 10px 2px;color:#888;font:700 7px Inter}
-    @media(max-width:1000px){.v91-quick{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:720px){.v91-quick{grid-template-columns:1fr 1fr}.v91-resume{display:block}.v91-resume button{margin-top:10px}.v82-tutor-layout{grid-template-columns:1fr!important}}
+    @media(max-width:1000px){.v91-quick{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}@media(max-width:720px){.v91-quick{grid-template-columns:1fr 1fr}.v91-resume{display:block}.v91-resume button{margin-top:10px}.v82-tutor-layout{grid-template-columns:1fr!important}}
   `;document.head.appendChild(css);
 
   const palette=document.createElement('div');palette.id='v91-command';palette.innerHTML='<div class="v91-command-card"><input id="v91-command-input" placeholder="Search SCHOLARK tools…"><div class="v91-results" id="v91-command-results"></div><div class="v91-hint">Enter to open · Esc to close · Ctrl/Cmd + K from anywhere in Workspace</div></div>';document.body.appendChild(palette);
@@ -68,7 +69,7 @@
     const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell)return;
     if(!$('.v91-quick',shell)){
       const q=document.createElement('div');q.className='v91-quick';q.innerHTML=[
-        ['tutor','Ask Tutor','Deep explanation + examples'],['files','Use my files','Summaries, quizzes and notes'],['education','Run diagnostic','Find weak topics fast'],['studio','Create in Studio','Build a polished artifact'],['study','Study Ahead','Prepare for a future field']
+        ['tutor','Ask Tutor','Deep explanation + examples'],['files','Use my files','Summaries, quizzes and notes'],['education','Run diagnostic','Find weak topics fast'],['language','Learn a language','Adaptive vocabulary + conversation'],['studio','Create in Studio','Build a polished artifact'],['study','Study Ahead','Prepare for a future field']
       ].map(x=>'<button data-v91-q="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>').join('');
       const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',q);$$('[data-v91-q]',q).forEach(b=>b.onclick=()=>openTool(b.dataset.v91Q));
     }
