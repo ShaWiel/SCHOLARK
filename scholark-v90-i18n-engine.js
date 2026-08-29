@@ -229,22 +229,31 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    const epoch=++translationEpoch;translating=true;
+    const previous=code(),epoch=++translationEpoch;translating=true;
     overlay.classList.add('open');overlay.style.removeProperty('opacity');$('#v90-switch-copy').textContent='Switching SCHOLARK to '+nativeName(target)+'…';
     const primed=primeDeviceTranslator(target,p=>{$('#v90-switch-copy').textContent='Preparing '+nativeName(target)+' on this device… '+p+'%'});
     localStorage.setItem('scholark_ui_language',target);map=loadMap(target);
     document.documentElement.lang=target;document.documentElement.dir=RTL.has(target)?'rtl':'ltr';upgradeSelectors();applyKnown();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target}}));
-    if(target==='en'){translating=false;overlay.classList.remove('open');window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:'source'}}));return}
-    const strings=[...new Set(collectDom(1200))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
+    if(target==='en'){translating=false;overlay.classList.remove('open');window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:'source',coverage:1}}));return}
+    const strings=[...new Set(collectDom(1200))].filter(eligibleText),missing=strings.filter(s=>!map[s]),already=Math.max(0,strings.length-missing.length);
     try{
+      let added=0;
       if(missing.length){
         const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyKnown()},'ui',primed);
-        if(epoch===translationEpoch){map={...map,...add};saveMap(target,map)}
+        added=Object.keys(add).length;if(epoch===translationEpoch){map={...map,...add};saveMap(target,map)}
       }
-      if(epoch===translationEpoch){applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target}}))}
-    }catch(e){console.warn('[SCHOLARK] language switch:',clean(e?.message||e))}
-    finally{if(epoch===translationEpoch){translating=false;overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
+      if(epoch!==translationEpoch)return;
+      const coverage=strings.length?Math.min(1,(already+added)/strings.length):1;
+      if(strings.length>=8&&coverage<.45){
+        localStorage.setItem('scholark_ui_language',previous);map=loadMap(previous);document.documentElement.lang=previous;document.documentElement.dir=RTL.has(previous)?'rtl':'ltr';upgradeSelectors();applyKnown();
+        window.dispatchEvent(new CustomEvent('scholark-language-failed',{detail:{requested:target,restored:previous,coverage}}));return;
+      }
+      applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,coverage}}));
+    }catch(e){
+      console.warn('[SCHOLARK] language switch:',clean(e?.message||e));
+      if(epoch===translationEpoch){localStorage.setItem('scholark_ui_language',previous);map=loadMap(previous);upgradeSelectors();applyKnown();window.dispatchEvent(new CustomEvent('scholark-language-failed',{detail:{requested:target,restored:previous,error:clean(e?.message||e)}}))}
+    }finally{if(epoch===translationEpoch){translating=false;overlay.style.opacity='0';setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity')},150)}}
   }
 
   async function translateStrings(target,strings,purpose='content'){
