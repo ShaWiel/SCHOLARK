@@ -51,6 +51,9 @@
   function sync(){
     $$('#v57-deck.open .v57-slide,#v57-present.open .v57-slide').forEach(decorate);
   }
-  new MutationObserver(()=>{clearTimeout(window.__v63sync);window.__v63sync=setTimeout(sync,20)}).observe(document.documentElement,{subtree:true,childList:true,characterData:false});
-  addEventListener('keydown',()=>setTimeout(sync,0));document.addEventListener('click',()=>setTimeout(sync,0),true);setTimeout(sync,100);
+  const v63observer=new MutationObserver(()=>{clearTimeout(window.__v63sync);window.__v63sync=setTimeout(sync,80)});
+  [document.getElementById('v57-deck'),document.getElementById('v57-present')].filter(Boolean).forEach(root=>v63observer.observe(root,{subtree:true,childList:true}));
+  addEventListener('keydown',()=>{if($('#v57-deck.open,#v57-present.open'))setTimeout(sync,0)});
+  document.addEventListener('click',()=>{if($('#v57-deck.open,#v57-present.open'))setTimeout(sync,0)},true);
+  setTimeout(sync,120);
 })();
