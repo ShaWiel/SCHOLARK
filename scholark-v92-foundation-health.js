@@ -48,8 +48,8 @@
     console[ok?'log':'warn']('[SCHOLARK] Client foundation self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  addEventListener('hashchange',()=>{reconcile();setTimeout(reconcile,180)});addEventListener('popstate',reconcile);addEventListener('focus',reconcile);
-  new MutationObserver(()=>{clearTimeout(window.__v92reconcile);window.__v92reconcile=setTimeout(reconcile,110)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden']});
-  setTimeout(reconcile,180);setTimeout(selftest,1400);
+  addEventListener('hashchange',()=>{reconcile();setTimeout(reconcile,180)});
+  addEventListener('popstate',()=>{reconcile();setTimeout(reconcile,180)});
+  setTimeout(reconcile,180);setTimeout(selftest,1600);
   window.__SCHOLARK_HEALTH__={selftest,reconcile,last:()=>{try{return JSON.parse(sessionStorage.getItem('scholark_foundation_health')||'null')}catch{return null}}};
 })();
