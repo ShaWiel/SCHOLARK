@@ -87,7 +87,7 @@
 
   function currentHome(){
     const h=(location.hash||'').toLowerCase();
-    if(h.includes('pricing')||h.includes('studio-')||h.includes('presentation')||h.includes('report')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')) return false;
+    if(h.includes('pricing')||h.includes('studio-')||h.includes('presentation')||h.includes('report')||h.includes('poster')||h.includes('tutor')||h.includes('planner')||h.includes('progress')||h.includes('goal')||h.includes('project')||h.includes('files')) return false;
     return location.pathname==='/' || location.pathname==='';
   }
 
