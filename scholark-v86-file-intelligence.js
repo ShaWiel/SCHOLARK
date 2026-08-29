@@ -46,7 +46,7 @@
   }
   function tutorText(r){return [r.answer,r.summary,(r.steps||[]).length?'\n'+r.steps.map((x,i)=>(i+1)+'. '+x).join('\n'):'',(r.checks||[]).length?'\nCheck yourself:\n- '+r.checks.join('\n- '):'',r.followUp?'\nNext: '+r.followUp:''].filter(Boolean).join('\n')}
   async function action(kind,btn){
-    if(kind==='studio'){if(state.text)window.__SCHOLARK_V45_BRIEF__?.mergeReference?.({name:'Files & Notes bundle',text:state.text});localStorage.setItem('scholark_v24_intent',JSON.stringify({mode:'presentation',prompt:'Create a strong presentation using the attached Files & Notes references.',at:Date.now()}));location.hash='studio';setTimeout(()=>$('#v41-sidebar [data-v51-tool="studio"]')?.click(),40);return}
+    if(kind==='studio'){if(state.text)window.__SCHOLARK_V45_BRIEF__?.mergeReference?.({name:'Files & Notes bundle',text:state.text});localStorage.setItem('scholark_v24_intent',JSON.stringify({mode:'presentation',prompt:'Create a strong presentation using the attached Files & Notes references.',at:Date.now()}));location.hash='studio';setTimeout(()=>$('#v51-sidebar [data-v51-tool="studio"]')?.click(),40);return}
     if(!state.text)return;btn.disabled=true;const out=$('#v86-output');out.innerHTML='<h3>Working…</h3>SCHOLARK is analyzing the uploaded material.';
     try{
       let data,title;
