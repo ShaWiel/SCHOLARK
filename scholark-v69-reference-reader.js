@@ -17,6 +17,6 @@
   }
   async function processInput(input){const files=[...(input?.files||[])],binary=files.filter(f=>['pdf','docx','pptx'].includes(ext(f)));if(!binary.length)return;let ok=0;for(const f of binary){if(await extract(f))ok++}if(ok)status(ok+' binary reference'+(ok===1?'':'s')+' fully readable by Studio AI.')}
   function bind(){const input=$('#v41-files');if(!input||input.dataset.v69bound)return;input.dataset.v69bound='1';const prior=input.getAttribute('accept')||'';const add=['.pdf','.docx','.pptx','.txt','.md','.markdown','.csv','.json','.html','.htm','.xml','image/*'];input.setAttribute('accept',[...new Set(prior.split(',').map(x=>x.trim()).filter(Boolean).concat(add))].join(','));input.addEventListener('change',()=>processInput(input))}
-  const obs=new MutationObserver(()=>{clearTimeout(window.__v69bind);window.__v69bind=setTimeout(bind,100)});obs.observe(document.documentElement,{subtree:true,childList:true});setTimeout(bind,180);
+  addEventListener('hashchange',()=>{setTimeout(bind,100);setTimeout(bind,300)});[180,700].forEach(ms=>setTimeout(bind,ms));
   window.__SCHOLARK_V69_REFERENCES__={extract};
 })();
