@@ -20,6 +20,7 @@ const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
 const translationMemory=new Map();
 const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
 const LINGVA_INSTANCES=['https://translate.dr460nf1r3.org','https://lingva.garudalinux.org','https://translate.jae.fi'];
+const LIBRE_INSTANCES=['https://libretranslate.de','https://translate.argosopentech.com','https://translate.api.skitzen.com'];
 const LINGVA_CODE={fil:'tl',zh:'zh-CN'};
 const lingvaTarget=code=>LINGVA_CODE[String(code||'').toLowerCase()]||String(code||'').toLowerCase();
 async function lingvaOne(source,targetCode,start=0){
@@ -35,11 +36,29 @@ async function lingvaOne(source,targetCode,start=0){
       last=new Error(d?.error||('HTTP '+r.status));
     }catch(e){last=e}finally{clearTimeout(timer)}
   }
-  throw last||new Error('Free translation provider unavailable');
+  throw last||new Error('Lingva unavailable');
+}
+async function libreOne(source,targetCode,start=0){
+  const target=String(targetCode||'').toLowerCase();if(!source||!target||target==='en')return source;
+  let last=null;
+  for(let step=0;step<LIBRE_INSTANCES.length;step++){
+    const base=LIBRE_INSTANCES[(start+step)%LIBRE_INSTANCES.length],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),7000);
+    try{
+      const r=await fetch(base+'/translate',{method:'POST',headers:{'content-type':'application/json',accept:'application/json','user-agent':'SCHOLARK/1.0 UI-localization'},body:JSON.stringify({q:source,source:'en',target,format:'text'}),signal:ctrl.signal});
+      const d=await r.json().catch(()=>({}));const tr=clean(d?.translatedText);
+      if(r.ok&&tr&&tr!==source)return tr;
+      last=new Error(d?.error||('HTTP '+r.status));
+    }catch(e){last=e}finally{clearTimeout(timer)}
+  }
+  throw last||new Error('LibreTranslate unavailable');
+}
+async function freeOne(source,targetCode,start=0){
+  try{return await libreOne(source,targetCode,start)}catch{}
+  return lingvaOne(source,targetCode,start);
 }
 async function freeUiTranslate(strings,targetCode){
   const src=[...new Set((strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))],out={},queue=[...src.entries()];
-  const worker=async()=>{while(queue.length){const [i,s]=queue.shift(),k=translationKey(targetCode,s),hit=translationMemory.get(k);if(hit){out[s]=hit;continue}try{const tr=await lingvaOne(s,targetCode,i);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}}};
+  const worker=async()=>{while(queue.length){const [i,s]=queue.shift(),k=translationKey(targetCode,s),hit=translationMemory.get(k);if(hit){out[s]=hit;continue}try{const tr=await freeOne(s,targetCode,i);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}}};
   await Promise.all(Array.from({length:Math.min(6,src.length)},()=>worker()));
   return out;
 }
@@ -191,7 +210,7 @@ async function translationSmokeTest(){
   const source=['Go to Workspace','Choose how much advantage you want.'];
   try{
     const got=await freeUiTranslate(source,'es'),ok=source.every(s=>clean(got[s])&&clean(got[s])!==s);
-    console.log('[SCHOLARK] Free translation smoke '+(ok?'PASS':'FAIL')+' provider=lingva rows='+Object.keys(got).length);
+    console.log('[SCHOLARK] Free translation smoke '+(ok?'PASS':'FAIL')+' provider=free-ui rows='+Object.keys(got).length);
   }catch(e){console.error('[SCHOLARK] Free translation smoke FAIL '+String(e?.message||e))}
 }
 setTimeout(()=>translationSmokeTest(),1800);
