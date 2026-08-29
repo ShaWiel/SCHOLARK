@@ -91,7 +91,7 @@
   }
   function ensure(key, indicator = false) {
     const files = required(key);
-    chain = chain.then(async () => {
+    chain = chain.catch(() => {}).then(async () => {
       if (indicator) { busy++; html.classList.add('scholark-route-loading'); }
       try {
         for (const file of files) {
