@@ -8,7 +8,7 @@
   const lower=e=>text(e).toLowerCase();
   const h=()=> (location.hash||'').toLowerCase();
   const workspace=()=>/dashboard|studio|presentation|document|report|poster|tutor|language|planner|progress|goal|project|education|book|schools|study/.test(h());
-  const publicHome=()=>!workspace()&&!/pricing/.test(h());
+  const publicHome=()=>!workspace();
 
   const style=document.createElement('style');
   style.id='scholark-v41-style';
@@ -93,7 +93,7 @@
 
   function priceMarkup(){return `<div class="v41-price-head"><small>SCHOLARK PLANS</small><h2>Choose how much advantage you want.</h2><p>Every plan uses the same SCHOLARK foundation. Upgrade when you need heavier Studio creation, long-form work, future-study tools and higher usage limits.</p></div><div class="v41-price-grid">
     <article class="v41-plan"><div class="v41-kicker">FREE</div><h3>SCHOLARK Free</h3><div class="v41-desc">For everyday learning, practice and planning.</div><div class="v41-price">$0 <small>/ month</small></div><div class="v41-trial">No payment method required.</div><ul>
-      <li>AI Tutor with step-by-step lessons</li><li>Diagnostics, Mastery & Spaced Review</li><li>Planner, Goals & Progress</li><li>Files & Notes analysis</li><li>Language Learner: vocabulary, grammar, listening & speaking practice</li><li>88-language interface</li><li>100 AI text requests/day</li><li>8 AI images/day</li>
+      <li>AI Tutor with step-by-step lessons</li><li>Diagnostics, Mastery & Spaced Review</li><li>Planner, Goals & Progress</li><li>Files & Notes analysis</li><li>Language Learner: vocabulary, grammar, listening & speaking practice</li><li>87-language interface</li><li>100 AI text requests/day</li><li>8 AI images/day</li>
     </ul><button data-plan="free">Start free</button></article>
     <article class="v41-plan plus"><div class="v41-kicker">PLUS</div><h3>SCHOLARK Plus</h3><div class="v41-desc">For learners and creators who use Studio AI regularly.</div><div class="v41-price">$14.99 <small>/ month</small></div><div class="v41-trial">7 days free, then $14.99/month. Cancel anytime.</div><ul>
       <li>Everything in Free</li><li>Studio AI: Presentation, Webpage, Document, Social & Graphic</li><li>Research + citations and web sources</li><li>Cloud projects + version history</li><li>Advanced Files & Notes: Ask Files, worksheets and study tools</li><li>Max 4 active creations per Studio type</li><li>Natural Rewrite — 2/day</li><li>350 AI text requests/day</li><li>25 AI images/day</li>
@@ -106,6 +106,8 @@
     if(!publicHome())return;
     const layer=$('#v29-home-layer');if(!layer)return;
     let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$('[data-plan]',p).forEach(b=>b.onclick=()=>{localStorage.setItem('scholark_selected_plan',b.dataset.plan);if(b.dataset.plan==='free'){history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'));}else location.hash='pricing';});}
+    if(p){p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity');const shell=$('.v29-shell',layer)||layer,final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);if(final&&p.nextElementSibling!==final)shell.insertBefore(p,final)}
+    if((location.hash||'').toLowerCase().includes('pricing'))setTimeout(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}),120);
     if(!priceTimer){let i=0;priceTimer=setInterval(()=>{const plans=$$('.v41-plan',p);plans.forEach(x=>x.classList.remove('v41-focus'));plans[i%plans.length]?.classList.add('v41-focus');i++;},2600);}
   }
 
