@@ -70,7 +70,7 @@
   function ensureNativeLanguage(){
     if(!publicHome()){$('#v55-native-language')?.remove();return}
     let sel=$('#v55-native-language');
-    const candidates=$('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]').filter(el=>{
+    const candidates=$$('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]').filter(el=>{
       if(el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main'))return false;
       const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
       return r.width>Math.min(480,innerWidth*.65)&&r.height>=40&&r.height<150&&r.top<120&&cs.display!=='none'&&cs.visibility!=='hidden';
@@ -83,7 +83,7 @@
       sel.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(sel.value)||applyLanguage(sel.value);
     }
     const current=localStorage.getItem('scholark_ui_language')||'nl';if(sel.value!==current)sel.value=current;
-    const account=$('button,a,[role="button"],div,span',header).find(el=>/^(account|cuenta|compte|konto|conta)$/i.test(text(el))||/^(sign in|log in|login|inloggen|aanmelden)$/i.test(text(el)));
+    const account=$$('button,a,[role="button"],div,span',header).find(el=>/^(account|cuenta|compte|konto|conta)$/i.test(text(el))||/^(sign in|log in|login|inloggen|aanmelden)$/i.test(text(el)));
     const target=account?.parentElement||header;
     if(sel.parentElement!==target){try{target.insertBefore(sel,account||target.firstChild)}catch{header.appendChild(sel)}}
   }
