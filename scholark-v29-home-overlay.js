@@ -197,5 +197,5 @@
   window.addEventListener('resize',()=>setTimeout(sync,80),{passive:true});
   window.addEventListener('scholark-language-ready',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer)});
   setTimeout(sync,80);
-  window.__SCHOLARK_V29_HOME__={setMode,openStudio,sync,getMode:()=>active,getLayer:()=>layer};
+  window.__SCHOLARK_V29_HOME__={setMode,openStudio,sync,speak,syncPresenterLanguage,getMode:()=>active,getLayer:()=>layer};
 })();
