@@ -103,13 +103,16 @@
     const x=renderedItems[index];if(!x||x._review?.loading)return;
     if(x._review&&!x._review.error){paintResults();return}
     x._review={loading:true};paintResults();
-    const language=window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||'English';
-    const place=[renderOpts?.city,renderOpts?.country].filter(Boolean).join(', ');
-    const query=`Research current public reviews and reputation for the education institution "${x.name}" in ${place||renderOpts?.country||'its location'}. Find real review sources where available, including Google/Maps snippets, Facebook, education directories, student/alumni discussion or reputable local reporting. Summarize recurring strengths and complaints. If a numerical rating or review count is visible, state the platform and count exactly. Do not invent a rating, review, testimonial or URL. If reliable public reviews are scarce, say that clearly. Also distinguish school quality/reputation from SCHOLARK's fit score.`;
     try{
-      const res=await fetch('/api/studio/research',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'school-review',language,query})});
+      const res=await fetch('/api/schools/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:x.name,country:renderOpts?.country||'',city:renderOpts?.city||''})});
       const data=await res.json().catch(()=>({}));if(!res.ok||!data?.ok)throw new Error(data?.error||'Public review search failed');
-      x._review={loading:false,summary:data.result?.summary||'',findings:data.result?.findings||[],sources:data.result?.sources||[]};
+      const results=Array.isArray(data.results)?data.results:[];
+      x._review={
+        loading:false,
+        summary:results.length?'SCHOLARK found '+results.length+' public review/reputation sources to inspect. Review snippets are shown below; open the sources for the full context.':'No reliable public review sources were returned for this school.',
+        findings:results.filter(r=>r.snippet).slice(0,4).map(r=>({claim:r.title||'Public review source',detail:r.snippet})),
+        sources:results.filter(r=>/^https?:/i.test(String(r.url||''))).map(r=>({title:r.title||'Review source',url:r.url,publisher:'Public web'}))
+      };
     }catch(e){x._review={loading:false,error:String(e?.message||e||'Review search failed')}}
     paintResults();
   }
@@ -132,23 +135,39 @@
   async function search(){
     const country=$('#v50-country').value.trim(),city=$('#v50-city').value.trim(),level=$('#v50-level').value,study=$('#v50-study').value.trim(),radius=Math.min(700,Math.max(1,+$('#v50-radius').value||50)),sort=$('#v50-sort').value,h=$('#v50-results'),loc=$('#v50-location');
     if(!country){h.innerHTML='<div class="v50-state err">Tell SCHOLARK which country you are in or going to first.</div>';return $('#v50-country').focus()}
-    h.innerHTML='<div class="v50-state">Finding schools across public sources and calculating fit scores…</div>';
-    let pos=currentPos,countryCode=String(currentPos?.countryCode||'').toUpperCase(),geoResult=null;
+    window.__SCHOLARK_COUNTRY__?.set?.(country,'schools');
+    h.innerHTML='<div class="v50-state">Finding schools through SCHOLARK server-side public sources…</div>';
     try{
-      if(!pos||city){geoResult=await geocode(country,city);pos={lat:geoResult.lat,lon:geoResult.lon,countryCode:geoResult.countryCode};countryCode=geoResult.countryCode;loc.textContent=`Searching around ${geoResult.display}.`}else loc.textContent=`Searching around your current location in ${country}.`;
-      const suriname=/^suriname$/i.test(country)||countryCode==='SR',national=suriname&&level==='all';
-      if(national)loc.textContent='Searching all education levels across Suriname. This nationwide search is not limited to Paramaribo.';
-      const [db,raw,wiki]=await Promise.all([
-        dbSchools(country,national?'':city,level,study,pos),
-        national?overpassCountry(countryCode||'SR','Suriname'):overpass(pos,radius),
-        national?Promise.resolve([]):wikiGeo(pos,radius)
-      ]);
-      const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems);
+      const payload={country,city,level,radius,lat:currentPos?.lat,lon:currentPos?.lon,countryCode:currentPos?.countryCode||''};
+      const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      const live=await response.json().catch(()=>({}));
+      if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
+      const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)};
+      const db=await dbSchools(country,live.national?'':city,level,study,pos).catch(()=>[]);
+      const items=merge(db,Array.isArray(live.schools)?live.schools:[]);
+      const national=!!live.national;
       render(items,{country,city,level,study,radius:national?700:radius,sort,national});
-      loc.textContent+=(db.length?' · '+db.length+' curated database matches included.':' · Public-source coverage included.');
-      if(national)loc.textContent+=` · ${items.length} named education institutions found nationwide from the currently available sources.`;
+      const sourceCount=(live.sourceStatus||[]).filter(x=>x.ok).reduce((n,x)=>n+(Number(x.count)||0),0);
+      loc.textContent=national
+        ? 'Nationwide Suriname search complete · '+items.length+' named education institutions · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
+        : 'School search complete around '+(live.center?.display||city||country)+' · '+items.length+' named education institutions · within '+radius+' km.';
+      if(db.length)loc.textContent+=' · '+db.length+' curated SCHOLARK database matches merged.';
+    }catch(serverError){
+      console.warn('[SCHOLARK] server school search failed, trying browser fallback:',serverError);
+      let pos=currentPos,countryCode=String(currentPos?.countryCode||'').toUpperCase(),geoResult=null;
+      try{
+        if(!pos||city){geoResult=await geocode(country,city);pos={lat:geoResult.lat,lon:geoResult.lon,countryCode:geoResult.countryCode};countryCode=geoResult.countryCode}
+        const suriname=/^suriname$/i.test(country)||countryCode==='SR',national=suriname&&level==='all';
+        const [db,raw,wiki]=await Promise.all([dbSchools(country,national?'':city,level,study,pos),national?overpassCountry(countryCode||'SR','Suriname'):overpass(pos,radius),national?Promise.resolve([]):wikiGeo(pos,radius)]);
+        const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems);
+        render(items,{country,city,level,study,radius:national?700:radius,sort,national});
+        loc.textContent='Browser fallback used · '+items.length+' named education institutions found.';
+      }catch(e){
+        h.innerHTML='<div class="v50-state err">SCHOLARK could not reach the school data sources right now. The app itself is still responsive; retry this search in a moment.</div>';
+        $('#v50-count').textContent='School source unavailable';
+        loc.textContent='Server route and browser fallback both failed.';
+      }
     }
-    catch(e){console.warn('[SCHOLARK] school search:',e);h.innerHTML='<div class="v50-state err">The school sources did not respond correctly. Try again, change the area, or retry in a moment.</div>';loc.textContent='Search could not be completed.'}
   }
 
   function open(){build();root.classList.add('open');root.scrollTop=0;history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
