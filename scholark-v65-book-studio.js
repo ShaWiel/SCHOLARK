@@ -60,11 +60,21 @@
     }finally{clearTimeout(timer)}
   }
   function shell(){
-    document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open'); document.body.classList.add('v51-workspace');
-    $('#v41-studio-workspace')?.setAttribute('hidden',''); $('#v25-book')?.classList.remove('open');
-    $$('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='book')); history.replaceState(null,'',location.pathname+location.search+'#book');
+    document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
+    document.body.classList.add('v51-workspace');
+    // Book Studio may be entered from Schools/Study/Studio. Clear those actual
+    // surfaces too, not only their body mode class, otherwise a legacy overlay
+    // can remain on top of the Book Studio and make the sidebar look closed.
+    $('#v41-studio-workspace')?.setAttribute('hidden','');
+    $('#sv24-overlay')?.classList.remove('open');
+    $('#v50-school')?.classList.remove('open');
+    $('#v25-study')?.classList.remove('open');
+    $('#v25-book')?.classList.remove('open');
+    const oldNative=$('.v51-native-host');if(oldNative)oldNative.classList.remove('v51-native-host');
+    $('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='book'));
+    if(String(location.hash||'').toLowerCase()!=='#book')history.replaceState(null,'',location.pathname+location.search+'#book');
     const main=$('#v51-main'); if(!main)return null; main.classList.add('v52-fast-main'); main.style.setProperty('display','block','important');
-    $$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});
+    $('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});
     let p=$('[data-v51-page="fallback"]',main); if(!p){p=document.createElement('section');p.className='v51-page';p.dataset.v51Page='fallback';main.appendChild(p)} p.classList.add('active');p.style.display='block';p.style.padding='0';
     let h=$('#v51-fallback',p); if(!h){h=document.createElement('div');h.id='v51-fallback';p.appendChild(h)} return h;
   }
@@ -138,7 +148,9 @@
   }
 
   function open(){load();state.index=0;render()} function openSaved(book){state.book=book;state.index=0;save();render()}
-  window.addEventListener('click',e=>{const b=e.target.closest?.('[data-v51-tool="book"]');if(!b)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open()},true);
+  // V51 owns sidebar routing. Do not intercept Book Studio sidebar clicks in the
+  // capture phase: doing so bypasses V51.clearModes() and leaves the previous
+  // tool surface mounted above Book Studio.
   load(); if(String(location.hash).toLowerCase()==='#book')setTimeout(open,90);
   window.__SCHOLARK_V65_BOOK__={open,openSaved,get:()=>state.book};
 })();
