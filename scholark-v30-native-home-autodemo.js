@@ -152,7 +152,7 @@
     if(window.__SCHOLARK_V29_HOME__?.setMode)window.__SCHOLARK_V29_HOME__.setMode(mode);
     else{
       const btn=$(`.v29-type[data-mode="${mode}"]`,layer)||$(`.v29-tab[data-mode="${mode}"]`,layer);btn?.click();
-      $('.v29-type,.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+      Array.from(layer.querySelectorAll('.v29-type,.v29-tab')).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     }
     autoType(mode);
   }
