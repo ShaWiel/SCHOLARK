@@ -14,7 +14,7 @@
     body.v31-public-home #v29-final-open,
     body.v31-public-home #sv24-launch{display:none!important;visibility:hidden!important;pointer-events:none!important}
     body.v31-public-home .v29-prompt{padding:10px 16px!important}
-    body.v31-public-home .v29-prompt input{padding-right:12px!important;cursor:default!important}
+    body.v31-public-home .v29-prompt input,body.v31-public-home .v29-prompt textarea{padding-right:12px!important;cursor:default!important}
 
     .v32-preview-shell{height:100%;display:flex;flex-direction:column;gap:11px;animation:v32fade .38s ease}
     .v32-preview-shell *{box-sizing:border-box}
