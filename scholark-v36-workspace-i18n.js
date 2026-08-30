@@ -26,7 +26,7 @@
   `;
   document.head.appendChild(style);
 
-  const langs=[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const langs=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
 
   const labels={
     nl:{home:'Home',dashboard:'Dashboard',education:'Educatie & Leren',projects:'Mijn projecten',tutor:'AI Tutor',studio:'Studio AI',planner:'Planner',progress:'Voortgang',goals:'Doelen',logout:'Uitloggen',focus:'Focusmodus',reset:'Demo resetten'},
