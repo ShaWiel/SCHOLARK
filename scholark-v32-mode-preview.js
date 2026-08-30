@@ -69,6 +69,7 @@
     if(mode===lastMode && $('.v32-preview-shell',host)) return;
     const d=data[mode]||data.presentation;
     host.innerHTML=`<div class="v32-preview-shell" data-v32-mode="${mode}"><div class="v32-label">${d.label}</div><div class="v32-title" id="v29-preview-title">${d.title}</div><div class="v32-sub">${d.sub}</div>${d.html}</div>`;
+    window.__SCHOLARK_I18N__?.apply?.(host);
     lastMode=mode;
   }
 
