@@ -102,9 +102,11 @@
   let layer=null,active='presentation',builtLang='base';
   function setMode(mode){
     active=mode;const d=studioData[mode]||studioData.presentation;
-    $$('.v29-type',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-    $$('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-    $('#v29-stage-title',layer).textContent=d.title;$('#v29-stage-desc',layer).textContent=d.desc;$('#v29-stage-list',layer).innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');$('#v29-output-title',layer).textContent=d.name;$('#v29-output-desc',layer).textContent=d.preview;$('#v29-preview-title',layer).textContent=d.name+' Builder';
+    $('.v29-type',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    $('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    const stageTitle=$('#v29-stage-title',layer),stageDesc=$('#v29-stage-desc',layer),stageList=$('#v29-stage-list',layer),outputTitle=$('#v29-output-title',layer),outputDesc=$('#v29-output-desc',layer),previewTitle=$('#v29-preview-title',layer);
+    if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(previewTitle)previewTitle.textContent=d.name+' Builder';
+    window.dispatchEvent(new CustomEvent('scholark-home-mode-change',{detail:{mode}}));
   }
 
   function presenterOptions(){
@@ -148,4 +150,5 @@
   window.addEventListener('resize',()=>setTimeout(sync,80),{passive:true});
   window.addEventListener('scholark-language-ready',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer)});
   setTimeout(sync,80);
+  window.__SCHOLARK_V29_HOME__={setMode,openStudio,sync,getMode:()=>active,getLayer:()=>layer};
 })();
