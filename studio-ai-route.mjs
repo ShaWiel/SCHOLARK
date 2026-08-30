@@ -39,7 +39,7 @@ const modeRules = {
   social: 'Return a complete social content set/carousel with platform-ready hooks, useful body copy, caption, CTA and platform-appropriate hashtags. Avoid engagement bait, placeholders and instructions to the creator. Each item should be publishable after normal human review.',
   graphic: 'Return a complete visual-content system for a poster/infographic/graphic: final headline, concise supporting copy, information blocks, hierarchy, CTA and a concrete visual brief. Do not put design instructions in the visible copy fields.',
   book: 'Create a serious book blueprint, not a generic writing checklist. Each section is one actual chapter plan with a chapter title, a concrete synopsis in body, scene/argument beats in bullets, structural points, continuity notes in speakerNotes, and a visualBrief used as mood or research direction. The sequence must build logically from first chapter to last. Adapt to fiction or nonfiction based on the request. Never pretend an entire long manuscript has been written when only a plan was requested.',
-  book_chapter: 'Write an actual polished chapter draft based on the supplied book and chapter context. Each returned section is a continuous subsection of the same chapter. The body field must contain finished prose, not an outline, instruction, summary of what to write, or meta-commentary. Preserve voice, POV, chronology, character/argument continuity and audience. Bullets should normally be empty unless the requested book format genuinely needs them. speakerNotes may contain private revision/continuity notes and must not be part of the manuscript prose.',
+  book_chapter: 'Write an actual publication-quality chapter based on the supplied book and chapter context. Each returned section is a continuous subsection of the same chapter. The body field must contain finished prose, not an outline, instruction, summary, placeholder, or meta-commentary. Use concrete names, settings, actions, sensory details, dialogue, decisions and consequences appropriate to the requested genre. Never write phrases such as "in this part of the chapter", "the scene moves through", "the characters respond", "the genre tone", "the POV perspective", or anything that talks about how the writing is being generated. Do not restate the prompt, genre, audience or POV inside the manuscript. If the user gave only a premise, invent specific recurring characters, setting details, goals and conflicts and keep them consistent. Preserve voice, chronology and continuity with supplied prior-chapter context. Bullets should normally be empty unless the requested book format genuinely needs them. speakerNotes may contain private revision/continuity notes and must not be part of the manuscript prose.',
 };
 
 const schema = {
@@ -163,7 +163,7 @@ function studioTier(payload={}) {
   const explicitResearch=payload.research===true||payload.settings?.research===true||payload.settings?.citations===true;
   if(['presentation_block_edit','presentation_slide_edit','webpage_section_edit','document_section_edit','social','graphic'].includes(mode)&&count<=12&&!explicitResearch)return'light';
   if(mode==='presentation'&&(count>30||explicitResearch)||mode==='document'&&count>25||mode==='book_chapter'&&Number(payload.settings?.targetWords||0)>7000)return'high';
-  if(mode==='book'||mode==='presentation'||mode==='document'||explicitResearch)return'balanced';
+  if(mode==='book'||mode==='book_chapter'||mode==='presentation'||mode==='document'||explicitResearch)return'balanced';
   return'light';
 }
 function tierModels(payload={}) {
@@ -311,14 +311,27 @@ function scholarkStudioTestFallback(payload){
 async function generate(payload){
   const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
   const mode=String(payload?.mode||'').toLowerCase();
+  const pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY);
+  const openAIConfigured=validSecret(process.env.OPENAI_API_KEY);
   const geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim());
   if(testMode){
-    if((mode==='book'||mode==='book_chapter')&&geminiConfigured){
-      try{return await generateGemini(payload)}catch(error){console.warn('[SCHOLARK] Gemini book test fallback:',error?.message||error)}
+    if(mode==='book'||mode==='book_chapter'){
+      const errors=[];
+      const providers=[
+        [pollinationsConfigured,generatePollinations,'pollinations'],
+        [geminiConfigured,generateGemini,'gemini'],
+        [openAIConfigured,generateOpenAI,'openai']
+      ];
+      for(const [configured,fn,name] of providers){
+        if(!configured)continue;
+        try{return await fn(payload)}catch(error){errors.push({provider:name,code:error?.code||'BOOK_AI_ERROR',message:error?.message||'Book generation failed'});console.warn('[SCHOLARK] '+name+' book generation failed:',error?.message||error)}
+      }
+      const err=new Error(errors.at(-1)?.message||'No production-quality Book Studio AI provider is available.');
+      err.code='BOOK_AI_UNAVAILABLE';err.providers=errors;throw err;
     }
     return scholarkStudioTestFallback(payload);
   }
-  const route=tierModels(payload),pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY),openAIConfigured=validSecret(process.env.OPENAI_API_KEY),errors=[];
+  const route=tierModels(payload),errors=[];
   const providers=route.tier==='light'
     ? [[geminiConfigured,generateGemini,'gemini'],[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai']]
     : [[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai'],[geminiConfigured,generateGemini,'gemini']];
