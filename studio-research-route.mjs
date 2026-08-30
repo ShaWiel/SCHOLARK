@@ -26,7 +26,30 @@ function normalize(x){
   if(findings.length&&!sources.length)cautions.unshift('Findings were returned without usable source URLs; treat them as unverified until sources are added.');
   return {summary:clean(x.summary).slice(0,5000),findings,sources,cautions,suggestedOutline:(Array.isArray(x.suggestedOutline)?x.suggestedOutline:[]).map(clean).filter(Boolean).slice(0,20)};
 }
+async function freeTestResearch(body){
+  const query=clean(body?.query||body?.prompt).slice(0,8000);if(query.length<5){const e=new Error('Describe what SCHOLARK should research');e.code='QUERY_REQUIRED';throw e}
+  const url='https://html.duckduckgo.com/html/?q='+encodeURIComponent(query),sources=[];
+  try{
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let response;
+    try{response=await fetch(url,{headers:{accept:'text/html','user-agent':'Mozilla/5.0 SCHOLARK/1.0'},signal:ctrl.signal})}finally{clearTimeout(timer)}
+    const html=await response.text(),blocks=html.split(/result results_links|result results_links_deep/i).slice(1,11);
+    for(const block of blocks){
+      const href=(block.match(/class="result__a"[^>]*href="([^"]+)"/i)||[])[1]||'',title=clean((block.match(/class="result__a"[^>]*>([\s\S]*?)<\/a>/i)||[])[1]||'').replace(/<[^>]+>/g,' '),snippet=clean((block.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a?>/i)||[])[1]||'').replace(/<[^>]+>/g,' ');
+      let resolved=href;try{const u=new URL(href,'https://duckduckgo.com');resolved=u.searchParams.get('uddg')||u.href}catch{}
+      if(title&&/^https?:/i.test(resolved))sources.push({title,url:resolved,publisher:'Public web',date:'',snippet});
+    }
+  }catch{}
+  const cleanSources=sources.slice(0,10);
+  return {ok:true,provider:'scholark-test-search',model:'duckduckgo-live',result:{
+    summary:cleanSources.length?'Testing-mode live search returned '+cleanSources.length+' public sources for review. SCHOLARK does not synthesize unsupported facts in zero-credit mode.':'No public source snippets were returned. Refine the query or open official sources manually.',
+    findings:cleanSources.filter(x=>x.snippet).slice(0,8).map(x=>({claim:x.title,detail:x.snippet,sourceUrls:[x.url],confidence:'medium'})),
+    sources:cleanSources.map(({snippet,...x})=>x),
+    cautions:['Zero-credit testing mode shows search-source snippets instead of paid AI synthesis. Verify important claims in the linked sources.'],
+    suggestedOutline:['Define the question','Review primary/official sources','Compare evidence','Note disagreements or uncertainty','Build a sourced conclusion']
+  },researchedAt:new Date().toISOString()};
+}
 async function research(body){
+  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')))return freeTestResearch(body);
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();if(!hasKey(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e}
   const query=clean(body?.query||body?.prompt).slice(0,8000);if(query.length<5){const e=new Error('Describe what SCHOLARK should research');e.code='QUERY_REQUIRED';throw e}
   const model=clean(process.env.POLLINATIONS_RESEARCH_MODEL||'perplexity-fast')||'perplexity-fast';
@@ -44,7 +67,7 @@ http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);const [req,res]=args;
   try{
     const url=new URL(req.url||'/','http://localhost');
-    if(req.method==='GET'&&url.pathname==='/api/studio/research/health'){json(res,200,{ok:true,configured:hasKey(process.env.POLLINATIONS_API_KEY),model:clean(process.env.POLLINATIONS_RESEARCH_MODEL||'perplexity-fast')});return true}
+    if(req.method==='GET'&&url.pathname==='/api/studio/research/health'){json(res,200,{ok:true,testMode:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),configured:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))||hasKey(process.env.POLLINATIONS_API_KEY),model:clean(process.env.POLLINATIONS_RESEARCH_MODEL||'perplexity-fast')});return true}
     if(req.method==='POST'&&url.pathname==='/api/studio/research'){readBody(req).then(research).then(x=>json(res,200,x)).catch(e=>{const code=e?.code||'RESEARCH_FAILED',status=code==='POLLINATIONS_NOT_CONFIGURED'?503:code==='POLLINATIONS_BALANCE'?402:code==='POLLINATIONS_RATE_LIMIT'?429:code==='QUERY_REQUIRED'||code==='INVALID_JSON'?400:e?.name==='AbortError'?504:502;json(res,status,{ok:false,code,error:e?.name==='AbortError'?'Research timed out':String(e?.message||e)})});return true}
   }catch(e){json(res,500,{ok:false,code:'RESEARCH_ROUTE_ERROR',error:String(e?.message||e)});return true}
   return originalEmit.call(this,type,...args);
