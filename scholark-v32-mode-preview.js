@@ -68,7 +68,7 @@
     const mode=currentMode();
     if(mode===lastMode && $('.v32-preview-shell',host)) return;
     const d=data[mode]||data.presentation;
-    host.innerHTML=`<div class="v32-preview-shell"><div class="v32-label">${d.label}</div><div class="v32-title">${d.title}</div><div class="v32-sub">${d.sub}</div>${d.html}</div>`;
+    host.innerHTML=`<div class="v32-preview-shell" data-v32-mode="${mode}"><div class="v32-label">${d.label}</div><div class="v32-title" id="v29-preview-title">${d.title}</div><div class="v32-sub">${d.sub}</div>${d.html}</div>`;
     lastMode=mode;
   }
 
@@ -89,7 +89,11 @@
   }
 
   function sync(){cleanPublicHome();render();}
+  function rerender(){lastMode='';requestAnimationFrame(render)}
   addEventListener('hashchange',()=>setTimeout(sync,80));
   addEventListener('scholark-language-ready',()=>setTimeout(sync,80));
+  addEventListener('scholark-home-mode-change',rerender);
+  document.addEventListener('click',e=>{if(e.target.closest?.('#v29-home-layer .v29-type,#v29-home-layer .v29-tab'))setTimeout(rerender,0)},true);
   [80,500].forEach(ms=>setTimeout(sync,ms));
+  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync};
 })();
