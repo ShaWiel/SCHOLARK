@@ -63,7 +63,7 @@
   const state={active:'dashboard'};
 
   function levelId(){return localStorage.getItem('scholark_learning_level')||'secondary'}
-  function setLevel(id){if(!LEVELS.some(x=>x[0]===id))id='secondary';localStorage.setItem('scholark_learning_level',id);localStorage.setItem('scholark_ai_audience_level',id);renderLevels();forceQuality()}
+  function setLevel(id){if(!LEVELS.some(x=>x[0]===id))id='secondary';localStorage.setItem('scholark_learning_level',id);localStorage.setItem('scholark_ai_audience_level',id);renderLevels();forceQuality();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)}
   function forceQuality(){localStorage.setItem('scholark_ai_quality','highest');localStorage.setItem('scholark_default_ai_quality','highest');localStorage.setItem('scholark_workspace_quality','highest');const q=$('#v41-quality');if(q&&[...q.options].some(o=>o.value==='highest'))q.value='highest';const d=$('#v45-depth');if(d&&[...d.options].some(o=>o.value==='expert'))d.value='expert';['v45-strict','v45-research','v45-factcheck','v45-visuals','v45-autopolish','v41-citations','v41-sources'].forEach(id=>{const e=$('#'+id);if(e&&'checked'in e)e.checked=true})}
 
   function officialLogoNode(){
