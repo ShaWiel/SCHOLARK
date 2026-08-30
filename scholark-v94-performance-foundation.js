@@ -52,7 +52,7 @@
   addEventListener('hashchange',routeTransition);addEventListener('popstate',routeTransition);addEventListener('resize',scheduleLayout,{passive:true});
 
   const lowPower=(Number(navigator.hardwareConcurrency)||8)<=4||(Number(navigator.deviceMemory)||8)<=4;
-  if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');window.__SCHOLARK_V30_DEMO__?.stop?.()}
+  if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');setTimeout(()=>window.__SCHOLARK_V30_DEMO__?.sync?.(),0)}
 
   if('PerformanceObserver'in window){
     try{
@@ -63,7 +63,7 @@
         while(recent.length&&now-recent[0]>12000)recent.shift();
         if(recent.length>=3&&!state.safeMode){
           state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');
-          window.__SCHOLARK_V30_DEMO__?.stop?.();
+          setTimeout(()=>window.__SCHOLARK_V30_DEMO__?.sync?.(),0);
           console.warn('[SCHOLARK] Performance safe mode enabled after repeated long tasks.');
         }
       });
