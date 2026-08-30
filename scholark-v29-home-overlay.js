@@ -164,7 +164,7 @@
     if(caption){caption.classList.add('open');caption.textContent='Preparing '+(presenterLanguages.find(([v])=>v===target)?.[1]||'English')+' presenter audio…'}
     speechSynthesis.cancel();speechSynthesis.resume();
     let i=0,finished=false;
-    const finish=()=>{if(finished)return;finished=true;$('.v29-host',layer).forEach(h=>h.classList.remove('v30-speaking'));if(button){button.disabled=false;button.textContent='▶ Let the AI presenters explain'}setTimeout(()=>caption?.classList.remove('open'),1800)};
+    const finish=()=>{if(finished)return;finished=true;Array.from(layer.querySelectorAll('.v29-host')).forEach(h=>h.classList.remove('v30-speaking'));if(button){button.disabled=false;button.textContent='▶ Let the AI presenters explain'}setTimeout(()=>caption?.classList.remove('open'),1800)};
     const next=()=>{
       if(i>=rows.length){finish();return}
       const [name,text]=rows[i++],hosts=$('.v29-host',layer);hosts.forEach(h=>h.classList.toggle('v30-speaking',clean(h.querySelector('b')?.textContent)===name));
