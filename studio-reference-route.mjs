@@ -21,7 +21,15 @@ async function safeZip(buffer){
 }
 async function extractPdf(buffer){
   if(buffer.slice(0,5).toString()!=='%PDF-'){const e=new Error('File does not look like a valid PDF');e.code='INVALID_PDF';throw e}
-  const mod=await import('@cedrugs/pdf-parse'),pdf=mod.default||mod;const out=await pdf(buffer);return {text:clean(out?.text),pages:Number(out?.numpages||0)||undefined};
+  const mod=await import('pdf-parse'),PDFParse=mod.PDFParse||mod.default?.PDFParse;
+  if(typeof PDFParse!=='function')throw new Error('PDF parser module did not expose PDFParse');
+  const parser=new PDFParse({data:buffer});
+  try{
+    const out=await parser.getText();
+    return {text:clean(out?.text),pages:Number(out?.total||out?.pages?.length||0)||undefined};
+  }finally{
+    try{await parser.destroy()}catch{}
+  }
 }
 async function extractDocx(buffer){
   if(buffer[0]!==0x50||buffer[1]!==0x4b){const e=new Error('File does not look like a valid DOCX');e.code='INVALID_DOCX';throw e}
