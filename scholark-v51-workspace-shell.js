@@ -90,8 +90,8 @@
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
-  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');if(main){main.style.removeProperty('display');$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
-  function showPage(name){$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
+  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
+  function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
   function syncNav(id=state.active){$$('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
 
   function findLegacySidebar(){
@@ -155,7 +155,7 @@
   function goHome(){
     clearModes();
     document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
-    if(main){main.style.removeProperty('display');$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.remove('active')});const fallback=$('#v51-fallback',main);if(fallback)fallback.innerHTML=''}
+    if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.remove('active')});const fallback=$('#v51-fallback',main);if(fallback)fallback.innerHTML=''}
     const oldUrl=location.href;
     window.history.replaceState(null,'',location.pathname+location.search+'#home');
     const h=$('#v29-home-layer');
