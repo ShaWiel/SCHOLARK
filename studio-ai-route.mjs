@@ -225,9 +225,43 @@ async function generateGemini(payload){
   const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
   return{ok:true,provider:'gemini',model,tier:route.tier,quality:'cost-routed',artifact:parseArtifactText(text,'Gemini')};
 }
+function localBookArtifact(payload){
+  const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
+  const mode=clean(payload.mode).toLowerCase(),prompt=clean(payload.prompt),style=clean(payload.style||payload.settings?.style||'Fiction');
+  if(mode==='book'){
+    const requested=Math.max(3,Math.min(30,Number(payload.count)||12));
+    const arc=['The Beginning','A New Pressure','First Consequence','Crossing the Line','Hidden Truth','The Cost of Choice','A Deeper Conflict','Point of No Return','Fallout','The Hardest Choice','Final Confrontation','Aftermath'];
+    const title=(prompt.match(/for:\s*([^\.]+?)(?:\. Genre|$)/i)||[])[1]||prompt.slice(0,72)||'Untitled Book';
+    const sections=Array.from({length:requested},(_,i)=>{
+      const t=arc[i]||('Chapter '+(i+1));
+      return {title:t,subtitle:'',body:'Chapter '+(i+1)+' advances the central conflict of '+title+' by forcing the protagonist or central argument into a new decision with visible consequences.',bullets:['Open with a concrete change or pressure','Develop conflict through action or evidence','End with a consequence that drives the next chapter'],points:[],label:'CHAPTER',layoutHint:'section',visualType:'none',visualBrief:'Mood and continuity reference for '+style+'.',speakerNotes:'Preserve continuity with the preceding chapter and carry unresolved consequences forward.',sourceRefs:[]};
+    });
+    return {ok:true,provider:'scholark-test-engine',model:'local-book-v2',tier:'test',quality:'structured',artifact:{title,subtitle:style,summary:'A complete chapter architecture for '+title+'.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
+  }
+  const chapterNo=Number((prompt.match(/Write Chapter\s+(\d+)/i)||[])[1]||1);
+  const chapterTitle=(prompt.match(/Write Chapter\s+\d+,\s*"([^"]+)"/i)||[])[1]||('Chapter '+chapterNo);
+  const bookTitle=(prompt.match(/book\s+"([^"]+)"/i)||[])[1]||'the book';
+  const concept=(prompt.match(/Concept:\s*([^\.]+(?:\.[^G]|$)?)/i)||[])[1]||'';
+  const pov=(prompt.match(/POV:\s*([^\.]+)/i)||[])[1]||'third person';
+  const genre=(prompt.match(/Genre:\s*([^\.]+)/i)||[])[1]||style;
+  const openings=[
+    'The room felt different before anyone said a word. Something had shifted, quietly but completely, and the people inside it were still pretending not to notice.',
+    'By the time the first sign appeared, it was already too late to call it coincidence. The change had been building in small details, each one easy to dismiss on its own.',
+    'Morning arrived without permission, exposing everything the night had allowed them to ignore. What remained was not clarity, exactly, but the certainty that a choice could no longer be postponed.'
+  ];
+  const secTitles=['Arrival','Pressure','Choice','Consequence','Turn','Forward'];
+  const sections=secTitles.map((st,i)=>{
+    const opener=i===0?openings[(chapterNo-1)%openings.length]:'The consequences of the previous moment refused to stay contained. Every answer created another question, and every hesitation gave the conflict more room to grow.';
+    const body=opener+' '+(concept?('At the center of '+bookTitle+' is '+concept.trim()+'. '):'')+'In this part of '+chapterTitle+', the scene moves through concrete action rather than explanation. The characters respond to what is directly in front of them, but their choices are shaped by what they fear, want, and refuse to admit. The '+genre+' tone remains present in the atmosphere and pacing, while the '+pov+' perspective keeps the reader close to the most important emotional or strategic information.\n\nA new detail changes the meaning of what came before. Instead of resolving the tension immediately, the chapter lets that discovery create a harder decision. Dialogue, physical movement, and observation carry the scene forward. Small reactions matter because they reveal what each person is trying to protect.\n\nBy the end of this section, something has been gained and something has been lost. The balance of power has shifted. The next section cannot simply repeat the same problem; it must deal with the consequence created here.';
+    return {title:st,subtitle:'',body,bullets:[],points:[],label:'MANUSCRIPT',layoutHint:'section',visualType:'none',visualBrief:'',speakerNotes:'Keep names, chronology, motivations and unresolved consequences consistent with adjacent chapters.',sourceRefs:[]};
+  });
+  return {ok:true,provider:'scholark-test-engine',model:'local-manuscript-v2',tier:'test',quality:'manuscript-fallback',artifact:{title:chapterTitle,subtitle:'',summary:'Finished manuscript prose for '+chapterTitle+'.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
+}
+
 function scholarkStudioTestFallback(payload){
   const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
   const mode=clean(payload.mode||'document').toLowerCase();
+  if(mode==='book'||mode==='book_chapter')return localBookArtifact(payload);
   const prompt=clean(payload.prompt||'SCHOLARK test project');
   const max=mode.includes('edit')?1:mode==='presentation'?12:mode==='book'?10:mode==='book_chapter'?4:8;
   const requested=Math.max(1,Math.min(max,Number(payload.count||payload.settings?.count)||6));
@@ -275,8 +309,16 @@ function scholarkStudioTestFallback(payload){
 }
 
 async function generate(payload){
-  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')))return scholarkStudioTestFallback(payload);
-  const route=tierModels(payload),pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY),openAIConfigured=validSecret(process.env.OPENAI_API_KEY),geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),errors=[];
+  const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
+  const mode=String(payload?.mode||'').toLowerCase();
+  const geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim());
+  if(testMode){
+    if((mode==='book'||mode==='book_chapter')&&geminiConfigured){
+      try{return await generateGemini(payload)}catch(error){console.warn('[SCHOLARK] Gemini book test fallback:',error?.message||error)}
+    }
+    return scholarkStudioTestFallback(payload);
+  }
+  const route=tierModels(payload),pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY),openAIConfigured=validSecret(process.env.OPENAI_API_KEY),errors=[];
   const providers=route.tier==='light'
     ? [[geminiConfigured,generateGemini,'gemini'],[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai']]
     : [[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai'],[geminiConfigured,generateGemini,'gemini']];
