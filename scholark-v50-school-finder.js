@@ -56,12 +56,15 @@
   }
   async function overpassCountry(countryCode='SR',countryName='Suriname'){
     const iso=String(countryCode||'SR').toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'SR',name=String(countryName||'Suriname').replace(/["\\]/g,'');
-    const queries=[
-      `[out:json][timeout:40];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country););out center tags 1800;`,
-      `[out:json][timeout:40];area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country););out center tags 1800;`
-    ];
-    for(const q of queries){const rows=await overpassQuery(q,30000);if(rows.length)return rows}
-    return [];
+    if(iso==='SR'){
+      const box='1.75,-58.25,6.25,-53.75';
+      const q=`[out:json][timeout:35];(node["amenity"~"kindergarten|school|college|university|language_school"](${box});way["amenity"~"kindergarten|school|college|university|language_school"](${box});relation["amenity"~"kindergarten|school|college|university|language_school"](${box});node["building"="school"](${box});way["building"="school"](${box});relation["building"="school"](${box});node["office"="educational_institution"](${box});way["office"="educational_institution"](${box});relation["office"="educational_institution"](${box}););out center tags 1800;`;
+      const rows=await overpassQuery(q,22000);if(rows.length)return rows;
+    }
+    const q=`[out:json][timeout:35];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country);node["building"="school"](area.country);way["building"="school"](area.country);relation["building"="school"](area.country););out center tags 1800;`;
+    const rows=await overpassQuery(q,22000);if(rows.length)return rows;
+    const byName=`[out:json][timeout:30];area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country););out center tags 1800;`;
+    return overpassQuery(byName,18000);
   }
   async function wikiGeo(pos,radius){const r=Math.min(10000,Math.max(1000,radius*1000)),u=`https://en.wikipedia.org/w/api.php?action=query&list=geosearch&format=json&origin=*&gslimit=50&gsradius=${r}&gscoord=${pos.lat}%7C${pos.lon}`;try{const j=await json(u,8000);return(j.query?.geosearch||[]).filter(x=>/school|university|college|academy|institute|polytechnic|lyceum|gymnasium/i.test(x.title)).map(x=>({name:x.title,lat:x.lat,lon:x.lon,distance:x.dist!=null?x.dist/1000:null,wiki:'https://en.wikipedia.org/?curid='+x.pageid,source:'Knowledge search',tags:{name:x.title,amenity:'school'}}))}catch{return[]}}
 
