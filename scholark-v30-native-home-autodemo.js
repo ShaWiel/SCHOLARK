@@ -88,35 +88,93 @@
   }
 
   const demoModes=['presentation','webpage','document','social','graphic','book'];
-  const prompts={
-    presentation:['Build a 10-slide NBA GOAT debate with evidence and visuals.','Maak een sterke presentatie over klimaatverandering met bronnen.'],
-    webpage:['Create a landing page for a student tutoring startup.','Maak een moderne portfolio-webpagina voor een student.'],
-    document:['Write a research-first report on renewable energy.','Schrijf een goed opgebouwd verslag over sociale media en jongeren.'],
-    social:['Create a 6-slide carousel about study habits.','Maak een social campagne voor een school event.'],
-    graphic:['Design an infographic about exam preparation.','Maak een posterconcept voor een schoolfestival.'],
-    book:['Plan a young-adult mystery novel with 18 chapters.','Bouw een boekstructuur voor een coming-of-age verhaal.']
+  const promptBanks={
+    presentation:{
+      en:['Build a 10-slide NBA GOAT debate with evidence, charts and a strong conclusion.','Create a presentation explaining climate change to secondary-school students with sources.'],
+      nl:['Maak een 10-slide NBA GOAT debat met bewijs, grafieken en een sterke conclusie.','Maak een presentatie die klimaatverandering uitlegt aan middelbare scholieren met bronnen.'],
+      es:['Crea una presentación de 10 diapositivas sobre el debate del mejor jugador de la NBA con pruebas y gráficos.','Crea una presentación sobre el cambio climático para estudiantes de secundaria con fuentes.'],
+      fr:['Crée une présentation de 10 diapositives sur le débat du meilleur joueur NBA avec preuves et graphiques.','Crée une présentation sur le changement climatique pour des élèves du secondaire avec des sources.'],
+      de:['Erstelle eine 10-Folien-Präsentation zur NBA-GOAT-Debatte mit Belegen und Diagrammen.','Erstelle eine Präsentation über den Klimawandel für Schüler mit Quellen.'],
+      pt:['Cria uma apresentação de 10 slides sobre o debate do maior jogador da NBA com provas e gráficos.','Cria uma apresentação sobre alterações climáticas para estudantes do ensino secundário com fontes.'],
+      it:['Crea una presentazione di 10 slide sul dibattito NBA GOAT con prove e grafici.','Crea una presentazione sul cambiamento climatico per studenti delle superiori con fonti.']
+    },
+    webpage:{
+      en:['Create a landing page for a student tutoring startup with pricing and a clear CTA.','Build a modern portfolio website for a hospitality-management student.'],
+      nl:['Maak een landingspagina voor een studenten-tutoring startup met prijzen en een duidelijke CTA.','Bouw een moderne portfolio-website voor een student Hospitality Management.'],
+      es:['Crea una página de aterrizaje para una startup de tutoría estudiantil con precios y una CTA clara.','Crea un portafolio web moderno para un estudiante de gestión hotelera.'],
+      fr:['Crée une landing page pour une startup de tutorat étudiant avec tarifs et CTA clair.','Crée un portfolio web moderne pour un étudiant en gestion hôtelière.'],
+      de:['Erstelle eine Landingpage für ein Schüler-Nachhilfe-Startup mit Preisen und klarer Handlungsaufforderung.','Erstelle eine moderne Portfolio-Website für einen Hospitality-Management-Studenten.'],
+      pt:['Cria uma landing page para uma startup de explicações com preços e uma CTA clara.','Cria um portefólio moderno para um estudante de gestão hoteleira.'],
+      it:['Crea una landing page per una startup di tutoraggio con prezzi e una CTA chiara.','Crea un portfolio moderno per uno studente di hospitality management.']
+    },
+    document:{
+      en:['Write a research-first report on renewable energy with citations and recommendations.','Draft a structured policy brief about responsible AI use in schools.'],
+      nl:['Schrijf een research-first verslag over hernieuwbare energie met bronnen en aanbevelingen.','Maak een gestructureerde policy brief over verantwoord AI-gebruik op scholen.'],
+      es:['Escribe un informe basado en investigación sobre energías renovables con citas y recomendaciones.','Redacta un informe de política sobre el uso responsable de la IA en las escuelas.'],
+      fr:['Rédige un rapport fondé sur la recherche sur les énergies renouvelables avec citations et recommandations.','Rédige une note de politique sur l’utilisation responsable de l’IA à l’école.'],
+      de:['Schreibe einen forschungsbasierten Bericht über erneuerbare Energien mit Quellen und Empfehlungen.','Entwirf ein Policy-Briefing zum verantwortungsvollen KI-Einsatz an Schulen.'],
+      pt:['Escreve um relatório baseado em pesquisa sobre energia renovável com citações e recomendações.','Redige um policy brief sobre a utilização responsável de IA nas escolas.'],
+      it:['Scrivi un rapporto basato sulla ricerca sulle energie rinnovabili con citazioni e raccomandazioni.','Prepara un policy brief sull’uso responsabile dell’IA nelle scuole.']
+    },
+    social:{
+      en:['Create a 6-slide carousel about study habits with hook, caption and CTA.','Build a one-week social campaign for a school open day.'],
+      nl:['Maak een carousel van 6 slides over studiegewoonten met hook, caption en CTA.','Bouw een social campagne van één week voor een open dag van een school.'],
+      es:['Crea un carrusel de 6 diapositivas sobre hábitos de estudio con gancho, texto y CTA.','Crea una campaña social de una semana para una jornada de puertas abiertas escolar.'],
+      fr:['Crée un carrousel de 6 slides sur les habitudes d’étude avec accroche, légende et CTA.','Crée une campagne sociale d’une semaine pour une journée portes ouvertes.'],
+      de:['Erstelle ein 6-Slide-Karussell über Lerngewohnheiten mit Hook, Caption und CTA.','Erstelle eine einwöchige Social-Media-Kampagne für einen Tag der offenen Tür.'],
+      pt:['Cria um carrossel de 6 slides sobre hábitos de estudo com hook, legenda e CTA.','Cria uma campanha social de uma semana para um dia aberto da escola.'],
+      it:['Crea un carosello di 6 slide sulle abitudini di studio con hook, caption e CTA.','Crea una campagna social di una settimana per l’open day di una scuola.']
+    },
+    graphic:{
+      en:['Design an infographic about exam preparation with seven practical steps.','Create a poster concept for a school festival with clear visual hierarchy.'],
+      nl:['Ontwerp een infographic over examenvoorbereiding met zeven praktische stappen.','Maak een posterconcept voor een schoolfestival met duidelijke visuele hiërarchie.'],
+      es:['Diseña una infografía sobre preparación para exámenes con siete pasos prácticos.','Crea un concepto de póster para un festival escolar con jerarquía visual clara.'],
+      fr:['Conçois une infographie sur la préparation aux examens en sept étapes pratiques.','Crée un concept d’affiche pour un festival scolaire avec une hiérarchie visuelle claire.'],
+      de:['Entwirf eine Infografik zur Prüfungsvorbereitung mit sieben praktischen Schritten.','Erstelle ein Plakatkonzept für ein Schulfestival mit klarer visueller Hierarchie.'],
+      pt:['Cria um infográfico sobre preparação para exames com sete passos práticos.','Cria um conceito de cartaz para um festival escolar com hierarquia visual clara.'],
+      it:['Progetta un’infografica sulla preparazione agli esami con sette passaggi pratici.','Crea un concept di poster per un festival scolastico con una chiara gerarchia visiva.']
+    },
+    book:{
+      en:['Write a young-adult mystery novel with 18 chapters, recurring clues and a final reveal.','Plan and start a horror-romance novel with multiple POVs and a strong character arc.'],
+      nl:['Schrijf een young-adult mysteryroman met 18 hoofdstukken, terugkerende aanwijzingen en een finale onthulling.','Plan en start een horror-romance boek met meerdere POV’s en een sterke karakterontwikkeling.'],
+      es:['Escribe una novela de misterio juvenil de 18 capítulos con pistas recurrentes y una revelación final.','Planifica e inicia una novela de terror romántico con múltiples puntos de vista.'],
+      fr:['Écris un roman mystère young adult de 18 chapitres avec indices récurrents et révélation finale.','Planifie et commence un roman d’horreur romantique avec plusieurs points de vue.'],
+      de:['Schreibe einen Young-Adult-Mysteryroman mit 18 Kapiteln, wiederkehrenden Hinweisen und finaler Enthüllung.','Plane und beginne einen Horror-Romance-Roman mit mehreren Perspektiven.'],
+      pt:['Escreve um romance mistério jovem-adulto com 18 capítulos, pistas recorrentes e uma revelação final.','Planeia e começa um romance de terror romântico com múltiplos pontos de vista.'],
+      it:['Scrivi un romanzo mystery young adult di 18 capitoli con indizi ricorrenti e rivelazione finale.','Pianifica e inizia un romanzo horror-romance con punti di vista multipli.']
+    }
   };
+  const promptSteps=Object.fromEntries(demoModes.map(m=>[m,0]));
   let modeIndex=0, typingTimer=null, rotateTimer=null, statusTimer=null, pausedUntil=0;
 
   function setAutoMode(mode){
     const layer=$('#v29-home-layer');if(!layer)return;
-    const btn=$(`.v29-type[data-mode="${mode}"]`,layer)||$(`.v29-tab[data-mode="${mode}"]`,layer);btn?.click();
-    $$('.v29-type,.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    if(window.__SCHOLARK_V29_HOME__?.setMode)window.__SCHOLARK_V29_HOME__.setMode(mode);
+    else{
+      const btn=$(`.v29-type[data-mode="${mode}"]`,layer)||$(`.v29-tab[data-mode="${mode}"]`,layer);btn?.click();
+      $('.v29-type,.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    }
     autoType(mode);
   }
 
+  function uiLanguage(){
+    const raw=(window.__SCHOLARK_I18N__?.code?.()||localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase();
+    return ['nl','en','es','fr','de','pt','it'].find(x=>raw.startsWith(x))||'en';
+  }
+  function nextPrompt(mode){
+    const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
+    const step=promptSteps[mode]||0,p=bank[step%bank.length];promptSteps[mode]=step+1;return p;
+  }
   function autoType(mode){
     const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
-    clearInterval(typingTimer);input.value='';
-    const isDutch=(localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase().startsWith('nl');
-    const p=prompts[mode][isDutch?1:0];
+    clearInterval(typingTimer);input.value='';const p=nextPrompt(mode);
     if(document.documentElement.classList.contains('scholark-performance-safe')){input.classList.remove('v30-typing-cursor');input.value=p;return}
     input.classList.add('v30-typing-cursor');let i=0;
     typingTimer=setInterval(()=>{
       if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
       input.value=p.slice(0,++i);
       if(i>=p.length){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');}
-    },58);
+    },42);
   }
 
   function cycleStudio(){
@@ -200,6 +258,7 @@
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
   addEventListener('hashchange',()=>setTimeout(sync,50));
   addEventListener('popstate',()=>setTimeout(sync,50));
+  addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(()=>setAutoMode(demoModes[modeIndex]||'presentation'),80)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
   window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync};
