@@ -3,7 +3,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260830-r114';
+  const VERSION = '20260830-r115';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -19,13 +19,13 @@
     'scholark-v81-stability-foundation.js','scholark-v82-tutor-cloud.js','scholark-v83-study-ahead-cloud.js','scholark-v84-profile-cloud.js',
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
-    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v97-foundation-coordinator.js','scholark-v98-brand-migration.js'
+    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v97-foundation-coordinator.js','scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
   ];
   const BASE = new Set([
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v32-mode-preview.js',
     'scholark-v33-preview-compat.js','scholark-v35-pro-creator-limits.js','scholark-v42-route-guard.js',
     'scholark-v55-home-topbar-workspace-entry.js','scholark-v81-stability-foundation.js','scholark-v90-i18n-engine.js',
-    'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v97-foundation-coordinator.js','scholark-v98-brand-migration.js'
+    'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v97-foundation-coordinator.js','scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
   ]);
   const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js'];
   const WORKSPACE = [
