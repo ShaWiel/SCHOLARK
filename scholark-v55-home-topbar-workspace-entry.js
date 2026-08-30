@@ -17,6 +17,7 @@
     #v41-dashboard-entry{display:none!important;visibility:hidden!important;pointer-events:none!important}
     #v55-topbar{position:fixed;z-index:2147483500;left:0;right:0;top:0;min-height:66px;background:linear-gradient(180deg,rgba(9,18,30,.98),rgba(15,28,44,.98));backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);display:none;align-items:center;justify-content:space-between;gap:14px;padding:10px 26px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif;color:#fff;box-shadow:0 10px 30px rgba(4,10,18,.16)}
     body.v55-public-home #v55-topbar{display:flex}
+    body.v55-public-home #v55-language{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
     body.v55-public-home #v29-home-layer{top:66px!important;padding-top:0!important}
     .v55-brand{display:flex;align-items:center;gap:10px;font:950 14px/1 Inter;letter-spacing:-.02em;color:#fff}.v55-brand-logo{display:block;width:42px;height:42px;object-fit:contain;flex:0 0 42px}.v55-brand small{display:block;font:800 7px/1 Inter;color:#a9b1bd;letter-spacing:.12em;margin-top:4px}
     .v55-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}.v55-select,.v55-btn{height:38px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:0 12px;font:850 9.5px Inter;cursor:pointer;outline:0}.v55-select option{background:#fff;color:#17191f}.v55-select{padding-right:30px;min-width:150px;max-width:220px}.v55-btn.dark{background:#c9ff6a;color:#17191f;border-color:#c9ff6a}.v55-btn.dark b{color:#17191f}.v55-account-wrap{position:relative}.v55-menu{position:absolute;right:0;top:46px;width:245px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:18px;padding:10px;box-shadow:0 24px 70px rgba(25,20,55,.16);display:none}.v55-account-wrap.open .v55-menu{display:block}.v55-menu-head{padding:9px 10px 12px;border-bottom:1px solid rgba(23,25,31,.08);margin-bottom:7px}.v55-menu-head b{font:900 11px Inter}.v55-menu-head span{display:block;margin-top:4px;font:650 8.5px Inter;color:#777}.v55-menu button{width:100%;border:0;background:transparent;text-align:left;border-radius:10px;padding:10px;font:800 9px Inter;cursor:pointer;color:#292631}.v55-menu button:hover{background:#f3f1fa}.v55-menu button.danger{color:#8b342d}
@@ -56,7 +57,9 @@
   }
 
   function buildTopbar(){
-    if(topbar)return;
+    if(topbar?.isConnected)return;
+    topbar=$('#v55-topbar');
+    if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);authButton=$('#v55-auth',topbar);return}
     topbar=document.createElement('header');topbar.id='v55-topbar';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholark-logo.png" alt="SCHOLARK logo"><div>SCHOLARK<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${LANGS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><div class="v55-account-wrap"><button class="v55-btn" id="v55-account"><span class="v55-account-label">Account</span> ▾</button><div class="v55-menu"></div></div><button class="v55-btn dark" id="v55-auth"></button></div>`;
     document.body.appendChild(topbar);
     const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=LANGS.some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
@@ -65,6 +68,33 @@
     authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(signedIn())clickNative(/^(uitloggen|log out|sign out|logout)$/i);else clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i);setTimeout(syncAuth,250)};
     document.addEventListener('click',e=>{if(accountWrap&&!accountWrap.contains(e.target))accountWrap.classList.remove('open')});
     syncAuth();
+  }
+
+  function wireLanguageSelector(sel){
+    if(!sel)return null;
+    const saved=localStorage.getItem('scholark_ui_language')||'nl';
+    const html=LANGS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+    if(sel.options.length!==LANGS.length||!LANGS.every(([v])=>[...sel.options].some(o=>o.value===v)))sel.innerHTML=html;
+    sel.value=LANGS.some(([v])=>v===saved)?saved:'nl';
+    sel.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(sel.value)||applyLanguage(sel.value);
+    sel.removeAttribute('hidden');
+    sel.setAttribute('aria-label','Language');
+    sel.style.removeProperty('display');sel.style.removeProperty('visibility');sel.style.removeProperty('opacity');sel.style.removeProperty('pointer-events');
+    return sel;
+  }
+
+  function ensureLanguageSelector(){
+    buildTopbar();
+    if(!topbar?.isConnected)return null;
+    const actions=$('.v55-actions',topbar);if(!actions)return null;
+    let sel=$('#v55-language',topbar);
+    if(!sel){
+      sel=document.createElement('select');
+      sel.id='v55-language';sel.className='v55-select';
+      const before=$('.v55-account-wrap',actions)||$('#v55-auth',actions)||actions.firstChild;
+      if(before)actions.insertBefore(sel,before);else actions.prepend(sel);
+    }
+    return wireLanguageSelector(sel);
   }
 
   function suppressLegacyHeader(){
@@ -105,6 +135,7 @@
 
   function sync(){
     buildTopbar();
+    ensureLanguageSelector();
     $('#v41-dashboard-entry')?.remove();
     const home=publicHome();document.body.classList.toggle('v55-public-home',home);
     if(home){ensureWorkspaceCTA();suppressLegacyHeader();syncAuth()}else{suppressLegacyHeader();accountWrap?.classList.remove('open')}
@@ -112,6 +143,8 @@
 
   addEventListener('hashchange',()=>{setTimeout(sync,30);setTimeout(sync,220)});
   addEventListener('popstate',()=>{setTimeout(sync,30);setTimeout(sync,220)});
-  addEventListener('scholark-language-ready',()=>{const lang=$('#v55-language');const current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncAuth()});
+  addEventListener('scholark-language-ready',()=>{const lang=ensureLanguageSelector();const current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncAuth()});
+  addEventListener('scholark-return-home',()=>{sync();setTimeout(sync,80);setTimeout(sync,260)});
   [40,180,650].forEach(ms=>setTimeout(sync,ms));
+  window.__SCHOLARK_V55_TOPBAR__={sync,ensureLanguageSelector,buildTopbar,publicHome};
 })();
