@@ -94,8 +94,9 @@ RUN unzip /tmp/scholark.zip -d /app \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
-    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip sanitize-html \
-    && npm audit fix --omit=dev
+    && npm audit fix --omit=dev \
+    && npm install --omit=dev --no-save pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html \
+    && npm audit --omit=dev
 
 ENV NODE_ENV=production
 ENV SCHOLARK_RELEASE=r111
