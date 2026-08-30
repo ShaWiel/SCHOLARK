@@ -1,6 +1,7 @@
 (function runtimeLoader() {
   if (window.__SCHOLARK_RUNTIME_LOADER__) return;
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
+  window.__SCHOLARK_TEST_MODE__ = true;
 
   const VERSION = '20260829-r110';
   const ACTIVE = [
