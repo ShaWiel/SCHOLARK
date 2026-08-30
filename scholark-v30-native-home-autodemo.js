@@ -107,9 +107,11 @@
 
   function autoType(mode){
     const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
-    clearInterval(typingTimer);input.value='';input.classList.add('v30-typing-cursor');
+    clearInterval(typingTimer);input.value='';
     const isDutch=(localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase().startsWith('nl');
-    const p=prompts[mode][isDutch?1:0];let i=0;
+    const p=prompts[mode][isDutch?1:0];
+    if(document.documentElement.classList.contains('scholark-performance-safe')){input.classList.remove('v30-typing-cursor');input.value=p;return}
+    input.classList.add('v30-typing-cursor');let i=0;
     typingTimer=setInterval(()=>{
       if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
       input.value=p.slice(0,++i);
@@ -188,10 +190,11 @@
     $('#v29-prompt')?.classList.remove('v30-typing-cursor');
   }
   function ensureDemo(){
-    if(!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-performance-safe')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
+    if(!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
     mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
-    if(!rotateTimer){setAutoMode('presentation');rotateTimer=setInterval(cycleStudio,9000);}
-    if(!statusTimer){animateLearning();animateFuture();animateQualitySteps();animateHosts();statusTimer=setInterval(()=>{if(document.hidden||!isHome())return;animateLearning();animateFuture();animateQualitySteps();animateHosts();},4800);}
+    const lite=document.documentElement.classList.contains('scholark-performance-safe');
+    if(!rotateTimer){setAutoMode('presentation');rotateTimer=setInterval(cycleStudio,lite?12000:9000);}
+    if(!statusTimer){animateLearning();animateFuture();animateQualitySteps();if(!lite)animateHosts();statusTimer=setInterval(()=>{if(document.hidden||!isHome())return;animateLearning();animateFuture();animateQualitySteps();if(!document.documentElement.classList.contains('scholark-performance-safe'))animateHosts();},lite?6500:4800);}
   }
 
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
