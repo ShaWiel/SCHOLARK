@@ -157,6 +157,14 @@
     autoType(mode);
   }
 
+  function resizePrompt(input=$('#v29-prompt')){
+    if(!input)return;
+    input.style.height='auto';
+    const next=Math.max(44,Math.min(128,input.scrollHeight||44));
+    input.style.height=next+'px';
+    input.style.overflowY=(input.scrollHeight||0)>128?'auto':'hidden';
+  }
+
   function uiLanguage(){
     const raw=(window.__SCHOLARK_I18N__?.code?.()||localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase();
     return ['nl','en','es','fr','de','pt','it'].find(x=>raw.startsWith(x))||'en';
@@ -167,13 +175,13 @@
   }
   function autoType(mode){
     const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
-    clearInterval(typingTimer);input.value='';const p=nextPrompt(mode);
-    if(document.documentElement.classList.contains('scholark-performance-safe')){input.classList.remove('v30-typing-cursor');input.value=p;return}
+    clearInterval(typingTimer);input.value='';resizePrompt(input);const p=nextPrompt(mode);
+    if(document.documentElement.classList.contains('scholark-performance-safe')){input.classList.remove('v30-typing-cursor');input.value=p;resizePrompt(input);return}
     input.classList.add('v30-typing-cursor');let i=0;
     typingTimer=setInterval(()=>{
       if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
-      input.value=p.slice(0,++i);
-      if(i>=p.length){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');}
+      input.value=p.slice(0,++i);resizePrompt(input);
+      if(i>=p.length){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');resizePrompt(input);}
     },42);
   }
 
@@ -238,7 +246,7 @@
     layer.addEventListener('pointerdown',e=>{
       if(e.target.closest('.v29-type,.v29-tab,#v29-prompt')) pausedUntil=Date.now()+12000;
     },true);
-    const input=$('#v29-prompt');input?.addEventListener('input',()=>{pausedUntil=Date.now()+20000;});
+    const input=$('#v29-prompt');input?.addEventListener('input',()=>{pausedUntil=Date.now()+20000;resizePrompt(input)});resizePrompt(input);
   }
 
   function stopDemo(){
@@ -261,5 +269,5 @@
   addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(()=>setAutoMode(demoModes[modeIndex]||'presentation'),80)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
-  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync};
+  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,resizePrompt};
 })();
