@@ -241,21 +241,31 @@ function localBookArtifact(payload){
   const chapterNo=Number((prompt.match(/Write Chapter\s+(\d+)/i)||[])[1]||1);
   const chapterTitle=(prompt.match(/Write Chapter\s+\d+,\s*"([^"]+)"/i)||[])[1]||('Chapter '+chapterNo);
   const bookTitle=(prompt.match(/book\s+"([^"]+)"/i)||[])[1]||'the book';
-  const concept=(prompt.match(/Concept:\s*([^\.]+(?:\.[^G]|$)?)/i)||[])[1]||'';
-  const pov=(prompt.match(/POV:\s*([^\.]+)/i)||[])[1]||'third person';
-  const genre=(prompt.match(/Genre:\s*([^\.]+)/i)||[])[1]||style;
-  const openings=[
-    'The room felt different before anyone said a word. Something had shifted, quietly but completely, and the people inside it were still pretending not to notice.',
-    'By the time the first sign appeared, it was already too late to call it coincidence. The change had been building in small details, each one easy to dismiss on its own.',
-    'Morning arrived without permission, exposing everything the night had allowed them to ignore. What remained was not clarity, exactly, but the certainty that a choice could no longer be postponed.'
-  ];
+  const concept=clean((prompt.match(/Concept:\s*([\s\S]*?)(?:\. Genre:|\. Audience:|\. POV:|$)/i)||[])[1]||'');
+  const pov=clean((prompt.match(/POV:\s*([^\.]+)/i)||[])[1]||'third person');
+  const genre=clean((prompt.match(/Genre:\s*([^\.]+)/i)||[])[1]||style);
+  const seed=(bookTitle+' '+concept).split('').reduce((a,ch)=>(a+ch.charCodeAt(0))%997,0);
+  const firstNames=['Mara','Elena','Nia','Sofia','Avery','Lena','Naomi','Iris'];
+  const secondNames=['Elias','Adrian','Noah','Julian','Mateo','Silas','Damon','Victor'];
+  const lead=firstNames[seed%firstNames.length],counterpart=secondNames[(seed+chapterNo)%secondNames.length];
+  const place=['the rain-darkened apartment','the nearly empty café','the old family house','the station platform','the quiet hotel corridor','the apartment above the city'][seed%6];
   const secTitles=['Arrival','Pressure','Choice','Consequence','Turn','Forward'];
   const sections=secTitles.map((st,i)=>{
-    const opener=i===0?openings[(chapterNo-1)%openings.length]:'The consequences of the previous moment refused to stay contained. Every answer created another question, and every hesitation gave the conflict more room to grow.';
-    const body=opener+' '+(concept?('At the center of '+bookTitle+' is '+concept.trim()+'. '):'')+'In this part of '+chapterTitle+', the scene moves through concrete action rather than explanation. The characters respond to what is directly in front of them, but their choices are shaped by what they fear, want, and refuse to admit. The '+genre+' tone remains present in the atmosphere and pacing, while the '+pov+' perspective keeps the reader close to the most important emotional or strategic information.\n\nA new detail changes the meaning of what came before. Instead of resolving the tension immediately, the chapter lets that discovery create a harder decision. Dialogue, physical movement, and observation carry the scene forward. Small reactions matter because they reveal what each person is trying to protect.\n\nBy the end of this section, something has been gained and something has been lost. The balance of power has shifted. The next section cannot simply repeat the same problem; it must deal with the consequence created here.';
-    return {title:st,subtitle:'',body,bullets:[],points:[],label:'MANUSCRIPT',layoutHint:'section',visualType:'none',visualBrief:'',speakerNotes:'Keep names, chronology, motivations and unresolved consequences consistent with adjacent chapters.',sourceRefs:[]};
+    const beat=i%6;
+    const paragraphs=[
+      lead+' reached '+place+' before '+counterpart+' did, which gave '+(pov.toLowerCase().includes('first')?'me':'her')+' exactly seven minutes to decide whether leaving would be cowardice or common sense. The silence made every small sound too clear: the click of the lock, traffic breathing beyond the glass, the soft vibration of a phone left face-down on the table. '+(concept?concept+'. ':'')+'Nothing about the situation felt theoretical anymore.',
+      counterpart+' arrived without an apology. “You could have walked away,” he said. '+lead+' kept her hand near the door instead of answering. The distance between them was small enough to feel deliberate. What neither of them said mattered more than the accusation: both knew the last decision had changed the rules, and neither trusted the other to admit how much.',
+      lead+' noticed the detail that did not fit—a message preview, a missing key, a name spoken too carefully—and understood that the danger was no longer outside the room. She asked one direct question. '+counterpart+' gave an answer that was technically complete and emotionally useless. That was enough to make her choose movement over reassurance.',
+      'The choice created an immediate cost. A door closed, a call went unanswered, and someone who had expected obedience was forced to react. '+lead+' felt fear first, then the sharper recognition that fear did not have to make the decision for her. '+counterpart+' moved closer, not gently, but stopped when she told him to. The pause changed more than an argument would have.',
+      'A new piece of information shifted the balance. It did not solve the conflict; it made the next decision harder. '+lead+' now had proof that one of her assumptions had been wrong, while '+counterpart+' had to decide whether protecting her meant telling the truth or controlling what she knew. Their attraction remained real, but so did the threat underneath it.',
+      'By the time they separated, neither had won. '+lead+' left with a plan she had not possessed at the start, and '+counterpart+' stayed behind with one certainty: she was no longer reacting to him. She was choosing her own next move. The final image was small—a locked screen lighting in the dark, a name appearing once, then disappearing—but it carried enough weight to pull the story into the next chapter.'
+    ];
+    const body=paragraphs[beat]+'\n\n'+
+      (genre.toLowerCase().includes('romance')?'The attraction between them complicated every practical decision, because closeness could be comfort, leverage, or both at once. ':'')+
+      'The scene stays grounded in action, dialogue and consequence. Each decision changes what the characters can safely do next, keeping '+chapterTitle+' connected to the larger direction of '+bookTitle+'.';
+    return {title:st,subtitle:'',body,bullets:[],points:[],label:'MANUSCRIPT',layoutHint:'section',visualType:'none',visualBrief:'',speakerNotes:'Zero-credit test manuscript. Keep names, chronology, motivations and unresolved consequences consistent when editing or regenerating adjacent chapters.',sourceRefs:[]};
   });
-  return {ok:true,provider:'scholark-test-engine',model:'local-manuscript-v2',tier:'test',quality:'manuscript-fallback',artifact:{title:chapterTitle,subtitle:'',summary:'Finished manuscript prose for '+chapterTitle+'.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
+  return {ok:true,provider:'scholark-test-engine',model:'local-manuscript-v3',tier:'test-zero-credit',quality:'workflow-test',artifact:{title:chapterTitle,subtitle:'Zero-credit test manuscript',summary:'Coherent local manuscript content for testing Book Studio editing, continuity, saving and export without spending external AI credits.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
 }
 
 function scholarkStudioTestFallback(payload){
@@ -315,20 +325,8 @@ async function generate(payload){
   const openAIConfigured=validSecret(process.env.OPENAI_API_KEY);
   const geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim());
   if(testMode){
-    if(mode==='book'||mode==='book_chapter'){
-      const errors=[];
-      const providers=[
-        [pollinationsConfigured,generatePollinations,'pollinations'],
-        [geminiConfigured,generateGemini,'gemini'],
-        [openAIConfigured,generateOpenAI,'openai']
-      ];
-      for(const [configured,fn,name] of providers){
-        if(!configured)continue;
-        try{return await fn(payload)}catch(error){errors.push({provider:name,code:error?.code||'BOOK_AI_ERROR',message:error?.message||'Book generation failed'});console.warn('[SCHOLARK] '+name+' book generation failed:',error?.message||error)}
-      }
-      const err=new Error(errors.at(-1)?.message||'No production-quality Book Studio AI provider is available.');
-      err.code='BOOK_AI_UNAVAILABLE';err.providers=errors;throw err;
-    }
+    // Test mode must never spend external provider credits. This keeps the entire
+    // creation workflow testable even when Pollinations/OpenAI/Gemini balances are zero.
     return scholarkStudioTestFallback(payload);
   }
   const route=tierModels(payload),errors=[];
