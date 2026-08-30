@@ -27,6 +27,7 @@
   }
   async function cost(feature){const m=await loadCosts();return Number(m?.[feature]?.credits)||0}
   async function consume(feature,meta={}){
+    if(window.__SCHOLARK_TEST_MODE__)return{ok:true,testMode:true,spent:0,balance:wallet?.balance??null};
     const x=await ctx();
     if(!x)return{ok:true,guest:true,spent:0,balance:null};
     const r=await x.c.request('/rest/v1/rpc/consume_feature_credits',{method:'POST',body:JSON.stringify({p_feature:feature,p_meta:meta||{}})});
@@ -37,6 +38,7 @@
   }
   async function quote(feature){return{feature,credits:await cost(feature),wallet}}
   async function authorize(feature){
+    if(window.__SCHOLARK_TEST_MODE__)return{ok:true,testMode:true,cost:0,balance:wallet?.balance??null};
     const x=await ctx();if(!x)return{ok:true,guest:true,cost:await cost(feature)};
     await load();const needed=await cost(feature),balance=Math.max(0,Number(wallet?.balance)||0);
     if(needed>0&&balance<needed){const e=new Error('Not enough SCHOLARK credits for this action.');e.code='INSUFFICIENT_CREDITS';e.balance=balance;e.needed=needed;throw e}
@@ -48,14 +50,14 @@
     const side=$('#v51-sidebar');if(side){
       let box=$('.v85-wallet',side);if(!box){box=document.createElement('div');box.className='v85-wallet';$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
       if(box){
-        if(!cloud()?.currentSession?.()?.user?.id)box.innerHTML='<small>SCHOLARK CREDITS</small><b>—</b><span>Sign in to sync usage and plan limits.</span>';
+        if(window.__SCHOLARK_TEST_MODE__)box.innerHTML='<small>SCHOLARK TEST MODE</small><b>FREE</b><span>AI credits and pollen are not deducted while the product is being tested.</span>';else if(!cloud()?.currentSession?.()?.user?.id)box.innerHTML='<small>SCHOLARK CREDITS</small><b>—</b><span>Sign in to sync usage and plan limits.</span>';
         else if(wallet){const bal=Math.max(0,Number(wallet.balance)||0),low=bal<10;box.innerHTML='<small>SCHOLARK CREDITS · '+clean(wallet.plan||'free').toUpperCase()+'</small><b class="'+(low?'v85-low':'')+'">'+bal.toLocaleString()+'</b><span>'+(low?'Low balance — heavy AI actions may be limited.':'Available AI credits')+'</span><button type="button">Plans & limits</button>';box.querySelector('button').onclick=pricing}
         else box.innerHTML='<small>SCHOLARK CREDITS</small><b>—</b><span>Wallet is not active yet.</span><button type="button">Plans & limits</button>',box.querySelector('button').onclick=pricing;
       }
     }
     const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(dash){
       let el=$('.v85-dash',dash);if(!el){el=document.createElement('div');el.className='v85-dash';$('.v51-head',dash)?.insertAdjacentElement('beforebegin',el)}
-      if(el){const signed=!!cloud()?.currentSession?.()?.user?.id,bal=wallet?Math.max(0,Number(wallet.balance)||0):null;el.innerHTML='<div><b>Usage foundation</b><span>'+(signed?(wallet?'Cloud wallet active · fair-use limits stay tied to your account.':'Signed in · wallet activation pending.'):'Sign in to keep usage, chats, projects and learning data attached to you.')+'</span></div><i>'+(bal==null?'—':bal.toLocaleString()+' credits')+'</i>'}
+      if(el){const signed=!!cloud()?.currentSession?.()?.user?.id,bal=wallet?Math.max(0,Number(wallet.balance)||0):null;el.innerHTML=window.__SCHOLARK_TEST_MODE__?'<div><b>Testing foundation</b><span>Zero-credit test mode is active. Tutor, Study Ahead, Language Learner and Studio can be exercised without pollen/AI balance.</span></div><i>FREE TESTING</i>':'<div><b>Usage foundation</b><span>'+(signed?(wallet?'Cloud wallet active · fair-use limits stay tied to your account.':'Signed in · wallet activation pending.'):'Sign in to keep usage, chats, projects and learning data attached to you.')+'</span></div><i>'+(bal==null?'—':bal.toLocaleString()+' credits')+'</i>'}
     }
   }
   function sync(){render();loadCosts();load()}
