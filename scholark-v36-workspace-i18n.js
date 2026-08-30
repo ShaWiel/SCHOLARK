@@ -71,7 +71,7 @@
 
   function findLanguageAnchor(){
     const names=langs.map(x=>x[1].toLowerCase());
-    return $('header select,nav select,header button,nav button').find(el=>{
+    return $$('header select,nav select,header button,nav button').find(el=>{
       if(el.closest('#v29-home-layer')||el.id==='v36-language')return false;
       return names.includes(text(el).toLowerCase())||[...el.options||[]].some(o=>names.includes(text(o).toLowerCase()));
     })||null;
