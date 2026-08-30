@@ -26,7 +26,16 @@ function cachePut(key,item){
 }
 function imageKey(model,prompt,width,height,seed){return crypto.createHash('sha256').update([model,prompt,width,height,seed].join('|')).digest('hex')}
 
+function testImage(body){
+  const prompt=String(body?.prompt||'SCHOLARK visual').replace(/\s+/g,' ').trim().slice(0,220);
+  if(prompt.length<4){const e=new Error('A visual prompt is required');e.code='PROMPT_REQUIRED';throw e}
+  const width=clamp(body?.width,512,1920,1280),height=clamp(body?.height,512,1920,720),seed=clamp(body?.seed,0,2147483646,1);
+  const safe=prompt.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#151821"/><stop offset="1" stop-color="#3d327b"/></linearGradient></defs><rect width="100%" height="100%" rx="36" fill="url(#g)"/><circle cx="'+Math.round(width*.82)+'" cy="'+Math.round(height*.2)+'" r="'+Math.round(Math.min(width,height)*.14)+'" fill="#c9ff6a" opacity=".18"/><text x="7%" y="43%" fill="#c9ff6a" font-family="Arial,sans-serif" font-size="'+Math.round(Math.max(20,width*.025))+'" font-weight="700">SCHOLARK TEST VISUAL</text><text x="7%" y="53%" fill="white" font-family="Arial,sans-serif" font-size="'+Math.round(Math.max(18,width*.02))+'">'+safe+'</text><text x="7%" y="62%" fill="#c9c7d3" font-family="Arial,sans-serif" font-size="'+Math.round(Math.max(14,width*.012))+'">Zero-credit placeholder · replace with final generated media later</text></svg>';
+  return {buffer:Buffer.from(svg),type:'image/svg+xml',model:'local-svg-test',width,height,seed,prompt,cached:false};
+}
 async function generateImage(body){
+  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')))return testImage(body);
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
   if(!secret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e}
   const prompt=String(body?.prompt||'').replace(/\s+/g,' ').trim().slice(0,3500);
@@ -71,8 +80,8 @@ http.Server.prototype.emit = function(type,...args){
   try{
     const url=new URL(req.url||'/', 'http://localhost');
     if(req.method==='GET'&&url.pathname==='/api/studio/image/health'){
-      const configured=secret(process.env.POLLINATIONS_API_KEY);
-      json(res,200,{ok:true,configured,model:safeModel(process.env.POLLINATIONS_IMAGE_MODEL)||'flux',cacheEntries:cache.size});
+      const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),configured=testMode||secret(process.env.POLLINATIONS_API_KEY);
+      json(res,200,{ok:true,testMode,configured,model:safeModel(process.env.POLLINATIONS_IMAGE_MODEL)||'flux',cacheEntries:cache.size});
       return true;
     }
     if(req.method==='POST'&&url.pathname==='/api/studio/image'){
