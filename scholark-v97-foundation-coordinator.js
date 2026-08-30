@@ -58,6 +58,22 @@
     }
   }
 
+  function syncBookSurface(){
+    if(route()!=='book')return;
+    document.body.classList.add('v51-workspace');
+    document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v41-studio-open');
+    $('#v41-studio-workspace')?.setAttribute('hidden','');
+    $('#sv24-overlay')?.classList.remove('open');
+    $('#v50-school')?.classList.remove('open');
+    $('#v25-study')?.classList.remove('open');
+    $('#v25-book')?.classList.remove('open');
+    const native=$('.v51-native-host');if(native)native.classList.remove('v51-native-host');
+    const main=$('#v51-main');if(main)main.style.setProperty('display','block','important');
+    if(window.__SCHOLARK_V65_BOOK__?.open&&!$('#v51-fallback .v65-book')){
+      setTimeout(()=>{if(route()==='book')window.__SCHOLARK_V65_BOOK__?.open?.()},0);
+    }
+  }
+
   function repair(){
     if(repairing)return;
     repairing=true;
@@ -76,9 +92,7 @@
         }
       }
       if(r==='project')syncProjectSurface();
-      if(r==='book'&&window.__SCHOLARK_V65_BOOK__?.open&&!$('#v51-fallback .v65-book')){
-        setTimeout(()=>{if(route()==='book')window.__SCHOLARK_V65_BOOK__?.open?.()},0);
-      }
+      if(r==='book')syncBookSurface();
       if(r==='home'){
         resetHomeSurface();
         $$('[data-v55-suppressed="1"]').forEach(el=>{if(getComputedStyle(el).display!=='none')el.style.setProperty('display','none','important')});
@@ -91,22 +105,24 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r113',
+      release:'r117',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
       projectApi:!!window.__SCHOLARK_V64_PROJECTS__?.ready,
       projectMounted:r!=='project'||!!$('#v51-fallback .v64-projects'),
       bookApi:!!window.__SCHOLARK_V65_BOOK__,
+      bookMounted:r!=='book'||!!$('#v51-fallback .v65-book'),
+      bookSurfaceClear:r!=='book'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')),
       schoolApi:!!window.__SCHOLARK_V50_SCHOOL_FINDER__,
       schoolScrollable:r!=='schools'||!!school&&(school.scrollHeight>school.clientHeight?getComputedStyle(school).overflowY!=='hidden':true),
       homeWorkspaceLeak:r!=='home'||!main||getComputedStyle(main).display==='none',
       officialTopbarLogo:r!=='home'||!$('#v55-topbar')||!!topLogo&&/scholark-logo\.png/i.test(topLogo.getAttribute('src')||''),
       cinematicSync:r!=='home'||!activeMode||!previewMode||activeMode===previewMode
     };
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.cinematicSync&&report.projectMounted;
-    try{sessionStorage.setItem('scholark_foundation_r113',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R113 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.cinematicSync&&report.projectMounted&&report.bookMounted&&report.bookSurfaceClear;
+    try{sessionStorage.setItem('scholark_foundation_r117',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R117 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -116,5 +132,5 @@
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(repair,ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,release:'r113'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncBookSurface,release:'r117'};
 })();
