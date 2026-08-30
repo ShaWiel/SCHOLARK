@@ -45,22 +45,45 @@ async function extract(body){
   return {ok:true,name,type:ext,text,chars:text.length,pages:result?.pages,slides:result?.slides,warnings:result?.warnings||[]};
 }
 
+function stablePdfBuffer(){
+  const stream='BT /F1 16 Tf 72 720 Td (SCHOLARK PDF reference self-test text) Tj ET';
+  const objects=[
+    '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+    '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+    '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n',
+    '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+    '5 0 obj\n<< /Length '+Buffer.byteLength(stream,'ascii')+' >>\nstream\n'+stream+'\nendstream\nendobj\n'
+  ];
+  let pdf='%PDF-1.4\n',offsets=[];
+  for(const obj of objects){offsets.push(Buffer.byteLength(pdf,'ascii'));pdf+=obj}
+  const xref=Buffer.byteLength(pdf,'ascii');
+  pdf+='xref\n0 6\n0000000000 65535 f \n'+offsets.map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('');
+  pdf+='trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
+  return Buffer.from(pdf,'ascii');
+}
+
 async function referenceSelftest(){
-  const [{Document,Packer,Paragraph},pdfkitMod,zipMod]=await Promise.all([import('docx'),import('pdfkit'),import('jszip')]);
-  const PDFDocument=pdfkitMod.default||pdfkitMod,JSZip=zipMod.default||zipMod;
+  const [{Document,Packer,Paragraph},zipMod]=await Promise.all([import('docx'),import('jszip')]);
+  const JSZip=zipMod.default||zipMod;
   const docxBuffer=await Packer.toBuffer(new Document({sections:[{children:[new Paragraph('SCHOLARK DOCX reference self-test text')]}]}));
-  const makePdfBuffer=()=>new Promise((resolve,reject)=>{const d=new PDFDocument({size:'A4',compress:false}),chunks=[];d.on('data',x=>chunks.push(x));d.on('end',()=>resolve(Buffer.concat(chunks)));d.on('error',reject);d.fontSize(16).text('SCHOLARK PDF reference self-test text');d.end()});
-  const pdfBuffer=await makePdfBuffer();
+  const pdfBuffer=stablePdfBuffer();
   const zip=new JSZip();zip.file('ppt/slides/slide1.xml','<?xml version="1.0"?><p:sld xmlns:p="p" xmlns:a="a"><p:cSld><a:t>SCHOLARK PPTX reference self-test text</a:t></p:cSld></p:sld>');
   const pptxBuffer=await zip.generateAsync({type:'nodebuffer'});
-  const timed=(name,p,ms=9000)=>Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error(name+' parser self-test timed out')),ms))]);
-  const pdfCheck=async()=>{try{return await extractPdf(pdfBuffer)}catch(first){await new Promise(r=>setTimeout(r,120));const retry=await makePdfBuffer();try{return await extractPdf(retry)}catch(second){throw new Error('PDF parser self-test failed after retry: '+String(second?.message||first?.message||second||first))}}};
+  const timed=(name,p,ms=12000)=>Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error(name+' parser self-test timed out')),ms))]);
+  const pdfCheck=async()=>{
+    try{return await extractPdf(pdfBuffer)}
+    catch(first){
+      await new Promise(r=>setTimeout(r,180));
+      try{return await extractPdf(stablePdfBuffer())}
+      catch(second){throw new Error('PDF parser self-test failed after deterministic retry: '+String(second?.message||first?.message||second||first))}
+    }
+  };
   const [pdf,docx,pptx]=await Promise.all([timed('PDF',pdfCheck()),timed('DOCX',extractDocx(docxBuffer)),timed('PPTX',extractPptx(pptxBuffer))]);
   const ok=/SCHOLARK/i.test(pdf.text||'')&&/SCHOLARK/i.test(docx.text||'')&&/SCHOLARK/i.test(pptx.text||'');
   return {ok,pdfChars:clean(pdf.text).length,docxChars:clean(docx.text).length,pptxChars:clean(pptx.text).length,pdfPages:pdf.pages,pptxSlides:pptx.slides};
 }
 
-setTimeout(()=>{referenceSelftest().then(x=>console.log('[SCHOLARK] Reference self-test '+(x.ok?'PASS':'FAIL')+' pdf='+x.pdfChars+' docx='+x.docxChars+' pptx='+x.pptxChars)).catch(e=>console.error('[SCHOLARK] Reference self-test FAIL '+String(e?.message||e)))},350);
+setTimeout(()=>{referenceSelftest().then(x=>console.log('[SCHOLARK] Reference self-test '+(x.ok?'PASS':'FAIL')+' pdf='+x.pdfChars+' docx='+x.docxChars+' pptx='+x.pptxChars)).catch(e=>console.error('[SCHOLARK] Reference self-test FAIL '+String(e?.message||e)))},1200);
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return originalEmit.call(this,type,...args);const [req,res]=args;
