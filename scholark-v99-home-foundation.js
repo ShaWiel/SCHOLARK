@@ -50,7 +50,7 @@
       masteryAnimated:!home()||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
-    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.presenterReady&&report.masteryBars===3&&report.runtimeErrors.length===0);
+    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.presenterReady&&report.masteryBars===3&&report.masteryAnimated&&report.runtimeErrors.length===0);
     try{sessionStorage.setItem('scholark_home_foundation_r115',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R115 '+(report.ok?'PASS':'WARN'),report);
     if(!report.ok)schedule(30);
