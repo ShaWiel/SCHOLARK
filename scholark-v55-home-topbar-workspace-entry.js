@@ -61,10 +61,31 @@
     document.body.appendChild(topbar);
     const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=LANGS.some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
     accountWrap=$('.v55-account-wrap',topbar);$('#v55-account',topbar).onclick=e=>{e.stopPropagation();accountWrap.classList.toggle('open');$('.v55-menu',topbar).innerHTML=accountMenu()};
-    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>Account settings</b><span>Plan: ${(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase()} · Language: ${LANGS.find(x=>x[0]===(localStorage.getItem('scholark_ui_language')||'nl'))?.[1]||'Nederlands'}</span></div><button data-v55-account="plans">Plans & billing</button>${signedIn()?'<button class="danger" data-v55-account="signout">Sign out</button>':'<button data-v55-account="signin">Sign in</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
+    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>Account settings</b><span>Plan: ${(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase()} · Language: ${LANGS.find(x=>x[0]===(localStorage.getItem('scholark_ui_language')||'nl'))?.[1]||'Dutch'}</span></div><button data-v55-account="plans">Plans & billing</button>${signedIn()?'<button class="danger" data-v55-account="signout">Sign out</button>':'<button data-v55-account="signin">Sign in</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
     authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(signedIn())clickNative(/^(uitloggen|log out|sign out|logout)$/i);else clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i);setTimeout(syncAuth,250)};
     document.addEventListener('click',e=>{if(accountWrap&&!accountWrap.contains(e.target))accountWrap.classList.remove('open')});
     syncAuth();
+  }
+
+  function ensureNativeLanguage(){
+    if(!publicHome()){$('#v55-native-language')?.remove();return}
+    let sel=$('#v55-native-language');
+    const candidates=$('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]').filter(el=>{
+      if(el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main'))return false;
+      const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
+      return r.width>Math.min(480,innerWidth*.65)&&r.height>=40&&r.height<150&&r.top<120&&cs.display!=='none'&&cs.visibility!=='hidden';
+    }).sort((a,b)=>b.getBoundingClientRect().width-a.getBoundingClientRect().width||a.getBoundingClientRect().height-b.getBoundingClientRect().height);
+    const header=candidates[0];if(!header)return;
+    if(!sel){
+      sel=document.createElement('select');sel.id='v55-native-language';sel.className='v55-select';sel.setAttribute('aria-label','Language');
+      sel.style.cssText='height:38px;min-width:138px;max-width:180px;border:1px solid rgba(255,255,255,.16);background:#22252e;color:#fff;border-radius:12px;padding:0 30px 0 11px;font:800 10px Inter,system-ui;outline:0;cursor:pointer;margin-left:auto;flex:0 0 auto';
+      sel.innerHTML=LANGS.map(([v,n])=>'<option value="'+v+'" style="background:#fff;color:#17191f">'+n+'</option>').join('');
+      sel.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(sel.value)||applyLanguage(sel.value);
+    }
+    const current=localStorage.getItem('scholark_ui_language')||'nl';if(sel.value!==current)sel.value=current;
+    const account=$('button,a,[role="button"],div,span',header).find(el=>/^(account|cuenta|compte|konto|conta)$/i.test(text(el))||/^(sign in|log in|login|inloggen|aanmelden)$/i.test(text(el)));
+    const target=account?.parentElement||header;
+    if(sel.parentElement!==target){try{target.insertBefore(sel,account||target.firstChild)}catch{header.appendChild(sel)}}
   }
 
   function syncAuth(){if(!authButton)return;const on=signedIn();authButton.innerHTML=on?'Sign out':'<b>Sign in</b>';authButton.title=on?'Sign out of SCHOLARK':'Sign in to SCHOLARK'}
@@ -87,7 +108,7 @@
     buildTopbar();
     $('#v41-dashboard-entry')?.remove();
     const home=publicHome();document.body.classList.toggle('v55-public-home',home);
-    if(home){ensureWorkspaceCTA();syncAuth()}else accountWrap?.classList.remove('open');
+    if(home){ensureWorkspaceCTA();ensureNativeLanguage();syncAuth()}else{$('#v55-native-language')?.remove();accountWrap?.classList.remove('open')}
   }
 
   addEventListener('hashchange',()=>{setTimeout(sync,30);setTimeout(sync,220)});
