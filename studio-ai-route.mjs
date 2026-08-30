@@ -225,7 +225,57 @@ async function generateGemini(payload){
   const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
   return{ok:true,provider:'gemini',model,tier:route.tier,quality:'cost-routed',artifact:parseArtifactText(text,'Gemini')};
 }
+function scholarkStudioTestFallback(payload){
+  const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
+  const mode=clean(payload.mode||'document').toLowerCase();
+  const prompt=clean(payload.prompt||'SCHOLARK test project');
+  const max=mode.includes('edit')?1:mode==='presentation'?12:mode==='book'?10:mode==='book_chapter'?4:8;
+  const requested=Math.max(1,Math.min(max,Number(payload.count||payload.settings?.count)||6));
+  const outline=Array.isArray(payload.outline)?payload.outline.map(clean).filter(Boolean):[];
+  const title=(prompt.length>72?prompt.slice(0,69)+'…':prompt)||'SCHOLARK Test Project';
+  const sectionTitle=(i)=>{
+    if(outline[i])return outline[i];
+    if(mode==='presentation')return ['Opening','Why it matters','Context','Key idea','Evidence plan','Comparison','Application','Risks','Recommendations','Next steps','Conclusion','Questions'][i]||('Slide '+(i+1));
+    if(mode==='book')return 'Chapter '+(i+1);
+    if(mode==='book_chapter')return 'Section '+(i+1);
+    if(mode==='webpage')return ['Hero','Problem','Solution','Benefits','Proof','How it works','FAQ','CTA'][i]||('Section '+(i+1));
+    return 'Section '+(i+1);
+  };
+  const sections=Array.from({length:requested},(_,i)=>{
+    const st=sectionTitle(i);
+    const body=mode==='book_chapter'
+      ? 'Testing-mode draft prose for '+st+'. This local fallback exists so the editor, save, export and revision workflows can be tested before paid AI is enabled. Replace this draft with research-grounded final prose for the production release.'
+      : 'Testing-mode content for '+st+' based on: '+prompt+'. This local draft keeps the complete SCHOLARK workflow usable without paid AI while avoiding fabricated facts or citations.';
+    return {
+      title:st,
+      subtitle:i===0?'Generated locally for zero-credit testing':'',
+      body,
+      bullets:mode==='presentation'||mode==='graphic'||mode==='social'
+        ? ['Core point','Supporting detail','Next action']
+        : [],
+      points:[],
+      label:mode.toUpperCase(),
+      layoutHint:i===0?'hero':i===requested-1?'closing':i%3===0?'split':i%3===1?'cards':'section',
+      visualType:mode==='presentation'?(i%3===0?'typography':i%3===1?'diagram':'none'):'none',
+      visualBrief:'Testing placeholder. Add a real visual only when it supports the final message.',
+      speakerNotes:mode==='presentation'?'Testing notes: explain the purpose of this slide and replace placeholder statements with verified subject content.':'',
+      sourceRefs:[]
+    };
+  });
+  return {ok:true,provider:'scholark-test-engine',model:'local-studio-v1',tier:'test',quality:'testing',artifact:{
+    title,
+    subtitle:'Zero-credit testing draft',
+    summary:'Local SCHOLARK testing artifact. Paid AI providers are intentionally bypassed while the product is being tested.',
+    sections,
+    cta:mode==='webpage'||mode==='social'?'Continue with SCHOLARK':'',
+    caption:mode==='social'?'Testing-mode social draft.':'',
+    hashtags:mode==='social'?['#SCHOLARK']:[],
+    sources:[]
+  }};
+}
+
 async function generate(payload){
+  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')))return scholarkStudioTestFallback(payload);
   const route=tierModels(payload),pollinationsConfigured=validSecret(process.env.POLLINATIONS_API_KEY),openAIConfigured=validSecret(process.env.OPENAI_API_KEY),geminiConfigured=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),errors=[];
   const providers=route.tier==='light'
     ? [[geminiConfigured,generateGemini,'gemini'],[pollinationsConfigured,generatePollinations,'pollinations'],[openAIConfigured,generateOpenAI,'openai']]
@@ -243,7 +293,8 @@ async function handle(req, res) {
     const geminiConfigured = Boolean(String(process.env.GEMINI_API_KEY || '').trim());
     return json(res, 200, {
       ok: true,
-      configured: pollinationsConfigured || openAIConfigured || geminiConfigured,
+      testMode: /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),
+      configured: /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')) || pollinationsConfigured || openAIConfigured || geminiConfigured,
       primary: geminiConfigured ? 'gemini(light)' : pollinationsConfigured ? 'pollinations' : openAIConfigured ? 'openai' : null,
       providers: {
         pollinations: { configured: pollinationsConfigured, fast: String(process.env.POLLINATIONS_FAST_MODEL || 'openai-fast'), balanced: String(process.env.POLLINATIONS_BALANCED_MODEL || 'gpt-5.6-terra'), premium: String(process.env.POLLINATIONS_PREMIUM_MODEL || process.env.POLLINATIONS_MODEL || 'gpt-5.6-sol') },
