@@ -50,7 +50,7 @@
   const loaded = new Set(), errors = [];
   let chain = Promise.resolve(), replaying = false, busy = 0;
   const html = document.documentElement;
-  const staticPage = /\/(privacy|terms)(?:\.html)?$/i.test(location.pathname);
+  const staticPage = /\/(privacy|terms|refunds|safety)(?:\.html)?$/i.test(location.pathname);
 
   const style = document.createElement('style');
   style.id = 'scholark-runtime-loader-style';
