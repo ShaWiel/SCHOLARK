@@ -229,7 +229,109 @@ async function gemini(mode,p){
   const text=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
   return{ok:true,provider:'gemini',model,tier:route.tier,result:parseText(text,'Gemini')};
 }
+function scholarkTestFallback(mode,p){
+  const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
+  const field=clean(p.field||p.subject||p.prompt||'your subject');
+  const country=clean(p.country||'');
+  const level=clean(p.level||'student');
+  const lower=field.toLowerCase();
+  const subjectBank=/law|legal|rechten|jurid/.test(lower)
+    ? ['Introduction to law','Legal systems & institutions','Constitutional law','Contract law','Criminal law','Legal research & writing']
+    : /hospitality|hotel|tourism|horeca/.test(lower)
+      ? ['Hospitality operations','Front office','Food & beverage','Housekeeping','Marketing','Revenue management']
+      : /computer|software|ict|informatics|programming/.test(lower)
+        ? ['Programming fundamentals','Algorithms & data structures','Computer systems','Databases','Networks','Software engineering']
+        : /medicine|medical|geneesk|doctor/.test(lower)
+          ? ['Biology','Chemistry','Anatomy','Physiology','Biochemistry','Public health']
+          : /engineer|engineering|techn/.test(lower)
+            ? ['Algebra & calculus','Physics','Materials','Engineering design','Programming','Statistics']
+            : /business|management|marketing|finance|bedrijf/.test(lower)
+              ? ['Accounting','Finance','Marketing','Management','Economics','Statistics']
+              : ['Foundations','Core theory','Methods & evidence','Applications','Communication','Ethics'];
+  const skills=['Academic reading','Critical thinking','Research','Structured writing','Problem solving','Time management','Communication','Digital study skills'];
+
+  if(mode==='study_ahead'){
+    return {ok:true,provider:'scholark-test-engine',model:'local-study-v1',tier:'test',result:{
+      title:'Study Ahead · '+field,
+      overview:'Testing mode is active, so this roadmap works without paid AI. It prepares you for '+field+(country?' in '+country:'')+' without inventing admission requirements.',
+      skills,
+      keySubjects:subjectBank,
+      books:['A current introductory textbook for '+field,'An academic writing and study-skills guide','An official curriculum or programme page from your target institution'],
+      universityPrep:['Check the official programme curriculum','Review prerequisite subjects','Build a weekly study routine','Practice academic reading and summarising','Create a glossary of core terms'],
+      careers:['Entry-level roles connected to '+field,'Specialist roles after further study','Research / analysis roles','Public or private-sector applications'],
+      roadmap:[
+        {phase:'1 · Foundations',actions:['Learn the basic vocabulary of '+field,'Review prerequisite school subjects','Set a weekly study schedule']},
+        {phase:'2 · Core knowledge',actions:subjectBank.slice(0,5).map(x=>'Learn the fundamentals of '+x)},
+        {phase:'3 · Practice',actions:['Complete short practice tasks weekly','Explain key ideas without notes','Write one structured mini-assignment']},
+        {phase:'4 · Readiness',actions:['Compare your knowledge with the target programme','Identify your three weakest areas','Plan your first 30 study days']}
+      ]
+    }};
+  }
+
+  if(mode==='curriculum'){
+    return {ok:true,provider:'scholark-test-engine',model:'local-curriculum-v1',tier:'test',result:{
+      title:field+' learning map',
+      summary:'Practical testing curriculum at '+level+' level. It is not presented as an official national curriculum.',
+      subjects:subjectBank.map((name,i)=>({name,why:'Builds '+(i<2?'foundational':'applied')+' knowledge for later topics.',topics:['Core terminology','Key concepts','Typical problems'],skills:['Explain','Apply','Self-check']})),
+      roadmap:['Start with foundations','Practice every core topic','Mix recall with application','Review weak areas','Finish with a cumulative project'],
+      resources:['Official school/ministry curriculum where available','A current introductory textbook','Teacher/course materials','Practice questions']
+    }};
+  }
+
+  if(mode==='exam'){
+    const count=Math.max(1,Math.min(20,Number(p.count)||10));
+    return {ok:true,provider:'scholark-test-engine',model:'local-exam-v1',tier:'test',result:{
+      title:field+' practice exam',
+      instructions:'Testing-mode question set. Use it to validate the exam workflow without paid AI.',
+      questions:Array.from({length:count},(_,i)=>({
+        type:i%3===0?'multiple_choice':i%3===1?'true_false':'open',
+        prompt:'Practice question '+(i+1)+': explain or apply one core idea from '+field+'.',
+        choices:i%3===0?['Option A','Option B','Option C','Option D']:[],
+        answer:'Verify the exact subject answer with your course material.',
+        explanation:'This local test item validates the exam interface and result flow.',
+        topic:field,
+        difficulty:i%4===0?'hard':i%2===0?'medium':'easy'
+      }))
+    }};
+  }
+
+  if(mode==='language_learning'){
+    const target=clean(p.targetLanguage||'English'),native=clean(p.nativeLanguage||'English');
+    const banks={
+      Spanish:[['Hola','Hello'],['Gracias','Thank you'],['Por favor','Please'],['¿Cómo estás?','How are you?'],['Me llamo…','My name is…']],
+      Dutch:[['Hallo','Hello'],['Dank je','Thank you'],['Alsjeblieft','Please'],['Hoe gaat het?','How are you?'],['Ik heet…','My name is…']],
+      French:[['Bonjour','Hello'],['Merci','Thank you'],['S’il vous plaît','Please'],['Comment ça va ?','How are you?'],['Je m’appelle…','My name is…']]
+    };
+    const rows=banks[target]||[['Hello','Greeting'],['Thank you','Polite thanks'],['Please','Polite request'],['How are you?','Basic question'],['My name is…','Introduction']];
+    return {ok:true,provider:'scholark-test-engine',model:'local-language-v1',tier:'test',result:{
+      title:target+' starter lesson',
+      overview:'Testing-mode lesson that works without paid AI.',
+      objectives:['Greet someone','Introduce yourself','Use basic polite expressions'],
+      vocabulary:rows.map(([term,translation])=>({term,translation,pronunciation:'Use native audio for precise pronunciation.',example:term,exampleTranslation:translation})),
+      grammar:[{point:'Basic sentence pattern',explanation:'Compare the target-language word order with '+native+'.',examples:rows.slice(0,3).map(x=>x[0])}],
+      dialogue:[{speaker:'A',target:rows[0][0],native:rows[0][1]},{speaker:'B',target:rows[3][0],native:rows[3][1]}],
+      exercises:rows.map(([term,translation],i)=>({type:i%2?'translate':'short_answer',prompt:'What does "'+term+'" mean?',choices:[],answer:translation,explanation:'Review the starter vocabulary.'})),
+      cultureTip:'Usage can vary by country and region.',
+      nextStep:'Practice a 30-second self-introduction.'
+    }};
+  }
+
+  const q=clean(p.prompt||field);
+  return {ok:true,provider:'scholark-test-engine',model:'local-tutor-v1',tier:'test',result:{
+    answer:'Testing mode is active. Start by defining the key terms in "'+q+'", connect them to what you already know, and work through one small example before increasing difficulty.',
+    summary:'No-cost test lesson for '+q+'.',
+    steps:['Define key terms','Connect prior knowledge','Work a simple example','Try a harder example','Check and explain the result'],
+    examples:[{title:'Starter example',setup:'Choose one simple case related to '+q+'.',walkthrough:'Write what is known, what is asked, and which concept applies. Work one step at a time.',answer:'Use the result to verify that the learning workflow is functioning.'}],
+    keyPoints:['Understand before memorising','Use examples','Explain ideas in your own words'],
+    commonMistakes:['Skipping definitions','Memorising without applying','Not checking the result'],
+    checks:['Can you explain it without notes?','Can you apply it to a new example?'],
+    followUp:'Ask a narrower question for a more focused test lesson.',
+    topic:q
+  }};
+}
+
 async function generate(mode,p){
+  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))&&mode!=='translate_ui')return scholarkTestFallback(mode,p);
   const route=learningModels(mode,p),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
   const order=route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasOpenAI,openai],[hasGemini,gemini]];
   for(const [ok,fn] of order){if(!ok)continue;try{return await fn(mode,p)}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}}
@@ -241,7 +343,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size});
+    json(res,200,{ok:true,testMode:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
