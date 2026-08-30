@@ -208,6 +208,12 @@
     const label=$('#v51-main [data-v51-page="dashboard"] .v51-level-label');
     if(label)label.textContent='CHOOSE YOUR EDUCATION STAGE · '+sys.label.toUpperCase();
   }
+  function applySchoolLevels(){
+    const sel=$('#v50-level');if(!sel)return;
+    const stages=system(currentCountry()).stages;
+    const labels={all:'All levels',early:stages[0]?.[2]||'Early childhood',primary:stages[1]?.[2]||'Primary',secondary:stages[2]?.[2]||'Lower secondary',vocational:stages[3]?.[2]||'Upper secondary / vocational',higher:stages[4]?.[2]||'Higher education',adult:'Adult / professional learning'};
+    for(const option of sel.options){if(labels[option.value])option.textContent=labels[option.value]}
+  }
   function seedInputs(){
     const c=currentCountry();
     for(const el of [$('#v50-country'),$('#v62-country'),$('#v52-cur-country')]){
@@ -224,7 +230,7 @@
   }
   function apply(){
     document.documentElement.dataset.scholarkCountry=currentCountry();
-    ensureDashboardSelector();applyLevels();seedInputs();
+    ensureDashboardSelector();applyLevels();applySchoolLevels();seedInputs();
   }
 
   const style=document.createElement('style');style.id='scholark-v96-country-style';style.textContent=`
