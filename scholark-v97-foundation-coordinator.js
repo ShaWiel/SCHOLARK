@@ -21,7 +21,7 @@
 
   function duplicateIds(){
     const seen=new Set(),dupes=[];
-    $('[id]').forEach(el=>{if(seen.has(el.id))dupes.push(el.id);else seen.add(el.id)});
+    $$('[id]').forEach(el=>{if(seen.has(el.id))dupes.push(el.id);else seen.add(el.id)});
     return [...new Set(dupes)];
   }
 
@@ -36,7 +36,7 @@
     const main=$('#v51-main');
     if(main){
       main.style.removeProperty('display');
-      $('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.remove('active')});
+      $$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.remove('active')});
     }
     $('#v41-studio-workspace')?.setAttribute('hidden','');
     $('#v50-school')?.classList.remove('open');
@@ -81,7 +81,7 @@
       }
       if(r==='home'){
         resetHomeSurface();
-        $('[data-v55-suppressed="1"]').forEach(el=>{if(getComputedStyle(el).display!=='none')el.style.setProperty('display','none','important')});
+        $$('[data-v55-suppressed="1"]').forEach(el=>{if(getComputedStyle(el).display!=='none')el.style.setProperty('display','none','important')});
       }
     }finally{repairing=false}
   }
