@@ -102,8 +102,8 @@
   let layer=null,active='presentation',builtLang='base';
   function setMode(mode){
     active=mode;const d=studioData[mode]||studioData.presentation;
-    $('.v29-type',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-    $('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    $$('.v29-type',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+    $$('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     const stageTitle=$('#v29-stage-title',layer),stageDesc=$('#v29-stage-desc',layer),stageList=$('#v29-stage-list',layer),outputTitle=$('#v29-output-title',layer),outputDesc=$('#v29-output-desc',layer),previewTitle=$('#v29-preview-title',layer);
     if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(previewTitle)previewTitle.textContent=d.name+' Builder';
     window.dispatchEvent(new CustomEvent('scholark-home-mode-change',{detail:{mode}}));
@@ -132,7 +132,7 @@
   function build(){
     if(layer) return;
     layer=document.createElement('main');layer.id='v29-home-layer';layer.innerHTML=html(copy.en);document.body.appendChild(layer);builtLang='base';
-    $$('.v29-type',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$$('.v29-tab',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+    $$$('.v29-type',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));$$$('.v29-tab',layer).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
     $('#v29-create',layer).onclick=()=>{const val=$('#v29-prompt',layer).value.trim();if(val)localStorage.setItem('scholark_v24_intent',JSON.stringify({mode:active,prompt:val,at:Date.now()}));openStudio(active)};
     $('#v29-open-studio',layer).onclick=()=>openStudio(active);$('#v29-final-open',layer).onclick=()=>openStudio('presentation');syncPresenterLanguage();setTimeout(syncPresenterLanguage,700);$('#v29-speak',layer).onclick=speak;
     $$('[data-future]',layer).forEach(b=>b.onclick=()=>{const route=b.dataset.future==='schools'?'schools':'study';const oldUrl=location.href;history.replaceState(null,'',location.pathname+location.search+'#'+route);window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL:oldUrl,newURL:location.href}));});
