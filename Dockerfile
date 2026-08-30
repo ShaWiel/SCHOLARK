@@ -94,9 +94,11 @@ RUN unzip /tmp/scholark.zip -d /app \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 RUN npm install --omit=dev \
-    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip sanitize-html
+    && npm install --omit=dev --no-save pptxgenjs docx pdfkit @cedrugs/pdf-parse mammoth jszip sanitize-html \
+    && npm audit fix --omit=dev
 
 ENV NODE_ENV=production
+ENV SCHOLARK_RELEASE=r111
 ENV SCHOLARK_TEST_MODE=1
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FAST_MODEL=openai-fast
