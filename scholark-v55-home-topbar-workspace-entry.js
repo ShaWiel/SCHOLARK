@@ -9,7 +9,7 @@
   const publicHome=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
   const workspace=()=>!publicHome();
 
-  const LANGS=[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const LANGS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
 
   const style=document.createElement('style');
   style.id='scholark-v55-style';
