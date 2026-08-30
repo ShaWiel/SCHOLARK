@@ -236,7 +236,7 @@ function localBookArtifact(payload){
       const t=arc[i]||('Chapter '+(i+1));
       return {title:t,subtitle:'',body:'Chapter '+(i+1)+' advances the central conflict of '+title+' by forcing the protagonist or central argument into a new decision with visible consequences.',bullets:['Open with a concrete change or pressure','Develop conflict through action or evidence','End with a consequence that drives the next chapter'],points:[],label:'CHAPTER',layoutHint:'section',visualType:'none',visualBrief:'Mood and continuity reference for '+style+'.',speakerNotes:'Preserve continuity with the preceding chapter and carry unresolved consequences forward.',sourceRefs:[]};
     });
-    return {ok:true,provider:'scholark-test-engine',model:'local-book-v2',tier:'test',quality:'structured',artifact:{title,subtitle:style,summary:'A complete chapter architecture for '+title+'.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
+    return {ok:true,provider:'scholark-zero-credit-test',model:'zero-credit-book-v3',tier:'test-zero-credit',quality:'workflow-test',artifact:{title,subtitle:style,summary:'A complete chapter architecture for '+title+'.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
   }
   const chapterNo=Number((prompt.match(/Write Chapter\s+(\d+)/i)||[])[1]||1);
   const chapterTitle=(prompt.match(/Write Chapter\s+\d+,\s*"([^"]+)"/i)||[])[1]||('Chapter '+chapterNo);
@@ -265,7 +265,7 @@ function localBookArtifact(payload){
       'The scene stays grounded in action, dialogue and consequence. Each decision changes what the characters can safely do next, keeping '+chapterTitle+' connected to the larger direction of '+bookTitle+'.';
     return {title:st,subtitle:'',body,bullets:[],points:[],label:'MANUSCRIPT',layoutHint:'section',visualType:'none',visualBrief:'',speakerNotes:'Zero-credit test manuscript. Keep names, chronology, motivations and unresolved consequences consistent when editing or regenerating adjacent chapters.',sourceRefs:[]};
   });
-  return {ok:true,provider:'scholark-test-engine',model:'local-manuscript-v3',tier:'test-zero-credit',quality:'workflow-test',artifact:{title:chapterTitle,subtitle:'Zero-credit test manuscript',summary:'Coherent local manuscript content for testing Book Studio editing, continuity, saving and export without spending external AI credits.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
+  return {ok:true,provider:'scholark-zero-credit-test',model:'zero-credit-manuscript-v3',tier:'test-zero-credit',quality:'workflow-test',artifact:{title:chapterTitle,subtitle:'Zero-credit test manuscript',summary:'Coherent local manuscript content for testing Book Studio editing, continuity, saving and export without spending external AI credits.',sections,cta:'',caption:'',hashtags:[],sources:[]}};
 }
 
 function scholarkStudioTestFallback(payload){
