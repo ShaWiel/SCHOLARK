@@ -11,7 +11,7 @@
   style.id='v29-style';
   style.textContent=`
     :root{--v29-bg:#f5f4ef;--v29-ink:#101218;--v29-purple:#6d5dfc;--v29-lime:#c9ff6a;--v29-muted:#77737e;--v29-line:rgba(16,18,24,.1)}
-    #v29-home-layer{position:fixed;top:74px;right:0;bottom:0;left:0;z-index:900;background:var(--v29-bg);overflow:auto;overscroll-behavior:contain;transition:left .25s ease;scroll-behavior:smooth;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--v29-ink)}
+    #v29-home-layer{position:fixed;top:74px;right:0;bottom:0;left:0;z-index:900;background:var(--v29-bg);overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;transition:left .25s ease;scroll-behavior:smooth;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--v29-ink)}
     #v29-home-layer *{box-sizing:border-box}#v29-home-layer button,#v29-home-layer input{font:inherit}
     #v29-home-layer[hidden]{display:none!important}.v29-shell{max-width:1480px;margin:0 auto;padding:16px 20px 90px}
     .v29-hero{position:relative;min-height:690px;border-radius:40px;overflow:hidden;padding:58px;color:white;background:radial-gradient(circle at 78% 18%,rgba(201,255,106,.28),transparent 27%),radial-gradient(circle at 10% 88%,rgba(109,93,252,.36),transparent 31%),linear-gradient(138deg,#090c12 0%,#171827 49%,#382d78 100%);box-shadow:0 40px 120px rgba(31,24,86,.26)}
@@ -108,7 +108,7 @@
   }
 
   function presenterOptions(){
-    const langs=window.__SCHOLARK_I18N__?.langs||[['nl','Nederlands'],['en','English'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+    const langs=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
     return langs.map(([v,n])=>'<option value="'+esc(v)+'">'+esc(n)+'</option>').join('');
   }
   function syncPresenterLanguage(){
