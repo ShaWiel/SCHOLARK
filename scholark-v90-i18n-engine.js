@@ -425,7 +425,8 @@
     }
     const side=$('#v51-sidebar');if(side){
       let box=$('.v90-langbox',side);if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>';$('.v85-wallet',side)?.insertAdjacentElement('beforebegin',box)||$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
-      const sel=$('#v90-language',box);if(sel&&sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options;sel.value=code();sel.onchange=null}
+      const sel=$('#v90-language',box);if(sel&&sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options;sel.onchange=null}
+      if(sel&&[...sel.options].some(o=>o.value===code()))sel.value=code();
     }
   }
 
@@ -437,8 +438,14 @@
       push($('#v29-home-layer:not([hidden])'));
     }else{
       push($('#v51-sidebar'));push($('#v51-main'));
-      push($('#v41-studio-workspace:not([hidden])'));
-      push($('#v50-school.open'));push($('#v25-study.open'));push($('#v25-book.open'));
+      // Route ownership is authoritative. A view may be mounting before its
+      // "open" class/hidden state is finalized, so include the route root too.
+      if(h.startsWith('#studio')||/^(#presentation|#webpage|#document|#report|#graphic|#social)/.test(h))push($('#v41-studio-workspace'));
+      else push($('#v41-studio-workspace:not([hidden])'));
+      if(h.startsWith('#schools'))push($('#v50-school'));else push($('#v50-school.open'));
+      if(h.startsWith('#study'))push($('#v25-study'));else push($('#v25-study.open'));
+      if(h.startsWith('#book'))push($('#v51-fallback .v65-book'));else push($('#v25-book.open'));
+      if(h.startsWith('#project'))push($('#v51-fallback .v64-projects'));
       push($('#v51-fallback .v65-book'));push($('#v51-fallback .v64-projects'));
       push($('#v58-suite.open'));push($('#v57-deck.open'));push($('#v57-present.open'));
     }
@@ -481,6 +488,7 @@
     // Critical path: no network, no model call, no full-screen wait.
     upgradeSelectors();
     applyVisible();
+    window.__SCHOLARK_WORKSPACE__?.syncLanguage?.();
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target,previous}}));
     window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':'instant-cache'}}));
 
