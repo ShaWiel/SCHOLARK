@@ -76,7 +76,7 @@
 
   function protectDashboard(on){
     if($('#v51-sidebar'))return;
-    const d=$('button,a,[role="button"],[tabindex]').find(el=>!el.closest('#v41-studio-workspace')&&lower(el)==='dashboard');
+    const d=$$('button,a,[role="button"],[tabindex]').find(el=>!el.closest('#v41-studio-workspace')&&lower(el)==='dashboard');
     if(!d)return;
     if(on){if(!d.textContent.includes('\u200B'))d.appendChild(document.createTextNode('\u200B'));}
     else [...d.childNodes].forEach(n=>{if(n.nodeType===3&&n.nodeValue?.includes('\u200B'))n.nodeValue=n.nodeValue.replace(/\u200B/g,'');});
