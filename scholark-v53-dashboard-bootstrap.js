@@ -74,6 +74,10 @@
   }
 
   function openDashboardFromHome(){
+    // Prefer the central Workspace router. The old retry loop is now only a
+    // failsafe for extremely early boot before V51 exists.
+    const api=window.__SCHOLARK_WORKSPACE__;
+    if(api?.openTool){api.openTool('dashboard');return}
     const old=location.href;
     history.replaceState(null,'',location.pathname+location.search+'#dashboard');
     emitHashChange(old);
@@ -81,8 +85,9 @@
     let tries=0;
     const step=()=>{
       tries++;
+      if(window.__SCHOLARK_WORKSPACE__?.openTool){window.__SCHOLARK_WORKSPACE__.openTool('dashboard');return}
       if(clickPrimaryDashboard()||revealPrimaryDashboard())return;
-      if(tries<30){setTimeout(step,40);return}
+      if(tries<12){setTimeout(step,35);return}
       createEmergency();
       document.body.classList.add('v53-emergency');
       const home=$('#v29-home-layer');if(home)home.hidden=true;
