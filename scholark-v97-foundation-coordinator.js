@@ -134,7 +134,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r118',
+      release:'r119',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -156,8 +156,8 @@
     };
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();report.homeLanguageSelector=!!$('#v55-language')&&$('#v55-language').options.length===7}
     report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r118',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R118 '+(report.ok?'PASS':'WARN'),report);
+    try{sessionStorage.setItem('scholark_foundation_r119',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R119 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -167,5 +167,5 @@
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(repair,ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,release:'r118'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,release:'r119'};
 })();
