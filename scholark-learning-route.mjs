@@ -371,15 +371,20 @@ http.Server.prototype.emit = function(event,...args){
           if(Object.keys(free).length){provider='lingva';model='public-ui-translation'}
         }
         if(remaining.length){
-          try{
-            const out=await generate(mode,{...p,language,strings:remaining});
-            provider=out.provider||provider;model=out.model||model;
-            for(const row of out.result?.translations||[]){
-              const source=String(row?.source||''),translated=clean(row?.translated);
-              if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
+          const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
+          if(!testMode){
+            try{
+              const out=await generate(mode,{...p,language,strings:remaining});
+              provider=out.provider||provider;model=out.model||model;
+              for(const row of out.result?.translations||[]){
+                const source=String(row?.source||''),translated=clean(row?.translated);
+                if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
+              }
+            }catch(e){
+              if(!Object.keys(cached).length)throw e;
             }
-          }catch(e){
-            if(!Object.keys(cached).length)throw e;
+          }else if(!Object.keys(cached).length){
+            provider='zero-credit-ui';model='free-ui-translation';
           }
         }
         const translations=strings.map(source=>({source,translated:cached[source]||source}));
