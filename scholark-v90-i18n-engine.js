@@ -447,6 +447,7 @@
         setTimeout(()=>{overlay.classList.remove('open');overlay.style.removeProperty('opacity');document.documentElement.classList.remove('scholark-language-switching');
           const resume=()=>{const h=String(location.hash||'').toLowerCase();if(h===''||h==='#home'||h==='#pricing')window.__SCHOLARK_V30_DEMO__?.start?.()};
           (window.requestIdleCallback||((fn)=>setTimeout(fn,450)))(resume,{timeout:900});
+          if(target!=='en')scheduleUnknown();
         },120);
       }
     }
@@ -469,7 +470,7 @@
   function boot(){
     const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
-    upgradeSelectors();applyVisible();
+    upgradeSelectors();applyVisible();if(normalized!=='en')scheduleUnknown();
   }
   const pendingRoots=new Set();let mutationTimer=null,selectorPending=false;
   const activeRoot=()=>visibleRoots().find(r=>r!==$('#v55-topbar'))||visibleRoots()[0]||document.body;
