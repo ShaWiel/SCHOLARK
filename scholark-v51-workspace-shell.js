@@ -95,7 +95,7 @@
     const lang=localStorage.getItem('scholark_ui_language')||'nl';
     document.documentElement.lang=lang;
     const i18n=window.__SCHOLARK_I18N__;
-    const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book')].filter(Boolean);
+    const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
     roots.forEach(el=>i18n?.apply?.(el));
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
     const studioLang=$('#v41-language');if(studioLang&&[...studioLang.options].some(o=>o.value===lang))studioLang.value=lang;
@@ -162,7 +162,7 @@
   }
   function clickExternalTool(tool){const c=$$(`[data-tool="${tool}"]`).filter(el=>!el.closest('#v51-sidebar,#v51-main'))[0];if(c){try{c.click();return true}catch{}}return false}
   function openPro(id){
-    clearModes();forceQuality();state.active=id;syncNav();setRoute(id);document.body.classList.add('v51-pro','v51-'+id);
+    setCollapsed(false,true);clearModes();forceQuality();state.active=id;syncNav();setRoute(id);document.body.classList.add('v51-pro','v51-'+id);
     if(id==='schools'){let t=$('[data-v50-school]');if(t){try{t.click()}catch{}}else{const old=$('[data-v48-tool="schools"]');try{old?.click()}catch{}}setTimeout(()=>{const x=$('#v50-school');x?.classList.add('open');window.__SCHOLARK_I18N__?.apply?.(x)},35);return}
     if(id==='study'){
       $('#v25-study')?.classList.remove('open');
