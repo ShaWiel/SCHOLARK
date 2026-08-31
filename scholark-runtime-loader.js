@@ -29,7 +29,7 @@
   ]);
   const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js'];
   const WORKSPACE = [
-    'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v52-workspace-qa.js','scholark-v53-dashboard-bootstrap.js',
+    'scholark-v36-workspace-i18n.js','scholark-v43-studio-workspace.js','scholark-v51-workspace-shell.js','scholark-v52-workspace-qa.js','scholark-v53-dashboard-bootstrap.js',
     'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
     'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js',
     'scholark-v91-workspace-polish.js'
@@ -152,6 +152,11 @@
       return;
     }
     const key = toolKey(e.target);
+    if(key==='studio'&&loaded.has('scholark-v43-studio-workspace.js')){
+      if(STUDIO_CORE.some(file=>!loaded.has(file)))ensureFiles(STUDIO_CORE,false);
+      prefetchStudioHeavy();
+      return;
+    }
     if (!key || !required(key).some(file => !loaded.has(file))) return;
     const target = e.target.closest?.('[data-v51-tool],[data-future],#v55-workspace-entry,#v41-workspace-home,[data-workspace-entry]');
     if (!target) return;
