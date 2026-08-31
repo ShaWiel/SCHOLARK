@@ -89,7 +89,22 @@
     $$('.sv24-mode',modes).forEach(b=>{if(b.dataset.v41)return;b.dataset.v41='1';b.addEventListener('click',()=>{const m=b.dataset.mode;if(m==='presentation'||m==='document')replaceCount(m);if(examples[m])replaceExamples(m);},true);});
     const a=$('.sv24-mode.active',modes)?.dataset.mode;if(a){if(counts[a])replaceCount(a);if(examples[a])replaceExamples(a);}
   }
-  function interceptStudio(){if(document.documentElement.dataset.v41Studio)return;document.documentElement.dataset.v41Studio='1';document.addEventListener('click',e=>{const el=e.target.closest('button,a,[role="button"],div,span');if(!el||el.closest('#sv24-overlay'))return;if(/^studio ai$/i.test(text(el))){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();ensureStudio();$('#sv24-overlay')?.classList.add('open');}},true);}
+  function interceptStudio(){
+    if(document.documentElement.dataset.v41Studio)return;document.documentElement.dataset.v41Studio='1';
+    document.addEventListener('click',e=>{
+      const el=e.target.closest('button,a,[role="button"],div,span');
+      if(!el||el.closest('#sv24-overlay'))return;
+      // V51 owns Workspace routing. The old pricing/home capture handler must
+      // never hijack the Workspace Studio AI button or reopen the legacy overlay.
+      const publicHome=document.body.classList.contains('v55-public-home');
+      if(!publicHome||!el.closest('#v29-home-layer,#v41-home-pricing'))return;
+      if(/^studio ai$/i.test(text(el))){
+        e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+        if(window.__SCHOLARK_WORKSPACE__?.openTool)window.__SCHOLARK_WORKSPACE__.openTool('studio');
+        else location.hash='studio';
+      }
+    },true);
+  }
 
   function priceMarkup(){return `<div class="v41-price-head"><small>SCHOLARK PLANS</small><h2>Choose how much advantage you want.</h2><p>Every plan uses the same SCHOLARK foundation. Upgrade when you need heavier Studio creation, long-form work, future-study tools and higher usage limits.</p></div><div class="v41-price-grid">
     <article class="v41-plan"><div class="v41-kicker">FREE</div><h3>SCHOLARK Free</h3><div class="v41-desc">For everyday learning, practice and planning.</div><div class="v41-price">$0 <small>/ month</small></div><div class="v41-trial">No payment method required.</div><ul>
