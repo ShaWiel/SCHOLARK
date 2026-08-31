@@ -3,7 +3,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260830-r119';
+  const VERSION = '20260831-r120';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -30,7 +30,7 @@
   const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js'];
   const WORKSPACE = [
     'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v52-workspace-qa.js','scholark-v53-dashboard-bootstrap.js',
-    'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
+    'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
     'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js',
     'scholark-v91-workspace-polish.js'
   ];
@@ -135,6 +135,14 @@
     return '';
   }
 
+  const warmTarget=e=>{
+    const key=toolKey(e.target);
+    if(key==='studio')ensureFiles(STUDIO_CORE,false);
+    else if(key==='project')ensureFiles(FEATURES.project,false);
+  };
+  document.addEventListener('pointerover',warmTarget,{passive:true,capture:true});
+  document.addEventListener('focusin',warmTarget,true);
+
   document.addEventListener('click', e => {
     if (replaying || staticPage) return;
     const generate=e.target.closest?.('#v41-studio-workspace .v41-generate');
@@ -178,7 +186,7 @@
     const key = routeKey();
     await ensure(key, false);
     html.classList.remove('scholark-runtime-loading');
-    if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
+    if (key === 'home') { window.__SCHOLARK_V30_DEMO__?.start?.(); prewarmStudioCore(); }
     else prewarmStudioCore();
     if (key === 'studio') prefetchStudioHeavy();
     window.dispatchEvent(new CustomEvent('scholark-runtime-ready',{detail:{route:key,version:VERSION}}));
