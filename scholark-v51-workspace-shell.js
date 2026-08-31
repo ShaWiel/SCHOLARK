@@ -99,7 +99,7 @@
     roots.forEach(el=>i18n?.apply?.(el));
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
     const studioLang=$('#v41-language');if(studioLang&&[...studioLang.options].some(o=>o.value===lang))studioLang.value=lang;
-    setTimeout(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},40);
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,140));idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:420});
   }
   function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
   function syncNav(id=state.active){$$('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
