@@ -35,7 +35,7 @@
     'scholark-v91-workspace-polish.js'
   ];
   const FEATURES = {
-    studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v57-presentation-deck.js','scholark-v58-studio-artifact-suite.js','scholark-v59-studio-ai-engine.js','scholark-v60-presentation-ready.js','scholark-v63-presentation-visuals.js','scholark-v66-presentation-ai-tools.js','scholark-v67-professional-exports.js','scholark-v68-slide-block-editor.js','scholark-v69-reference-reader.js','scholark-v70-social-graphic-media.js','scholark-v71-research-agent.js','scholark-v73-web-publishing.js','scholark-v74-presenter-pro.js','scholark-v75-document-pro.js','scholark-v76-graphic-canvas.js','scholark-v77-webpage-pro.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
+    studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
     tutor:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
     education:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
     schools:['scholark-v50-school-finder.js'],
@@ -45,6 +45,13 @@
     project:['scholark-v64-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
     book:['scholark-v65-book-studio.js','scholark-v67-professional-exports.js','scholark-v69-reference-reader.js']
   };
+  const STUDIO_CORE=[...FEATURES.studio];
+  const STUDIO_HEAVY=[
+    'scholark-v57-presentation-deck.js','scholark-v58-studio-artifact-suite.js','scholark-v60-presentation-ready.js','scholark-v63-presentation-visuals.js',
+    'scholark-v66-presentation-ai-tools.js','scholark-v67-professional-exports.js','scholark-v68-slide-block-editor.js','scholark-v69-reference-reader.js',
+    'scholark-v70-social-graphic-media.js','scholark-v71-research-agent.js','scholark-v73-web-publishing.js','scholark-v74-presenter-pro.js',
+    'scholark-v75-document-pro.js','scholark-v76-graphic-canvas.js','scholark-v77-webpage-pro.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'
+  ];
 
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);
@@ -90,8 +97,7 @@
       document.head.appendChild(s);
     });
   }
-  function ensure(key, indicator = false) {
-    const files = required(key);
+  function ensureFiles(files, indicator = false) {
     chain = chain.catch(() => {}).then(async () => {
       if (indicator) { busy++; html.classList.add('scholark-route-loading'); }
       try {
@@ -109,6 +115,17 @@
     });
     return chain;
   }
+  function ensure(key, indicator = false) {
+    return ensureFiles(required(key), indicator);
+  }
+  function prewarmStudioCore(){
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,320));
+    idle(()=>ensureFiles(STUDIO_CORE,false),{timeout:900});
+  }
+  function prefetchStudioHeavy(){
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,420));
+    idle(()=>ensureFiles(STUDIO_HEAVY,false),{timeout:1400});
+  }
   function toolKey(target) {
     const direct = target?.closest?.('[data-v51-tool]');
     if (direct?.dataset.v51Tool) return direct.dataset.v51Tool;
@@ -120,6 +137,12 @@
 
   document.addEventListener('click', e => {
     if (replaying || staticPage) return;
+    const generate=e.target.closest?.('#v41-studio-workspace .v41-generate');
+    if(generate&&STUDIO_HEAVY.some(file=>!loaded.has(file))){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      ensureFiles(STUDIO_HEAVY,true).then(()=>{if(!generate.isConnected)return;replaying=true;try{generate.click()}finally{replaying=false}});
+      return;
+    }
     const key = toolKey(e.target);
     if (!key || !required(key).some(file => !loaded.has(file))) return;
     const target = e.target.closest?.('[data-v51-tool],[data-future],#v55-workspace-entry,#v41-workspace-home,[data-workspace-entry]');
@@ -135,12 +158,17 @@
   addEventListener('hashchange', () => {
     if (staticPage) return;
     const key = routeKey();
-    ensure(key, true).then(() => { if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.(); });
+    ensure(key, true).then(() => {
+      if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
+      else prewarmStudioCore();
+      if (key === 'studio') prefetchStudioHeavy();
+    });
   });
   addEventListener('popstate', () => { if (!staticPage) ensure(routeKey(), true); });
 
   window.__SCHOLARK_RUNTIME__ = {
     version:VERSION, route:routeKey, ensure:key => ensure(key || routeKey(), true),
+    prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,
     loaded:() => [...loaded], errors:() => [...errors], activeCount:ACTIVE.length
   };
 
@@ -151,6 +179,8 @@
     await ensure(key, false);
     html.classList.remove('scholark-runtime-loading');
     if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
+    else prewarmStudioCore();
+    if (key === 'studio') prefetchStudioHeavy();
     window.dispatchEvent(new CustomEvent('scholark-runtime-ready',{detail:{route:key,version:VERSION}}));
   })().catch(err => {
     html.classList.remove('scholark-runtime-loading','scholark-route-loading');
