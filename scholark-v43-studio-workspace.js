@@ -73,8 +73,26 @@
     else [...d.childNodes].forEach(n=>{if(n.nodeType===3&&n.nodeValue?.includes('\u200B'))n.nodeValue=n.nodeValue.replace(/\u200B/g,'');});
   }
 
-  function openStudio(mode){active=mode||active;root.hidden=false;document.body.classList.add('v41-studio-open');if(!/^#studio/.test((location.hash||'').toLowerCase()))history.pushState(null,'',location.pathname+location.search+'#studio');protectDashboard(true);setMode(active);syncGeometry();setTimeout(syncGeometry,120);}
-  function closeStudio(){root.hidden=true;document.body.classList.remove('v41-studio-open');protectDashboard(false);}
+  let mountedMode=active;
+  function openStudio(mode,opts={}){
+    const requested=mode||active;active=requested;
+    // Paint first. Studio is fully constructed at boot, so reopening it should not
+    // rebuild the entire settings/modes tree before the user sees anything.
+    root.hidden=false;root.removeAttribute('aria-hidden');document.body.classList.add('v41-studio-open');
+    if(opts.route!==false&&!/^#studio/.test((location.hash||'').toLowerCase()))history.pushState(null,'',location.pathname+location.search+'#studio');
+    protectDashboard(true);
+    if(mountedMode!==active){setMode(active);mountedMode=active}
+    requestAnimationFrame(()=>{syncGeometry();setTimeout(syncGeometry,80)});
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
+    idle(()=>window.__SCHOLARK_I18N__?.apply?.(root),{timeout:300});
+  }
+  function closeStudio(){root.hidden=true;root.setAttribute('aria-hidden','true');document.body.classList.remove('v41-studio-open');protectDashboard(false);}
+  function prewarm(){
+    // The expensive DOM already exists; prewarm only geometry/state while hidden.
+    if(!root.isConnected)return;
+    const savedLang=localStorage.getItem('scholark_ui_language')||'nl';
+    const l=$('#v41-language',settingsBody);if(l&&[...l.options].some(o=>o.value===savedLang))l.value=savedLang;
+  }
 
   function buildOutline(){const value=prompt.value.trim();if(!value){prompt.focus();status.textContent='Describe what you want to create first.';return;}const base={presentation:['Title / opening','Context & why it matters','Core argument / section 1','Evidence / data','Core argument / section 2','Counterpoint / comparison','Key takeaway','Conclusion / next step'],webpage:['Hero & primary promise','Problem / context','Key benefits','Feature / content sections','Proof / trust','FAQ','Primary CTA'],document:['Title & scope','Executive summary / introduction','Background / literature','Method / approach','Main analysis','Evidence / findings','Discussion','Conclusion & recommendations','References'],social:['Hook','Core message','Value / insight','Proof / example','Engagement moment','CTA'],graphic:['Visual hierarchy','Primary headline','Core information blocks','Supporting visual system','CTA / footer'],book:['Core promise / premise','Audience / reader expectation','Story or knowledge bible','Part I setup','Part II development','Midpoint / major shift','Part III escalation','Resolution / conclusion','Continuity & revision plan']}[active];outlineList.innerHTML=base.map(x=>`<li>${x}</li>`).join('');status.textContent='Outline ready. You can now generate the complete first draft.';}
 
@@ -101,9 +119,10 @@
   let saveT;$('#v41-project-name',root).oninput=e=>{const s=$('.v41-save',root);s.textContent='Saving…';clearTimeout(saveT);saveT=setTimeout(()=>{localStorage.setItem('scholark_v41_project_name',e.target.value);s.textContent='Saved';},450);};
   $('#v41-project-name',root).value=localStorage.getItem('scholark_v41_project_name')||'Untitled project';
 
-  window.addEventListener('click',e=>{const el=e.target.closest('button,a,[role="button"],div,span');if(!el||el.closest('#v41-studio-workspace')||el.closest('#sv24-overlay'))return;const t=lower(el);if(t==='studio ai'||t==='ai studio'||t==='studio ia'||t==='ki studio'||t==='ai stüdyosu'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openStudio();}},true);
-  window.addEventListener('hashchange',()=>{if(/^#studio/.test((location.hash||'').toLowerCase()))openStudio();else if(!/studio|presentation|document|report|graphic|social|book/.test((location.hash||'').toLowerCase()))closeStudio();});
+  window.addEventListener('hashchange',()=>{if(/^#studio/.test((location.hash||'').toLowerCase()))openStudio(null,{route:false});else if(!/studio|presentation|document|report|graphic|social|book/.test((location.hash||'').toLowerCase()))closeStudio();});
   addEventListener('resize',()=>{if(!root.hidden)requestAnimationFrame(syncGeometry)},{passive:true});
   addEventListener('scholark-layout-change',()=>{if(!root.hidden)requestAnimationFrame(syncGeometry)});
-  renderModes();setMode(active);
+  renderModes();setMode(active);mountedMode=active;
+  (window.requestIdleCallback||((fn)=>setTimeout(fn,240)))(prewarm,{timeout:700});
+  window.__SCHOLARK_STUDIO_WORKSPACE__={open:openStudio,close:closeStudio,prewarm,getRoot:()=>root,getMode:()=>active,setMode};
 })();
