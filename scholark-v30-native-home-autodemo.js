@@ -235,27 +235,33 @@
       study.appendChild(box);
     }
   }
-  const schoolLiveLabels=[
-    'Finding school matches around your area…',
-    'Comparing distance, level and study relevance…',
-    'Checking public school information…',
-    'Best-fit options ready to explore.'
-  ];
-  const aheadLiveLabels=[
-    'Foundation mapped · building your head start',
-    'Core subjects mapped · skills next',
-    'Practice path ready · sequencing milestones',
-    'Semester-ready roadmap assembled'
-  ];
+  const schoolLiveLabels={
+    en:['Finding school matches around your area…','Comparing distance, level and study relevance…','Checking public school information…','Best-fit options ready to explore.'],
+    nl:['Scholen in jouw omgeving zoeken…','Afstand, niveau en studierelevantie vergelijken…','Publieke schoolinformatie controleren…','Beste matches klaar om te bekijken.'],
+    es:['Buscando escuelas en tu zona…','Comparando distancia, nivel y relevancia de estudio…','Verificando información pública de las escuelas…','Mejores opciones listas para explorar.'],
+    fr:['Recherche des écoles autour de vous…','Comparaison de la distance, du niveau et de la pertinence…','Vérification des informations publiques…','Meilleures options prêtes à explorer.'],
+    de:['Schulen in deiner Umgebung werden gesucht…','Entfernung, Niveau und Studienrelevanz werden verglichen…','Öffentliche Schulinformationen werden geprüft…','Beste Optionen sind bereit.'],
+    pt:['A procurar escolas na tua zona…','A comparar distância, nível e relevância…','A verificar informação pública das escolas…','Melhores opções prontas para explorar.'],
+    it:['Ricerca delle scuole nella tua zona…','Confronto di distanza, livello e pertinenza…','Verifica delle informazioni pubbliche…','Migliori opzioni pronte da esplorare.']
+  };
+  const aheadLiveLabels={
+    en:['Foundation mapped · building your head start','Core subjects mapped · skills next','Practice path ready · sequencing milestones','Semester-ready roadmap assembled'],
+    nl:['Basis in kaart · voorsprong wordt opgebouwd','Kernvakken in kaart · vaardigheden volgen','Oefenpad klaar · mijlpalen worden geordend','Roadmap voor semesterstart gereed'],
+    es:['Base trazada · construyendo tu ventaja','Materias clave trazadas · siguen las habilidades','Ruta de práctica lista · ordenando hitos','Hoja de ruta lista para el semestre'],
+    fr:['Fondations cartographiées · votre avance se construit','Matières clés cartographiées · compétences ensuite','Parcours de pratique prêt · jalons en cours','Feuille de route prête pour le semestre'],
+    de:['Grundlagen erfasst · Vorsprung wird aufgebaut','Kernfächer erfasst · Fähigkeiten folgen','Übungspfad bereit · Meilensteine werden geordnet','Roadmap für den Semesterstart bereit'],
+    pt:['Base mapeada · a construir a tua vantagem','Disciplinas centrais mapeadas · competências a seguir','Percurso de prática pronto · marcos em sequência','Roteiro pronto para o semestre'],
+    it:['Fondamenta mappate · costruendo il tuo vantaggio','Materie chiave mappate · seguono le competenze','Percorso di pratica pronto · tappe in sequenza','Roadmap pronta per il semestre']
+  };
   let futureStep=0;
   function animateFuture(){
     enhanceFuture();
     const pins=$$('.v30-school-live .v30-pin'),schoolLabel=$('.v30-school-live .v30-live-label');
-    if(pins.length){pins.forEach((p,i)=>p.classList.toggle('active',i===futureStep%pins.length));if(schoolLabel)schoolLabel.textContent=schoolLiveLabels[futureStep%schoolLiveLabels.length]}
+    const lc=uiLanguage(),schoolRows=schoolLiveLabels[lc]||schoolLiveLabels.en,aheadRows=aheadLiveLabels[lc]||aheadLiveLabels.en;if(pins.length){pins.forEach((p,i)=>p.classList.toggle('active',i===futureStep%pins.length));if(schoolLabel)schoolLabel.textContent=schoolRows[futureStep%schoolRows.length]}
     const fill=$('.v30-ahead-line i'),dots=$$('.v30-ahead-dots span'),caption=$('.v30-ahead-caption'),stage=futureStep%4;
     if(fill)fill.style.width=[25,50,75,100][stage]+'%';
     dots.forEach((d,i)=>{d.classList.toggle('done',i<stage);d.classList.toggle('active',i===stage)});
-    if(caption)caption.textContent=aheadLiveLabels[stage];
+    if(caption)caption.textContent=aheadRows[stage];
     futureStep++;
   }
 
