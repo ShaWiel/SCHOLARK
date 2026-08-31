@@ -5,7 +5,9 @@
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const FAST=['dashboard','studio','tutor','education','planner','progress','goal','project','schools'];
+  // V51 is the single route owner for Studio, My Projects and Pro/Future tools.
+  // V52 only handles lightweight native learning views directly.
+  const FAST=['dashboard','tutor','education','planner','progress','goal'];
 
   const css=document.createElement('style');
   css.id='scholark-v52-fast-style';
