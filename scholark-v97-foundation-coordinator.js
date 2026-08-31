@@ -140,10 +140,11 @@
       duplicateIds:duplicateIds(),
       projectApi:!!window.__SCHOLARK_V64_PROJECTS__?.ready,
       projectMounted:r!=='project'||!!$('#v51-fallback .v64-projects'),
-      projectSurfaceClear:r!=='project'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')),
+      projectSurfaceClear:r!=='project'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')&&!$('#v58-suite')?.classList.contains('open')&&!$('#v57-deck')?.classList.contains('open')&&!$('#v57-present')?.classList.contains('open')),
       projectSidebarVisible:r!=='project'||!document.body.classList.contains('v51-collapsed'),
       studioMounted:r!=='studio'||!!$('#v41-studio-workspace:not([hidden])'),
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
+      workspaceLanguageSelector:r==='home'||!!$('#v90-language')&&$('#v90-language').options.length===7&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
       bookApi:!!window.__SCHOLARK_V65_BOOK__,
       bookMounted:r!=='book'||!!$('#v51-fallback .v65-book'),
       bookSurfaceClear:r!=='book'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')),
@@ -155,7 +156,7 @@
       cinematicSync:r!=='home'||!activeMode||!previewMode||activeMode===previewMode
     };
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();report.homeLanguageSelector=!!$('#v55-language')&&$('#v55-language').options.length===7}
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.bookMounted&&report.bookSurfaceClear;
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.bookMounted&&report.bookSurfaceClear;
     try{sessionStorage.setItem('scholark_foundation_r120',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R120 '+(report.ok?'PASS':'WARN'),report);
     return report;
