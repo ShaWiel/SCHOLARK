@@ -90,7 +90,7 @@
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
-  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
+  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
   function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
   function syncNav(id=state.active){$$('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
 
@@ -135,14 +135,16 @@
   }
 
   function openStudio(){
+    setCollapsed(false,false);
     clearModes();forceQuality();state.active='studio';syncNav();setRoute('studio');
     const s=$('#v41-studio-workspace');
     if(s){
-      // Make the prepared Studio surface visible immediately; defer geometry/i18n.
+      // First paint wins: show the already-built Studio immediately.
       s.hidden=false;s.removeAttribute('aria-hidden');document.body.classList.add('v51-studio','v41-studio-open');
       Array.from(s.querySelectorAll('.v41-mode[data-mode="book"]')).forEach(x=>x.remove());
-      window.__SCHOLARK_STUDIO_WORKSPACE__?.open?.(null,{route:false});
-      requestAnimationFrame(()=>window.__SCHOLARK_I18N__?.apply?.(s));
+      window.__SCHOLARK_STUDIO_WORKSPACE__?.open?.(null,{route:false,fast:true});
+      const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
+      idle(()=>window.__SCHOLARK_I18N__?.apply?.(s),{timeout:250});
       return
     }
     showFallback('studio')
@@ -163,7 +165,7 @@
     }
   }
 
-  function openTool(id){build();document.body.classList.add('v51-workspace');forceQuality();state.active=id;syncNav();if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');return}if(id==='studio'){openStudio();return}if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>window.__SCHOLARK_V93_LANGUAGE__?.open?.(),100);return}if(id==='project'){clearModes();setRoute('project');showPage('fallback');requestAnimationFrame(()=>{const api=window.__SCHOLARK_V64_PROJECTS__;if(api?.open){api.open();return}setTimeout(()=>{if(window.__SCHOLARK_V64_PROJECTS__?.open)window.__SCHOLARK_V64_PROJECTS__.open();else showFallback('project')},60)});return}if(['schools','study','book'].includes(id)){openPro(id);return}openNative(id)}
+  function openTool(id){build();document.body.classList.add('v51-workspace');forceQuality();state.active=id;syncNav();if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');return}if(id==='studio'){openStudio();return}if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>window.__SCHOLARK_V93_LANGUAGE__?.open?.(),100);return}if(id==='project'){setCollapsed(false,false);clearModes();setRoute('project');showPage('fallback');const api=window.__SCHOLARK_V64_PROJECTS__;if(api?.open){api.open();return}setTimeout(()=>{if(window.__SCHOLARK_V64_PROJECTS__?.open)window.__SCHOLARK_V64_PROJECTS__.open();else showFallback('project')},35);return}if(['schools','study','book'].includes(id)){openPro(id);return}openNative(id)}
   function goHome(){
     clearModes();
     document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
@@ -185,7 +187,7 @@
   function cleanConflicts(){
     build();$('#v49-sidebar-toggle')?.setAttribute('hidden','');$('#v48-sidebar')?.setAttribute('hidden','');$('#v48-dashboard')?.setAttribute('hidden','');$('#v48-return-home')?.setAttribute('hidden','');$$('#v41-studio-workspace .v41-mode[data-mode="book"],#v29-home-layer .v29-type[data-mode="book"],#v29-home-layer .v29-tab[data-mode="book"]').forEach(x=>x.remove());
     const active=workspaceRoute();document.body.classList.toggle('v51-workspace',active);if(!active){clearModes();return}
-    forceQuality();const h=route();let id='dashboard';if(h.includes('studio')||h.includes('presentation')||h.includes('webpage')||h.includes('document')||h.includes('report')||h.includes('graphic')||h.includes('social'))id='studio';else if(h.includes('schools'))id='schools';else if(h.includes('study'))id='study';else if(h.includes('book'))id='book';else if(h.includes('tutor'))id='tutor';else if(h.includes('education'))id='education';else if(h.includes('language'))id='language';else if(h.includes('planner'))id='planner';else if(h.includes('progress'))id='progress';else if(h.includes('goal'))id='goal';else if(h.includes('project'))id='project';state.active=id;syncNav(id);if(id==='dashboard'&&!document.body.classList.contains('v51-native')&&!document.body.classList.contains('v51-studio')&&!document.body.classList.contains('v51-pro'))showPage('dashboard');refreshLogo()
+    forceQuality();const h=route();let id='dashboard';if(h.includes('studio')||h.includes('presentation')||h.includes('webpage')||h.includes('document')||h.includes('report')||h.includes('graphic')||h.includes('social'))id='studio';else if(h.includes('schools'))id='schools';else if(h.includes('study'))id='study';else if(h.includes('book'))id='book';else if(h.includes('tutor'))id='tutor';else if(h.includes('education'))id='education';else if(h.includes('language'))id='language';else if(h.includes('planner'))id='planner';else if(h.includes('progress'))id='progress';else if(h.includes('goal'))id='goal';else if(h.includes('project'))id='project';state.active=id;syncNav(id);if(id==='project'){setCollapsed(false,false);showPage('fallback');setTimeout(()=>window.__SCHOLARK_V64_PROJECTS__?.open?.(),0)}else if(id==='dashboard'&&!document.body.classList.contains('v51-native')&&!document.body.classList.contains('v51-studio')&&!document.body.classList.contains('v51-pro'))showPage('dashboard');refreshLogo()
   }
 
   addEventListener('hashchange',()=>{setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
