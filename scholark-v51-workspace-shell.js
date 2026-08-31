@@ -181,6 +181,13 @@
     if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');syncWorkspaceLanguage(main);return}
     if(id==='studio'){openStudio();return}
     if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>{if(route()==='#language')window.__SCHOLARK_V93_LANGUAGE__?.open?.()},100);syncWorkspaceLanguage(main);return}
+    if(id==='files'){
+      setCollapsed(false,true);clearModes();setRoute('files');showPage('fallback');state.active='files';syncNav();
+      const mount=()=>{if(route()!=='#files')return false;const api=window.__SCHOLARK_V86_FILES__;if(!api?.open)return false;api.open();syncWorkspaceLanguage($('#v51-fallback'));return true};
+      if(mount())return;
+      window.__SCHOLARK_RUNTIME__?.ensure?.('files')?.then(()=>{if(!mount()&&route()==='#files')showFallback('files')});
+      return
+    }
     if(id==='project'){
       setCollapsed(false,true);clearModes();setRoute('project');showPage('fallback');
       const mount=()=>{
