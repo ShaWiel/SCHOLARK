@@ -140,7 +140,7 @@
     if(s){
       // Make the prepared Studio surface visible immediately; defer geometry/i18n.
       s.hidden=false;s.removeAttribute('aria-hidden');document.body.classList.add('v51-studio','v41-studio-open');
-      $('.v41-mode[data-mode="book"]',s).forEach(x=>x.remove());
+      Array.from(s.querySelectorAll('.v41-mode[data-mode="book"]')).forEach(x=>x.remove());
       window.__SCHOLARK_STUDIO_WORKSPACE__?.open?.(null,{route:false});
       requestAnimationFrame(()=>window.__SCHOLARK_I18N__?.apply?.(s));
       return
