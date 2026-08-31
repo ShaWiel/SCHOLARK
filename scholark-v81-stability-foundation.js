@@ -112,12 +112,17 @@
 
   document.addEventListener('click',e=>{
     const home=e.target.closest?.('#v51-home,#v48-return-home,[data-return-home]');
-    if(home){
-      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-      const old=location.href;history.replaceState(null,'',location.pathname+location.search+'#home');
-      dispatchEvent(new HashChangeEvent('hashchange',{oldURL:old,newURL:location.href}));
-      forceNewHome();
-    }
+    if(!home)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    // The Workspace shell owns return-home cleanup. Calling the same route owner
+    // preserves the homepage language selector, closes every stale overlay and
+    // restarts the homepage cinematic consistently.
+    const api=window.__SCHOLARK_WORKSPACE__;
+    if(api?.goHome){api.goHome();return}
+    const old=location.href;history.replaceState(null,'',location.pathname+location.search+'#home');
+    dispatchEvent(new HashChangeEvent('hashchange',{oldURL:old,newURL:location.href}));
+    forceNewHome();
+    setTimeout(()=>{window.__SCHOLARK_V55_TOPBAR__?.sync?.();window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.()},40);
   },true);
 
   function fixOnboarding(){
