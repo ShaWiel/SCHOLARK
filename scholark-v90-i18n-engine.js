@@ -288,7 +288,7 @@
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
     const result={};
     const local=await deviceTranslate(target,strings,part=>{Object.assign(result,part);onChunk?.(part)},primed);
-    if(!local.missing.length||purpose==='ui'&&STATIC_UI[target])return result;
+    if(!local.missing.length)return result;
     const chunks=[];for(let i=0;i<local.missing.length;i+=70)chunks.push(local.missing.slice(i,i+70));
     let cursor=0;
     const worker=async()=>{
@@ -331,7 +331,7 @@
   }
   async function translateCurrentPage(showOverlay=false){
     const target=code(),epoch=translationEpoch;
-    if(target==='en'||STATIC_UI[target]){upgradeSelectors();applyVisible();overlay.classList.remove('open');return}
+    if(target==='en'){upgradeSelectors();applyVisible();overlay.classList.remove('open');return}
     if(navigator.onLine===false){applyVisible();overlay.classList.remove('open');return}
     if(translating)return;translating=true;
     if(showOverlay){overlay.classList.add('open');$('#v90-switch-copy').textContent='Finishing '+nativeName(target)+' across SCHOLARK…'}
@@ -356,8 +356,8 @@
   }
   async function fillUnknown(){return translateCurrentPage(false)}
   function scheduleUnknown(){
-    if(code()==='en'||STATIC_UI[code()])return;
-    clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,500);
+    if(code()==='en')return;
+    clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,420);
   }
 
   function upgradeSelectors(){
@@ -380,7 +380,10 @@
       push($('#v29-home-layer:not([hidden])'));
     }else{
       push($('#v51-sidebar'));push($('#v51-main'));
-      push($('.v41-studio-workspace:not([hidden])'));push($('#v58-suite.open'));push($('#v57-deck.open'));push($('#v57-present.open'));
+      push($('#v41-studio-workspace:not([hidden])'));
+      push($('#v50-school.open'));push($('#v25-study.open'));push($('#v25-book.open'));
+      push($('#v51-fallback .v65-book'));push($('#v51-fallback .v64-projects'));
+      push($('#v58-suite.open'));push($('#v57-deck.open'));push($('#v57-present.open'));
     }
     return roots.length?roots:[document.body];
   }
@@ -450,6 +453,7 @@
       else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
     }
     if(selectorPending){selectorPending=false;upgradeSelectors()}
+    if(code()!=='en')scheduleUnknown();
   }
   const obs=new MutationObserver(muts=>{
     for(const m of muts){
@@ -467,8 +471,8 @@
     if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
   });
   obs.observe(document.body||document.documentElement,{subtree:true,childList:true});
-  addEventListener('hashchange',()=>setTimeout(()=>{upgradeSelectors();applyVisible()},100));
-  addEventListener('popstate',()=>setTimeout(()=>{upgradeSelectors();applyVisible()},100));
+  addEventListener('hashchange',()=>setTimeout(()=>{upgradeSelectors();applyVisible();scheduleUnknown()},70));
+  addEventListener('popstate',()=>setTimeout(()=>{upgradeSelectors();applyVisible();scheduleUnknown()},70));
   addEventListener('scholark-language-change',()=>setTimeout(boot,30));
   setTimeout(boot,80);
 
