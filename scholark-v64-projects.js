@@ -12,13 +12,22 @@
   function dedupe(a=projectHistory()){const seen=new Set(),out=[];for(const x of a){const k=key(x);if(seen.has(k))continue;seen.add(k);out.push(x)}try{localStorage.setItem('scholark_v45_history',JSON.stringify(out.slice(0,40)))}catch{}return out.slice(0,40)}
   function host(){
     document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
-    $$('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'));window.history.replaceState(null,'',location.pathname+location.search+'#project');
-    const main=$('#v51-main');if(!main)return null;main.classList.add('v52-fast-main');main.style.setProperty('display','block','important');$$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});
+    // My Projects must own a clean workspace surface. Clear every tool overlay
+    // that can otherwise remain fixed above #v51-main.
+    $('#v41-studio-workspace')?.setAttribute('hidden','');
+    $('#sv24-overlay')?.classList.remove('open');
+    $('#v50-school')?.classList.remove('open');
+    $('#v25-study')?.classList.remove('open');
+    $('#v25-book')?.classList.remove('open');
+    const native=$('.v51-native-host');if(native)native.classList.remove('v51-native-host');
+    $('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'));
+    if(String(location.hash||'').toLowerCase()!=='#project')window.history.replaceState(null,'',location.pathname+location.search+'#project');
+    const main=$('#v51-main');if(!main)return null;main.classList.add('v52-fast-main');main.style.setProperty('display','block','important');$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});
     let p=$('[data-v51-page="fallback"]',main);if(!p){p=document.createElement('section');p.className='v51-page';p.dataset.v51Page='fallback';main.appendChild(p)}p.classList.add('active');p.style.display='block';p.style.padding='0';
     let h=$('#v51-fallback',p);if(!h){h=document.createElement('div');h.id='v51-fallback';p.appendChild(h)}return h;
   }
   function label(m){return ({presentation:'Presentation',webpage:'Webpage',document:'Document',social:'Social',graphic:'Graphic'}[m]||m||'Project')}
-  function render(){const h=host();if(!h)return;const a=dedupe();h.innerHTML='<div class="v64-projects"><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>My Projects</h1><p>Open saved Studio work directly. Autosaves are deduplicated, so one project no longer appears over and over.</p>'+(a.length?'<div class="v64-grid">'+a.map((x,i)=>'<article class="v64-card" data-v64-open="'+i+'"><button class="v64-del" data-v64-del="'+i+'" title="Delete project">×</button><small>'+esc(label(x.mode))+'</small><h3>'+esc(x.project||'Untitled project')+'</h3><p>'+esc(clean(x.rawPrompt||x.prompt||'Saved SCHOLARK creation').slice(0,180))+'</p></article>').join('')+'</div>':'<div class="v64-empty">No saved projects yet. Create something in Studio AI and save it; it will appear here.</div>')+'</div>';}
+  function render(){const h=host();if(!h)return;const a=dedupe();h.innerHTML='<div class="v64-projects"><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>My Projects</h1><p>Open saved Studio work directly. Autosaves are deduplicated, so one project no longer appears over and over.</p>'+(a.length?'<div class="v64-grid">'+a.map((x,i)=>'<article class="v64-card" data-v64-open="'+i+'"><button class="v64-del" data-v64-del="'+i+'" title="Delete project">×</button><small>'+esc(label(x.mode))+'</small><h3>'+esc(x.project||'Untitled project')+'</h3><p>'+esc(clean(x.rawPrompt||x.prompt||'Saved SCHOLARK creation').slice(0,180))+'</p></article>').join('')+'</div>':'<div class="v64-empty">No saved projects yet. Create something in Studio AI and save it; it will appear here.</div>')+'</div>';window.__SCHOLARK_I18N__?.apply?.(h);}
   function openItem(i){const a=dedupe(),x=a[i];if(!x)return;
     if(x.deckId){try{const d=JSON.parse(localStorage.getItem('scholark_v57_deck_'+x.deckId)||'null');if(d)return window.__SCHOLARK_V57_PRESENTATIONS__?.open?.(d)}catch{}}
     if(x.artifactId){try{const d=JSON.parse(localStorage.getItem('scholark_v58_artifact_'+x.artifactId)||'null');if(d)return window.__SCHOLARK_V58_ARTIFACTS__?.openArtifact?.(d)}catch{}}
@@ -27,7 +36,7 @@
     if(['webpage','document','social','graphic'].includes(x.mode)){try{const d=JSON.parse(localStorage.getItem('scholark_v58_'+x.mode)||'null');if(d)return window.__SCHOLARK_V58_ARTIFACTS__?.openArtifact?.(d)}catch{}}
   }
   function removeItem(i){const a=dedupe(),x=a[i];if(!x)return;a.splice(i,1);try{localStorage.setItem('scholark_v45_history',JSON.stringify(a));if(x.artifactId)localStorage.removeItem('scholark_v58_artifact_'+x.artifactId);if(x.deckId)localStorage.removeItem('scholark_v57_deck_'+x.deckId);if(x.bookId)localStorage.removeItem('scholark_v65_book')}catch{}render()}
-  window.addEventListener('click',e=>{const p=e.target.closest?.('[data-v51-tool="project"]');if(p){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();render();return}const d=e.target.closest?.('[data-v64-del]');if(d){e.preventDefault();e.stopPropagation();removeItem(+d.dataset.v64Del);return}const o=e.target.closest?.('[data-v64-open]');if(o){e.preventDefault();openItem(+o.dataset.v64Open)}},true);
+  window.addEventListener('click',e=>{const d=e.target.closest?.('[data-v64-del]');if(d){e.preventDefault();e.stopPropagation();removeItem(+d.dataset.v64Del);return}const o=e.target.closest?.('[data-v64-open]');if(o){e.preventDefault();openItem(+o.dataset.v64Open)}},false);
   window.__SCHOLARK_V64_PROJECTS__={ready:true,open:render,refresh:render,openItem,removeItem,list:()=>dedupe()};
   dedupe();if(String(location.hash).toLowerCase()==='#project')setTimeout(render,60);
 })();
