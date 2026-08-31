@@ -11,7 +11,7 @@
   function key(x){return x.deckId?'deck:'+x.deckId:x.artifactId?'artifact:'+x.artifactId:x.bookId?'book:'+x.bookId:[x.mode||'',x.project||'',x.rawPrompt||x.prompt||''].join('|')}
   function dedupe(a=projectHistory()){const seen=new Set(),out=[];for(const x of a){const k=key(x);if(seen.has(k))continue;seen.add(k);out.push(x)}try{localStorage.setItem('scholark_v45_history',JSON.stringify(out.slice(0,40)))}catch{}return out.slice(0,40)}
   function host(){
-    document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
+    document.body.classList.remove('v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
     // My Projects must own a clean workspace surface. Clear every tool overlay
     // that can otherwise remain fixed above #v51-main.
     $('#v41-studio-workspace')?.setAttribute('hidden','');
@@ -19,6 +19,7 @@
     $('#v50-school')?.classList.remove('open');
     $('#v25-study')?.classList.remove('open');
     $('#v25-book')?.classList.remove('open');
+    $('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');
     const native=$('.v51-native-host');if(native)native.classList.remove('v51-native-host');
     Array.from(document.querySelectorAll('#v51-sidebar [data-v51-tool]')).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'));
     if(String(location.hash||'').toLowerCase()!=='#project')window.history.replaceState(null,'',location.pathname+location.search+'#project');
