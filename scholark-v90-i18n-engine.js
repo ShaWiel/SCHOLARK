@@ -306,10 +306,13 @@
     return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview');
   }
   function collectDom(limit=180){
-    const out=new Set();
-    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
-    $$('input[placeholder],textarea[placeholder],[aria-label],[title]').forEach(el=>{const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
+    const out=new Set(),roots=typeof visibleRoots==='function'?visibleRoots():[document.body];
+    for(const base of roots){
+      if(!base||out.size>=limit)continue;
+      const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
+      let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
+      $('input[placeholder],textarea[placeholder],[aria-label],[title]',base).forEach(el=>{if(out.size>=limit)return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
+    }
     return [...out];
   }
   async function translateBatch(target,strings,onChunk,purpose='ui',primed=null){
