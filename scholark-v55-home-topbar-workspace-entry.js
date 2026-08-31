@@ -153,6 +153,7 @@
 
   addEventListener('hashchange',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
   addEventListener('popstate',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
+  addEventListener('scholark-language-applied',()=>{const lang=ensureLanguageSelector();const current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;scheduleTopbarRepair(20)});
   addEventListener('scholark-language-ready',()=>{const lang=ensureLanguageSelector();const current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncAuth();scheduleTopbarRepair(120)});
   addEventListener('scholark-return-home',()=>{sync();ensureLanguageSelector();[60,220,700,1500].forEach(ms=>setTimeout(()=>{sync();ensureLanguageSelector()},ms))});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleTopbarRepair(80)});
