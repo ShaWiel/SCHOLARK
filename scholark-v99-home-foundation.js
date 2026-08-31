@@ -40,7 +40,7 @@
     const bars=$$('.v29-master .v29-line i');
     const report={
       ok:true,
-      release:'r118',
+      release:'r119',
       home:home(),
       activeMode:mode,
       previewMode,
@@ -55,8 +55,8 @@
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presenterReady&&report.masteryBars===3&&report.masteryAnimated&&report.runtimeErrors.length===0);
-    try{sessionStorage.setItem('scholark_home_foundation_r118',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R118 '+(report.ok?'PASS':'WARN'),report);
+    try{sessionStorage.setItem('scholark_home_foundation_r119',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R119 '+(report.ok?'PASS':'WARN'),report);
     if(!report.ok)schedule(30);
     return report;
   }
@@ -69,5 +69,5 @@
   [100,500,1600].forEach(ms=>setTimeout(()=>schedule(0),ms));
   setTimeout(health,2400);
 
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r118'};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r119'};
 })();
