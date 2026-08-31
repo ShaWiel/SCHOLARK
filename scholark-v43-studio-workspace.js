@@ -61,13 +61,22 @@
   function renderExamples(){examplesWrap.innerHTML=MODES[active].examples.map(x=>`<button class="v41-example">${esc(x)}</button>`).join('');$$('.v41-example',examplesWrap).forEach(b=>b.onclick=()=>{prompt.value=b.textContent;prompt.focus();});}
   function setMode(mode){active=mode;const m=MODES[mode];$('#v41-mode-title',root).textContent=m.label+' Studio';$('#v41-mode-sub',root).textContent=m.sub;settingsBody.innerHTML=settingsFor(mode);const savedLang=localStorage.getItem('scholark_ui_language')||'nl';const l=$('#v41-language',settingsBody);if(l&&[...l.options].some(o=>o.value===savedLang))l.value=savedLang;renderModes();renderPipeline();renderExamples();outlineList.innerHTML='<li>Your outline will appear here.</li>';status.textContent='';if(mode==='book'){$('#v41-book-words',settingsBody).oninput=e=>{if(+e.target.value>150000)e.target.value=150000;if(+e.target.value<1000&&e.target.value)e.target.value=1000;};}}
 
-  function topbarBottom(){const els=$$('header,nav,section,div').map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>o.r.top<20&&o.r.height>35&&o.r.height<130&&o.r.width>innerWidth*.5&&(o.t.includes('uitloggen')||o.t.includes('log out')||o.t.includes('focus')));return Math.max(64,els.sort((a,b)=>a.r.height-b.r.height)[0]?.r.bottom||74);}
-  function sidebarRight(){if(document.body.classList.contains('v40-sidebar-closed')||localStorage.getItem('scholark_sidebar_closed')==='1')return 0;const terms=['dashboard','studio ai','ai tutor','planner','voortgang','progress','doelen','goals'];const c=$$('aside,nav,section,div').map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>o.r.left<30&&o.r.width>150&&o.r.width<430&&o.r.height>350&&terms.filter(t=>o.t.includes(t)).length>=4).sort((a,b)=>a.r.width-b.r.width)[0];return c?Math.max(0,c.r.right):0;}
+  function topbarBottom(){
+    if($('#v51-sidebar'))return 0;
+    const bar=$('#v55-topbar');if(bar&&getComputedStyle(bar).display!=='none')return Math.max(0,bar.getBoundingClientRect().bottom);
+    return 0;
+  }
+  function sidebarRight(){
+    const side=$('#v51-sidebar');
+    if(side&&!document.body.classList.contains('v51-collapsed'))return Math.max(0,side.getBoundingClientRect().right);
+    if(document.body.classList.contains('v40-sidebar-closed')||localStorage.getItem('scholark_sidebar_closed')==='1')return 0;
+    return 0;
+  }
   function syncGeometry(){if(root.hidden)return;root.style.setProperty('--v41-top',topbarBottom()+'px');root.style.setProperty('--v41-left',sidebarRight()+'px');}
 
   function protectDashboard(on){
-    const candidates=$$('button,a,[role="button"],[tabindex],div,span').filter(el=>!el.closest('#v41-studio-workspace')&&lower(el)==='dashboard');
-    const d=candidates.sort((a,b)=>(['BUTTON','A'].includes(a.tagName)?0:1)-(['BUTTON','A'].includes(b.tagName)?0:1))[0];
+    if($('#v51-sidebar'))return;
+    const d=$('button,a,[role="button"],[tabindex]').find(el=>!el.closest('#v41-studio-workspace')&&lower(el)==='dashboard');
     if(!d)return;
     if(on){if(!d.textContent.includes('\u200B'))d.appendChild(document.createTextNode('\u200B'));}
     else [...d.childNodes].forEach(n=>{if(n.nodeType===3&&n.nodeValue?.includes('\u200B'))n.nodeValue=n.nodeValue.replace(/\u200B/g,'');});
@@ -76,15 +85,12 @@
   let mountedMode=active;
   function openStudio(mode,opts={}){
     const requested=mode||active;active=requested;
-    // Paint first. Studio is fully constructed at boot, so reopening it should not
-    // rebuild the entire settings/modes tree before the user sees anything.
     root.hidden=false;root.removeAttribute('aria-hidden');document.body.classList.add('v41-studio-open');
+    syncGeometry();
     if(opts.route!==false&&!/^#studio/.test((location.hash||'').toLowerCase()))history.pushState(null,'',location.pathname+location.search+'#studio');
-    protectDashboard(true);
     if(mountedMode!==active){setMode(active);mountedMode=active}
-    requestAnimationFrame(()=>{syncGeometry();setTimeout(syncGeometry,80)});
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
-    idle(()=>window.__SCHOLARK_I18N__?.apply?.(root),{timeout:300});
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,70));
+    idle(()=>{protectDashboard(true);syncGeometry();window.__SCHOLARK_I18N__?.apply?.(root)}, {timeout:220});
   }
   function closeStudio(){root.hidden=true;root.setAttribute('aria-hidden','true');document.body.classList.remove('v41-studio-open');protectDashboard(false);}
   function prewarm(){
