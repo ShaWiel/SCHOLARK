@@ -134,24 +134,36 @@
     if(id==='project'){let arr=[];try{arr=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]')}catch{}if(!arr.length){try{const x=JSON.parse(localStorage.getItem('scholark_v45_last_project')||'null');if(x)arr=[x]}catch{}}$('#v51-project-list').innerHTML=arr.length?arr.slice(0,20).map(x=>`<div class="v51-fallback-item"><b>${esc(x.project||x.mode||'Studio project')}</b><br>${esc(x.rawPrompt||x.prompt||'Saved SCHOLARK creation')}</div>`).join(''):'<div class="v51-fallback-item">No saved Studio projects yet.</div>'}
   }
 
-  function openStudio(){clearModes();forceQuality();state.active='studio';syncNav();setRoute('studio');const s=$('#v41-studio-workspace');if(s){s.hidden=false;s.removeAttribute('aria-hidden');document.body.classList.add('v51-studio','v41-studio-open');$$('.v41-mode[data-mode="book"]',s).forEach(x=>x.remove());return}showFallback('studio')}
+  function openStudio(){
+    clearModes();forceQuality();state.active='studio';syncNav();setRoute('studio');
+    const s=$('#v41-studio-workspace');
+    if(s){
+      // Make the prepared Studio surface visible immediately; defer geometry/i18n.
+      s.hidden=false;s.removeAttribute('aria-hidden');document.body.classList.add('v51-studio','v41-studio-open');
+      $('.v41-mode[data-mode="book"]',s).forEach(x=>x.remove());
+      window.__SCHOLARK_STUDIO_WORKSPACE__?.open?.(null,{route:false});
+      requestAnimationFrame(()=>window.__SCHOLARK_I18N__?.apply?.(s));
+      return
+    }
+    showFallback('studio')
+  }
   function clickExternalTool(tool){const c=$$(`[data-tool="${tool}"]`).filter(el=>!el.closest('#v51-sidebar,#v51-main'))[0];if(c){try{c.click();return true}catch{}}return false}
   function openPro(id){
     clearModes();forceQuality();state.active=id;syncNav();setRoute(id);document.body.classList.add('v51-pro','v51-'+id);
-    if(id==='schools'){let t=$('[data-v50-school]');if(t){try{t.click()}catch{}}else{const old=$('[data-v48-tool="schools"]');try{old?.click()}catch{}}setTimeout(()=>$('#v50-school')?.classList.add('open'),80);return}
+    if(id==='schools'){let t=$('[data-v50-school]');if(t){try{t.click()}catch{}}else{const old=$('[data-v48-tool="schools"]');try{old?.click()}catch{}}setTimeout(()=>{const x=$('#v50-school');x?.classList.add('open');window.__SCHOLARK_I18N__?.apply?.(x)},35);return}
     if(id==='study'){
       $('#v25-study')?.classList.remove('open');
-      const api=window.__SCHOLARK_V62_LEARNING_API__;if(api?.openStudyAhead){api.openStudyAhead();return}
-      setTimeout(()=>window.__SCHOLARK_V62_LEARNING_API__?.openStudyAhead?.(),90);return;
+      const api=window.__SCHOLARK_V62_LEARNING_API__;if(api?.openStudyAhead){api.openStudyAhead();setTimeout(()=>window.__SCHOLARK_I18N__?.apply?.($('#v25-study')),20);return}
+      setTimeout(()=>{window.__SCHOLARK_V62_LEARNING_API__?.openStudyAhead?.();window.__SCHOLARK_I18N__?.apply?.($('#v25-study'))},60);return;
     }
     if(id==='book'){
       $('#v25-book')?.classList.remove('open');
-      const api=window.__SCHOLARK_V65_BOOK__;if(api?.open){api.open();return}
-      setTimeout(()=>window.__SCHOLARK_V65_BOOK__?.open?.(),90);return;
+      const api=window.__SCHOLARK_V65_BOOK__;if(api?.open){api.open();setTimeout(()=>window.__SCHOLARK_I18N__?.apply?.($('#v51-fallback')),20);return}
+      setTimeout(()=>{window.__SCHOLARK_V65_BOOK__?.open?.();window.__SCHOLARK_I18N__?.apply?.($('#v51-fallback'))},60);return;
     }
   }
 
-  function openTool(id){build();document.body.classList.add('v51-workspace');forceQuality();state.active=id;syncNav();if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');return}if(id==='studio'){openStudio();return}if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>window.__SCHOLARK_V93_LANGUAGE__?.open?.(),100);return}if(id==='project'){clearModes();setRoute('project');showPage('fallback');const api=window.__SCHOLARK_V64_PROJECTS__;if(api?.open){api.open();return}setTimeout(()=>{if(window.__SCHOLARK_V64_PROJECTS__?.open)window.__SCHOLARK_V64_PROJECTS__.open();else showFallback('project')},120);return}if(['schools','study','book'].includes(id)){openPro(id);return}openNative(id)}
+  function openTool(id){build();document.body.classList.add('v51-workspace');forceQuality();state.active=id;syncNav();if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');return}if(id==='studio'){openStudio();return}if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>window.__SCHOLARK_V93_LANGUAGE__?.open?.(),100);return}if(id==='project'){clearModes();setRoute('project');showPage('fallback');requestAnimationFrame(()=>{const api=window.__SCHOLARK_V64_PROJECTS__;if(api?.open){api.open();return}setTimeout(()=>{if(window.__SCHOLARK_V64_PROJECTS__?.open)window.__SCHOLARK_V64_PROJECTS__.open();else showFallback('project')},60)});return}if(['schools','study','book'].includes(id)){openPro(id);return}openNative(id)}
   function goHome(){
     clearModes();
     document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
@@ -162,10 +174,12 @@
     if(h){h.hidden=false;h.removeAttribute('aria-hidden');h.classList.add('v30-native-home');['display','visibility','opacity','pointer-events','position','inset','top','left','right','bottom'].forEach(p=>h.style.removeProperty(p));h.scrollTop=0}
     document.body.classList.add('v55-public-home');
     window.__SCHOLARK_V55_TOPBAR__?.sync?.();
+    window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();
     window.dispatchEvent(new CustomEvent('scholark-return-home'));
     window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL:oldUrl,newURL:location.href}));
     window.scrollTo({top:0,behavior:'instant'});
-    setTimeout(()=>{const home=$('#v29-home-layer');if(home){home.hidden=false;home.classList.add('v30-native-home');home.scrollTop=0}window.__SCHOLARK_V55_TOPBAR__?.sync?.();window.__SCHOLARK_V30_DEMO__?.sync?.();window.__SCHOLARK_FOUNDATION__?.repair?.();refreshLogo()},80)
+    setTimeout(()=>{const home=$('#v29-home-layer');if(home){home.hidden=false;home.classList.add('v30-native-home');home.scrollTop=0}window.__SCHOLARK_V55_TOPBAR__?.sync?.();window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();window.__SCHOLARK_V30_DEMO__?.sync?.();window.__SCHOLARK_FOUNDATION__?.repair?.();refreshLogo()},80);
+    setTimeout(()=>window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.(),320)
   }
 
   function cleanConflicts(){
