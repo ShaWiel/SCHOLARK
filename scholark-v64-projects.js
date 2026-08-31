@@ -20,9 +20,9 @@
     $('#v25-study')?.classList.remove('open');
     $('#v25-book')?.classList.remove('open');
     const native=$('.v51-native-host');if(native)native.classList.remove('v51-native-host');
-    $('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'));
+    Array.from(document.querySelectorAll('#v51-sidebar [data-v51-tool]')).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'));
     if(String(location.hash||'').toLowerCase()!=='#project')window.history.replaceState(null,'',location.pathname+location.search+'#project');
-    const main=$('#v51-main');if(!main)return null;main.classList.add('v52-fast-main');main.style.setProperty('display','block','important');$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});
+    const main=$('#v51-main');if(!main)return null;main.classList.add('v52-fast-main');main.style.setProperty('display','block','important');Array.from(main.querySelectorAll('.v51-page')).forEach(p=>{p.classList.remove('active');p.style.display='none'});
     let p=$('[data-v51-page="fallback"]',main);if(!p){p=document.createElement('section');p.className='v51-page';p.dataset.v51Page='fallback';main.appendChild(p)}p.classList.add('active');p.style.display='block';p.style.padding='0';
     let h=$('#v51-fallback',p);if(!h){h=document.createElement('div');h.id='v51-fallback';p.appendChild(h)}return h;
   }
