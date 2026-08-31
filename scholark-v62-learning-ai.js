@@ -154,7 +154,8 @@
     const cur=e.target.closest?.('#v52-cur-build');if(cur){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();runCurriculum();return}
     const exam=e.target.closest?.('#v52-exam-build');if(exam){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();runExam();return}
     const reveal=e.target.closest?.('.v62-reveal');if(reveal){const sol=reveal.nextElementSibling;sol?.classList.toggle('open');reveal.textContent=sol?.classList.contains('open')?'Hide answer':'Show answer';return}
-    const study=e.target.closest?.('[data-v51-tool="study"]');if(study){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openStudyAhead();return}
+    // V51 owns the Study Ahead sidebar route so all previous tool surfaces
+    // are cleared before the Study Ahead view mounts.
     const run=e.target.closest?.('#v62-study-run');if(run){e.preventDefault();runStudyAhead()}
   },true);
   document.addEventListener('keydown',e=>{if(e.target?.id==='v52-tutor-q'&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runTutor()}});
