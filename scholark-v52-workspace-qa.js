@@ -143,9 +143,10 @@
     if(id==='tutor')renderTutor();else if(id==='education')renderEducation();else if(id==='planner')renderPlanner();else if(id==='progress')renderProgress();else if(id==='goal')renderGoals();else if(id==='project')renderProjects();
   }
 
-  document.addEventListener('click',e=>{const b=e.target.closest('[data-v51-tool]');if(!b)return;const id=b.dataset.v51Tool;if(!FAST.includes(id))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openDirect(id)},true);
-
+  // Sidebar navigation is owned by V51. V52 exposes the fast native views
+  // without capture-phase interception, preventing stale overlays and route races.
   function syncRoute(){const id=String(location.hash||'').replace(/^#/,'').toLowerCase();if(FAST.includes(id))openDirect(id)}
   addEventListener('hashchange',syncRoute);addEventListener('popstate',syncRoute);
   setTimeout(()=>{cleanDashboard();const id=String(location.hash||'').replace(/^#/,'').toLowerCase();if(FAST.includes(id))openDirect(id)},25);
+  window.__SCHOLARK_V52_FAST__={open:openDirect,sync:syncRoute,tools:[...FAST]};
 })();
