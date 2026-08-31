@@ -3,7 +3,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260831-r120';
+  const VERSION = '20260831-r121';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -55,8 +55,8 @@
 
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);
-  const loaded = new Set(), errors = [];
-  let chain = Promise.resolve(), replaying = false, busy = 0;
+  const loaded = new Set(), errors = [], inflight = new Map(), preloaded = new Set();
+  let foregroundChain = Promise.resolve(), backgroundChain = Promise.resolve(), replaying = false, busy = 0;
   const html = document.documentElement;
   const staticPage = /\/(privacy|terms|refunds|safety)(?:\.html)?$/i.test(location.pathname);
 
@@ -85,20 +85,30 @@
     try { if (globalThis.scheduler?.yield) return globalThis.scheduler.yield(); } catch {}
     return new Promise(resolve => setTimeout(resolve, 0));
   }
+  function preloadOne(file){
+    if(preloaded.has(file)||loaded.has(file))return;
+    preloaded.add(file);
+    const l=document.createElement('link');l.rel='preload';l.as='script';l.href=new URL(file+'?v='+VERSION,baseUrl).href;l.dataset.scholarkPreload=file;
+    document.head.appendChild(l);
+  }
+  function preloadFiles(files){files.forEach(preloadOne)}
   function loadOne(file) {
     if (loaded.has(file)) return Promise.resolve(true);
-    return new Promise(resolve => {
+    if (inflight.has(file)) return inflight.get(file);
+    const promise=new Promise(resolve => {
       const s = document.createElement('script');
       s.async = false;
       s.dataset.scholarkModule = file;
       s.src = new URL(file + '?v=' + VERSION, baseUrl).href;
-      s.onload = () => { loaded.add(file); s.dataset.loaded = '1'; resolve(true); };
-      s.onerror = () => { errors.push(file); console.error('[SCHOLARK] Runtime module failed:', file); resolve(false); };
+      s.onload = () => { loaded.add(file); inflight.delete(file); s.dataset.loaded = '1'; resolve(true); };
+      s.onerror = () => { inflight.delete(file); errors.push(file); console.error('[SCHOLARK] Runtime module failed:', file); resolve(false); };
       document.head.appendChild(s);
     });
+    inflight.set(file,promise);
+    return promise;
   }
-  function ensureFiles(files, indicator = false) {
-    chain = chain.catch(() => {}).then(async () => {
+  function ensureFiles(files, indicator = false, background = false) {
+    const run=async()=>{
       if (indicator) { busy++; html.classList.add('scholark-route-loading'); }
       try {
         for (const file of files) {
@@ -112,19 +122,26 @@
           if (!busy) html.classList.remove('scholark-route-loading');
         }
       }
-    });
-    return chain;
+    };
+    if(background){
+      backgroundChain=backgroundChain.catch(()=>{}).then(run);
+      return backgroundChain;
+    }
+    foregroundChain=foregroundChain.catch(()=>{}).then(run);
+    return foregroundChain;
   }
   function ensure(key, indicator = false) {
-    return ensureFiles(required(key), indicator);
+    return ensureFiles(required(key), indicator, false);
   }
   function prewarmStudioCore(){
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,320));
-    idle(()=>ensureFiles(STUDIO_CORE,false),{timeout:900});
+    preloadFiles(STUDIO_CORE);
+    setTimeout(()=>ensureFiles(STUDIO_CORE,false,true),20);
   }
   function prefetchStudioHeavy(){
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,420));
-    idle(()=>ensureFiles(STUDIO_HEAVY,false),{timeout:1400});
+    // Cache heavy Studio modules without executing them. Background execution
+    // used to block unrelated foreground routes such as My Projects.
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,320));
+    idle(()=>preloadFiles(STUDIO_HEAVY),{timeout:900});
   }
   function toolKey(target) {
     const direct = target?.closest?.('[data-v51-tool]');
@@ -137,8 +154,8 @@
 
   const warmTarget=e=>{
     const key=toolKey(e.target);
-    if(key==='studio')ensureFiles(STUDIO_CORE,false);
-    else if(key==='project')ensureFiles(FEATURES.project,false);
+    if(key==='studio'){preloadFiles(STUDIO_CORE);ensureFiles(STUDIO_CORE,false,true)}
+    else if(key==='project'){preloadFiles(FEATURES.project);ensureFiles(FEATURES.project,false,true)}
   };
   document.addEventListener('pointerover',warmTarget,{passive:true,capture:true});
   document.addEventListener('focusin',warmTarget,true);
@@ -162,9 +179,13 @@
     if (!target) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     ensure(key, true).then(() => {
-      if (!target.isConnected) return;
       replaying = true;
-      try { target.click(); } finally { replaying = false; }
+      try {
+        const workspace=window.__SCHOLARK_WORKSPACE__;
+        if((key==='studio'||key==='project')&&workspace?.openTool){workspace.openTool(key);return}
+        if(target.isConnected)target.click();
+        else if(workspace?.openTool&&key!=='home')workspace.openTool(key);
+      } finally { replaying = false; }
     });
   }, true);
 
@@ -187,6 +208,7 @@
 
   (async () => {
     if (staticPage) return;
+    preloadFiles([...STUDIO_CORE,...FEATURES.project]);
     html.classList.add('scholark-runtime-loading');
     const key = routeKey();
     await ensure(key, false);
