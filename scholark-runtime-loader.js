@@ -169,20 +169,50 @@
       return;
     }
     const key = toolKey(e.target);
-    if(key==='studio'&&loaded.has('scholark-v43-studio-workspace.js')){
-      if(STUDIO_CORE.some(file=>!loaded.has(file)))ensureFiles(STUDIO_CORE,false);
-      prefetchStudioHeavy();
+    const target = e.target.closest?.('[data-v51-tool],[data-future],#v55-workspace-entry,#v41-workspace-home,[data-workspace-entry]');
+
+    // Route-first loading: Studio and My Projects should paint their own shell
+    // before optional engines, sharing or export modules finish loading.
+    if(key==='studio'){
+      if(!target)return;
+      if(loaded.has('scholark-v43-studio-workspace.js')){
+        if(STUDIO_CORE.some(file=>!loaded.has(file)))ensureFiles(STUDIO_CORE,false,true);
+        prefetchStudioHeavy();
+        return;
+      }
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      ensureFiles(['scholark-v43-studio-workspace.js'],true,false).then(()=>{
+        replaying=true;
+        try{window.__SCHOLARK_WORKSPACE__?.openTool?.('studio')}finally{replaying=false}
+        ensureFiles(STUDIO_CORE.filter(file=>file!=='scholark-v43-studio-workspace.js'),false,true);
+        prefetchStudioHeavy();
+      });
       return;
     }
+    if(key==='project'){
+      if(!target)return;
+      if(loaded.has('scholark-v64-projects.js')){
+        const rest=FEATURES.project.filter(file=>file!=='scholark-v64-projects.js'&&!loaded.has(file));
+        if(rest.length)ensureFiles(rest,false,true);
+        return;
+      }
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      ensureFiles(['scholark-v64-projects.js'],true,false).then(()=>{
+        replaying=true;
+        try{window.__SCHOLARK_WORKSPACE__?.openTool?.('project')}finally{replaying=false}
+        const rest=FEATURES.project.filter(file=>file!=='scholark-v64-projects.js');
+        ensureFiles(rest,false,true);
+      });
+      return;
+    }
+
     if (!key || !required(key).some(file => !loaded.has(file))) return;
-    const target = e.target.closest?.('[data-v51-tool],[data-future],#v55-workspace-entry,#v41-workspace-home,[data-workspace-entry]');
     if (!target) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     ensure(key, true).then(() => {
       replaying = true;
       try {
         const workspace=window.__SCHOLARK_WORKSPACE__;
-        if((key==='studio'||key==='project')&&workspace?.openTool){workspace.openTool(key);return}
         if(target.isConnected)target.click();
         else if(workspace?.openTool&&key!=='home')workspace.openTool(key);
       } finally { replaying = false; }
