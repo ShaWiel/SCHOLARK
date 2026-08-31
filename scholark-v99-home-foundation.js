@@ -23,10 +23,9 @@
     if(!stageTitle?.textContent?.trim()||!stageDesc?.textContent?.trim()||!stageList?.children?.length)api?.setMode?.(mode);
     const preview=$('#v29-home-layer .v32-preview-shell');
     if(!preview||preview.dataset.v32Mode!==mode)window.__SCHOLARK_V32_PREVIEW__?.sync?.();
-    const select=$('#v29-presenter-language');
-    if(select&&select.options.length!==7)api?.syncPresenterLanguage?.();
-    const button=$('#v29-speak');
-    if(button&&typeof button.onclick!=='function'&&api?.speak)button.onclick=api.speak;
+    const topLang=$('#v55-language');
+    if(!topLang||topLang.options.length!==7)window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();
+    if(!$('.v30-school-live')||!$('.v30-ahead-live'))window.__SCHOLARK_V30_DEMO__?.sync?.();
     if(!$('#v29-prompt')?.value?.trim())window.__SCHOLARK_V30_DEMO__?.sync?.();
   }
 
@@ -40,7 +39,7 @@
     const bars=$$('.v29-master .v29-line i');
     const report={
       ok:true,
-      release:'r119',
+      release:'r120',
       home:home(),
       activeMode:mode,
       previewMode,
@@ -48,15 +47,16 @@
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),
       promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
       topbarLanguage:!home()||!!$('#v55-language')&&$('#v55-language').options.length===7&&getComputedStyle($('#v55-language')).display!=='none',
-      presenterLanguages:$('#v29-presenter-language')?.options?.length||0,
-      presenterReady:!home()||($('#v29-presenter-language')?.options?.length||0)===7&&!!$('#v29-speak'),
+      presentersRemoved:!$('#v29-presenter-language')&&!$('#v29-speak')&&!$('.v29-hosts'),
+      futureSchoolLive:!home()||!!$('.v30-school-live .v30-radar')&&$('.v30-school-live .v30-pin')!==null,
+      futureStudyLive:!home()||!!$('.v30-ahead-live .v30-ahead-line i')&&$('.v30-ahead-dots span').length===4,
       masteryBars:bars.length,
       masteryAnimated:!home()||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
-    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presenterReady&&report.masteryBars===3&&report.masteryAnimated&&report.runtimeErrors.length===0);
-    try{sessionStorage.setItem('scholark_home_foundation_r119',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R119 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.runtimeErrors.length===0);
+    try{sessionStorage.setItem('scholark_home_foundation_r120',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R120 '+(report.ok?'PASS':'WARN'),report);
     if(!report.ok)schedule(30);
     return report;
   }
@@ -69,5 +69,5 @@
   [100,500,1600].forEach(ms=>setTimeout(()=>schedule(0),ms));
   setTimeout(health,2400);
 
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r119'};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r120'};
 })();
