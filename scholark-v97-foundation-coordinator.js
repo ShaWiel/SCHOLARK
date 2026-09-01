@@ -178,8 +178,13 @@
       'Plan the book, then let SCHOLARK write',
       'Create from a brief, not a blank page.',
       'Creation settings',
+      'Output language',
+      'Quality pipeline',
+      'Build outline first',
+      'No reference files added',
       'Open saved Studio work directly.',
-      'No saved projects yet.'
+      'No saved projects yet.',
+      'Delete project'
     ];
     return phrases.filter(p=>text.includes(p));
   }
@@ -189,7 +194,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r123',
+      release:'r124',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -198,7 +203,13 @@
       projectMounted:r!=='project'||!!$('#v51-fallback .v64-projects'),
       projectSurfaceClear:r!=='project'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')&&!$('#v58-suite')?.classList.contains('open')&&!$('#v57-deck')?.classList.contains('open')&&!$('#v57-present')?.classList.contains('open')),
       projectSidebarVisible:r!=='project'||!document.body.classList.contains('v51-collapsed'),
+      projectMainVisible:r!=='project'||!!main&&getComputedStyle(main).display!=='none',
+      projectNavActive:r!=='project'||!!$('#v51-sidebar [data-v51-tool="project"].active'),
       studioMounted:r!=='studio'||!!$('#v41-studio-workspace:not([hidden])'),
+      studioSidebarVisible:r!=='studio'||!document.body.classList.contains('v51-collapsed'),
+      studioNavActive:r!=='studio'||!!$('#v51-sidebar [data-v51-tool="studio"].active'),
+      studioSurfaceClear:r!=='studio'||(!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')&&!$('#v25-book')?.classList.contains('open')),
+      studioFirstPaintMs:Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)||null,
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
       workspaceLanguageSelector:r==='home'||!!$('#v90-language')&&$('#v90-language').options.length===7&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
       criticalLanguageLeaks:criticalLanguageLeaks(),
@@ -215,9 +226,9 @@
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();report.homeLanguageSelector=!!$('#v55-language')&&$('#v55-language').options.length===7}
     if(report.criticalLanguageLeaks.length){syncWorkspaceLanguage();window.__SCHOLARK_I18N__?.translateCurrentPage?.(false)}
     if(report.foreignSurfaceConflicts.length){repairForeignSurfaces(r);report.foreignSurfaceConflicts=foreignSurfaceConflicts(r)}
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r123',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R123 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
+    try{sessionStorage.setItem('scholark_foundation_r124',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R124 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -235,11 +246,12 @@
 
   addEventListener('scholark-language-applied',()=>{syncWorkspaceLanguage();setTimeout(repair,20)});
   addEventListener('scholark-language-ready',()=>{syncWorkspaceLanguage();setTimeout(health,160)});
+  addEventListener('scholark-route-painted',e=>{if(e.detail?.route==='studio')setTimeout(health,40)});
   addEventListener('hashchange',()=>{setTimeout(repair,35);setTimeout(health,500)});
   addEventListener('popstate',()=>setTimeout(repair,35));
   addEventListener('scholark-runtime-ready',()=>{bindRouteInvariantObserver();setTimeout(repair,60);setTimeout(health,800)});
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(()=>{bindRouteInvariantObserver();repair()},ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r123'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r124'};
 })();
