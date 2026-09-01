@@ -91,15 +91,22 @@
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
   function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
-  function syncWorkspaceLanguage(root=null){
+  const languageStamp=new WeakMap();
+  function applyLanguageRoot(el,lang,force=false){
+    const i18n=window.__SCHOLARK_I18N__;if(!el||!i18n?.apply)return;
+    if(!force&&languageStamp.get(el)===lang)return;
+    i18n.apply(el);languageStamp.set(el,lang);
+  }
+  function syncWorkspaceLanguage(root=null,force=false){
     const lang=localStorage.getItem('scholark_ui_language')||'nl';
     document.documentElement.lang=lang;
-    const i18n=window.__SCHOLARK_I18N__;
     const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
-    roots.forEach(el=>i18n?.apply?.(el));
+    [...new Set(roots)].forEach(el=>applyLanguageRoot(el,lang,force));
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
     const studioLang=$('#v41-language');if(studioLang&&[...studioLang.options].some(o=>o.value===lang))studioLang.value=lang;
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,140));idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:420});
+    const i18n=window.__SCHOLARK_I18N__;
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,140));
+    idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:420});
   }
   function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
   function syncNav(id=state.active){$$('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
@@ -149,6 +156,7 @@
     clearModes();forceQuality();state.active='studio';syncNav();setRoute('studio');
     const s=$('#v41-studio-workspace');
     if(s){
+      const openedAt=performance.now();
       // First paint wins: show the already-built Studio immediately.
       s.hidden=false;s.removeAttribute('aria-hidden');document.body.classList.add('v51-studio','v41-studio-open');
       Array.from(s.querySelectorAll('.v41-mode[data-mode="book"]')).forEach(x=>x.remove());
@@ -156,6 +164,11 @@
       syncWorkspaceLanguage(s);
       const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,70));
       idle(()=>window.__SCHOLARK_RUNTIME__?.prefetchStudio?.(),{timeout:220});
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const ms=Math.round((performance.now()-openedAt)*10)/10;
+        try{sessionStorage.setItem('scholark_studio_first_paint_ms',String(ms))}catch{}
+        window.dispatchEvent(new CustomEvent('scholark-route-painted',{detail:{route:'studio',ms}}));
+      }));
       return
     }
     showFallback('studio')
@@ -236,7 +249,7 @@
   addEventListener('hashchange',()=>{setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
-  addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(),20)});
+  addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),20)});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
   window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,getActive:()=>state.active};
 })();
