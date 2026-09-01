@@ -59,7 +59,24 @@
   function renderModes(){modesWrap.innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="v41-mode ${k===active?'active':''}" data-mode="${k}" style="--accent:${m.accent}"><span class="icon">${m.icon}</span><strong>${m.label}</strong><span>${m.sub}</span></button>`).join('');$$('.v41-mode',modesWrap).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));}
   function renderPipeline(){const p=MODES[active].pipeline;stepsWrap.innerHTML=p.map((x,i)=>`<div class="v41-step" data-step="${i}"><i>${i+1}</i><b>${x}</b><span>waiting</span></div>`).join('');}
   function renderExamples(){examplesWrap.innerHTML=MODES[active].examples.map(x=>`<button class="v41-example">${esc(x)}</button>`).join('');$$('.v41-example',examplesWrap).forEach(b=>b.onclick=()=>{prompt.value=b.textContent;prompt.focus();});}
-  function setMode(mode){active=mode;const m=MODES[mode];$('#v41-mode-title',root).textContent=m.label+' Studio';$('#v41-mode-sub',root).textContent=m.sub;settingsBody.innerHTML=settingsFor(mode);const savedLang=localStorage.getItem('scholark_ui_language')||'nl';const l=$('#v41-language',settingsBody);if(l&&[...l.options].some(o=>o.value===savedLang))l.value=savedLang;renderModes();renderPipeline();renderExamples();outlineList.innerHTML='<li>Your outline will appear here.</li>';status.textContent='';if(mode==='book'){$('#v41-book-words',settingsBody).oninput=e=>{if(+e.target.value>150000)e.target.value=150000;if(+e.target.value<1000&&e.target.value)e.target.value=1000;};}}
+  function localizeDynamicStudio(){
+    const i18n=window.__SCHOLARK_I18N__;if(!i18n)return;
+    [$('.v41-modehead',root),settingsBody,modesWrap,stepsWrap,examplesWrap,$('.v41-actions',root),$('.v41-pipeline',root)].filter(Boolean).forEach(el=>i18n.apply?.(el));
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,120));
+    idle(()=>i18n.translateCurrentPage?.(false),{timeout:360});
+  }
+  function setMode(mode){
+    active=mode;const m=MODES[mode];
+    $('#v41-mode-title',root).textContent=m.label+' Studio';
+    $('#v41-mode-sub',root).textContent=m.sub;
+    settingsBody.innerHTML=settingsFor(mode);
+    const savedLang=localStorage.getItem('scholark_ui_language')||'nl';
+    const l=$('#v41-language',settingsBody);if(l&&[...l.options].some(o=>o.value===savedLang))l.value=savedLang;
+    renderModes();renderPipeline();renderExamples();
+    outlineList.innerHTML='<li>Your outline will appear here.</li>';status.textContent='';
+    if(mode==='book'){$('#v41-book-words',settingsBody).oninput=e=>{if(+e.target.value>150000)e.target.value=150000;if(+e.target.value<1000&&e.target.value)e.target.value=1000;};}
+    localizeDynamicStudio();
+  }
 
   function topbarBottom(){
     if($('#v51-sidebar'))return 0;
@@ -90,7 +107,11 @@
     if(opts.route!==false&&!/^#studio/.test((location.hash||'').toLowerCase()))history.pushState(null,'',location.pathname+location.search+'#studio');
     if(mountedMode!==active){setMode(active);mountedMode=active}
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,70));
-    idle(()=>{protectDashboard(true);syncGeometry();window.__SCHOLARK_I18N__?.apply?.(root)}, {timeout:220});
+    idle(()=>{
+      protectDashboard(true);syncGeometry();
+      const lang=localStorage.getItem('scholark_ui_language')||'nl';
+      if(root.dataset.v43Lang!==lang){window.__SCHOLARK_I18N__?.apply?.(root);root.dataset.v43Lang=lang}
+    }, {timeout:220});
   }
   function closeStudio(){root.hidden=true;root.setAttribute('aria-hidden','true');document.body.classList.remove('v41-studio-open');protectDashboard(false);}
   function prewarm(){
