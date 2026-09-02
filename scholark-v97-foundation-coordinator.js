@@ -79,6 +79,7 @@
       const target=localStorage.getItem('scholark_ui_language')||'nl';
       if(document.documentElement.lang!==target)document.documentElement.lang=target;
       const roots=[$('#v51-sidebar'),$('#v51-main'),$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v65-book'),$('#v51-fallback .v64-projects')].filter(Boolean);
+      window.__SCHOLARK_COUNTRY__?.apply?.();
       roots.forEach(r=>window.__SCHOLARK_I18N__?.apply?.(r));
       const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,180));
       idle(()=>window.__SCHOLARK_I18N__?.translateCurrentPage?.(false),{timeout:700});
@@ -134,7 +135,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r119',
+      release:'r120',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -144,6 +145,8 @@
       projectSidebarVisible:r!=='project'||!document.body.classList.contains('v51-collapsed'),
       studioMounted:r!=='studio'||!!$('#v41-studio-workspace:not([hidden])'),
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
+      countryLanguage:r==='home'||!window.__SCHOLARK_COUNTRY__||window.__SCHOLARK_COUNTRY__.language?.()===(localStorage.getItem('scholark_ui_language')||'nl'),
+      countrySelectorOwned:r==='home'||!$('#v96-country')||$('#v96-country')?.dataset.v96I18nOwned==='1',
       bookApi:!!window.__SCHOLARK_V65_BOOK__,
       bookMounted:r!=='book'||!!$('#v51-fallback .v65-book'),
       bookSurfaceClear:r!=='book'||(!document.body.classList.contains('v51-schools')&&!document.body.classList.contains('v51-study')&&!document.body.classList.contains('v51-studio')&&!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')),
@@ -155,8 +158,8 @@
       cinematicSync:r!=='home'||!activeMode||!previewMode||activeMode===previewMode
     };
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();report.homeLanguageSelector=!!$('#v55-language')&&$('#v55-language').options.length===7}
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r119',JSON.stringify(report))}catch{}
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.studioMounted&&report.workspaceLanguage&&report.countryLanguage&&report.countrySelectorOwned&&report.bookMounted&&report.bookSurfaceClear;
+    try{sessionStorage.setItem('scholark_foundation_r120',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R119 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
@@ -164,8 +167,10 @@
   addEventListener('hashchange',()=>{setTimeout(repair,35);setTimeout(health,500)});
   addEventListener('popstate',()=>setTimeout(repair,35));
   addEventListener('scholark-runtime-ready',()=>{setTimeout(repair,60);setTimeout(health,800)});
+  addEventListener('scholark-language-applied',()=>setTimeout(repair,20));
+  addEventListener('scholark-language-ready',()=>{setTimeout(repair,20);setTimeout(health,420)});
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(repair,ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,release:'r119'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,release:'r120'};
 })();
