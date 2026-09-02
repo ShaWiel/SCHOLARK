@@ -95,14 +95,14 @@
   function buildShellControls(){
     if(!isWorkspace())return;
     // V51/V90 own the modern workspace navigation and language selector.
-    if($('#v51-sidebar')){$('.v36-shell-controls')?.remove();return}
+    if($('#v51-sidebar')){$('.v36-shell-controls')?.remove();window.__SCHOLARK_I18N__?.upgradeSelectors?.();return}
     const anchor=findLanguageAnchor();
     if(!anchor)return;
-    let wrap=$('.v36-shell-controls');
+    let wrap=$('.v36-shell-controls'),sel=$('#v36-language');
     if(!wrap){
       wrap=document.createElement('div');wrap.className='v36-shell-controls';
       const home=document.createElement('button');home.id='v36-shell-home';home.type='button';home.onclick=()=>{location.hash='';setTimeout(()=>{document.body?.classList.remove('v36-workspace');const layer=$('#v29-home-layer');if(layer){layer.hidden=false;layer.style.removeProperty('display');}},20)};
-      const sel=document.createElement('select');sel.id='v36-language';sel.setAttribute('aria-label','SCHOLARK language');sel.innerHTML=langs.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');sel.onchange=()=>applyLanguage(sel.value);
+      sel=document.createElement('select');sel.id='v36-language';sel.setAttribute('aria-label','SCHOLARK language');sel.innerHTML=langs.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');sel.onchange=()=>applyLanguage(sel.value);
       wrap.append(home,sel);
       anchor.parentElement?.insertBefore(wrap,anchor);
     }
