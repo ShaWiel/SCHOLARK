@@ -106,7 +106,11 @@
     $$('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     const stageTitle=$('#v29-stage-title',layer),stageDesc=$('#v29-stage-desc',layer),stageList=$('#v29-stage-list',layer),outputTitle=$('#v29-output-title',layer),outputDesc=$('#v29-output-desc',layer),previewTitle=$('#v29-preview-title',layer);
     if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(previewTitle)previewTitle.textContent=d.name+' Builder';
-    const i18n=window.__SCHOLARK_I18N__;if(i18n?.apply){const stage=$('.v29-stage',layer);if(stage)i18n.apply(stage)}
+    const i18n=window.__SCHOLARK_I18N__;if(i18n?.apply){
+      const stage=$('.v29-stage',layer),visual=$('.v29-visual',layer);
+      if(stage)i18n.apply(stage);
+      if(visual)i18n.apply(visual);
+    }
     window.dispatchEvent(new CustomEvent('scholark-home-mode-change',{detail:{mode}}));
   }
 
