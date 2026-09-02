@@ -370,5 +370,5 @@
   addEventListener('scholark-language-ready',()=>{apply();setTimeout(apply,80)});
   [80,260,700].forEach(ms=>setTimeout(apply,ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,systems:SYSTEMS,apply};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply};
 })();
