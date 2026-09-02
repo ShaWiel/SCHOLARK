@@ -16,7 +16,7 @@
     body.v31-public-home .v29-prompt{padding:10px 16px!important}
     body.v31-public-home .v29-prompt input,body.v31-public-home .v29-prompt textarea{padding-right:12px!important;cursor:default!important}
 
-    .v32-preview-shell{height:100%;display:flex;flex-direction:column;gap:11px;animation:v32fade .38s ease}
+    .v29-preview>.v32-preview-shell{min-height:100%;height:100%}.v32-preview-shell{height:100%;display:flex;flex-direction:column;gap:11px;animation:v32fade .38s ease}
     .v32-preview-shell *{box-sizing:border-box}
     @keyframes v32fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
     .v32-label{font:900 8px/1 Inter,system-ui;letter-spacing:.13em;color:#78747f;text-transform:uppercase}
@@ -62,15 +62,20 @@
   }
 
   let lastMode='';
-  function render(){
+  function healthy(host=$('.v29-preview'),mode=currentMode()){
+    const shell=host&&$('.v32-preview-shell',host),pane=shell&&$('.v32-pane',shell);
+    return !!shell&&!!pane&&shell.dataset.v32Mode===mode&&pane.children.length>0&&getComputedStyle(shell).display!=='none'&&getComputedStyle(pane).display!=='none';
+  }
+  function render(force=false){
     const host=$('.v29-preview');
     if(!host) return;
     const mode=currentMode();
-    if(mode===lastMode && $('.v32-preview-shell',host)) return;
+    if(!force&&mode===lastMode&&healthy(host,mode)) return;
     const d=data[mode]||data.presentation;
     host.innerHTML=`<div class="v32-preview-shell" data-v32-mode="${mode}"><div class="v32-label">${d.label}</div><div class="v32-title" id="v29-preview-title">${d.title}</div><div class="v32-sub">${d.sub}</div>${d.html}</div>`;
     window.__SCHOLARK_I18N__?.apply?.(host);
     lastMode=mode;
+    requestAnimationFrame(()=>{if(!healthy(host,mode)){lastMode='';requestAnimationFrame(()=>render(true))}});
   }
 
   function cleanPublicHome(){
@@ -89,11 +94,13 @@
     if(prompt){prompt.readOnly=true;prompt.setAttribute('aria-label','Automatic SCHOLARK capability demo');}
   }
 
-  function sync(){cleanPublicHome();render();}
-  function rerender(){lastMode='';requestAnimationFrame(render)}
+  function sync(){cleanPublicHome();render(false);}
+  function rerender(){lastMode='';requestAnimationFrame(()=>render(true))}
   addEventListener('hashchange',()=>setTimeout(sync,80));
-  addEventListener('scholark-language-ready',()=>setTimeout(sync,80));
+  addEventListener('scholark-language-applied',()=>setTimeout(rerender,20));
+  addEventListener('scholark-language-ready',()=>setTimeout(rerender,55));
+  addEventListener('scholark-language-complete',()=>setTimeout(rerender,25));
   addEventListener('scholark-home-mode-change',rerender);
   [80,500].forEach(ms=>setTimeout(sync,ms));
-  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync};
+  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync,healthy};
 })();
