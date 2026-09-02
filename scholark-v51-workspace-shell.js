@@ -101,6 +101,7 @@
     const lang=localStorage.getItem('scholark_ui_language')||'nl';
     document.documentElement.lang=lang;
     const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
+    window.__SCHOLARK_I18N__?.upgradeSelectors?.();
     [...new Set(roots)].forEach(el=>applyLanguageRoot(el,lang,force));
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
     const studioLang=$('#v41-language');if(studioLang&&[...studioLang.options].some(o=>o.value===lang))studioLang.value=lang;
@@ -250,6 +251,7 @@
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),20)});
+  addEventListener('scholark-language-complete',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),10)});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
   window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,getActive:()=>state.active};
 })();
