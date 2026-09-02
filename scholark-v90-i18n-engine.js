@@ -298,6 +298,28 @@
     ["Delete project","Project verwijderen","Eliminar proyecto","Supprimer le projet","Projekt löschen","Eliminar projeto","Elimina progetto"]
   ].forEach(r=>add(...r));
 
+  [
+    ['Curriculum Explorer','Curriculumverkenner','Explorador del currículo','Explorateur du programme','Lehrplan-Explorer','Explorador do currículo','Esplora curriculum'],
+    ['Mastery Map','Beheersingskaart','Mapa de dominio','Carte de maîtrise','Beherrschungskarte','Mapa de domínio','Mappa di padronanza'],
+    ['Exam Prep Center','Examenvoorbereidingscentrum','Centro de preparación de exámenes','Centre de préparation aux examens','Prüfungsvorbereitung','Centro de preparação para exames','Centro preparazione esami'],
+    ['Diagnostic Check','Diagnostische controle','Diagnóstico','Diagnostic','Diagnose-Check','Diagnóstico','Controllo diagnostico'],
+    ['Spaced Review Queue','Wachtrij voor gespreide herhaling','Cola de repaso espaciado','File de révision espacée','Warteschlange für verteilte Wiederholung','Fila de revisão espaçada','Coda di ripasso dilazionato'],
+    ['Study Methods Lab','Lab voor studiemethoden','Laboratorio de métodos de estudio','Laboratoire des méthodes d’étude','Lernmethoden-Labor','Laboratório de métodos de estudo','Laboratorio dei metodi di studio'],
+    ['Run diagnostic','Diagnose starten','Ejecutar diagnóstico','Lancer le diagnostic','Diagnose starten','Executar diagnóstico','Avvia diagnostica'],
+    ['8 questions','8 vragen','8 preguntas','8 questions','8 Fragen','8 perguntas','8 domande'],
+    ['12 questions','12 vragen','12 preguntas','12 questions','12 Fragen','12 perguntas','12 domande'],
+    ['16 questions','16 vragen','16 preguntas','16 questions','16 Fragen','16 perguntas','16 domande'],
+    ['Foundation','Basis','Fundamentos','Fondamentaux','Grundlagen','Fundamentos','Fondamenti'],
+    ['Intermediate','Gemiddeld','Intermedio','Intermédiaire','Mittelstufe','Intermediário','Intermedio'],
+    ['Challenge','Uitdaging','Desafío','Défi','Herausforderung','Desafio','Sfida'],
+    ['Building a diagnostic at your current learning level…','Diagnose opbouwen op jouw huidige leerniveau…','Creando un diagnóstico para tu nivel actual…','Création d’un diagnostic adapté à votre niveau actuel…','Diagnose für dein aktuelles Lernniveau wird erstellt…','Criando um diagnóstico para o seu nível atual…','Creazione di una diagnostica per il tuo livello attuale…'],
+    ['Question','Vraag','Pregunta','Question','Frage','Pergunta','Domanda'],
+    ['Show answer','Toon antwoord','Mostrar respuesta','Afficher la réponse','Antwort anzeigen','Mostrar resposta','Mostra risposta'],
+    ['Answer:','Antwoord:','Respuesta:','Réponse :','Antwort:','Resposta:','Risposta:'],
+    ['Why:','Waarom:','Por qué:','Pourquoi :','Warum:','Por quê:','Perché:'],
+    ['Grade each question after revealing the answer. SCHOLARK will turn the completed result into real Progress + Mastery data.','Beoordeel elke vraag nadat je het antwoord hebt bekeken. SCHOLARK zet het voltooide resultaat om in echte Voortgang- en Beheersingsdata.','Califica cada pregunta después de mostrar la respuesta. SCHOLARK convertirá el resultado completo en datos reales de Progreso y Dominio.','Évaluez chaque question après avoir affiché la réponse. SCHOLARK transformera le résultat final en véritables données de progression et de maîtrise.','Bewerte jede Frage nach dem Anzeigen der Antwort. SCHOLARK verwandelt das vollständige Ergebnis in echte Fortschritts- und Beherrschungsdaten.','Avalie cada pergunta depois de mostrar a resposta. O SCHOLARK transformará o resultado concluído em dados reais de Progresso e Domínio.','Valuta ogni domanda dopo aver mostrato la risposta. SCHOLARK trasformerà il risultato completato in dati reali di Progresso e Padronanza.']
+  ].forEach(r=>add(...r));
+
   const RTL=new Set();
   const STATIC_KEYS=new Set(Object.values(STATIC_UI).flatMap(m=>Object.keys(m)));
   const CORE=[
@@ -387,6 +409,9 @@
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
+  const reverseStatic=new Map();
+  for(const [lc,m] of Object.entries(STATIC_UI)){for(const [source,translated] of Object.entries(m||{})){reverseStatic.set(clean(source),source);if(clean(translated))reverseStatic.set(clean(translated),source)}}
+  const canonicalSource=value=>reverseStatic.get(clean(value))||clean(value);
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
   function primeDeviceTranslator(target,onProgress){
@@ -408,8 +433,8 @@
     await Promise.all(Array.from({length:Math.min(6,strings.length)},()=>worker()));
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
-  const rememberText=n=>{if(!textSource.has(n))textSource.set(n,clean(n.nodeValue));return textSource.get(n)||clean(n.nodeValue)};
-  const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=v}attrSource.set(el,o)}return o};
+  const rememberText=n=>{if(!textSource.has(n))textSource.set(n,canonicalSource(n.nodeValue));return textSource.get(n)||canonicalSource(n.nodeValue)};
+  const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}return o};
 
   function eligibleText(s){
     const t=clean(s);if(!t||t.length<2||t.length>420)return false;
@@ -508,15 +533,20 @@
   }
 
   function upgradeSelectors(){
-    const options=LANGS.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
-    for(const sel of [$('#v55-language'),$('#v36-language'),$('#v89-lang')].filter(Boolean)){
-      const val=code();if(sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options;sel.onchange=null}
-      if([...sel.options].some(o=>o.value===val))sel.value=val;
-    }
+    const expected=LANGS.map(([v,n])=>[v,n]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
+    const normalize=sel=>{
+      if(!sel)return null;
+      const current=[...sel.options].map(o=>[String(o.value),clean(o.textContent)]);
+      const exact=current.length===expected.length&&expected.every(([v,n],i)=>current[i]?.[0]===v&&current[i]?.[1]===n);
+      if(!exact)sel.innerHTML=options;
+      sel.dataset.v90='1';sel.onchange=null;
+      const val=code();if([...sel.options].some(o=>o.value===val))sel.value=val;
+      return sel;
+    };
+    [$('#v55-language'),$('#v36-language'),$('#v89-lang')].filter(Boolean).forEach(normalize);
     const side=$('#v51-sidebar');if(side){
       let box=$('.v90-langbox',side);if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>';$('.v85-wallet',side)?.insertAdjacentElement('beforebegin',box)||$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
-      const sel=$('#v90-language',box);if(sel&&sel.dataset.v90!=='1'){sel.dataset.v90='1';sel.innerHTML=options;sel.onchange=null}
-      if(sel&&[...sel.options].some(o=>o.value===code()))sel.value=code();
+      normalize($('#v90-language',box));
     }
   }
 
@@ -557,6 +587,11 @@
           map={...map,...part};saveMap(target,map);applyVisible();
         },'ui',primed);
         if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
+        if(epoch===translationEpoch){
+          upgradeSelectors();
+          window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
+          window.dispatchEvent(new CustomEvent('scholark-language-complete',{detail:{code:target}}));
+        }
       }catch(e){console.warn('[SCHOLARK] background language completion:',clean(e?.message||e))}
     };
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,120));
