@@ -286,7 +286,7 @@
     it:[['✦ Comprensione del prompt','○ Creazione scaletta','○ Controllo qualità'],['✓ Prompt compreso','✦ Ricerca + struttura','○ Controllo qualità'],['✓ Scaletta completa','✓ Bozza generata','✦ Controllo qualità'],['✓ Ricerca verificata','✓ Design assemblato','✓ Pronto da modificare']]
   };
   function animateQualitySteps(){
-    const floats=$('.v29-float');if(floats.length<3)return;
+    const floats=$$('.v29-float');if(floats.length<3)return;
     const steps=qualitySteps[uiLanguage()]||qualitySteps.en;
     const row=steps[(futureStep)%steps.length];
     floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
