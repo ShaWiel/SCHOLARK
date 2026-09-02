@@ -288,7 +288,8 @@
   function animateQualitySteps(){
     const floats=$('.v29-float');if(floats.length<3)return;
     const steps=qualitySteps[uiLanguage()]||qualitySteps.en;
-    const row=steps[(futureStep)%steps.length];floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
+    const row=steps[(futureStep)%steps.length];
+    floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
   }
 
 
