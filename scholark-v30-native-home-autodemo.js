@@ -286,19 +286,48 @@
     clearInterval(statusTimer);statusTimer=null;
     $('#v29-prompt')?.classList.remove('v30-typing-cursor');
   }
+  function currentDemoMode(){
+    const apiMode=window.__SCHOLARK_V29_HOME__?.getMode?.();
+    return demoModes.includes(apiMode)?apiMode:(demoModes[modeIndex]||'presentation');
+  }
+  function startTimers(){
+    const lite=document.documentElement.classList.contains('scholark-performance-safe');
+    if(!rotateTimer)rotateTimer=setInterval(cycleStudio,lite?12000:9000);
+    if(!statusTimer)statusTimer=setInterval(()=>{
+      if(document.hidden||!isHome())return;
+      animateLearning();animateFuture();animateQualitySteps();
+    },lite?6500:4800);
+  }
   function ensureDemo(){
     if(!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
     mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
-    const lite=document.documentElement.classList.contains('scholark-performance-safe');
-    if(!rotateTimer){setAutoMode('presentation');rotateTimer=setInterval(cycleStudio,lite?12000:9000);}
-    if(!statusTimer){animateLearning();animateFuture();animateQualitySteps();statusTimer=setInterval(()=>{if(document.hidden||!isHome())return;animateLearning();animateFuture();animateQualitySteps();},lite?6500:4800);}
+    const mode=currentDemoMode(),idx=demoModes.indexOf(mode);if(idx>=0)modeIndex=idx;
+    if(!rotateTimer){
+      setAutoMode(mode);
+      animateLearning();animateFuture();animateQualitySteps();
+    }
+    startTimers();
+  }
+  function restartAfterLanguage(){
+    if(!isHome())return;
+    stopDemo();
+    pausedUntil=0;learnStep=0;futureStep=0;
+    const mode=currentDemoMode(),idx=demoModes.indexOf(mode);if(idx>=0)modeIndex=idx;
+    requestAnimationFrame(()=>{
+      if(!isHome()||document.documentElement.classList.contains('scholark-language-switching'))return;
+      mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
+      setAutoMode(mode);
+      animateLearning();animateFuture();animateQualitySteps();
+      startTimers();
+      window.__SCHOLARK_HOME_FOUNDATION__?.repair?.();
+    });
   }
 
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
   addEventListener('hashchange',()=>setTimeout(sync,50));
   addEventListener('popstate',()=>setTimeout(sync,50));
-  addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(()=>setAutoMode(demoModes[modeIndex]||'presentation'),80)});
+  addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(restartAfterLanguage,35)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
-  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,resizePrompt};
+  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,restartAfterLanguage,resizePrompt};
 })();
