@@ -91,23 +91,26 @@
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
   function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
-  const languageStamp=new WeakMap();
-  function applyLanguageRoot(el,lang,force=false){
+  function applyLanguageRoot(el){
     const i18n=window.__SCHOLARK_I18N__;if(!el||!i18n?.apply)return;
-    if(!force&&languageStamp.get(el)===lang)return;
-    i18n.apply(el);languageStamp.set(el,lang);
+    // #v51-main and #v51-fallback are reused between tools. Caching by root
+    // caused newly mounted panels to stay in English.
+    i18n.apply(el);
   }
   function syncWorkspaceLanguage(root=null,force=false){
-    const lang=localStorage.getItem('scholark_ui_language')||'nl';
+    const lang=localStorage.getItem('scholark_ui_language')||'nl',i18n=window.__SCHOLARK_I18N__;
     document.documentElement.lang=lang;
+    i18n?.upgradeSelectors?.();
     const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
-    window.__SCHOLARK_I18N__?.upgradeSelectors?.();
-    [...new Set(roots)].forEach(el=>applyLanguageRoot(el,lang,force));
+    [...new Set(roots)].forEach(applyLanguageRoot);
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
-    const studioLang=$('#v41-language');if(studioLang&&[...studioLang.options].some(o=>o.value===lang))studioLang.value=lang;
-    const i18n=window.__SCHOLARK_I18N__;
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,140));
-    idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:420});
+    // #v41-language is the artifact OUTPUT language, not the SCHOLARK UI language.
+    // Keep its broader language support independent from this 7-language selector.
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
+    if(lang!=='en'){
+      idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:320});
+      setTimeout(()=>{if(workspaceRoute()&&(localStorage.getItem('scholark_ui_language')||'nl')===lang){i18n?.upgradeSelectors?.();i18n?.translateCurrentPage?.(false)}},320);
+    }
   }
   function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
   function syncNav(id=state.active){$$('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
