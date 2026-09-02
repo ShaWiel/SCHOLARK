@@ -161,6 +161,112 @@
     'jamaica':'Jamaica','belgium':'Belgium','belgie':'Belgium','belgië':'Belgium'
   };
   const countryList=Object.keys(SYSTEMS);
+  const UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
+  const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return UI_LANGS.has(x)?x:'nl'};
+  const COUNTRY_NAMES={
+    Suriname:{nl:'Suriname',en:'Suriname',es:'Surinam',fr:'Suriname',de:'Suriname',pt:'Suriname',it:'Suriname'},
+    Netherlands:{nl:'Nederland',en:'Netherlands',es:'Países Bajos',fr:'Pays-Bas',de:'Niederlande',pt:'Países Baixos',it:'Paesi Bassi'},
+    'United States':{nl:'Verenigde Staten',en:'United States',es:'Estados Unidos',fr:'États-Unis',de:'Vereinigte Staaten',pt:'Estados Unidos',it:'Stati Uniti'},
+    'United Kingdom':{nl:'Verenigd Koninkrijk',en:'United Kingdom',es:'Reino Unido',fr:'Royaume-Uni',de:'Vereinigtes Königreich',pt:'Reino Unido',it:'Regno Unito'},
+    Germany:{nl:'Duitsland',en:'Germany',es:'Alemania',fr:'Allemagne',de:'Deutschland',pt:'Alemanha',it:'Germania'},
+    France:{nl:'Frankrijk',en:'France',es:'Francia',fr:'France',de:'Frankreich',pt:'França',it:'Francia'},
+    Spain:{nl:'Spanje',en:'Spain',es:'España',fr:'Espagne',de:'Spanien',pt:'Espanha',it:'Spagna'},
+    Portugal:{nl:'Portugal',en:'Portugal',es:'Portugal',fr:'Portugal',de:'Portugal',pt:'Portugal',it:'Portogallo'},
+    Italy:{nl:'Italië',en:'Italy',es:'Italia',fr:'Italie',de:'Italien',pt:'Itália',it:'Italia'},
+    Brazil:{nl:'Brazilië',en:'Brazil',es:'Brasil',fr:'Brésil',de:'Brasilien',pt:'Brasil',it:'Brasile'},
+    Canada:{nl:'Canada',en:'Canada',es:'Canadá',fr:'Canada',de:'Kanada',pt:'Canadá',it:'Canada'},
+    Australia:{nl:'Australië',en:'Australia',es:'Australia',fr:'Australie',de:'Australien',pt:'Austrália',it:'Australia'},
+    India:{nl:'India',en:'India',es:'India',fr:'Inde',de:'Indien',pt:'Índia',it:'India'},
+    'South Africa':{nl:'Zuid-Afrika',en:'South Africa',es:'Sudáfrica',fr:'Afrique du Sud',de:'Südafrika',pt:'África do Sul',it:'Sudafrica'},
+    Guyana:{nl:'Guyana',en:'Guyana',es:'Guyana',fr:'Guyana',de:'Guyana',pt:'Guiana',it:'Guyana'},
+    'Trinidad & Tobago':{nl:'Trinidad en Tobago',en:'Trinidad & Tobago',es:'Trinidad y Tobago',fr:'Trinité-et-Tobago',de:'Trinidad und Tobago',pt:'Trinidad e Tobago',it:'Trinidad e Tobago'},
+    Jamaica:{nl:'Jamaica',en:'Jamaica',es:'Jamaica',fr:'Jamaïque',de:'Jamaika',pt:'Jamaica',it:'Giamaica'},
+    Belgium:{nl:'België',en:'Belgium',es:'Bélgica',fr:'Belgique',de:'Belgien',pt:'Bélgica',it:'Belgio'}
+  };
+  const LEVEL_COPY={
+    nl:{
+      young:['Voorschools onderwijs','Vroege ontwikkeling en voorbereiding op het basisonderwijs.'],
+      primary:['Primair onderwijs','Fundamentele taal-, reken- en algemene leervaardigheden.'],
+      secondary:['Lager secundair onderwijs','De eerste fase van het secundair onderwijs binnen het gekozen landsysteem.'],
+      student:['Hoger secundair / beroepsonderwijs','De bovenbouw en beroepsgerichte voorbereiding op vervolgstudie of werk.'],
+      adult:['Hoger onderwijs','Tertiair, beroepsgericht en universitair onderwijs.'],
+      all:'Alle niveaus',adultFilter:'Volwassenen / professioneel leren',system:'Onderwijssysteem',country:'Land',systemNote:'landgebonden onderwijsniveaus',choose:'KIES JE ONDERWIJSNIVEAU'
+    },
+    en:{
+      young:['Early childhood education','Early development and preparation for primary education.'],
+      primary:['Primary education','Foundational literacy, numeracy and general learning skills.'],
+      secondary:['Lower secondary education','The first secondary stage within the selected national system.'],
+      student:['Upper secondary / vocational education','Upper-secondary and vocational preparation for further study or work.'],
+      adult:['Higher education','Tertiary, professional and university education.'],
+      all:'All levels',adultFilter:'Adult / professional learning',system:'Education system',country:'Country',systemNote:'country-aware school stages',choose:'CHOOSE YOUR EDUCATION STAGE'
+    },
+    es:{
+      young:['Educación infantil','Desarrollo temprano y preparación para la educación primaria.'],
+      primary:['Educación primaria','Alfabetización, matemáticas y aprendizaje general fundamentales.'],
+      secondary:['Educación secundaria inferior','Primera etapa de secundaria dentro del sistema nacional seleccionado.'],
+      student:['Secundaria superior / formación profesional','Preparación académica o profesional para estudios posteriores o trabajo.'],
+      adult:['Educación superior','Educación terciaria, profesional y universitaria.'],
+      all:'Todos los niveles',adultFilter:'Aprendizaje adulto / profesional',system:'Sistema educativo',country:'País',systemNote:'niveles educativos adaptados al país',choose:'ELIGE TU NIVEL EDUCATIVO'
+    },
+    fr:{
+      young:['Éducation de la petite enfance','Développement précoce et préparation à l’enseignement primaire.'],
+      primary:['Enseignement primaire','Compétences fondamentales en langue, calcul et apprentissage général.'],
+      secondary:['Enseignement secondaire inférieur','Première étape du secondaire dans le système national choisi.'],
+      student:['Secondaire supérieur / professionnel','Préparation académique ou professionnelle aux études supérieures ou au travail.'],
+      adult:['Enseignement supérieur','Enseignement tertiaire, professionnel et universitaire.'],
+      all:'Tous les niveaux',adultFilter:'Formation adulte / professionnelle',system:'Système éducatif',country:'Pays',systemNote:'niveaux scolaires adaptés au pays',choose:'CHOISISSEZ VOTRE NIVEAU D’ÉTUDES'
+    },
+    de:{
+      young:['Frühkindliche Bildung','Frühe Entwicklung und Vorbereitung auf die Grundschule.'],
+      primary:['Primarbildung','Grundlegende Sprach-, Rechen- und allgemeine Lernkompetenzen.'],
+      secondary:['Sekundarstufe I','Erste Sekundarstufe im gewählten nationalen Bildungssystem.'],
+      student:['Sekundarstufe II / Berufsbildung','Schulische oder berufliche Vorbereitung auf Studium oder Arbeit.'],
+      adult:['Hochschulbildung','Tertiäre, berufliche und universitäre Bildung.'],
+      all:'Alle Stufen',adultFilter:'Erwachsenen- / Berufsbildung',system:'Bildungssystem',country:'Land',systemNote:'länderspezifische Bildungsstufen',choose:'WÄHLE DEINE BILDUNGSSTUFE'
+    },
+    pt:{
+      young:['Educação infantil','Desenvolvimento inicial e preparação para o ensino primário.'],
+      primary:['Ensino primário','Competências fundamentais de literacia, numeracia e aprendizagem geral.'],
+      secondary:['Ensino secundário inferior','Primeira etapa do ensino secundário no sistema nacional selecionado.'],
+      student:['Ensino secundário superior / profissional','Preparação académica ou profissional para estudos posteriores ou trabalho.'],
+      adult:['Ensino superior','Ensino terciário, profissional e universitário.'],
+      all:'Todos os níveis',adultFilter:'Aprendizagem adulta / profissional',system:'Sistema educativo',country:'País',systemNote:'níveis de ensino adaptados ao país',choose:'ESCOLHA O SEU NÍVEL DE ENSINO'
+    },
+    it:{
+      young:['Educazione della prima infanzia','Sviluppo iniziale e preparazione all’istruzione primaria.'],
+      primary:['Istruzione primaria','Competenze fondamentali di lingua, matematica e apprendimento generale.'],
+      secondary:['Istruzione secondaria inferiore','Prima fase della scuola secondaria nel sistema nazionale selezionato.'],
+      student:['Secondaria superiore / professionale','Preparazione accademica o professionale a studi successivi o lavoro.'],
+      adult:['Istruzione superiore','Istruzione terziaria, professionale e universitaria.'],
+      all:'Tutti i livelli',adultFilter:'Apprendimento adulto / professionale',system:'Sistema educativo',country:'Paese',systemNote:'livelli scolastici adattati al paese',choose:'SCEGLI IL TUO LIVELLO DI ISTRUZIONE'
+    }
+  };
+  const OFFICIAL={
+    Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO/VWO · NATIN/IMEAO',adult:'AdeKUS'},
+    Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
+    'United States':{young:'Pre-K / K',primary:'K–5/6',secondary:'Grades 6–8',student:'Grades 9–12',adult:'College / University'},
+    'United Kingdom':{young:'Early Years',primary:'KS1–2',secondary:'KS3–4 · GCSE',student:'Sixth Form · A levels',adult:'Higher Education'},
+    Germany:{young:'Kindergarten',primary:'Grundschule',secondary:'Sekundarstufe I',student:'Sekundarstufe II · Ausbildung',adult:'Hochschule / Universität'},
+    France:{young:'École maternelle',primary:'École primaire',secondary:'Collège',student:'Lycée',adult:'Enseignement supérieur'},
+    Spain:{young:'Educación Infantil',primary:'Educación Primaria',secondary:'ESO',student:'Bachillerato / FP',adult:'Universidad / Superior'},
+    Portugal:{young:'Pré-escolar',primary:'1.º/2.º ciclo',secondary:'3.º ciclo',student:'Secundário / Profissional',adult:'Ensino Superior'},
+    Italy:{young:'Scuola dell’infanzia',primary:'Scuola primaria',secondary:'Secondaria di I grado',student:'Secondaria di II grado',adult:'Università'},
+    Brazil:{young:'Educação Infantil',primary:'Ensino Fundamental I',secondary:'Ensino Fundamental II',student:'Ensino Médio / Técnico',adult:'Ensino Superior'},
+    Canada:{young:'Kindergarten',primary:'Elementary',secondary:'Middle / Junior High',student:'Secondary / High School',adult:'College / University'},
+    Australia:{young:'Kindergarten',primary:'Primary',secondary:'Junior Secondary',student:'Senior Secondary',adult:'TAFE / University'},
+    India:{young:'Pre-primary',primary:'Primary',secondary:'Upper Primary / Secondary',student:'Senior Secondary',adult:'College / University'},
+    'South Africa':{young:'ECD / Grade R',primary:'Foundation / Intermediate',secondary:'Senior Phase',student:'FET · Grades 10–12',adult:'TVET / University'},
+    Guyana:{young:'Nursery',primary:'Primary',secondary:'Secondary',student:'CSEC/CAPE / Technical',adult:'Tertiary'},
+    'Trinidad & Tobago':{young:'ECCE',primary:'Primary',secondary:'CSEC pathway',student:'CAPE / Sixth Form / Technical',adult:'Tertiary'},
+    Jamaica:{young:'Early Childhood',primary:'Primary',secondary:'Lower Secondary',student:'CSEC/CAPE / Sixth Form',adult:'Tertiary'},
+    Belgium:{young:'Kleuter / Maternelle',primary:'Lager / Primaire',secondary:'Secundair / Secondaire I',student:'Secundair / Secondaire II',adult:'Hoger / Supérieur'}
+  };
+  const countryName=c=>COUNTRY_NAMES[c]?.[uiLang()]||c;
+  const levelCopy=id=>LEVEL_COPY[uiLang()]?.[id]||LEVEL_COPY.en[id];
+  const localizedStage=(id,country=currentCountry())=>{
+    const copy=levelCopy(id)||['',''],official=OFFICIAL[country]?.[id];
+    return {title:copy[0]+(official?' · '+official:''),description:copy[1]};
+  };
 
   function normalizeCountry(value){
     const x=clean(value);if(!x)return '';
@@ -181,17 +287,19 @@
   function countryOptions(selected){
     const known=[...countryList];
     if(selected&&!known.includes(selected))known.unshift(selected);
-    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+c+'</option>').join('');
+    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+countryName(c)+'</option>').join('');
   }
   function ensureSidebarCountry(){
     const side=$('#v51-sidebar');if(!side)return;
     let box=$('#v96-side-country',side);
     if(!box){
-      box=document.createElement('div');box.id='v96-side-country';box.innerHTML='<small>EDUCATION COUNTRY</small><select aria-label="Education country"></select><span>School stages and learning context adapt to this system.</span>';
+      box=document.createElement('div');box.id='v96-side-country';box.dataset.v96I18nOwned='1';box.innerHTML='<small></small><select aria-label="Education country" data-v96-i18n-owned="1"></select><span></span>';
       const before=$('.v51-quality',side);before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
       $('select',box).addEventListener('change',e=>setCountry(e.target.value,'sidebar'));
     }
-    const selected=currentCountry(),sel=$('select',box);if(sel){sel.innerHTML=countryOptions(selected);sel.value=selected}
+    const selected=currentCountry(),sel=$('select',box),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
+    const sm=$('small',box),sp=$('span',box);if(sm)sm.textContent=(ui.country||'Country').toUpperCase();if(sp)sp.textContent=ui.systemNote+'.';
+    if(sel){sel.innerHTML=countryOptions(selected);sel.value=selected;sel.setAttribute('aria-label',ui.country||'Country')}
   }
   function ensureDashboardSelector(){
     const host=$('#v51-main [data-v51-page="dashboard"] .v51-levels')?.parentElement;
@@ -199,29 +307,33 @@
     let wrap=$('#v96-country-context',host);
     if(!wrap){
       wrap=document.createElement('div');wrap.id='v96-country-context';
-      wrap.innerHTML='<div class="v96-country-copy"><b>Education system</b><span id="v96-system-note"></span></div><label>Country<select id="v96-country"></select></label>';
+      wrap.dataset.v96I18nOwned='1';wrap.innerHTML='<div class="v96-country-copy"><b></b><span id="v96-system-note"></span></div><label><span class="v96-country-label"></span><select id="v96-country" data-v96-i18n-owned="1"></select></label>';
       const levels=$('.v51-levels',host);levels?.insertAdjacentElement('beforebegin',wrap);
       $('#v96-country',wrap).addEventListener('change',e=>setCountry(e.target.value,'dashboard'));
     }
-    const c=currentCountry(),sel=$('#v96-country',wrap);
-    if(sel){sel.innerHTML=countryOptions(c);sel.value=c}
-    const note=$('#v96-system-note',wrap);if(note)note.textContent=system(c).label+' · country-aware school stages';
+    const c=currentCountry(),sel=$('#v96-country',wrap),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
+    if(sel){sel.innerHTML=countryOptions(c);sel.value=c;sel.setAttribute('aria-label',ui.country||'Country')}
+    const title=$('.v96-country-copy b',wrap),countryLabel=$('.v96-country-label',wrap),note=$('#v96-system-note',wrap);
+    if(title)title.textContent=ui.system;if(countryLabel)countryLabel.textContent=ui.country;
+    if(note)note.textContent=countryName(c)+' · '+ui.systemNote;
   }
   function applyLevels(){
-    const c=currentCountry(),sys=system(c);
-    $$('.v51-level[data-level]').forEach(btn=>{
+    const c=currentCountry(),sys=system(c),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
+    $('.v51-level[data-level]').forEach(btn=>{
       const st=sys.stages.find(x=>x[0]===btn.dataset.level);if(!st)return;
-      const icon=btn.querySelector(':scope > span'),title=btn.querySelector('b'),desc=btn.querySelector('small');
-      if(icon)icon.textContent=st[1];if(title)title.textContent=st[2];if(desc)desc.textContent=st[3];
+      const icon=btn.querySelector(':scope > span'),title=btn.querySelector('b'),desc=btn.querySelector('small'),lc=localizedStage(btn.dataset.level,c);
+      btn.dataset.v96I18nOwned='1';
+      if(icon)icon.textContent=st[1];if(title)title.textContent=lc.title;if(desc)desc.textContent=lc.description;
       btn.dataset.countrySystem=sys.label;
     });
     const label=$('#v51-main [data-v51-page="dashboard"] .v51-level-label');
-    if(label)label.textContent='CHOOSE YOUR EDUCATION STAGE · '+sys.label.toUpperCase();
+    if(label){label.dataset.v96I18nOwned='1';label.textContent=ui.choose+' · '+countryName(c).toUpperCase()}
   }
   function applySchoolLevels(){
     const sel=$('#v50-level');if(!sel)return;
-    const stages=system(currentCountry()).stages;
-    const labels={all:'All levels',early:stages[0]?.[2]||'Early childhood',primary:stages[1]?.[2]||'Primary',secondary:stages[2]?.[2]||'Lower secondary',vocational:stages[3]?.[2]||'Upper secondary / vocational',higher:stages[4]?.[2]||'Higher education',adult:'Adult / professional learning'};
+    const c=currentCountry(),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
+    sel.dataset.v96I18nOwned='1';
+    const labels={all:ui.all,early:localizedStage('young',c).title,primary:localizedStage('primary',c).title,secondary:localizedStage('secondary',c).title,vocational:localizedStage('student',c).title,higher:localizedStage('adult',c).title,adult:ui.adultFilter};
     for(const option of sel.options){if(labels[option.value])option.textContent=labels[option.value]}
   }
   function seedInputs(){
@@ -254,7 +366,8 @@
   observeCountryInputs();
   addEventListener('hashchange',()=>{setTimeout(apply,60);setTimeout(apply,260)});
   addEventListener('scholark-runtime-ready',()=>setTimeout(apply,60));
-  addEventListener('scholark-language-ready',()=>setTimeout(apply,80));
+  addEventListener('scholark-language-applied',()=>apply());
+  addEventListener('scholark-language-ready',()=>{apply();setTimeout(apply,80)});
   [80,260,700].forEach(ms=>setTimeout(apply,ms));
 
   window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,systems:SYSTEMS,apply};
