@@ -207,18 +207,29 @@
     if(diag&&!$('.v30-diagnostic-demo',diag)){const d=document.createElement('div');d.className='v30-diagnostic-demo';diag.appendChild(d);}
   }
 
-  const tutorLines=[
-    ['AI TUTOR','“Explain photosynthesis like I am 13.” → Simplifying concept…'],
-    ['AI TUTOR','Quick check: “Why do plants need sunlight?” → adaptive question ready'],
-    ['AI TUTOR','Weak topic detected → adding a shorter practice set for tomorrow']
-  ];
-  const diagLines=[
-    ['DIAGNOSTICS','Scanning 12 skills…'],['DIAGNOSTICS','3 weak areas found → prioritizing practice'],['DIAGNOSTICS','Mastered topics moved to spaced review']
-  ];
+  const tutorLines={
+    en:[['AI TUTOR','“Explain photosynthesis like I am 13.” → Simplifying concept…'],['AI TUTOR','Quick check: “Why do plants need sunlight?” → adaptive question ready'],['AI TUTOR','Weak topic detected → adding a shorter practice set for tomorrow']],
+    nl:[['AI TUTOR','“Leg fotosynthese uit alsof ik 13 ben.” → Concept vereenvoudigen…'],['AI TUTOR','Snelle check: “Waarom hebben planten zonlicht nodig?” → adaptieve vraag klaar'],['AI TUTOR','Zwak onderwerp gevonden → kortere oefenset voor morgen toevoegen']],
+    es:[['TUTOR IA','“Explica la fotosíntesis como si tuviera 13 años.” → Simplificando…'],['TUTOR IA','Comprobación rápida: “¿Por qué necesitan luz solar las plantas?” → pregunta adaptativa lista'],['TUTOR IA','Tema débil detectado → añadiendo una práctica más corta para mañana']],
+    fr:[['TUTEUR IA','« Explique la photosynthèse comme si j’avais 13 ans. » → Simplification…'],['TUTEUR IA','Vérification rapide : « Pourquoi les plantes ont-elles besoin de lumière ? » → question adaptative prête'],['TUTEUR IA','Sujet faible détecté → série d’exercices plus courte prévue pour demain']],
+    de:[['KI-TUTOR','„Erkläre Fotosynthese so, als wäre ich 13.“ → Konzept wird vereinfacht…'],['KI-TUTOR','Kurzcheck: „Warum brauchen Pflanzen Sonnenlicht?“ → adaptive Frage bereit'],['KI-TUTOR','Schwaches Thema erkannt → kürzere Übung für morgen wird hinzugefügt']],
+    pt:[['TUTOR DE IA','“Explica a fotossíntese como se eu tivesse 13 anos.” → A simplificar…'],['TUTOR DE IA','Verificação rápida: “Porque precisam as plantas de luz solar?” → pergunta adaptativa pronta'],['TUTOR DE IA','Tópico fraco detetado → prática mais curta adicionada para amanhã']],
+    it:[['TUTOR IA','“Spiega la fotosintesi come se avessi 13 anni.” → Semplificazione…'],['TUTOR IA','Controllo rapido: “Perché le piante hanno bisogno della luce?” → domanda adattiva pronta'],['TUTOR IA','Argomento debole rilevato → aggiunta una pratica più breve per domani']]
+  };
+  const diagLines={
+    en:[['DIAGNOSTICS','Scanning 12 skills…'],['DIAGNOSTICS','3 weak areas found → prioritizing practice'],['DIAGNOSTICS','Mastered topics moved to spaced review']],
+    nl:[['DIAGNOSTIEK','12 vaardigheden scannen…'],['DIAGNOSTIEK','3 zwakke gebieden gevonden → oefening prioriteren'],['DIAGNOSTIEK','Beheerste onderwerpen naar gespreide herhaling verplaatst']],
+    es:[['DIAGNÓSTICO','Analizando 12 habilidades…'],['DIAGNÓSTICO','3 áreas débiles encontradas → priorizando práctica'],['DIAGNÓSTICO','Temas dominados movidos a repaso espaciado']],
+    fr:[['DIAGNOSTIC','Analyse de 12 compétences…'],['DIAGNOSTIC','3 points faibles trouvés → priorité à la pratique'],['DIAGNOSTIC','Sujets maîtrisés déplacés vers la révision espacée']],
+    de:[['DIAGNOSE','12 Fähigkeiten werden geprüft…'],['DIAGNOSE','3 Schwachstellen gefunden → Übung wird priorisiert'],['DIAGNOSE','Beherrschte Themen in verteilte Wiederholung verschoben']],
+    pt:[['DIAGNÓSTICO','A analisar 12 competências…'],['DIAGNÓSTICO','3 áreas fracas encontradas → prática priorizada'],['DIAGNÓSTICO','Tópicos dominados movidos para revisão espaçada']],
+    it:[['DIAGNOSTICA','Analisi di 12 abilità…'],['DIAGNOSTICA','3 aree deboli trovate → pratica prioritaria'],['DIAGNOSTICA','Argomenti padroneggiati spostati nel ripasso dilazionato']]
+  };
   let learnStep=0;
   function animateLearning(){
     const t=$('.v30-tutor-demo'),d=$('.v30-diagnostic-demo');if(!t||!d)return;
-    const a=tutorLines[learnStep%tutorLines.length],b=diagLines[learnStep%diagLines.length];
+    const lc=uiLanguage(),tl=tutorLines[lc]||tutorLines.en,dl=diagLines[lc]||diagLines.en;
+    const a=tl[learnStep%tl.length],b=dl[learnStep%dl.length];
     t.innerHTML=`<b>${a[0]}</b>${a[1]}`;d.innerHTML=`<b>${b[0]}</b>${b[1]}`;learnStep++;
   }
 
@@ -265,9 +276,18 @@
     futureStep++;
   }
 
+  const qualitySteps={
+    en:[['✦ Understanding prompt','○ Building outline','○ Quality pass'],['✓ Prompt understood','✦ Research + structure','○ Quality pass'],['✓ Outline complete','✓ Draft generated','✦ Quality pass'],['✓ Research checked','✓ Design assembled','✓ Ready to edit']],
+    nl:[['✦ Prompt begrijpen','○ Outline opbouwen','○ Kwaliteitscheck'],['✓ Prompt begrepen','✦ Onderzoek + structuur','○ Kwaliteitscheck'],['✓ Outline compleet','✓ Draft gegenereerd','✦ Kwaliteitscheck'],['✓ Onderzoek gecontroleerd','✓ Design opgebouwd','✓ Klaar om te bewerken']],
+    es:[['✦ Entendiendo el prompt','○ Creando esquema','○ Control de calidad'],['✓ Prompt entendido','✦ Investigación + estructura','○ Control de calidad'],['✓ Esquema completo','✓ Borrador generado','✦ Control de calidad'],['✓ Investigación verificada','✓ Diseño ensamblado','✓ Listo para editar']],
+    fr:[['✦ Compréhension du prompt','○ Construction du plan','○ Contrôle qualité'],['✓ Prompt compris','✦ Recherche + structure','○ Contrôle qualité'],['✓ Plan terminé','✓ Brouillon généré','✦ Contrôle qualité'],['✓ Recherche vérifiée','✓ Design assemblé','✓ Prêt à modifier']],
+    de:[['✦ Prompt verstehen','○ Gliederung erstellen','○ Qualitätsprüfung'],['✓ Prompt verstanden','✦ Recherche + Struktur','○ Qualitätsprüfung'],['✓ Gliederung fertig','✓ Entwurf erstellt','✦ Qualitätsprüfung'],['✓ Recherche geprüft','✓ Design erstellt','✓ Bereit zum Bearbeiten']],
+    pt:[['✦ A compreender o prompt','○ A construir o esboço','○ Verificação de qualidade'],['✓ Prompt compreendido','✦ Pesquisa + estrutura','○ Verificação de qualidade'],['✓ Esboço completo','✓ Rascunho gerado','✦ Verificação de qualidade'],['✓ Pesquisa verificada','✓ Design montado','✓ Pronto para editar']],
+    it:[['✦ Comprensione del prompt','○ Creazione scaletta','○ Controllo qualità'],['✓ Prompt compreso','✦ Ricerca + struttura','○ Controllo qualità'],['✓ Scaletta completa','✓ Bozza generata','✦ Controllo qualità'],['✓ Ricerca verificata','✓ Design assemblato','✓ Pronto da modificare']]
+  };
   function animateQualitySteps(){
-    const floats=$$('.v29-float');if(floats.length<3)return;
-    const steps=[['✦ Understanding prompt','○ Building outline','○ Quality pass'],['✓ Prompt understood','✦ Research + structure','○ Quality pass'],['✓ Outline complete','✓ Draft generated','✦ Quality pass'],['✓ Research checked','✓ Design assembled','✓ Ready to edit']];
+    const floats=$('.v29-float');if(floats.length<3)return;
+    const steps=qualitySteps[uiLanguage()]||qualitySteps.en;
     const row=steps[(futureStep)%steps.length];floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
   }
 
