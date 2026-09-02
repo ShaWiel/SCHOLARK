@@ -218,7 +218,9 @@
 
   function normalizeCountry(value){
     const x=clean(value);if(!x)return '';
-    return aliases[x.toLowerCase()]||countryList.find(c=>c.toLowerCase()===x.toLowerCase())||x;
+    const low=x.toLowerCase();
+    const localized=Object.entries(COUNTRY_NAMES).find(([,names])=>names.some(n=>clean(n).toLowerCase()===low))?.[0];
+    return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
   function system(country=currentCountry()){const n=normalizeCountry(country);return SYSTEMS[n]||{...GENERIC,label:n||GENERIC.label}}
