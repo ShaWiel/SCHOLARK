@@ -11,7 +11,7 @@
   function key(x){return x.deckId?'deck:'+x.deckId:x.artifactId?'artifact:'+x.artifactId:x.bookId?'book:'+x.bookId:[x.mode||'',x.project||'',x.rawPrompt||x.prompt||''].join('|')}
   function dedupe(a=projectHistory()){const seen=new Set(),out=[];for(const x of a){const k=key(x);if(seen.has(k))continue;seen.add(k);out.push(x)}try{localStorage.setItem('scholark_v45_history',JSON.stringify(out.slice(0,40)))}catch{}return out.slice(0,40)}
   function host(){
-    document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
+    document.body.classList.remove('v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
     // My Projects must own a clean workspace surface. Clear every tool overlay
     // that can otherwise remain fixed above #v51-main.
     $('#v41-studio-workspace')?.setAttribute('hidden','');
