@@ -184,9 +184,23 @@
       'No reference files added',
       'Open saved Studio work directly.',
       'No saved projects yet.',
-      'Delete project'
+      'Delete project',
+      'Curriculum Explorer',
+      'Mastery Map',
+      'Exam Prep Center',
+      'Diagnostic Check',
+      'Spaced Review Queue',
+      'Study Methods Lab',
+      'Run diagnostic'
     ];
     return phrases.filter(p=>text.includes(p));
+  }
+
+  const UI_LANGUAGE_OPTIONS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
+  function languageSelectorExact(sel){
+    if(!sel)return false;
+    const rows=[...sel.options].map(o=>[String(o.value||''),String(o.textContent||'').trim()]);
+    return rows.length===UI_LANGUAGE_OPTIONS.length&&UI_LANGUAGE_OPTIONS.every(([v,n],i)=>rows[i]?.[0]===v&&rows[i]?.[1]===n);
   }
 
   function health(){
@@ -194,7 +208,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r124',
+      release:'r125',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -211,7 +225,7 @@
       studioSurfaceClear:r!=='studio'||(!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')&&!$('#v25-book')?.classList.contains('open')),
       studioFirstPaintMs:Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)||null,
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
-      workspaceLanguageSelector:r==='home'||!!$('#v90-language')&&$('#v90-language').options.length===7&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
+      workspaceLanguageSelector:r==='home'||languageSelectorExact($('#v90-language'))&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
       criticalLanguageLeaks:criticalLanguageLeaks(),
       bookApi:!!window.__SCHOLARK_V65_BOOK__,
       bookMounted:r!=='book'||!!$('#v51-fallback .v65-book'),
@@ -220,15 +234,15 @@
       schoolScrollable:r!=='schools'||!!school&&(school.scrollHeight>school.clientHeight?getComputedStyle(school).overflowY!=='hidden':true),
       homeWorkspaceLeak:r!=='home'||!main||getComputedStyle(main).display==='none',
       officialTopbarLogo:r!=='home'||!$('#v55-topbar')||!!topLogo&&/scholark-logo\.png/i.test(topLogo.getAttribute('src')||''),
-      homeLanguageSelector:r!=='home'||!!$('#v55-language')&&$('#v55-language').options.length===7&&getComputedStyle($('#v55-language')).display!=='none'&&getComputedStyle($('#v55-language')).visibility!=='hidden',
+      homeLanguageSelector:r!=='home'||languageSelectorExact($('#v55-language'))&&getComputedStyle($('#v55-language')).display!=='none'&&getComputedStyle($('#v55-language')).visibility!=='hidden',
       cinematicSync:r!=='home'||!activeMode||!previewMode||activeMode===previewMode
     };
-    if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();report.homeLanguageSelector=!!$('#v55-language')&&$('#v55-language').options.length===7}
+    if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();window.__SCHOLARK_I18N__?.upgradeSelectors?.();report.homeLanguageSelector=languageSelectorExact($('#v55-language'))}
     if(report.criticalLanguageLeaks.length){syncWorkspaceLanguage();window.__SCHOLARK_I18N__?.translateCurrentPage?.(false)}
     if(report.foreignSurfaceConflicts.length){repairForeignSurfaces(r);report.foreignSurfaceConflicts=foreignSurfaceConflicts(r)}
     report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r124',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R124 '+(report.ok?'PASS':'WARN'),report);
+    try{sessionStorage.setItem('scholark_foundation_r125',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R125 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -246,6 +260,7 @@
 
   addEventListener('scholark-language-applied',()=>{syncWorkspaceLanguage();setTimeout(repair,20)});
   addEventListener('scholark-language-ready',()=>{syncWorkspaceLanguage();setTimeout(health,160)});
+  addEventListener('scholark-language-complete',()=>{syncWorkspaceLanguage();setTimeout(()=>{repair();health()},40)});
   addEventListener('scholark-route-painted',e=>{if(e.detail?.route==='studio')setTimeout(health,40)});
   addEventListener('hashchange',()=>{setTimeout(repair,35);setTimeout(health,500)});
   addEventListener('popstate',()=>setTimeout(repair,35));
@@ -253,5 +268,5 @@
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(()=>{bindRouteInvariantObserver();repair()},ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r124'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r125'};
 })();
