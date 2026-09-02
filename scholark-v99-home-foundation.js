@@ -4,6 +4,12 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const home=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
   let queued=false;
+  const UI_LANGUAGE_OPTIONS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
+  const languageSelectorExact=sel=>{
+    if(!sel)return false;
+    const rows=[...sel.options].map(o=>[String(o.value||''),String(o.textContent||'').trim()]);
+    return rows.length===UI_LANGUAGE_OPTIONS.length&&UI_LANGUAGE_OPTIONS.every(([v,n],i)=>rows[i]?.[0]===v&&rows[i]?.[1]===n);
+  };
 
   function activeMode(){
     return window.__SCHOLARK_V29_HOME__?.getMode?.()
@@ -39,35 +45,37 @@
     const bars=$$('.v29-master .v29-line i');
     const report={
       ok:true,
-      release:'r120',
+      release:'r125',
       home:home(),
       activeMode:mode,
       previewMode,
       stageReady:!home()||!!$('#v29-stage-title')?.textContent?.trim()&&!!$('#v29-stage-desc')?.textContent?.trim()&&($('#v29-stage-list')?.children?.length||0)>0,
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),
       promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
-      topbarLanguage:!home()||!!$('#v55-language')&&$('#v55-language').options.length===7&&getComputedStyle($('#v55-language')).display!=='none',
+      topbarLanguage:!home()||languageSelectorExact($('#v55-language'))&&getComputedStyle($('#v55-language')).display!=='none',
       presentersRemoved:!$('#v29-presenter-language')&&!$('#v29-speak')&&!$('.v29-hosts'),
       futureSchoolLive:!home()||!!$('.v30-school-live .v30-radar')&&$('.v30-school-live .v30-pin')!==null,
       futureStudyLive:!home()||!!$('.v30-ahead-live .v30-ahead-line i')&&$('.v30-ahead-dots span').length===4,
       masteryBars:bars.length,
       masteryAnimated:!home()||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),
+      languageSwitchSettled:!document.documentElement.classList.contains('scholark-language-switching'),
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
-    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.runtimeErrors.length===0);
-    try{sessionStorage.setItem('scholark_home_foundation_r120',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R120 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.runtimeErrors.length===0);
+    try{sessionStorage.setItem('scholark_home_foundation_r125',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R125 '+(report.ok?'PASS':'WARN'),report);
     if(!report.ok)schedule(30);
     return report;
   }
 
   addEventListener('scholark-home-mode-change',()=>schedule(0));
-  addEventListener('scholark-language-ready',()=>schedule(50));
+  addEventListener('scholark-language-ready',()=>{schedule(40);setTimeout(health,260)});
+  addEventListener('scholark-language-complete',()=>{schedule(20);setTimeout(health,140)});
   addEventListener('scholark-runtime-ready',()=>{schedule(80);setTimeout(health,900)});
   addEventListener('hashchange',()=>{schedule(60);setTimeout(health,650)});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(60)});
   [100,500,1600].forEach(ms=>setTimeout(()=>schedule(0),ms));
   setTimeout(health,2400);
 
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r120'};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r125'};
 })();
