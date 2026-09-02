@@ -108,6 +108,7 @@
     if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(previewTitle)previewTitle.textContent=d.name+' Builder';
     const i18n=window.__SCHOLARK_I18N__;if(i18n?.apply){const stage=$('.v29-stage',layer);if(stage)i18n.apply(stage)}
     window.dispatchEvent(new CustomEvent('scholark-home-mode-change',{detail:{mode}}));
+    requestAnimationFrame(()=>window.__SCHOLARK_V32_PREVIEW__?.render?.());
   }
 
   const presenterLanguages=[['nl','Dutch','nl-NL'],['en','English','en-US'],['es','Spanish','es-ES'],['fr','French','fr-FR'],['de','Deutch','de-DE'],['pt','Portugues','pt-PT'],['it','Italian','it-IT']];
@@ -168,7 +169,7 @@
     const finish=()=>{if(finished)return;finished=true;Array.from(layer.querySelectorAll('.v29-host')).forEach(h=>h.classList.remove('v30-speaking'));if(button){button.disabled=false;button.textContent='▶ Let the AI presenters explain'}setTimeout(()=>caption?.classList.remove('open'),1800)};
     const next=()=>{
       if(i>=rows.length){finish();return}
-      const [name,text]=rows[i++],hosts=$('.v29-host',layer);hosts.forEach(h=>h.classList.toggle('v30-speaking',clean(h.querySelector('b')?.textContent)===name));
+      const [name,text]=rows[i++],hosts=Array.from(layer.querySelectorAll('.v29-host'));hosts.forEach(h=>h.classList.toggle('v30-speaking',clean(h.querySelector('b')?.textContent)===name));
       if(caption){caption.classList.add('open');caption.textContent=name+': '+text}
       const u=new SpeechSynthesisUtterance(text),voice=presenterVoice(target);u.lang=voice?.lang||locale;u.rate=.93;u.pitch=1;if(voice)u.voice=voice;
       let done=false;const advance=()=>{if(done)return;done=true;clearTimeout(watchdog);next()};const watchdog=setTimeout(advance,Math.max(4500,text.length*72));
@@ -196,7 +197,8 @@
   window.addEventListener('hashchange',()=>setTimeout(sync,40));
   window.addEventListener('popstate',()=>setTimeout(sync,40));
   window.addEventListener('resize',()=>setTimeout(sync,80),{passive:true});
-  window.addEventListener('scholark-language-ready',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer)});
+  window.addEventListener('scholark-language-applied',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer);window.__SCHOLARK_V32_PREVIEW__?.render?.()});
+  window.addEventListener('scholark-language-ready',()=>{syncPresenterLanguage();window.__SCHOLARK_I18N__?.apply?.(layer);window.__SCHOLARK_V32_PREVIEW__?.render?.()});
   setTimeout(sync,80);
   window.__SCHOLARK_V29_HOME__={setMode,openStudio,sync,speak,syncPresenterLanguage,getMode:()=>active,getLayer:()=>layer};
 })();
