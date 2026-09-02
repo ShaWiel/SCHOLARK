@@ -82,6 +82,7 @@
     if(route()==='home')return;
     clearTimeout(languageRepairTimer);
     languageRepairTimer=setTimeout(()=>{
+      window.__SCHOLARK_COUNTRY__?.apply?.();
       if(window.__SCHOLARK_WORKSPACE__?.syncLanguage){window.__SCHOLARK_WORKSPACE__.syncLanguage();return}
       const target=localStorage.getItem('scholark_ui_language')||'nl';
       if(document.documentElement.lang!==target)document.documentElement.lang=target;
@@ -208,7 +209,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r126',
+      release:'r127',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -226,6 +227,9 @@
       studioFirstPaintMs:Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)||null,
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
       workspaceLanguageSelector:r==='home'||languageSelectorExact($('#v90-language'))&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
+      countryLanguage:r==='home'||!window.__SCHOLARK_COUNTRY__||window.__SCHOLARK_COUNTRY__.language?.()===(localStorage.getItem('scholark_ui_language')||'nl'),
+      countrySelectorOwned:r==='home'||!$('#v96-country')||$('#v96-country')?.dataset.v96I18nOwned==='1',
+      cinematicComplete:r!=='home'||window.__SCHOLARK_V32_PREVIEW__?.healthy?.()===true,
       criticalLanguageLeaks:criticalLanguageLeaks(),
       bookApi:!!window.__SCHOLARK_V65_BOOK__,
       bookMounted:r!=='book'||!!$('#v51-fallback .v65-book'),
@@ -240,8 +244,8 @@
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();window.__SCHOLARK_I18N__?.upgradeSelectors?.();report.homeLanguageSelector=languageSelectorExact($('#v55-language'))}
     if(report.criticalLanguageLeaks.length){syncWorkspaceLanguage();window.__SCHOLARK_I18N__?.translateCurrentPage?.(false)}
     if(report.foreignSurfaceConflicts.length){repairForeignSurfaces(r);report.foreignSurfaceConflicts=foreignSurfaceConflicts(r)}
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r126',JSON.stringify(report))}catch{}
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.cinematicComplete&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.countryLanguage&&report.countrySelectorOwned&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
+    try{sessionStorage.setItem('scholark_foundation_r127',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R126 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
@@ -268,5 +272,5 @@
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(()=>{bindRouteInvariantObserver();repair()},ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r126'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r127'};
 })();
