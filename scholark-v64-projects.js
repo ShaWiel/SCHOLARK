@@ -12,6 +12,7 @@
   function dedupe(a=projectHistory()){const seen=new Set(),out=[];for(const x of a){const k=key(x);if(seen.has(k))continue;seen.add(k);out.push(x)}try{localStorage.setItem('scholark_v45_history',JSON.stringify(out.slice(0,40)))}catch{}return out.slice(0,40)}
   function host(){
     localStorage.setItem('scholark_v51_collapsed','0');
+    window.__SCHOLARK_WORKSPACE__?.setCollapsed?.(false,true);
     document.body.classList.remove('v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
     // My Projects must own a clean workspace surface. Clear every tool overlay
     // that can otherwise remain fixed above #v51-main.
@@ -33,7 +34,7 @@
     const h=host();if(!h)return;const a=dedupe();
     h.innerHTML='<div class="v64-projects"><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>My Projects</h1><p>Open saved Studio work directly. Autosaves are deduplicated, so one project no longer appears over and over.</p>'+(a.length?'<div class="v64-grid">'+a.map((x,i)=>'<article class="v64-card" data-v64-open="'+i+'"><button class="v64-del" data-v64-del="'+i+'" title="Delete project">×</button><small>'+esc(label(x.mode))+'</small><h3>'+esc(x.project||'Untitled project')+'</h3><p>'+esc(clean(x.rawPrompt||x.prompt||'Saved SCHOLARK creation').slice(0,180))+'</p></article>').join('')+'</div>':'<div class="v64-empty">No saved projects yet. Create something in Studio AI and save it; it will appear here.</div>')+'</div>';
     window.__SCHOLARK_I18N__?.apply?.(h);window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(h);
-    requestAnimationFrame(()=>{if(String(location.hash||'').toLowerCase()==='#project'){document.body.classList.remove('v51-collapsed');const main=$('#v51-main');if(main)main.style.setProperty('display','block','important')}});
+    requestAnimationFrame(()=>{if(String(location.hash||'').toLowerCase()==='#project'){window.__SCHOLARK_WORKSPACE__?.setCollapsed?.(false,true);document.body.classList.remove('v51-collapsed');const main=$('#v51-main');if(main)main.style.setProperty('display','block','important');Array.from(document.querySelectorAll('#v51-sidebar [data-v51-tool]')).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'))}});
   }
   function openItem(i){const a=dedupe(),x=a[i];if(!x)return;
     if(x.deckId){try{const d=JSON.parse(localStorage.getItem('scholark_v57_deck_'+x.deckId)||'null');if(d)return window.__SCHOLARK_V57_PRESENTATIONS__?.open?.(d)}catch{}}
