@@ -182,6 +182,29 @@
       'Output language',
       'Quality pipeline',
       'Build outline first',
+      'Deep / research-first',
+      'Highest quality · PRO',
+      'Number of slides',
+      'Aspect ratio',
+      'Speaker notes',
+      'Page type',
+      'Document type',
+      'Citation style',
+      'Graphic type',
+      'Custom genre blend (optional)',
+      'Target words',
+      'Chapter strategy',
+      'Generate chapter draft',
+      'Continuity & purpose',
+      'Mood / research direction',
+      'Export DOCX',
+      'Export PDF',
+      'Skills to build',
+      'Key subjects',
+      'Books & resources',
+      'University preparation',
+      'Career directions',
+      'Your roadmap',
       'No reference files added',
       'Open saved Studio work directly.',
       'No saved projects yet.',
@@ -209,7 +232,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r127',
+      release:'r128',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -225,6 +248,8 @@
       studioNavActive:r!=='studio'||!!$('#v51-sidebar [data-v51-tool="studio"].active'),
       studioSurfaceClear:r!=='studio'||(!$('#v50-school')?.classList.contains('open')&&!$('#v25-study')?.classList.contains('open')&&!$('#v25-book')?.classList.contains('open')),
       studioFirstPaintMs:Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)||null,
+      studioFirstPaintHealthy:r!=='studio'||!Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)||Number(sessionStorage.getItem('scholark_studio_first_paint_ms')||0)<700,
+      projectRouteStable:r!=='project'||String(location.hash||'').toLowerCase()==='#project'&&!!$('#v51-fallback .v64-projects')&&!document.body.classList.contains('v51-collapsed'),
       workspaceLanguage:r==='home'||document.documentElement.lang===(localStorage.getItem('scholark_ui_language')||'nl'),
       workspaceLanguageSelector:r==='home'||languageSelectorExact($('#v90-language'))&&$('#v90-language').value===(localStorage.getItem('scholark_ui_language')||'nl'),
       countryLanguage:r==='home'||!window.__SCHOLARK_COUNTRY__||window.__SCHOLARK_COUNTRY__.language?.()===(localStorage.getItem('scholark_ui_language')||'nl'),
@@ -244,9 +269,9 @@
     if(r==='home'&&!report.homeLanguageSelector){window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();window.__SCHOLARK_I18N__?.upgradeSelectors?.();report.homeLanguageSelector=languageSelectorExact($('#v55-language'))}
     if(report.criticalLanguageLeaks.length){syncWorkspaceLanguage();window.__SCHOLARK_I18N__?.translateCurrentPage?.(false)}
     if(report.foreignSurfaceConflicts.length){repairForeignSurfaces(r);report.foreignSurfaceConflicts=foreignSurfaceConflicts(r)}
-    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.cinematicComplete&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.countryLanguage&&report.countrySelectorOwned&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r127',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R126 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.cinematicComplete&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.studioFirstPaintHealthy&&report.projectRouteStable&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.countryLanguage&&report.countrySelectorOwned&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
+    try{sessionStorage.setItem('scholark_foundation_r128',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R128 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -266,11 +291,11 @@
   addEventListener('scholark-language-ready',()=>{syncWorkspaceLanguage();setTimeout(health,160)});
   addEventListener('scholark-language-complete',()=>{syncWorkspaceLanguage();setTimeout(()=>{repair();health()},40)});
   addEventListener('scholark-route-painted',e=>{if(e.detail?.route==='studio')setTimeout(health,40)});
-  addEventListener('hashchange',()=>{setTimeout(repair,35);setTimeout(health,500)});
+  addEventListener('hashchange',()=>{repair();setTimeout(repair,35);setTimeout(health,420)});
   addEventListener('popstate',()=>setTimeout(repair,35));
   addEventListener('scholark-runtime-ready',()=>{bindRouteInvariantObserver();setTimeout(repair,60);setTimeout(health,800)});
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(()=>{bindRouteInvariantObserver();repair()},ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r127'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r128'};
 })();
