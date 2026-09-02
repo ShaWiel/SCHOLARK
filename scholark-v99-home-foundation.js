@@ -33,6 +33,7 @@
     if(!topLang||topLang.options.length!==7)window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();
     if(!$('.v30-school-live')||!$('.v30-ahead-live'))window.__SCHOLARK_V30_DEMO__?.sync?.();
     if(!$('#v29-prompt')?.value?.trim())window.__SCHOLARK_V30_DEMO__?.sync?.();
+    if(window.__SCHOLARK_V30_DEMO__?.isRunning?.()===false)window.__SCHOLARK_V30_DEMO__?.start?.();
   }
 
   function schedule(delay=0){
@@ -45,7 +46,7 @@
     const bars=$$('.v29-master .v29-line i');
     const report={
       ok:true,
-      release:'r125',
+      release:'r126',
       home:home(),
       activeMode:mode,
       previewMode,
@@ -59,11 +60,12 @@
       masteryBars:bars.length,
       masteryAnimated:!home()||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),
       languageSwitchSettled:!document.documentElement.classList.contains('scholark-language-switching'),
+      cinematicRunning:!home()||window.__SCHOLARK_V30_DEMO__?.isRunning?.()===true,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
-    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.runtimeErrors.length===0);
-    try{sessionStorage.setItem('scholark_home_foundation_r125',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R125 '+(report.ok?'PASS':'WARN'),report);
+    report.ok=!report.home||(report.activeMode===report.previewMode&&report.stageReady&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.cinematicRunning&&report.runtimeErrors.length===0);
+    try{sessionStorage.setItem('scholark_home_foundation_r126',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Home foundation R126 '+(report.ok?'PASS':'WARN'),report);
     if(!report.ok)schedule(30);
     return report;
   }
@@ -77,5 +79,5 @@
   [100,500,1600].forEach(ms=>setTimeout(()=>schedule(0),ms));
   setTimeout(health,2400);
 
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r125'};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,release:'r126'};
 })();
