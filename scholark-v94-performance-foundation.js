@@ -16,7 +16,12 @@
     html.scholark-performance-safe .v29-glow,html.scholark-performance-safe .v29-device,html.scholark-performance-safe .v29-float,html.scholark-performance-safe .v41-most{animation:none!important}
     html.scholark-performance-safe #v55-topbar,html.scholark-performance-safe .v29-future-card{backdrop-filter:none!important}
     html.scholark-performance-safe{scroll-behavior:auto}
-    html.scholark-language-switching *{animation-play-state:paused!important;transition:none!important}
+    /* Do not pause homepage cinematics during a language switch. Pausing CSS
+       animations mid-frame caused incomplete cards/bars after the locale changed.
+       Only suppress workspace transitions while text is being swapped. */
+    html.scholark-language-switching body.v51-workspace #v51-main *,
+    html.scholark-language-switching body.v51-workspace #v51-sidebar *,
+    html.scholark-language-switching body.v51-workspace #v41-studio-workspace *{transition:none!important}
     html.scholark-language-switching{scroll-behavior:auto!important}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.v29-glow,.v29-device,.v29-float,.v41-most{animation:none!important}.v94-route-fade #v51-main,.v94-route-fade #v29-home-layer{transition:none!important}}
   `;document.head.appendChild(css);
