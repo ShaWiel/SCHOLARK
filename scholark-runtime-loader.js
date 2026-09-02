@@ -122,6 +122,10 @@
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,320));
     idle(()=>ensureFiles(STUDIO_CORE,false),{timeout:900});
   }
+  function prewarmProjects(){
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,520));
+    idle(()=>ensureFiles(FEATURES.project,false),{timeout:1200});
+  }
   function prefetchStudioHeavy(){
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,420));
     idle(()=>ensureFiles(STUDIO_HEAVY,false),{timeout:1400});
@@ -149,9 +153,15 @@
     if (!target) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     ensure(key, true).then(() => {
-      if (!target.isConnected) return;
+      let replayTarget=target;
+      if(!replayTarget?.isConnected){
+        replayTarget=document.querySelector('[data-v51-tool="'+key+'"]')
+          ||(key==='schools'?document.querySelector('[data-future="schools"]'):null)
+          ||(key==='study'?document.querySelector('[data-future="ahead"]'):null);
+      }
+      if(!replayTarget)return;
       replaying = true;
-      try { target.click(); } finally { replaying = false; }
+      try { replayTarget.click(); } finally { replaying = false; }
     });
   }, true);
 
@@ -159,8 +169,8 @@
     if (staticPage) return;
     const key = routeKey();
     ensure(key, true).then(() => {
-      if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
-      else prewarmStudioCore();
+      if (key === 'home') { window.__SCHOLARK_V30_DEMO__?.start?.(); prewarmStudioCore(); }
+      else { prewarmStudioCore(); if(key==='dashboard')prewarmProjects(); }
       if (key === 'studio') prefetchStudioHeavy();
     });
   });
@@ -168,7 +178,7 @@
 
   window.__SCHOLARK_RUNTIME__ = {
     version:VERSION, route:routeKey, ensure:key => ensure(key || routeKey(), true),
-    prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,
+    prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,prewarmProjects,
     loaded:() => [...loaded], errors:() => [...errors], activeCount:ACTIVE.length
   };
 
@@ -178,8 +188,8 @@
     const key = routeKey();
     await ensure(key, false);
     html.classList.remove('scholark-runtime-loading');
-    if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
-    else prewarmStudioCore();
+    if (key === 'home') { window.__SCHOLARK_V30_DEMO__?.start?.(); prewarmStudioCore(); }
+    else { prewarmStudioCore(); if(key==='dashboard')prewarmProjects(); }
     if (key === 'studio') prefetchStudioHeavy();
     window.dispatchEvent(new CustomEvent('scholark-runtime-ready',{detail:{route:key,version:VERSION}}));
   })().catch(err => {
