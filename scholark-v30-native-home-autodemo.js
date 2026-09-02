@@ -328,26 +328,33 @@
     }
     startTimers();
   }
-  function restartAfterLanguage(){
+  function refreshLanguage(){
     if(!isHome())return;
-    stopDemo();
-    pausedUntil=0;learnStep=0;futureStep=0;
     const mode=currentDemoMode(),idx=demoModes.indexOf(mode);if(idx>=0)modeIndex=idx;
-    requestAnimationFrame(()=>{
-      if(!isHome()||document.documentElement.classList.contains('scholark-language-switching'))return;
-      mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
-      setAutoMode(mode);
-      animateLearning();animateFuture();animateQualitySteps();
-      startTimers();
-      window.__SCHOLARK_HOME_FOUNDATION__?.repair?.();
-    });
+    // Keep rotate/status timers and the current animation progress untouched.
+    // Only replace language-sensitive text for the frame that is already visible.
+    const input=$('#v29-prompt');
+    if(input&&document.activeElement!==input){
+      clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');
+      const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
+      const step=Math.max(0,(promptSteps[mode]||1)-1);
+      input.value=bank[step%bank.length];resizePrompt(input);
+    }
+    const lc=uiLanguage(),schoolRows=schoolLiveLabels[lc]||schoolLiveLabels.en,aheadRows=aheadLiveLabels[lc]||aheadLiveLabels.en;
+    const displayed=Math.max(0,futureStep-1)%4;
+    const schoolLabel=$('.v30-school-live .v30-live-label'),caption=$('.v30-ahead-caption');
+    if(schoolLabel)schoolLabel.textContent=schoolRows[displayed%schoolRows.length];
+    if(caption)caption.textContent=aheadRows[displayed%aheadRows.length];
+    animateQualitySteps();
+    window.__SCHOLARK_I18N__?.apply?.($('#v29-home-layer'));
+    window.__SCHOLARK_HOME_FOUNDATION__?.repair?.();
   }
 
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
   addEventListener('hashchange',()=>setTimeout(sync,50));
   addEventListener('popstate',()=>setTimeout(sync,50));
-  addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(restartAfterLanguage,35)});
+  addEventListener('scholark-language-ready',()=>{if(isHome())requestAnimationFrame(refreshLanguage)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
-  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,restartAfterLanguage,resizePrompt};
+  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,refreshLanguage,resizePrompt,isRunning:()=>!!rotateTimer&&!!statusTimer,state:()=>({mode:currentDemoMode(),modeIndex,futureStep,learnStep,typing:!!typingTimer,rotating:!!rotateTimer,status:!!statusTimer})};
 })();
