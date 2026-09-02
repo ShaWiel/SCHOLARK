@@ -178,6 +178,11 @@
     const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
     const step=promptSteps[mode]||0,p=bank[step%bank.length];promptSteps[mode]=step+1;return p;
   }
+  function promptForCurrentStep(mode){
+    const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
+    const step=Math.max(0,(promptSteps[mode]||1)-1);
+    return bank[step%bank.length];
+  }
   function autoType(mode){
     const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
     clearInterval(typingTimer);input.value='';resizePrompt(input);const p=nextPrompt(mode);
@@ -265,10 +270,37 @@
     futureStep++;
   }
 
+  const qualitySteps={
+    en:[['✦ Understanding prompt','○ Building outline','○ Quality pass'],['✓ Prompt understood','✦ Research + structure','○ Quality pass'],['✓ Outline complete','✓ Draft generated','✦ Quality pass'],['✓ Research checked','✓ Design assembled','✓ Ready to edit']],
+    nl:[['✦ Prompt begrijpen','○ Opzet bouwen','○ Kwaliteitscheck'],['✓ Prompt begrepen','✦ Onderzoek + structuur','○ Kwaliteitscheck'],['✓ Opzet compleet','✓ Eerste versie gemaakt','✦ Kwaliteitscheck'],['✓ Onderzoek gecontroleerd','✓ Ontwerp samengesteld','✓ Klaar om te bewerken']],
+    es:[['✦ Entendiendo el prompt','○ Creando esquema','○ Control de calidad'],['✓ Prompt entendido','✦ Investigación + estructura','○ Control de calidad'],['✓ Esquema completo','✓ Borrador generado','✦ Control de calidad'],['✓ Investigación revisada','✓ Diseño ensamblado','✓ Listo para editar']],
+    fr:[['✦ Compréhension du prompt','○ Construction du plan','○ Contrôle qualité'],['✓ Prompt compris','✦ Recherche + structure','○ Contrôle qualité'],['✓ Plan terminé','✓ Brouillon généré','✦ Contrôle qualité'],['✓ Recherche vérifiée','✓ Design assemblé','✓ Prêt à modifier']],
+    de:[['✦ Prompt verstehen','○ Gliederung erstellen','○ Qualitätsprüfung'],['✓ Prompt verstanden','✦ Recherche + Struktur','○ Qualitätsprüfung'],['✓ Gliederung fertig','✓ Entwurf erstellt','✦ Qualitätsprüfung'],['✓ Recherche geprüft','✓ Design zusammengestellt','✓ Bereit zum Bearbeiten']],
+    pt:[['✦ A compreender o prompt','○ A criar estrutura','○ Verificação de qualidade'],['✓ Prompt compreendido','✦ Pesquisa + estrutura','○ Verificação de qualidade'],['✓ Estrutura concluída','✓ Rascunho gerado','✦ Verificação de qualidade'],['✓ Pesquisa verificada','✓ Design montado','✓ Pronto para editar']],
+    it:[['✦ Comprensione del prompt','○ Creazione struttura','○ Controllo qualità'],['✓ Prompt compreso','✦ Ricerca + struttura','○ Controllo qualità'],['✓ Struttura completa','✓ Bozza generata','✦ Controllo qualità'],['✓ Ricerca verificata','✓ Design assemblato','✓ Pronto da modificare']]
+  };
   function animateQualitySteps(){
-    const floats=$$('.v29-float');if(floats.length<3)return;
-    const steps=[['✦ Understanding prompt','○ Building outline','○ Quality pass'],['✓ Prompt understood','✦ Research + structure','○ Quality pass'],['✓ Outline complete','✓ Draft generated','✦ Quality pass'],['✓ Research checked','✓ Design assembled','✓ Ready to edit']];
+    const floats=$('.v29-float');if(floats.length<3)return;
+    const steps=qualitySteps[uiLanguage()]||qualitySteps.en;
     const row=steps[(futureStep)%steps.length];floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
+  }
+
+  function refreshLanguage(){
+    if(!isHome())return;
+    const mode=window.__SCHOLARK_V29_HOME__?.getMode?.()||demoModes[modeIndex]||'presentation';
+    const input=$('#v29-prompt');
+    if(input&&document.activeElement!==input){
+      clearInterval(typingTimer);typingTimer=null;
+      input.classList.remove('v30-typing-cursor');
+      input.value=promptForCurrentStep(mode);resizePrompt(input);
+    }
+    const schoolLabel=$('.v30-school-live .v30-live-label'),caption=$('.v30-ahead-caption');
+    const lc=uiLanguage(),schoolRows=schoolLiveLabels[lc]||schoolLiveLabels.en,aheadRows=aheadLiveLabels[lc]||aheadLiveLabels.en;
+    const displayed=Math.max(0,futureStep-1)%4;
+    if(schoolLabel)schoolLabel.textContent=schoolRows[displayed%schoolRows.length];
+    if(caption)caption.textContent=aheadRows[displayed%aheadRows.length];
+    animateQualitySteps();
+    window.__SCHOLARK_I18N__?.apply?.($('#v29-home-layer'));
   }
 
 
@@ -297,8 +329,8 @@
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
   addEventListener('hashchange',()=>setTimeout(sync,50));
   addEventListener('popstate',()=>setTimeout(sync,50));
-  addEventListener('scholark-language-ready',()=>{if(isHome())setTimeout(()=>setAutoMode(demoModes[modeIndex]||'presentation'),80)});
+  addEventListener('scholark-language-ready',()=>{if(isHome())requestAnimationFrame(refreshLanguage)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
-  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,resizePrompt};
+  window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,resizePrompt,refreshLanguage};
 })();
