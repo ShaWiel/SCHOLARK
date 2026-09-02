@@ -208,7 +208,7 @@
     const main=$('#v51-main'),topLogo=$('#v55-topbar .v55-brand-logo'),activeMode=$('#v29-home-layer .v29-type.active[data-mode],#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'',previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'';
     const report={
       ok:true,
-      release:'r125',
+      release:'r126',
       route:r,
       runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       duplicateIds:duplicateIds(),
@@ -241,8 +241,8 @@
     if(report.criticalLanguageLeaks.length){syncWorkspaceLanguage();window.__SCHOLARK_I18N__?.translateCurrentPage?.(false)}
     if(report.foreignSurfaceConflicts.length){repairForeignSurfaces(r);report.foreignSurfaceConflicts=foreignSurfaceConflicts(r)}
     report.ok=report.runtimeErrors.length===0&&report.duplicateIds.length===0&&report.foreignSurfaceConflicts.length===0&&report.schoolScrollable&&report.homeWorkspaceLeak&&report.officialTopbarLogo&&report.homeLanguageSelector&&report.cinematicSync&&report.projectMounted&&report.projectSurfaceClear&&report.projectSidebarVisible&&report.projectMainVisible&&report.projectNavActive&&report.studioMounted&&report.studioSidebarVisible&&report.studioNavActive&&report.studioSurfaceClear&&report.workspaceLanguage&&report.workspaceLanguageSelector&&report.criticalLanguageLeaks.length===0&&report.bookMounted&&report.bookSurfaceClear;
-    try{sessionStorage.setItem('scholark_foundation_r125',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R125 '+(report.ok?'PASS':'WARN'),report);
+    try{sessionStorage.setItem('scholark_foundation_r126',JSON.stringify(report))}catch{}
+    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R126 '+(report.ok?'PASS':'WARN'),report);
     return report;
   }
 
@@ -268,5 +268,5 @@
   addEventListener('resize',()=>setTimeout(repair,120),{passive:true});
   [120,500,1400].forEach(ms=>setTimeout(()=>{bindRouteInvariantObserver();repair()},ms));
   setTimeout(health,2200);
-  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r125'};
+  window.__SCHOLARK_FOUNDATION__={repair,health,resetHomeSurface,syncProjectSurface,syncStudioSurface,syncWorkspaceLanguage,syncBookSurface,repairForeignSurfaces,foreignSurfaceConflicts,release:'r126'};
 })();
