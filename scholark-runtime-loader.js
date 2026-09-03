@@ -261,7 +261,7 @@
   window.__SCHOLARK_RUNTIME__ = {
     version:VERSION, route:routeKey, ensure:key => ensure(key || routeKey(), true),
     prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,warmWorkspace:warmWorkspaceOptional,
-    navigation:()=>({epoch:navigationEpoch,intent:lastIntent}),
+    navigation:()=>({epoch:navigationEpoch,intent:lastIntent}),loading:()=>busy,
     loaded:() => [...loaded], errors:() => [...errors], activeCount:ACTIVE.length
   };
 
