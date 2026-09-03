@@ -461,7 +461,7 @@
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
-  const CACHE_VERSION='v3-seven-ui';
+  const CACHE_VERSION='v4-seven-ui-r129';
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   function loadMap(c){let saved={};try{saved=JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{}return {...(STATIC_UI[c]||{}),...saved}}
   function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
@@ -491,8 +491,48 @@
     await Promise.all(Array.from({length:Math.min(6,strings.length)},()=>worker()));
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
-  const rememberText=n=>{if(!textSource.has(n))textSource.set(n,canonicalSource(n.nodeValue));return textSource.get(n)||canonicalSource(n.nodeValue)};
-  const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}return o};
+  function translatedValue(source){
+    const c=code();if(c==='en')return clean(source);
+    if(mapCode!==c){map=loadMap(c);mapCode=c}
+    return clean(map[source]||(STATIC_UI[c]||{})[source]||'');
+  }
+  function rememberText(n){
+    const raw=clean(n?.nodeValue),candidate=canonicalSource(raw),previous=textSource.get(n);
+    if(!previous){textSource.set(n,candidate);return candidate}
+    // Dynamic Studio/Workspace nodes are reused. If the app writes a new English
+    // source into the same node, refresh its canonical source instead of keeping
+    // the translation key from the previous mode/tool.
+    const previousTranslated=translatedValue(previous);
+    if(raw&&candidate&&candidate!==previous&&raw!==clean(previous)&&raw!==previousTranslated){
+      textSource.set(n,candidate);return candidate;
+    }
+    return previous||candidate;
+  }
+  function rememberAttrs(el){
+    let o=attrSource.get(el);if(!o){o={};attrSource.set(el,o)}
+    for(const a of ['placeholder','aria-label','title']){
+      const raw=clean(el.getAttribute?.(a));if(!raw)continue;
+      const candidate=canonicalSource(raw),previous=o[a];
+      if(!previous){o[a]=candidate;continue}
+      const previousTranslated=translatedValue(previous);
+      if(candidate&&candidate!==previous&&raw!==clean(previous)&&raw!==previousTranslated)o[a]=candidate;
+    }
+    return o;
+  }
+  function rebaseSources(root=document){
+    const base=root?.nodeType===1?root:document;
+    const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
+    let n;while((n=walker.nextNode())){
+      const raw=clean(n.nodeValue),candidate=canonicalSource(raw);
+      if(raw&&(code()==='en'||STATIC_KEYS.has(candidate)||reverseStatic.has(raw)))textSource.set(n,candidate);
+    }
+    Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{
+      let o=attrSource.get(el)||{};for(const a of ['placeholder','aria-label','title']){
+        const raw=clean(el.getAttribute(a));if(!raw)continue;const candidate=canonicalSource(raw);
+        if(code()==='en'||STATIC_KEYS.has(candidate)||reverseStatic.has(raw))o[a]=candidate;
+      }attrSource.set(el,o)
+    });
+  }
 
   function eligibleText(s){
     const t=clean(s);if(!t||t.length<2||t.length>420)return false;
@@ -754,5 +794,5 @@
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,count:LANGS.length};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,rebase:rebaseSources,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,count:LANGS.length};
 })();
