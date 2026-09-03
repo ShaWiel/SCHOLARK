@@ -8,23 +8,13 @@
   function reconcile(){
     const r=route();if(!modern.has(r))return;
     document.body.classList.add('v51-workspace');
+    // R97+ is the single owner of route/surface repair. This older health layer
+    // must not toggle route classes again after the active tool has painted.
+    if(window.__SCHOLARK_FOUNDATION__?.repair){window.__SCHOLARK_FOUNDATION__.repair();return}
+    // Minimal boot fallback only until the coordinator is available.
     if(r!=='schools')$('#v50-school')?.classList.remove('open');
     if(r!=='study')$('#v25-study')?.classList.remove('open');
     if(r!=='book')$('#v25-book')?.classList.remove('open');
-    if(r==='study'){
-      $('#v25-study')?.classList.remove('open');
-      document.body.classList.remove('v51-pro','v51-book','v51-schools');document.body.classList.add('v51-study');
-      setTimeout(()=>{if(!$('#v62-field'))window.__SCHOLARK_V62_LEARNING_API__?.openStudyAhead?.()},120);
-    }else if(r==='book'){
-      $('#v25-book')?.classList.remove('open');document.body.classList.remove('v51-pro','v51-study','v51-schools');document.body.classList.add('v51-book');
-      setTimeout(()=>{if(!$('.v65-book'))window.__SCHOLARK_V65_BOOK__?.open?.()},120);
-    }else if(r==='files'){
-      document.body.classList.remove('v51-pro','v51-study','v51-book','v51-schools');
-      setTimeout(()=>{if(!$('.v86'))$('#v51-sidebar [data-v51-tool="files"]')?.click()},140);
-    }else if(r==='language'){
-      document.body.classList.remove('v51-pro','v51-study','v51-book','v51-schools');
-      setTimeout(()=>{if(!$('.v93'))window.__SCHOLARK_V93_LANGUAGE__?.open?.()},140);
-    }
   }
 
   async function endpoint(path){
@@ -42,7 +32,7 @@
       learningApi:!['tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__,
       bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,
       languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
-      cloudApi:!!window.__SCHOLARK_V72_CLOUD__||!workspaceNeeded,
+      cloudApi:!!window.__SCHOLARK_V72_CLOUD__||!workspaceNeeded||!!window.__SCHOLARK_RUNTIME__,
       i18n:!!window.__SCHOLARK_I18N__,
       countryFoundation:!!window.__SCHOLARK_COUNTRY__,
       performanceFoundation:!!window.__SCHOLARK_PERF__,
