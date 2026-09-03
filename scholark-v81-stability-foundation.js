@@ -90,23 +90,18 @@
 
   function routeCleanup(){
     const h=hash();
-    if(h==='#study'){
-      closeLegacyOverlays('study');
-      $('#v50-school')?.classList.remove('open');
-      document.body.classList.remove('v51-schools','v51-book');
-      document.body.classList.add('v51-workspace','v51-study');
-    }else if(h==='#schools'){
-      closeLegacyOverlays('schools');
-      document.body.classList.remove('v51-study','v51-book');
-      document.body.classList.add('v51-workspace','v51-schools');
-    }else if(h==='#book'){
-      closeLegacyOverlays('book');
-      $('#v50-school')?.classList.remove('open');
-      document.body.classList.remove('v51-study','v51-schools');
-      document.body.classList.add('v51-workspace','v51-book');
-    }else if(h==='#dashboard'){
-      closeLegacyOverlays();
+    // R97+ owns all active workspace surfaces. V81 is stability/network recovery
+    // only; duplicating route class changes here caused delayed screen reversions.
+    if(window.__SCHOLARK_FOUNDATION__?.repair){
+      if(!h||h==='#home'||h==='#start')forceNewHome();
+      else window.__SCHOLARK_FOUNDATION__.repair();
+      return;
     }
+    // Minimal boot fallback before the central coordinator is available.
+    if(h==='#dashboard')closeLegacyOverlays();
+    else if(h==='#study')closeLegacyOverlays('study');
+    else if(h==='#schools')closeLegacyOverlays('schools');
+    else if(h==='#book')closeLegacyOverlays('book');
     forceNewHome();
   }
 
@@ -158,7 +153,13 @@
     const visible=candidates.some(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>80&&r.height>80});
     if(!visible){
       console.warn('[SCHOLARK] Route rescue for '+h);
-      const b=$('#v51-sidebar [data-v51-tool="'+h.slice(1)+'"]');b?.click();
+      window.__SCHOLARK_FOUNDATION__?.repair?.();
+      requestAnimationFrame(()=>{
+        if(hash()!==h)return;
+        const now=[$('#v51-main'),$('#v41-studio-workspace'),$('#v50-school'),$('#v25-book'),$('.v93')].filter(Boolean)
+          .some(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>80&&r.height>80});
+        if(!now)window.__SCHOLARK_WORKSPACE__?.openTool?.(h.slice(1));
+      });
     }
   }
 
