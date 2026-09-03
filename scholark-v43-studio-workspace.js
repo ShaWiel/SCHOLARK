@@ -59,11 +59,17 @@
   function renderModes(){modesWrap.innerHTML=Object.entries(MODES).map(([k,m])=>`<button class="v41-mode ${k===active?'active':''}" data-mode="${k}" style="--accent:${m.accent}"><span class="icon">${m.icon}</span><strong>${m.label}</strong><span>${m.sub}</span></button>`).join('');$$('.v41-mode',modesWrap).forEach(b=>b.onclick=()=>setMode(b.dataset.mode));}
   function renderPipeline(){const p=MODES[active].pipeline;stepsWrap.innerHTML=p.map((x,i)=>`<div class="v41-step" data-step="${i}"><i>${i+1}</i><b>${x}</b><span>waiting</span></div>`).join('');}
   function renderExamples(){examplesWrap.innerHTML=MODES[active].examples.map(x=>`<button class="v41-example">${esc(x)}</button>`).join('');$$('.v41-example',examplesWrap).forEach(b=>b.onclick=()=>{prompt.value=b.textContent;prompt.focus();});}
+  let localeSettleTimer=null;
   function localizeDynamicStudio(){
     const i18n=window.__SCHOLARK_I18N__;if(!i18n)return;
-    [$('.v41-modehead',root),settingsBody,modesWrap,stepsWrap,examplesWrap,$('.v41-actions',root),$('.v41-pipeline',root)].filter(Boolean).forEach(el=>i18n.apply?.(el));
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,120));
-    idle(()=>i18n.translateCurrentPage?.(false),{timeout:360});
+    const roots=[$('.v41-modehead',root),settingsBody,modesWrap,stepsWrap,examplesWrap,$('.v41-actions',root),$('.v41-pipeline',root)].filter(Boolean);
+    roots.forEach(el=>{i18n.rebase?.(el);i18n.apply?.(el)});
+    // Static workspace strings translate immediately. Only do the more expensive
+    // unknown-string pass after the user has stopped switching Studio modes.
+    clearTimeout(localeSettleTimer);
+    if((localStorage.getItem('scholark_ui_language')||'nl')!=='en'){
+      localeSettleTimer=setTimeout(()=>{if(!root.hidden)i18n.translateCurrentPage?.(false)},520);
+    }
   }
   function setMode(mode){
     active=mode;const m=MODES[mode];
