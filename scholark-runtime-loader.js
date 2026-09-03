@@ -38,18 +38,20 @@
     'scholark-v88-learning-engine.js','scholark-v89-account-settings.js'
   ];
   const FEATURES = {
-    studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
+    studio:['scholark-v43-studio-workspace.js'],
     tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js'],
     education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js'],
     schools:['scholark-v50-school-finder.js'],
     study:['scholark-v62-learning-ai.js','scholark-v83-study-ahead-cloud.js'],
     language:['scholark-v93-language-learner.js'],
     files:['scholark-v69-reference-reader.js','scholark-v86-file-intelligence.js'],
-    project:['scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
+    project:['scholark-v64-projects.js'],
     planner:['scholark-v52-workspace-qa.js'],progress:['scholark-v52-workspace-qa.js'],goal:['scholark-v52-workspace-qa.js'],
     book:['scholark-v65-book-studio.js','scholark-v67-professional-exports.js','scholark-v69-reference-reader.js']
   };
-  const STUDIO_CORE=[...FEATURES.studio];
+  const STUDIO_CORE=['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'];
+  const STUDIO_AUGMENT=STUDIO_CORE.filter(x=>x!=='scholark-v43-studio-workspace.js');
+  const PROJECT_EXTRAS=['scholark-v72-cloud-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'];
   const STUDIO_HEAVY=[
     'scholark-v57-presentation-deck.js','scholark-v58-studio-artifact-suite.js','scholark-v60-presentation-ready.js','scholark-v63-presentation-visuals.js',
     'scholark-v66-presentation-ai-tools.js','scholark-v67-professional-exports.js','scholark-v68-slide-block-editor.js','scholark-v69-reference-reader.js',
@@ -181,10 +183,11 @@
   document.addEventListener('click', e => {
     if (replaying || staticPage) return;
     const generate=e.target.closest?.('#v41-studio-workspace .v41-generate');
-    if(generate&&STUDIO_HEAVY.some(file=>!loaded.has(file))){
+    const generationModules=[...STUDIO_AUGMENT,...STUDIO_HEAVY];
+    if(generate&&generationModules.some(file=>!loaded.has(file))){
       const epoch=navigationEpoch;
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-      ensureFiles(STUDIO_HEAVY,true).then(()=>{if(epoch!==navigationEpoch||routeKey()!=='studio'||!generate.isConnected)return;replaying=true;try{generate.click()}finally{replaying=false}});
+      ensureFiles(generationModules,true).then(()=>{if(epoch!==navigationEpoch||routeKey()!=='studio'||!generate.isConnected)return;replaying=true;try{generate.click()}finally{replaying=false}});
       return;
     }
     const key = toolKey(e.target);
@@ -213,7 +216,7 @@
     if(key==='project'){
       if(!target)return;
       if(loaded.has('scholark-v64-projects.js')){
-        const rest=FEATURES.project.filter(file=>file!=='scholark-v64-projects.js'&&!loaded.has(file));
+        const rest=PROJECT_EXTRAS.filter(file=>!loaded.has(file));
         if(rest.length)ensureFiles(rest,false,true);
         return;
       }
@@ -222,8 +225,7 @@
         if(!stillCurrent(epoch,'project'))return;
         replaying=true;
         try{window.__SCHOLARK_WORKSPACE__?.openTool?.('project')}finally{replaying=false}
-        const rest=FEATURES.project.filter(file=>file!=='scholark-v64-projects.js');
-        ensureFiles(rest,false,true);
+        ensureFiles(PROJECT_EXTRAS,false,true);
       });
       return;
     }
@@ -242,6 +244,10 @@
     });
   }, true);
 
+  addEventListener('scholark-workspace-route',e=>{
+    const key=String(e.detail?.route||'').toLowerCase();
+    if(key)beginNavigation(key);
+  });
   addEventListener('hashchange', () => {
     if (staticPage) return;
     const key = routeKey(),epoch=beginNavigation(key);
@@ -249,7 +255,7 @@
       if(!stillCurrent(epoch,key))return;
       if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
       else {prewarmStudioCore();warmWorkspaceOptional();}
-      if (key === 'studio') prefetchStudioHeavy();
+      if (key === 'studio') {ensureFiles(STUDIO_AUGMENT,false,true);prefetchStudioHeavy();}
     });
   });
   addEventListener('popstate', () => {
@@ -275,7 +281,7 @@
     lastIntent=key;
     if (key === 'home') { window.__SCHOLARK_V30_DEMO__?.start?.(); prewarmStudioCore(); }
     else {prewarmStudioCore();warmWorkspaceOptional();}
-    if (key === 'studio') prefetchStudioHeavy();
+    if (key === 'studio') {ensureFiles(STUDIO_AUGMENT,false,true);prefetchStudioHeavy();}
     window.dispatchEvent(new CustomEvent('scholark-runtime-ready',{detail:{route:key,version:VERSION}}));
   })().catch(err => {
     html.classList.remove('scholark-runtime-loading','scholark-route-loading');
