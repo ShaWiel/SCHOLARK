@@ -89,7 +89,11 @@
   function renderLevels(){if(!side)return;const host=$('.v51-levels',main);if(!host)return;host.innerHTML=LEVELS.map(([id,ic,l,d])=>`<button class="v51-level ${id===levelId()?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');$$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level))}
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
-  function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
+  function setRoute(id){
+    const next='#'+id;
+    if(String(location.hash||'').toLowerCase()!==next)history.replaceState(null,'',location.pathname+location.search+next);
+    window.dispatchEvent(new CustomEvent('scholark-workspace-route',{detail:{route:id}}));
+  }
   function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
   function applyLanguageRoot(el){
     const i18n=window.__SCHOLARK_I18N__;if(!el||!i18n?.apply)return;
@@ -97,19 +101,22 @@
     // caused newly mounted panels to stay in English.
     i18n.apply(el);
   }
+  let workspaceTranslationTimer=null;
   function syncWorkspaceLanguage(root=null,force=false){
     const lang=localStorage.getItem('scholark_ui_language')||'nl',i18n=window.__SCHOLARK_I18N__;
     document.documentElement.lang=lang;
     i18n?.upgradeSelectors?.();
     const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
-    [...new Set(roots)].forEach(applyLanguageRoot);
+    [...new Set(roots)].forEach(el=>{i18n?.rebase?.(el);applyLanguageRoot(el)});
     const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
-    // #v41-language is the artifact OUTPUT language, not the SCHOLARK UI language.
-    // Keep its broader language support independent from this 7-language selector.
-    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
+    // Static workspace UI is immediate. Unknown strings are translated once
+    // after the route has settled instead of traversing the whole workspace twice.
+    clearTimeout(workspaceTranslationTimer);
     if(lang!=='en'){
-      idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:320});
-      setTimeout(()=>{if(workspaceRoute()&&(localStorage.getItem('scholark_ui_language')||'nl')===lang){i18n?.upgradeSelectors?.();i18n?.translateCurrentPage?.(false)}},320);
+      workspaceTranslationTimer=setTimeout(()=>{
+        if(!workspaceRoute()||(localStorage.getItem('scholark_ui_language')||'nl')!==lang)return;
+        i18n?.upgradeSelectors?.();i18n?.translateCurrentPage?.(false);
+      },force?90:460);
     }
   }
   function showPage(name){$$('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
