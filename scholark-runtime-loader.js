@@ -3,7 +3,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260902-r128';
+  const VERSION = '20260903-r129';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -28,21 +28,25 @@
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v97-foundation-coordinator.js','scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
   ]);
   const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js'];
-  const WORKSPACE = [
-    'scholark-v36-workspace-i18n.js','scholark-v43-studio-workspace.js','scholark-v51-workspace-shell.js','scholark-v52-workspace-qa.js','scholark-v53-dashboard-bootstrap.js',
-    'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
-    'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js',
-    'scholark-v91-workspace-polish.js'
+  const WORKSPACE_CORE = [
+    'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v53-dashboard-bootstrap.js',
+    'scholark-v56-sidebar-cleanup.js','scholark-v91-workspace-polish.js'
+  ];
+  const WORKSPACE_OPTIONAL = [
+    'scholark-v52-workspace-qa.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js',
+    'scholark-v80-workspace-cloud.js','scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js',
+    'scholark-v88-learning-engine.js','scholark-v89-account-settings.js'
   ];
   const FEATURES = {
     studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
-    tutor:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
-    education:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
+    tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js'],
+    education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js'],
     schools:['scholark-v50-school-finder.js'],
     study:['scholark-v62-learning-ai.js','scholark-v83-study-ahead-cloud.js'],
     language:['scholark-v93-language-learner.js'],
     files:['scholark-v69-reference-reader.js','scholark-v86-file-intelligence.js'],
-    project:['scholark-v64-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
+    project:['scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
+    planner:['scholark-v52-workspace-qa.js'],progress:['scholark-v52-workspace-qa.js'],goal:['scholark-v52-workspace-qa.js'],
     book:['scholark-v65-book-studio.js','scholark-v67-professional-exports.js','scholark-v69-reference-reader.js']
   };
   const STUDIO_CORE=[...FEATURES.studio];
@@ -56,7 +60,7 @@
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);
   const loaded = new Set(), errors = [], inflight = new Map(), preloaded = new Set();
-  let foregroundChain = Promise.resolve(), backgroundChain = Promise.resolve(), replaying = false, busy = 0;
+  let foregroundChain = Promise.resolve(), backgroundChain = Promise.resolve(), replaying = false, busy = 0, navigationEpoch = 0, lastIntent = routeKey();
   const html = document.documentElement;
   const staticPage = /\/(privacy|terms|refunds|safety)(?:\.html)?$/i.test(location.pathname);
 
@@ -76,7 +80,7 @@
     const set = new Set(BASE);
     if (key === 'home') HOME.forEach(x => set.add(x));
     else {
-      WORKSPACE.forEach(x => set.add(x));
+      WORKSPACE_CORE.forEach(x => set.add(x));
       (FEATURES[key] || []).forEach(x => set.add(x));
     }
     return ACTIVE.filter(file => set.has(file));
@@ -135,7 +139,21 @@
   }
   function prewarmStudioCore(){
     preloadFiles(STUDIO_CORE);
-    setTimeout(()=>ensureFiles(STUDIO_CORE,false,true),20);
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,180));
+    idle(()=>ensureFiles(['scholark-v43-studio-workspace.js'],false,true),{timeout:700});
+  }
+  function warmWorkspaceOptional(){
+    preloadFiles(WORKSPACE_OPTIONAL);
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,420));
+    idle(()=>ensureFiles(WORKSPACE_OPTIONAL,false,true),{timeout:1400});
+  }
+  function beginNavigation(key){
+    navigationEpoch++;
+    lastIntent=key||routeKey();
+    return navigationEpoch;
+  }
+  function stillCurrent(epoch,key){
+    return epoch===navigationEpoch&&(!key||lastIntent===key||routeKey()===key);
   }
   function prefetchStudioHeavy(){
     // Cache heavy Studio modules without executing them. Background execution
@@ -155,7 +173,7 @@
   const warmTarget=e=>{
     const key=toolKey(e.target);
     if(key==='studio'){preloadFiles(STUDIO_CORE);ensureFiles(STUDIO_CORE,false,true)}
-    else if(key==='project'){preloadFiles(FEATURES.project);ensureFiles(FEATURES.project,false,true)}
+    else if(key==='project'){preloadFiles(['scholark-v64-projects.js']);ensureFiles(['scholark-v64-projects.js'],false,true)}
   };
   document.addEventListener('pointerover',warmTarget,{passive:true,capture:true});
   document.addEventListener('focusin',warmTarget,true);
@@ -164,12 +182,14 @@
     if (replaying || staticPage) return;
     const generate=e.target.closest?.('#v41-studio-workspace .v41-generate');
     if(generate&&STUDIO_HEAVY.some(file=>!loaded.has(file))){
+      const epoch=navigationEpoch;
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-      ensureFiles(STUDIO_HEAVY,true).then(()=>{if(!generate.isConnected)return;replaying=true;try{generate.click()}finally{replaying=false}});
+      ensureFiles(STUDIO_HEAVY,true).then(()=>{if(epoch!==navigationEpoch||routeKey()!=='studio'||!generate.isConnected)return;replaying=true;try{generate.click()}finally{replaying=false}});
       return;
     }
     const key = toolKey(e.target);
     const target = e.target.closest?.('[data-v51-tool],[data-future],#v55-workspace-entry,#v41-workspace-home,[data-workspace-entry]');
+    const epoch=key&&target?beginNavigation(key):navigationEpoch;
 
     // Route-first loading: Studio and My Projects should paint their own shell
     // before optional engines, sharing or export modules finish loading.
@@ -182,6 +202,7 @@
       }
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       ensureFiles(['scholark-v43-studio-workspace.js'],true,false).then(()=>{
+        if(!stillCurrent(epoch,'studio'))return;
         replaying=true;
         try{window.__SCHOLARK_WORKSPACE__?.openTool?.('studio')}finally{replaying=false}
         ensureFiles(STUDIO_CORE.filter(file=>file!=='scholark-v43-studio-workspace.js'),false,true);
@@ -198,6 +219,7 @@
       }
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       ensureFiles(['scholark-v64-projects.js'],true,false).then(()=>{
+        if(!stillCurrent(epoch,'project'))return;
         replaying=true;
         try{window.__SCHOLARK_WORKSPACE__?.openTool?.('project')}finally{replaying=false}
         const rest=FEATURES.project.filter(file=>file!=='scholark-v64-projects.js');
@@ -210,6 +232,7 @@
     if (!target) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     ensure(key, true).then(() => {
+      if(!stillCurrent(epoch,key))return;
       replaying = true;
       try {
         const workspace=window.__SCHOLARK_WORKSPACE__;
@@ -221,18 +244,24 @@
 
   addEventListener('hashchange', () => {
     if (staticPage) return;
-    const key = routeKey();
+    const key = routeKey(),epoch=beginNavigation(key);
     ensure(key, true).then(() => {
+      if(!stillCurrent(epoch,key))return;
       if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
-      else prewarmStudioCore();
+      else {prewarmStudioCore();warmWorkspaceOptional();}
       if (key === 'studio') prefetchStudioHeavy();
     });
   });
-  addEventListener('popstate', () => { if (!staticPage) ensure(routeKey(), true); });
+  addEventListener('popstate', () => {
+    if (staticPage) return;
+    const key=routeKey(),epoch=beginNavigation(key);
+    ensure(key, true).then(()=>{if(stillCurrent(epoch,key)&&key!=='home')warmWorkspaceOptional()});
+  });
 
   window.__SCHOLARK_RUNTIME__ = {
     version:VERSION, route:routeKey, ensure:key => ensure(key || routeKey(), true),
-    prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,
+    prewarmStudio:prewarmStudioCore,prefetchStudio:prefetchStudioHeavy,warmWorkspace:warmWorkspaceOptional,
+    navigation:()=>({epoch:navigationEpoch,intent:lastIntent}),
     loaded:() => [...loaded], errors:() => [...errors], activeCount:ACTIVE.length
   };
 
@@ -243,8 +272,9 @@
     const key = routeKey();
     await ensure(key, false);
     html.classList.remove('scholark-runtime-loading');
+    lastIntent=key;
     if (key === 'home') { window.__SCHOLARK_V30_DEMO__?.start?.(); prewarmStudioCore(); }
-    else prewarmStudioCore();
+    else {prewarmStudioCore();warmWorkspaceOptional();}
     if (key === 'studio') prefetchStudioHeavy();
     window.dispatchEvent(new CustomEvent('scholark-runtime-ready',{detail:{route:key,version:VERSION}}));
   })().catch(err => {
