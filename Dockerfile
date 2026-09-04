@@ -93,16 +93,17 @@ RUN unzip /tmp/scholark.zip -d /app \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260902-r128\"></script></body>#" "$1"' sh {} \; \
+    && sed -i 's#20260902-r128#20260904-r129#g' /tmp/scholark-runtime-loader.js \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260904-r129\"></script></body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
-RUN npm install --omit=dev \
-    && npm audit fix --omit=dev \
-    && npm install --omit=dev --no-save pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html \
-    && npm audit --omit=dev
+# Security auditing belongs in CI, not in the critical production image build.
+# Registry audit outages must never block a SCHOLARK deploy.
+RUN npm install --omit=dev --no-audit --no-fund \
+    && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r128
+ENV SCHOLARK_RELEASE=r129
 ENV SCHOLARK_TEST_MODE=1
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FAST_MODEL=openai-fast
