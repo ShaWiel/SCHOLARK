@@ -4,54 +4,23 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const isHome=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
   let timer=null,lastMode='',lastRepair=0;
-
-  const style=document.createElement('style');
-  style.id='scholark-v100-cinematic-style';
-  style.textContent=`
-    #v29-home-layer .v29-device,#v29-home-layer .v29-float,#v29-home-layer .v30-live-badge i,#v29-home-layer .v30-radar,#v29-home-layer .v29-master .v29-line i,#v29-home-layer .v32-chart i,#v29-home-layer .v32-webart:after{animation-play-state:running!important}
+  const style=document.createElement('style');style.id='scholark-v100-cinematic-style';style.textContent=`
+    #v29-home-layer .v29-device,#v29-home-layer .v29-float,#v29-home-layer .v30-live-badge i,#v29-home-layer .v30-radar,#v29-home-layer .v29-master .v29-line i,#v29-home-layer .v32-chart i,#v29-home-layer .v32-webart:after,#v29-home-layer .v100-bars i{animation-play-state:running!important}
     #v29-home-layer .v29-preview{position:relative!important;min-width:0!important;min-height:0!important;overflow:hidden!important}
-    #v29-home-layer .v29-preview>.v32-preview-shell{display:flex!important;visibility:visible!important;opacity:1!important;min-height:100%!important;height:100%!important;position:relative!important;z-index:1!important}
-    #v29-home-layer .v29-preview .v32-pane{display:flex;visibility:visible!important;opacity:1!important;flex:1 1 auto!important;min-height:0!important}
-    #v29-home-layer .v29-preview .v32-deck{display:grid!important}#v29-home-layer .v29-preview .v32-web{display:flex!important}#v29-home-layer .v29-preview .v32-doc{display:grid!important}#v29-home-layer .v29-preview .v32-social{display:grid!important}#v29-home-layer .v29-preview .v32-graphic{display:grid!important}#v29-home-layer .v29-preview .v32-book{display:grid!important}
-  `;
-  document.head.appendChild(style);
-
+    #v29-home-layer .v29-preview>.v32-preview-shell,#v29-home-layer .v29-preview>.v100-fallback{display:flex!important;visibility:visible!important;opacity:1!important;min-height:100%!important;height:100%!important;position:relative!important;z-index:2!important}
+    .v100-fallback{box-sizing:border-box;flex-direction:column;gap:10px;padding:16px;background:linear-gradient(145deg,#f8f7f4,#ece9f8);color:#15161b}.v100-k{font:900 8px Inter;letter-spacing:.13em;color:#6d5dfc}.v100-t{font:950 24px/.98 Inter;letter-spacing:-.04em}.v100-s{font:650 8px/1.45 Inter;color:#6d6973}.v100-card{flex:1;min-height:0;border-radius:14px;background:#27223f;color:#fff;padding:14px;display:grid;grid-template-columns:1.15fr .85fr;gap:12px;overflow:hidden}.v100-card.alt{background:linear-gradient(145deg,#17191f,#352c75)}.v100-card h5{font:950 18px/1 Inter;margin:0 0 7px}.v100-card p{font:600 7px/1.5 Inter;color:#d6d2e0}.v100-bars{height:92px;display:flex;gap:6px;align-items:end;padding:10px;border-radius:10px;background:rgba(255,255,255,.06)}.v100-bars i{flex:1;border-radius:4px 4px 2px 2px;background:#9b8cff;animation:v100bar 2.4s ease-in-out infinite}.v100-bars i:nth-child(1){height:35%}.v100-bars i:nth-child(2){height:75%;animation-delay:.15s}.v100-bars i:nth-child(3){height:55%;animation-delay:.3s}.v100-bars i:nth-child(4){height:90%;animation-delay:.45s}@keyframes v100bar{50%{transform:scaleY(.74);transform-origin:bottom}}
+  `;document.head.appendChild(style);
+  const META={presentation:['SCHOLARK STUDIO • PRESENTATION','Presentation Builder','A complete deck is being structured, researched and designed.','NBA GOAT Debate','Evidence, charts, argument flow and conclusion are assembled together.'],webpage:['SCHOLARK STUDIO • WEBPAGE','Webpage Builder','Copy, hierarchy and responsive structure are assembled together.','Study smarter. Go further.','Landing-page structure, content and CTA are generated as one system.'],document:['SCHOLARK STUDIO • DOCUMENT','Document Builder','Outline, evidence, argument flow and citations are built before final polish.','Renewable Energy Report','Research structure, citations and recommendations are being assembled.'],social:['SCHOLARK STUDIO • SOCIAL','Social Builder','Campaign concept, hook, caption and CTA move as one system.','Study Habit Carousel','Hook, slide sequence, caption and visual direction are generated together.'],graphic:['SCHOLARK STUDIO • GRAPHIC','Graphic Builder','Information hierarchy and visual design are composed into one finished concept.','7 Days to Exam','A focused revision visual is being composed and refined.'],book:['SCHOLARK STUDIO • BOOK','Book Studio','Concept, chapters, pacing and narrative direction are planned together.','The Last Light','An 18-chapter mystery structure is being built with recurring clues.']};
   function mode(){return window.__SCHOLARK_V29_HOME__?.getMode?.()||$('#v29-home-layer .v29-type.active[data-mode]')?.dataset.mode||$('#v29-home-layer .v29-tab.active[data-mode]')?.dataset.mode||'presentation'}
-  function previewHealthy(){
-    const host=$('#v29-home-layer .v29-preview'),shell=host?.querySelector('.v32-preview-shell'),pane=shell?.querySelector('.v32-pane');
-    if(!host||!shell||!pane)return false;
-    const r=host.getBoundingClientRect(),sr=shell.getBoundingClientRect(),pr=pane.getBoundingClientRect();
-    const cs=getComputedStyle(shell),pc=getComputedStyle(pane);
-    return shell.dataset.v32Mode===mode()&&r.width>120&&r.height>120&&sr.width>80&&sr.height>80&&pr.width>60&&pr.height>45&&cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.05&&pc.display!=='none'&&pc.visibility!=='hidden';
+  function fallback(current=mode()){
+    const host=$('#v29-home-layer .v29-preview');if(!host)return false;const m=META[current]||META.presentation;
+    host.innerHTML=`<div class="v100-fallback" data-v100-mode="${current}"><div class="v100-k">${m[0]}</div><div class="v100-t">${m[1]}</div><div class="v100-s">${m[2]}</div><div class="v100-card alt"><div><h5>${m[3]}</h5><p>${m[4]}</p><p><b>Live cinematic preview</b></p></div><div class="v100-bars"><i></i><i></i><i></i><i></i></div></div></div>`;
+    window.__SCHOLARK_I18N__?.apply?.(host);return true;
   }
-  function resumeAnimations(){
-    $$('#v29-home-layer [class*="v29"],#v29-home-layer [class*="v30"],#v29-home-layer [class*="v32"]').forEach(el=>{
-      const cs=getComputedStyle(el);if(cs.animationName&&cs.animationName!=='none'&&cs.animationPlayState==='paused')el.style.setProperty('animation-play-state','running','important');
-    });
-  }
-  function repair(force=false){
-    if(!isHome())return;
-    const layer=$('#v29-home-layer');if(!layer||layer.hidden)return;
-    resumeAnimations();
-    const current=mode(),changed=current!==lastMode;lastMode=current;
-    const now=Date.now();
-    if(force||changed||!previewHealthy()){
-      if(now-lastRepair>120){lastRepair=now;window.__SCHOLARK_V32_PREVIEW__?.render?.();setTimeout(()=>window.__SCHOLARK_V32_PREVIEW__?.ensure?.(),40);}
-    }
-    if(window.__SCHOLARK_V30_DEMO__?.isRunning?.()===false)window.__SCHOLARK_V30_DEMO__?.start?.();
-  }
-  function start(){clearInterval(timer);repair(true);timer=setInterval(()=>repair(false),650)}
-  function stop(){clearInterval(timer);timer=null}
-  addEventListener('hashchange',()=>setTimeout(()=>isHome()?start():stop(),30));
-  addEventListener('pageshow',()=>setTimeout(start,30));
-  addEventListener('focus',()=>setTimeout(()=>repair(true),30));
-  addEventListener('resize',()=>setTimeout(()=>repair(true),90),{passive:true});
-  addEventListener('scholark-home-mode-change',()=>setTimeout(()=>repair(true),0));
-  addEventListener('scholark-language-complete',()=>setTimeout(()=>repair(true),35));
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else if(isHome())start()});
-  const mo=new MutationObserver(()=>{if(isHome())repair(false)});
-  mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
-  [0,100,400,1000,2200].forEach(ms=>setTimeout(()=>{if(isHome())repair(true)},ms));
-  if(isHome())start();
-  window.__SCHOLARK_HOME_CINEMATICS__={repair:()=>repair(true),healthy:previewHealthy,start,stop,release:'r131'};
+  function previewHealthy(){const host=$('#v29-home-layer .v29-preview');if(!host)return false;const current=mode(),shell=host.querySelector('.v32-preview-shell'),fb=host.querySelector('.v100-fallback');const visual=shell||fb;if(!visual)return false;const r=host.getBoundingClientRect(),vr=visual.getBoundingClientRect(),cs=getComputedStyle(visual);const matches=shell?shell.dataset.v32Mode===current:fb.dataset.v100Mode===current;return matches&&r.width>120&&r.height>120&&vr.width>100&&vr.height>80&&cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.05}
+  function resumeAnimations(){$$('#v29-home-layer [class*="v29"],#v29-home-layer [class*="v30"],#v29-home-layer [class*="v32"],#v29-home-layer [class*="v100"]').forEach(el=>{const cs=getComputedStyle(el);if(cs.animationName&&cs.animationName!=='none'&&cs.animationPlayState==='paused')el.style.setProperty('animation-play-state','running','important')})}
+  function repair(force=false){if(!isHome())return;const layer=$('#v29-home-layer');if(!layer||layer.hidden)return;resumeAnimations();const current=mode(),changed=current!==lastMode;lastMode=current;const now=Date.now();if(force||changed||!previewHealthy()){if(now-lastRepair>100){lastRepair=now;window.__SCHOLARK_V32_PREVIEW__?.render?.();setTimeout(()=>{window.__SCHOLARK_V32_PREVIEW__?.ensure?.();if(!previewHealthy())fallback(current)},70)}}if(window.__SCHOLARK_V30_DEMO__?.isRunning?.()===false)window.__SCHOLARK_V30_DEMO__?.start?.()}
+  function start(){clearInterval(timer);repair(true);timer=setInterval(()=>repair(false),500)}function stop(){clearInterval(timer);timer=null}
+  addEventListener('hashchange',()=>setTimeout(()=>isHome()?start():stop(),30));addEventListener('pageshow',()=>setTimeout(start,30));addEventListener('focus',()=>setTimeout(()=>repair(true),30));addEventListener('resize',()=>setTimeout(()=>repair(true),90),{passive:true});addEventListener('scholark-home-mode-change',()=>setTimeout(()=>repair(true),0));addEventListener('scholark-language-complete',()=>setTimeout(()=>repair(true),35));document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else if(isHome())start()});
+  [0,100,350,900,1800].forEach(ms=>setTimeout(()=>{if(isHome())repair(true)},ms));if(isHome())start();window.__SCHOLARK_HOME_CINEMATICS__={repair:()=>repair(true),healthy:previewHealthy,start,stop,fallback,release:'r132'};
 })();
