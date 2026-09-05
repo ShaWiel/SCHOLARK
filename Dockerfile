@@ -84,17 +84,19 @@ COPY scholark-v24-ui.js \
      scholark-v98-brand-migration.js \
      scholark-v99-home-foundation.js \
      scholark-v100-home-cinematics.js \
+     scholark-v101-core-foundation.js \
      /tmp/
 
 RUN unzip /tmp/scholark.zip -d /app \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
     && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
+    && sed -i 's#20260904-r129#20260905-r133#g' /tmp/scholark-runtime-loader.js \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' -o -name '*.css' -o -name '*.md' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g; s#https://studentos-360-shawiel-7vsm.onrender.com#https://scholark-app-shawiel.onrender.com#g; s#studentos-360-shawiel-7vsm.onrender.com#scholark-app-shawiel.onrender.com#g; s#StudentOS 360#SCHOLARK#g; s#StudentOS#SCHOLARK#g; s#Student OS 360#SCHOLARK#g; s#Student OS#SCHOLARK#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260904-r132\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260904-r132\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260905-r133\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260905-r133\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260905-r133\"></script></body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
@@ -103,7 +105,7 @@ RUN npm install --omit=dev --no-audit --no-fund \
     && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r132
+ENV SCHOLARK_RELEASE=r133
 ENV SCHOLARK_TEST_MODE=1
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FAST_MODEL=openai-fast
