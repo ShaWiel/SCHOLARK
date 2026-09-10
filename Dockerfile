@@ -16,10 +16,11 @@ COPY studio-public-page-route.mjs /app/studio-public-page-route.mjs
 COPY studio-public-artifact-route.mjs /app/studio-public-artifact-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-school-route.mjs /app/scholark-school-route.mjs
+COPY scholark-api-guard.mjs /app/scholark-api-guard.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 
-# Active runtime only. Older V46-V49 workspace routers are intentionally not loaded.
+# Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v24-ui.js \
      scholark-v25-enhancements.js \
      scholark-v27-voice-hotfix.js \
@@ -80,7 +81,6 @@ COPY scholark-v24-ui.js \
      scholark-v94-performance-foundation.js \
      scholark-v95-experience-polish.js \
      scholark-v96-country-education.js \
-     scholark-v97-foundation-coordinator.js \
      scholark-v98-brand-migration.js \
      scholark-v99-home-foundation.js \
      scholark-v100-home-cinematics.js \
@@ -91,12 +91,11 @@ RUN unzip /tmp/scholark.zip -d /app \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
     && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
-    && sed -i 's#20260904-r129#20260908-r135#g' /tmp/scholark-runtime-loader.js \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' -o -name '*.css' -o -name '*.md' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g; s#https://studentos-360-shawiel-7vsm.onrender.com#https://scholark-app-shawiel.onrender.com#g; s#studentos-360-shawiel-7vsm.onrender.com#scholark-app-shawiel.onrender.com#g; s#StudentOS 360#SCHOLARK#g; s#StudentOS#SCHOLARK#g; s#Student OS 360#SCHOLARK#g; s#Student OS#SCHOLARK#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(cat /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260908-r135\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260908-r135\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260908-r135\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260910-r136\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260910-r136\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260910-r136\"></script></body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
@@ -105,7 +104,7 @@ RUN npm install --omit=dev --no-audit --no-fund \
     && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r135
+ENV SCHOLARK_RELEASE=r136
 ENV SCHOLARK_TEST_MODE=1
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FAST_MODEL=openai-fast
@@ -126,4 +125,4 @@ ENV OPENAI_PREMIUM_MODEL=gpt-5.6-sol
 ENV GEMINI_FAST_MODEL=gemini-3.1-flash-lite
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "backend/server.mjs"]
