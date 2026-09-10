@@ -1,9 +1,10 @@
 (() => {
   if(window.__SCHOLARK_V92_FOUNDATION__)return;
   window.__SCHOLARK_V92_FOUNDATION__=true;
-  const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
+  const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const modern=new Set(['dashboard','studio','tutor','education','language','planner','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
-  const route=()=>String(location.hash||'').replace(/^#/,'').split('-')[0].toLowerCase();
+  const route=()=>String(location.hash||'').replace(/^#/,'').split(/[\/-]/)[0].toLowerCase();
+  let inflight=null,lastReport=null,lastRun=0,runtimeReady=false;
 
   function reconcile(){
     const r=route();if(!modern.has(r))return;
@@ -28,45 +29,50 @@
   }
 
   async function endpoint(path){
-    try{const r=await fetch(path,{cache:'no-store'});return {ok:r.ok,status:r.status}}catch(e){return {ok:false,error:clean(e?.message||e)}}
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
+    try{const r=await fetch(path,{cache:'no-store',signal:c.signal});return {ok:r.ok,status:r.status}}
+    catch(e){return {ok:false,error:e?.name==='AbortError'?'timeout':clean(e?.message||e)}}
+    finally{clearTimeout(t)}
   }
   function duplicateIds(){
-    const seen=new Set(),dups=new Set();$$('[id]').forEach(el=>{if(seen.has(el.id))dups.add(el.id);seen.add(el.id)});return [...dups].filter(x=>!/^v25-|^sv24-/.test(x)).slice(0,20)
+    const seen=new Set(),dups=new Set();$$('[id]').forEach(el=>{if(seen.has(el.id))dups.add(el.id);else seen.add(el.id)});return [...dups].filter(x=>!/^v25-|^sv24-/.test(x)).slice(0,20)
   }
-  async function selftest(){
-    const r=route(),workspaceNeeded=modern.has(r)&&r!=='home';
+
+  async function runSelftest(){
+    const r=route(),workspaceNeeded=modern.has(r);
     const checks={
-      route:r,
-      sidebar:!workspaceNeeded||!!$('#v51-sidebar'),
-      workspaceMain:!workspaceNeeded||!!$('#v51-main'),
+      release:'r136',route:r||'home',online:navigator.onLine!==false,
+      sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
       learningApi:!['tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__,
-      bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,
-      languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
-      cloudApi:!!window.__SCHOLARK_V72_CLOUD__||!workspaceNeeded,
-      i18n:!!window.__SCHOLARK_I18N__,
-      countryFoundation:!!window.__SCHOLARK_COUNTRY__,
-      performanceFoundation:!!window.__SCHOLARK_PERF__,
-      testMode:!!window.__SCHOLARK_TEST_MODE__,
-      runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
-      duplicateIds:duplicateIds()
+      bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
+      cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
+      performanceFoundation:!!window.__SCHOLARK_PERF__,runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],duplicateIds:duplicateIds()
     };
-    const [rootHealth,studio,learning,exporter,schools,research,media]=await Promise.all([
-      endpoint('/api/health'),endpoint('/api/studio/health'),endpoint('/api/learning/health'),endpoint('/api/export/health'),
-      endpoint('/api/schools/health'),endpoint('/api/studio/research/health'),endpoint('/api/studio/image/health')
-    ]);
-    checks.rootEndpoint=rootHealth;checks.studioEndpoint=studio;checks.learningEndpoint=learning;checks.exportEndpoint=exporter;
-    checks.schoolsEndpoint=schools;checks.researchEndpoint=research;checks.mediaEndpoint=media;
+    const paths=['/api/health','/api/guard/health','/api/studio/health','/api/learning/health','/api/export/health','/api/schools/health','/api/studio/research/health','/api/studio/image/health'];
+    const results=checks.online?await Promise.all(paths.map(endpoint)):paths.map(()=>({ok:false,error:'offline'}));
+    checks.endpoints=Object.fromEntries(paths.map((p,i)=>[p,results[i]]));
     checks.i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null;
-    const endpoints=[rootHealth,studio,learning,exporter,schools,research,media];
-    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpoints.every(x=>x.ok)&&(checks.i18nReport?.ok!==false)&&checks.duplicateIds.length===0&&checks.runtimeErrors.length===0;
-    const report={ok,at:new Date().toISOString(),route:r,checks};
+    const endpointOk=!checks.online||results.every(x=>x.ok);
+    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.cloudApi&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
+    const report={ok,at:new Date().toISOString(),route:r||'home',checks};
+    lastReport=report;lastRun=Date.now();
     try{sessionStorage.setItem('scholark_foundation_health',JSON.stringify(report))}catch{}
     console[ok?'log':'warn']('[SCHOLARK] Client foundation self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
 
-  addEventListener('hashchange',()=>{reconcile();setTimeout(reconcile,180)});
+  function selftest(force=false){
+    if(inflight)return inflight;
+    if(!force&&lastReport&&Date.now()-lastRun<60000)return Promise.resolve(lastReport);
+    inflight=runSelftest().finally(()=>{inflight=null});
+    return inflight;
+  }
+
+  addEventListener('hashchange',()=>{reconcile();setTimeout(reconcile,180);setTimeout(()=>selftest(false),900)});
   addEventListener('popstate',()=>{reconcile();setTimeout(reconcile,180)});
-  setTimeout(reconcile,180);setTimeout(selftest,2200);addEventListener('scholark-runtime-ready',()=>setTimeout(selftest,700));
-  window.__SCHOLARK_HEALTH__={selftest,reconcile,last:()=>{try{return JSON.parse(sessionStorage.getItem('scholark_foundation_health')||'null')}catch{return null}}};
+  addEventListener('online',()=>setTimeout(()=>selftest(true),500));
+  addEventListener('scholark-runtime-ready',()=>{runtimeReady=true;setTimeout(()=>selftest(false),700)});
+  setTimeout(reconcile,180);
+  setTimeout(()=>{if(!runtimeReady)selftest(false)},3200);
+  window.__SCHOLARK_HEALTH__={selftest,reconcile,refresh:()=>selftest(true),last:()=>lastReport||(()=>{try{return JSON.parse(sessionStorage.getItem('scholark_foundation_health')||'null')}catch{return null}})()};
 })();
