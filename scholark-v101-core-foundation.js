@@ -1,11 +1,15 @@
 (() => {
-  if (window.__SCHOLARK_V101_CORE_FOUNDATION__) return;
+  const appPath = (() => {
+    const p = String(location.pathname || '/').replace(/\/+$/, '') || '/';
+    return p === '/' || p === '/index.html';
+  })();
+  if (!appPath || window.__SCHOLARK_V101_CORE_FOUNDATION__) return;
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r135';
+  const RELEASE = 'r136';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
-  const state = { lastRoute:'', routeEpoch:0, repairs:0, errors:[], lastRepairAt:0 };
+  const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
   let repairing = false;
   let timer = 0;
 
@@ -29,7 +33,7 @@
     const message = String(err?.message || err || '').trim();
     if (!message) return;
     state.errors.push({ at:Date.now(), source, message:message.slice(0,400) });
-    if (state.errors.length > 12) state.errors.splice(0, state.errors.length - 12);
+    if (state.errors.length > 16) state.errors.splice(0, state.errors.length - 16);
   }
 
   function closeForeign(info) {
@@ -50,15 +54,26 @@
   }
 
   function previewHealthy() {
-    if (window.__SCHOLARK_HOME_CINEMATICS__?.healthy) return window.__SCHOLARK_HOME_CINEMATICS__.healthy();
-    if (window.__SCHOLARK_V32_PREVIEW__?.healthy) return window.__SCHOLARK_V32_PREVIEW__.healthy();
+    try {
+      if (window.__SCHOLARK_HOME_CINEMATICS__?.healthy) return window.__SCHOLARK_HOME_CINEMATICS__.healthy();
+      if (window.__SCHOLARK_V32_PREVIEW__?.healthy) return window.__SCHOLARK_V32_PREVIEW__.healthy();
+    } catch (e) { rememberError(e,'preview-health'); return false; }
     return true;
+  }
+
+  function scrollPricing(attempt=0) {
+    if (routeInfo().base !== 'pricing') return;
+    const section = $('#v41-home-pricing');
+    if (section) {
+      section.scrollIntoView?.({block:'start', behavior:attempt ? 'auto' : 'smooth'});
+      return;
+    }
+    if (attempt < 8) setTimeout(() => scrollPricing(attempt + 1), 80 + attempt * 45);
   }
 
   function restoreHome(info, routeChanged=false) {
     document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
     document.body.classList.add('v55-public-home');
-
     const home = $('#v29-home-layer');
     if (home) {
       home.hidden = false;
@@ -66,23 +81,16 @@
       home.classList.add('v30-native-home');
       ['display','visibility','opacity','pointer-events'].forEach(p => home.style.removeProperty(p));
     }
-
     window.__SCHOLARK_V55_TOPBAR__?.sync?.();
     window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();
     window.__SCHOLARK_V29_HOME__?.sync?.();
-
-    // Home cinematic recovery stays isolated from route cleanup. Do not continuously
-    // rewrite the homepage DOM: that was the source of the R134 regression.
     if (!previewHealthy()) {
       window.__SCHOLARK_V32_PREVIEW__?.render?.(true);
       window.__SCHOLARK_V32_PREVIEW__?.ensure?.();
       window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
     }
     if (window.__SCHOLARK_V30_DEMO__?.isRunning?.() === false) window.__SCHOLARK_V30_DEMO__?.start?.();
-
-    if (routeChanged && info.base === 'pricing') {
-      setTimeout(() => $('#v41-home-pricing')?.scrollIntoView?.({block:'start'}), 40);
-    }
+    if (routeChanged && info.base === 'pricing') scrollPricing();
   }
 
   function syncWorkspace(info) {
@@ -90,11 +98,32 @@
     document.body.classList.remove('v55-public-home','v81-home');
     if (info.kind === 'studio') document.body.classList.add('v51-studio','v41-studio-open');
     else document.body.classList.remove('v51-studio','v41-studio-open');
-
     const lang = localStorage.getItem('scholark_ui_language') || 'nl';
     if (document.documentElement.lang !== lang) document.documentElement.lang = lang;
     window.__SCHOLARK_COUNTRY__?.apply?.();
     window.__SCHOLARK_WORKSPACE__?.syncLanguage?.();
+  }
+
+  function stabilizeSchools() {
+    const overlay = $('#v50-school');
+    if (!overlay) return;
+    overlay.style.setProperty('height','100dvh','important');
+    overlay.style.setProperty('max-height','100dvh','important');
+    overlay.style.setProperty('overflow-y','auto','important');
+    overlay.style.setProperty('overflow-x','hidden','important');
+    overlay.style.setProperty('overscroll-behavior-y','contain','important');
+    overlay.style.setProperty('touch-action','pan-y','important');
+    if (overlay.dataset.v136Wheel === '1') return;
+    overlay.dataset.v136Wheel = '1';
+    overlay.addEventListener('wheel', e => {
+      if (routeInfo().base !== 'schools' || !overlay.classList.contains('open')) return;
+      const max = overlay.scrollHeight - overlay.clientHeight;
+      if (max <= 2) return;
+      const before = overlay.scrollTop;
+      overlay.scrollTop = Math.max(0, Math.min(max, before + e.deltaY));
+      if (overlay.scrollTop !== before) e.preventDefault();
+    }, { passive:false });
+    state.schoolWheelBound = true;
   }
 
   function surfaceHealthy(info) {
@@ -127,17 +156,23 @@
     } else if (info.base === 'language') {
       window.__SCHOLARK_V93_LANGUAGE__?.open?.();
     } else if (info.base === 'schools') {
+      ws?.setCollapsed?.(false,true);
       ws?.openTool?.('schools');
+      setTimeout(stabilizeSchools, 50);
+    } else if (info.base !== 'dashboard') {
+      ws?.openTool?.(info.base);
     }
   }
 
   async function recoverWorkspace(info, token) {
     try {
+      state.recoveries++;
       const runtime = window.__SCHOLARK_RUNTIME__;
       if (runtime?.ensure) await runtime.ensure(info.kind === 'studio' ? 'studio' : info.base);
       if (token !== state.routeEpoch || routeInfo().raw !== info.raw) return;
       syncWorkspace(info);
       if (!surfaceHealthy(info)) openExpected(info);
+      if (info.base === 'schools') setTimeout(stabilizeSchools, 80);
     } catch (e) { rememberError(e,'workspace-recovery'); }
   }
 
@@ -151,15 +186,15 @@
       if (routeChanged) { state.lastRoute = info.raw; state.routeEpoch++; }
       const token = state.routeEpoch;
       closeForeign(info);
-
       if (info.kind === 'home') {
         if (force || routeChanged || !homeSurfaceHealthy()) restoreHome(info, routeChanged);
         else if (!previewHealthy()) window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
+        if (info.base === 'pricing') scrollPricing();
       } else {
         syncWorkspace(info);
+        if (info.base === 'schools') stabilizeSchools();
         if (!surfaceHealthy(info)) recoverWorkspace(info, token);
       }
-
       state.repairs++;
       state.lastRepairAt = Date.now();
       document.documentElement.dataset.scholarkRelease = RELEASE;
@@ -176,19 +211,23 @@
 
   function health() {
     const info = routeInfo();
+    const runtimeErrors = window.__SCHOLARK_RUNTIME__?.errors?.() || [];
     const report = {
       release:RELEASE,
       route:info.raw,
       routeKind:info.kind,
       runtimeVersion:window.__SCHOLARK_RUNTIME__?.version || '',
-      runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.() || [],
+      runtimeErrors,
       surfaceHealthy:surfaceHealthy(info),
       previewHealthy:info.kind !== 'home' || previewHealthy(),
+      schoolsScrollable:info.base !== 'schools' || !$('#v50-school') || getComputedStyle($('#v50-school')).overflowY !== 'hidden',
       repairs:state.repairs,
+      recoveries:state.recoveries,
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !report.runtimeErrors.length && report.surfaceHealthy && report.previewHealthy;
+    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.previewHealthy && report.schoolsScrollable;
+    try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
 
@@ -201,7 +240,6 @@
   addEventListener('scholark-language-complete', () => schedule('language',50,false));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) schedule('visible',60,false); });
 
-  // Passive watchdog only. It does not mutate a healthy homepage.
   setInterval(() => {
     if (document.hidden || document.documentElement.classList.contains('scholark-route-loading')) return;
     const info = routeInfo();
@@ -217,6 +255,7 @@
     release:RELEASE,
     repair:() => schedule('manual',0,true),
     recover:() => schedule('manual-recover',0,true),
-    health
+    health,
+    route:routeInfo
   };
 })();
