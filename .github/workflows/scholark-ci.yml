@@ -21,10 +21,34 @@ jobs:
       - name: Validate runtime, release and syntax
         run: node scripts/scholark-static-audit.mjs
 
-  docker-build:
+  docker-build-and-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Build production image
         run: docker build --pull -t scholark-ci .
+      - name: Start production container
+        run: docker run -d --name scholark-ci-run -p 10000:10000 scholark-ci
+      - name: Wait for SCHOLARK
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:10000/api/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs scholark-ci-run
+          exit 1
+      - name: Smoke test critical surfaces
+        run: |
+          curl --fail --silent http://127.0.0.1:10000/api/health | grep -q '"ok":true'
+          curl --fail --silent http://127.0.0.1:10000/api/guard/health | grep -q '"ok":true'
+          curl --fail --silent http://127.0.0.1:10000/api/studio/health | grep -q '"ok":true'
+          curl --fail --silent http://127.0.0.1:10000/api/learning/health | grep -q '"ok":true'
+          curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
+          grep -q 'scholark-runtime-loader.js?v=20260910-r136' /tmp/scholark-home.html
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs scholark-ci-run || true
+      - name: Stop container
+        if: always()
+        run: docker rm -f scholark-ci-run || true
