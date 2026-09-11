@@ -17,6 +17,7 @@ COPY studio-public-artifact-route.mjs /app/studio-public-artifact-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
 COPY scholark-school-route.mjs /app/scholark-school-route.mjs
 COPY scholark-api-guard.mjs /app/scholark-api-guard.mjs
+COPY scholark-gemini-primary.mjs /app/scholark-gemini-primary.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 
@@ -106,6 +107,8 @@ RUN npm install --omit=dev --no-audit --no-fund \
 ENV NODE_ENV=production
 ENV SCHOLARK_RELEASE=r136
 ENV SCHOLARK_TEST_MODE=1
+ENV SCHOLARK_AI_LIVE=1
+ENV SCHOLARK_AI_PROVIDER=gemini
 ENV POLLINATIONS_MODEL=gpt-5.6-sol
 ENV POLLINATIONS_FAST_MODEL=openai-fast
 ENV POLLINATIONS_BALANCED_MODEL=gpt-5.6-terra
@@ -122,7 +125,8 @@ ENV OPENAI_LEARNING_MODEL=gpt-5.6-luna
 ENV OPENAI_FAST_MODEL=gpt-5.6-luna
 ENV OPENAI_BALANCED_MODEL=gpt-5.6-terra
 ENV OPENAI_PREMIUM_MODEL=gpt-5.6-sol
-ENV GEMINI_FAST_MODEL=gemini-3.1-flash-lite
+ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash
+ENV GEMINI_FAST_MODEL=gemini-3.8-flash
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "--import", "./scholark-gemini-primary.mjs", "backend/server.mjs"]
