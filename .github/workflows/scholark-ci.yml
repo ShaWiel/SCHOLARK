@@ -44,6 +44,10 @@ jobs:
           curl --fail --silent http://127.0.0.1:10000/api/guard/health | grep -q '"ok":true'
           curl --fail --silent http://127.0.0.1:10000/api/studio/health | grep -q '"ok":true'
           curl --fail --silent http://127.0.0.1:10000/api/learning/health | grep -q '"ok":true'
+          curl --fail --silent http://127.0.0.1:10000/api/gemini/health >/tmp/scholark-gemini.json
+          grep -q '"provider":"gemini"' /tmp/scholark-gemini.json
+          grep -q '"model":"gemini-3.8-flash"' /tmp/scholark-gemini.json
+          grep -q '"liveEnabled":true' /tmp/scholark-gemini.json
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-runtime-loader.js?v=20260910-r136' /tmp/scholark-home.html
       - name: Show logs on failure
