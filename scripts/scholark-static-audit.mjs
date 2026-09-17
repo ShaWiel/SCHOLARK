@@ -9,6 +9,7 @@ const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
 const RELEASE='r136';
 const VERSION='20260910-r136';
 const ROUTER='20260917-gemini-resilience-v3';
+const SCHOOL_STRICT='20260917-school-country-levels-v3';
 
 const runtime=read('scholark-runtime-loader.js');
 const docker=read('Dockerfile');
@@ -16,6 +17,8 @@ const foundation=read('scholark-v101-core-foundation.js');
 const prepaint=read('scholark-prepaint-head.html');
 const gemini=read('scholark-gemini-primary.mjs');
 const schoolResilience=read('scholark-school-resilience.mjs');
+const schoolStrict=read('scholark-school-strict.mjs');
+const schoolClient=read('scholark-v104-school-filter-guard.js');
 const quiz=read('scholark-v102-language-quiz.js');
 const nextLesson=read('scholark-v103-language-next-lesson.js');
 
@@ -34,6 +37,18 @@ ok(docker.includes('--import", "./scholark-school-resilience.mjs"'),'School resi
 ok(docker.indexOf('./scholark-school-resilience.mjs')<docker.indexOf('./scholark-school-route.mjs'),'School resilience must load before school discovery route');
 ok(schoolResilience.includes('photon.komoot.io')&&schoolResilience.includes('nominatim.openstreetmap.org'),'School geocoder fallback providers are incomplete');
 ok(schoolResilience.includes("'/api/schools/resilience'")&&schoolResilience.includes('STATIC_PLACES'),'School geocoder health/static fallback is missing');
+ok(docker.includes('scholark-school-strict.mjs'),'Strict country school route is not shipped');
+ok(docker.includes('--import", "./scholark-school-strict.mjs"'),'Strict country school route is not imported');
+ok(docker.indexOf('./scholark-school-route.mjs')<docker.indexOf('./scholark-school-strict.mjs'),'Strict school route must load after base school route');
+ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route version is not current');
+ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
+ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
+ok(schoolStrict.includes("out.add('lower_secondary')")&&schoolStrict.includes("out.add('upper_secondary')")&&schoolStrict.includes("out.add('vocational')"),'Strict school education taxonomy is incomplete');
+ok(schoolStrict.includes("wanted==='secondary'||wanted==='lower_secondary'")&&schoolStrict.includes("wanted==='upper_secondary'"),'Strict lower/upper secondary matching is missing');
+ok(docker.includes('scholark-v104-school-filter-guard.js'),'School client filter guard is not copied');
+ok(docker.includes('scholark-v104-school-filter-guard.js?v=20260917-school-filter-v1'),'School client filter guard is not injected');
+ok(schoolClient.includes('/rest/v1/rpc/search_schools')&&schoolClient.includes('rowMatches'),'Curated school RPC country/place guard is missing');
+ok(schoolClient.includes('option[value="upper_secondary"]')&&schoolClient.includes('Vocational / technical education'),'Improved school level selector is missing');
 ok(docker.includes('ENV SCHOLARK_AI_PROVIDER=gemini'),'Gemini is not configured as the primary AI provider');
 ok(docker.includes('ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash'),'Gemini 3.8 Flash is not the primary model');
 ok(gemini.includes("'/api/studio/generate'")&&gemini.includes("'/api/learning/generate'"),'Gemini adapter does not scope Studio + Learning generation routes');
@@ -57,10 +72,10 @@ const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs',
   ...active
 ])];
@@ -75,4 +90,4 @@ if(fail.length){
   fail.forEach(x=>console.error(' - '+x));
   process.exit(1);
 }
-console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · ${active.length} active runtime modules checked`);
+console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · school ${SCHOOL_STRICT} · ${active.length} active runtime modules checked`);
