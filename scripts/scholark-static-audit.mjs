@@ -29,6 +29,10 @@ ok(docker.includes('ENV SCHOLARK_AI_PROVIDER=gemini'),'Gemini is not configured 
 ok(docker.includes('ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash'),'Gemini 3.8 Flash is not the primary model');
 ok(gemini.includes("'/api/studio/generate'")&&gemini.includes("'/api/learning/generate'"),'Gemini adapter does not scope Studio + Learning generation routes');
 ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'"),'Gemini adapter does not safely bypass test mode for scoped AI routes');
+ok(gemini.includes('GEMINI_FALLBACK_MODELS'),'Gemini fallback models are not configurable');
+ok(gemini.includes('gemini-3.7-flash')&&gemini.includes('gemini-3.6-flash')&&gemini.includes('gemini-3.5-flash-lite'),'Gemini fallback chain is incomplete');
+ok(gemini.includes('retryableStatuses')&&gemini.includes('503'),'Gemini overload retry protection is missing');
+ok(gemini.includes("ROUTER_VERSION = '20260916-gemini-fallback-v1'"),'Gemini fallback router version is not current');
 ok(prepaint.includes("p==='/index.html'")||prepaint.includes("p === '/index.html'"),'prepaint lacks static-page/app-path guard');
 ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
