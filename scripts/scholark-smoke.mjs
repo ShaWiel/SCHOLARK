@@ -38,7 +38,16 @@ await get('/api/health');
 await get('/api/guard/health');
 const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
+const schoolHealth=await get('/api/schools/health');
+const schoolResilience=await get('/api/schools/resilience');
 const geminiHealth=await get('/api/gemini/health',{requireOk:live});
+if(schoolHealth){
+  check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
+}
+if(schoolResilience){
+  check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
+  check(Array.isArray(schoolResilience.providers)&&schoolResilience.providers.some(x=>/Photon/i.test(x)),'School Photon fallback missing');
+}
 if(geminiHealth){
   check(geminiHealth.routerVersion==='20260917-gemini-resilience-v3','Gemini router version mismatch');
   check(geminiHealth.primaryModel==='gemini-3.8-flash','Gemini primary model mismatch');
