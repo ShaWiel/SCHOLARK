@@ -44,9 +44,12 @@ const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
-  check(schoolHealth.version==='20260917-school-country-levels-v2','School country/level search version mismatch');
+  check(schoolHealth.version==='20260917-school-country-levels-v3','School country/level search version mismatch');
   check(/lower secondary/i.test(String(schoolHealth.levels?.secondary||'')),'Lower-secondary taxonomy missing');
+  check(/upper secondary/i.test(String(schoolHealth.levels?.upper_secondary||'')),'Upper-secondary taxonomy missing');
+  check(/vocational/i.test(String(schoolHealth.levels?.vocational||'')),'Vocational taxonomy missing');
   check(/higher education only/i.test(String(schoolHealth.levels?.higher||'')),'Higher-education taxonomy is not strict');
+  check(schoolHealth.officialRoster?.configured===true,'Official Suriname school roster is not configured');
 }
 if(schoolResilience){
   check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
@@ -93,6 +96,7 @@ if(!live){
     check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('lower_secondary')),'live lower-secondary search leaked other education levels');
     const explicitForeign=schools.filter(s=>{const c=String(s.tags?.['addr:country']||'').trim().toUpperCase();return c&&c!=='SR'&&c!=='SURINAME'});
     check(explicitForeign.length===0,'live Suriname search returned explicitly foreign schools');
+    check(Array.isArray(d.sourceStatus)&&d.sourceStatus.some(s=>/MinOWC official school list/i.test(String(s.source||''))&&s.ok===true),'official Suriname school roster was not used');
   },180000);
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
