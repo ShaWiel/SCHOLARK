@@ -20,7 +20,7 @@
       ['young','🧸','Voorschools onderwijs','Vroege ontwikkeling en voorbereiding op het basisonderwijs.'],
       ['primary','📚','Primair · GLO','Gewoon Lager Onderwijs / basisonderwijs.'],
       ['secondary','🎒','Secundair I · VOJ','Juniorenonderwijs, waaronder o.a. MULO en LBO-routes.'],
-      ['student','🎓','Secundair II · VOS','Seniorenonderwijs, waaronder HAVO/VWO en beroepsgerichte routes zoals NATIN/IMEAO.'],
+      ['student','🎓','Secundair II · VOS','Seniorenonderwijs, waaronder HAVO en beroepsgerichte routes zoals NATIN/IMEAO. VWO staat als aparte onderwijsroute in SCHOLARK.'],
       ['adult','🏛️','Tertiair / Hoger onderwijs','Hoger beroeps- en universitair onderwijs, waaronder AdeKUS en andere tertiaire instellingen.']
     ]},
     Netherlands:{label:'Netherlands',stages:[
@@ -195,7 +195,7 @@
     it:{young:['Educazione della prima infanzia','Sviluppo iniziale e preparazione alla primaria.'],primary:['Istruzione primaria','Competenze fondamentali di lingua, matematica e apprendimento.'],secondary:['Secondaria inferiore','Prima fase secondaria del sistema nazionale.'],student:['Secondaria superiore / professionale','Preparazione a studi successivi o lavoro.'],adult:['Istruzione superiore','Istruzione terziaria, professionale e universitaria.'],all:'Tutti i livelli',adultFilter:'Apprendimento adulto / professionale',system:'Sistema educativo',country:'Paese',note:'livelli scolastici adattati al paese',choose:'SCEGLI IL TUO LIVELLO DI ISTRUZIONE'}
   };
   const OFFICIAL={
-    Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO/VWO · NATIN/IMEAO',adult:'AdeKUS'},
+    Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
     'United States':{young:'Pre-K / K',primary:'K–5/6',secondary:'Grades 6–8',student:'Grades 9–12',adult:'College / University'},
     'United Kingdom':{young:'Early Years',primary:'KS1–2',secondary:'KS3–4 · GCSE',student:'Sixth Form · A levels',adult:'Higher Education'},
