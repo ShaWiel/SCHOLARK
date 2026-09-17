@@ -40,6 +40,7 @@ const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
 const schoolHealth=await get('/api/schools/health');
 const schoolResilience=await get('/api/schools/resilience');
+const vwoHealth=live?await get('/api/schools/vwo-health'):null;
 const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
@@ -47,9 +48,15 @@ if(schoolHealth){
   check(schoolHealth.version==='20260917-school-country-levels-v3','School country/level search version mismatch');
   check(/lower secondary/i.test(String(schoolHealth.levels?.secondary||'')),'Lower-secondary taxonomy missing');
   check(/upper secondary/i.test(String(schoolHealth.levels?.upper_secondary||'')),'Upper-secondary taxonomy missing');
+  check(/vwo|atheneum/i.test(String(schoolHealth.levels?.vwo||'')),'VWO taxonomy missing');
   check(/vocational/i.test(String(schoolHealth.levels?.vocational||'')),'Vocational taxonomy missing');
   check(/higher education only/i.test(String(schoolHealth.levels?.higher||'')),'Higher-education taxonomy is not strict');
   check(schoolHealth.officialRoster?.configured===true,'Official Suriname school roster is not configured');
+}
+if(vwoHealth){
+  check(vwoHealth.vwoEnabled===true,'VWO school discovery is not enabled');
+  check(Number(vwoHealth.vwoCount)>0,'No VWO schools were detected in the official Suriname roster');
+  check(vwoHealth.hogendoornDetected===true,'Arthur Alex Hogendoorn Atheneum was not detected as VWO');
 }
 if(schoolResilience){
   check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
@@ -97,6 +104,15 @@ if(!live){
     const explicitForeign=schools.filter(s=>{const c=String(s.tags?.['addr:country']||'').trim().toUpperCase();return c&&c!=='SR'&&c!=='SURINAME'});
     check(explicitForeign.length===0,'live Suriname search returned explicitly foreign schools');
     check(Array.isArray(d.sourceStatus)&&d.sourceStatus.some(s=>/MinOWC official school list/i.test(String(s.source||''))&&s.ok===true),'official Suriname school roster was not used');
+  },180000);
+  await post('/api/schools/search',{country:'Suriname',city:'',level:'vwo',radius:700},'live:schools_suriname_vwo',d=>{
+    check(d.strictCountry===true,'live VWO search did not enforce country boundary');
+    check(d.center?.countryCode==='SR','live VWO search resolved outside Suriname');
+    check(d.taxonomy?.vwo==='pre_university_vwo_atheneum_gymnasium','live VWO taxonomy is missing');
+    const schools=Array.isArray(d.schools)?d.schools:[];
+    check(schools.length>0,'live Suriname VWO search returned no schools');
+    check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('vwo')),'live VWO search leaked non-VWO schools');
+    check(schools.some(s=>/hogendoorn.*atheneum|arthur.*hogendoorn/i.test(String(s.name||''))),'Arthur Alex Hogendoorn Atheneum is missing from live VWO results');
   },180000);
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
