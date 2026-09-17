@@ -18,45 +18,43 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate runtime, release and syntax
+      - name: Validate runtime, resilience and syntax
         run: node scripts/scholark-static-audit.mjs
 
   docker-build-and-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Build production image
         run: docker build --pull -t scholark-ci .
-      - name: Start production container
-        run: docker run -d --name scholark-ci-run -e PORT=10000 -p 10000:10000 scholark-ci
+      - name: Start production container in zero-credit test mode
+        run: docker run -d --name scholark-ci-run -e PORT=10000 -e SCHOLARK_AI_LIVE=0 -e SCHOLARK_TEST_MODE=1 -p 10000:10000 scholark-ci
       - name: Wait for SCHOLARK
         run: |
-          for i in {1..45}; do
+          for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:10000/api/health >/dev/null; then exit 0; fi
             sleep 1
           done
           docker logs scholark-ci-run
           exit 1
-      - name: Smoke test critical surfaces
+      - name: Run full local API smoke suite
+        run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+      - name: Verify homepage boot, loading guard and runtime scripts
         run: |
-          curl --fail --silent http://127.0.0.1:10000/api/health | grep -q '"ok":true'
-          curl --fail --silent http://127.0.0.1:10000/api/guard/health | grep -q '"ok":true'
-          curl --fail --silent http://127.0.0.1:10000/api/studio/health | grep -q '"ok":true'
-          curl --fail --silent http://127.0.0.1:10000/api/learning/health | grep -q '"ok":true'
-          curl --fail --silent http://127.0.0.1:10000/api/gemini/health >/tmp/scholark-gemini.json
-          python - <<'PY'
-          import json
-          d=json.load(open('/tmp/scholark-gemini.json'))
-          assert d.get('provider') == 'gemini', d
-          assert d.get('model') == 'gemini-3.8-flash', d
-          assert d.get('liveEnabled') is True, d
-          assert d.get('fallbackEnabled') is True, d
-          assert d.get('routerVersion') == '20260916-gemini-fallback-v1', d
-          assert d.get('fallbackModels') == ['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash-lite'], d
-          PY
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
+          grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
+          grep -q '/scholark-logo.png' /tmp/scholark-home.html
           grep -q 'scholark-runtime-loader.js?v=20260910-r136' /tmp/scholark-home.html
+          grep -q 'scholark-v102-language-quiz.js?v=20260916-language-choice-v2' /tmp/scholark-home.html
+          grep -q 'scholark-v103-language-next-lesson.js?v=20260917-language-next-v1' /tmp/scholark-home.html
+          if grep -Eqi 'Student[[:space:]]*OS' /tmp/scholark-home.html; then
+            echo 'Legacy StudentOS text leaked into served homepage'
+            exit 1
+          fi
       - name: Show logs on failure
         if: failure()
         run: docker logs scholark-ci-run || true
@@ -64,70 +62,28 @@ jobs:
         if: always()
         run: docker rm -f scholark-ci-run || true
 
-  live-gemini-smoke:
+  live-resilience-smoke:
     if: github.event_name == 'push'
+    needs: [static-audit, docker-build-and-smoke]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
-      - name: Wait for live SCHOLARK Gemini fallback router
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for live SCHOLARK resilience router
         run: |
-          for i in {1..60}; do
+          for i in {1..90}; do
             if curl --fail --silent --show-error https://scholark-app-shawiel.onrender.com/api/gemini/health >/tmp/gemini-health.json; then
-              if grep -q '"ok":true' /tmp/gemini-health.json && grep -q '"configured":true' /tmp/gemini-health.json && grep -q '"routerVersion":"20260916-gemini-fallback-v1"' /tmp/gemini-health.json; then
+              if grep -q '"ok":true' /tmp/gemini-health.json && grep -q '"configured":true' /tmp/gemini-health.json && grep -q '"routerVersion":"20260917-gemini-resilience-v3"' /tmp/gemini-health.json; then
                 cat /tmp/gemini-health.json
                 exit 0
               fi
             fi
-            sleep 3
+            sleep 4
           done
           cat /tmp/gemini-health.json 2>/dev/null || true
           exit 1
-      - name: Verify AI Tutor uses Gemini with failover
-        run: |
-          status=000
-          for i in {1..3}; do
-            status=$(curl --silent --show-error -o /tmp/gemini-learning.json -w '%{http_code}' \
-              -H 'content-type: application/json' \
-              --data '{"mode":"tutor","prompt":"Explain photosynthesis in one concise sentence.","level":"student","language":"English"}' \
-              https://scholark-app-shawiel.onrender.com/api/learning/generate)
-            echo "AI Tutor attempt $i HTTP $status"
-            cat /tmp/gemini-learning.json
-            [ "$status" = "200" ] && break
-            sleep 4
-          done
-          test "$status" = "200"
-          python - <<'PY'
-          import json
-          d=json.load(open('/tmp/gemini-learning.json'))
-          allowed={'gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash-lite'}
-          assert d.get('ok') is True, d
-          assert d.get('provider') == 'gemini', d
-          assert d.get('model') in allowed, d
-          assert isinstance(d.get('geminiAttempts'), list) and d['geminiAttempts'], d
-          print('AI Tutor live Gemini PASS via', d.get('model'), 'fallback=', d.get('fallbackUsed'))
-          PY
-      - name: Verify Studio AI uses Gemini with failover
-        run: |
-          status=000
-          for i in {1..3}; do
-            status=$(curl --silent --show-error -o /tmp/gemini-studio.json -w '%{http_code}' \
-              -H 'content-type: application/json' \
-              --data '{"mode":"graphic","prompt":"Create a concise study reminder about staying hydrated.","count":1,"language":"English"}' \
-              https://scholark-app-shawiel.onrender.com/api/studio/generate)
-            echo "Studio AI attempt $i HTTP $status"
-            cat /tmp/gemini-studio.json
-            [ "$status" = "200" ] && break
-            sleep 4
-          done
-          test "$status" = "200"
-          python - <<'PY'
-          import json
-          d=json.load(open('/tmp/gemini-studio.json'))
-          allowed={'gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash-lite'}
-          assert d.get('ok') is True, d
-          assert d.get('provider') == 'gemini', d
-          assert d.get('model') in allowed, d
-          assert isinstance(d.get('geminiAttempts'), list) and d['geminiAttempts'], d
-          assert isinstance(d.get('artifact',{}).get('sections'), list) and d['artifact']['sections'], d
-          print('Studio AI live Gemini PASS via', d.get('model'), 'fallback=', d.get('fallbackUsed'))
-          PY
+      - name: Test live health, AI Tutor, Language Learner and Studio presentation
+        run: node scripts/scholark-smoke.mjs https://scholark-app-shawiel.onrender.com --live
