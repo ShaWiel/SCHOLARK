@@ -42,7 +42,7 @@ ok(prepaint.includes("p==='/index.html'")||prepaint.includes("p === '/index.html
 ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
-ok(quiz.includes('data-v102-choice')&&quiz.includes('Correct'),'Language Learner choices are not interactive');
+ok(quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes('HTMLButtonElement'),'Language Learner choices are not interactive');
 ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
 ok(docker.includes('scholark-v102-language-quiz.js'),'Language quiz fix is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
