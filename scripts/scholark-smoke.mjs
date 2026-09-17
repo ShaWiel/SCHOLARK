@@ -71,6 +71,16 @@ if(!live){
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');
   check(geminiHealth?.configured===true,'Live Gemini key is not configured');
+  const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
+  await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
+    acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
+  },180000);
+  await post('/api/learning/generate',{mode:'language_learning',prompt:'Teach beginner greetings.',targetLanguage:'Spanish',nativeLanguage:'English',proficiency:'A1',learningGoal:'conversation',language:'English'},'live:language_learning',d=>{
+    acceptedProvider(d);check(Array.isArray(d.result?.exercises)&&d.result.exercises.length>0,'live:language_learning returned no exercises');
+  },180000);
+  await post('/api/studio/generate',{mode:'presentation',prompt:'Create a two-slide mini presentation about effective study habits.',count:2,language:'English'},'live:studio_presentation',d=>{
+    acceptedProvider(d);check(Array.isArray(d.artifact?.sections)&&d.artifact.sections.length>=2,'live:studio_presentation returned too few slides');
+  },220000);
 }
 
 console.log('\nSCHOLARK SMOKE RESULTS');
