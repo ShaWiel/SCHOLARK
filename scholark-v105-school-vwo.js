@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V105_SCHOOL_VWO__)return;
   window.__SCHOLARK_V105_SCHOOL_VWO__=true;
 
-  const VERSION='20260917-school-vwo-v3';
+  const VERSION='20260917-school-vwo-v4';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
@@ -27,7 +27,7 @@
   const shouldIncludeHogendoorn=(country,city)=>key(country)==='suriname'&&(!key(city)||key(city)==='paramaribo'||key(city).includes('paramaribo'));
   const hasHogendoorn=rows=>(rows||[]).some(row=>/hogendoorn.*atheneum|arthur.*hogendoorn/i.test(clean(row?.name||row?.school_name)));
   const currentCountry=()=>window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname';
-  const isSuriname=()=>key(currentCountry())==='suriname';
+  const isSuriname=()=>['suriname','sr'].includes(key(currentCountry()));
 
   const VWO_DESCRIPTION={
     nl:'Voorbereidend wetenschappelijk onderwijs.',
@@ -45,7 +45,6 @@
   let dashboardHost=null;
   let resultsObserver=null;
   let resultsHost=null;
-  let bootObserver=null;
 
   function scheduleApply(){
     if(scheduled)return;
@@ -113,6 +112,17 @@
     host.querySelectorAll('.v51-level').forEach(x=>x.classList.toggle('active',x===button));
   }
 
+  function separateDashboardVwoLabel(){
+    if(!isSuriname())return;
+    const student=document.querySelector('#v51-main [data-v51-page="dashboard"] .v51-level[data-level="student"] b');
+    if(!student)return;
+    const next=clean(student.textContent)
+      .replace(/\s*\/\s*VWO\b/gi,'')
+      .replace(/\bVWO\s*\/\s*/gi,'')
+      .replace(/\s*·\s*VWO\b/gi,'');
+    if(next&&next!==student.textContent)student.textContent=next;
+  }
+
   function ensureDashboardVwo(){
     const host=document.querySelector('#v51-main [data-v51-page="dashboard"] .v51-levels');
     if(!host)return false;
@@ -174,7 +184,7 @@
   }
 
   function apply(){
-    patchSelector();patchServerFetch();patchCurated();ensureDashboardVwo();annotateResults();wireTargetObservers();
+    patchSelector();patchServerFetch();patchCurated();separateDashboardVwoLabel();ensureDashboardVwo();annotateResults();wireTargetObservers();
   }
 
   document.addEventListener('click',e=>{
@@ -190,16 +200,12 @@
 
   ['hashchange','scholark-runtime-ready','scholark-country-change','scholark-language-applied','scholark-language-ready','scholark-language-complete'].forEach(ev=>addEventListener(ev,()=>setTimeout(scheduleApply,30)));
 
-  // Short boot observer only. The old permanent document-wide observer rewrote option
-  // text on every mutation and could create a self-sustaining mutation loop in Chrome.
-  const root=document.body||document.documentElement;
-  bootObserver=new MutationObserver(()=>scheduleApply());
-  bootObserver.observe(root,{childList:true,subtree:true});
-  setTimeout(()=>{bootObserver?.disconnect();bootObserver=null},8000);
-
+  // No document-wide MutationObserver: the workspace can mount many nodes quickly and
+  // observing the whole page can make Chrome report "Page Unresponsive". A bounded
+  // boot poll plus narrow dashboard/results observers is enough to catch late mounts.
   let attempts=0;
-  const bootTimer=setInterval(()=>{scheduleApply();if(++attempts>=16)clearInterval(bootTimer)},500);
-  [20,80,220,600,1400].forEach(ms=>setTimeout(scheduleApply,ms));
+  const bootTimer=setInterval(()=>{scheduleApply();if(++attempts>=12)clearInterval(bootTimer)},500);
+  [20,100,260,700,1500,3000].forEach(ms=>setTimeout(scheduleApply,ms));
 
-  window.__SCHOLARK_VWO__={version:VERSION,apply:()=>scheduleApply(),schoolLabel:'VWO',dashboardStage:true,performanceGuard:'targeted-observers'};
+  window.__SCHOLARK_VWO__={version:VERSION,apply:()=>scheduleApply(),schoolLabel:'VWO',dashboardStage:true,performanceGuard:'targeted-observers',documentWideObserver:false};
 })();
