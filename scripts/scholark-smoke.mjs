@@ -43,6 +43,10 @@ const schoolResilience=await get('/api/schools/resilience');
 const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
+  check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
+  check(schoolHealth.version==='20260917-school-country-levels-v1','School country/level search version mismatch');
+  check(/lower secondary/i.test(String(schoolHealth.levels?.secondary||'')),'Lower-secondary taxonomy missing');
+  check(/higher education only/i.test(String(schoolHealth.levels?.higher||'')),'Higher-education taxonomy is not strict');
 }
 if(schoolResilience){
   check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
@@ -80,6 +84,16 @@ if(!live){
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');
   check(geminiHealth?.configured===true,'Live Gemini key is not configured');
+  await post('/api/schools/search',{country:'Suriname',city:'Paramaribo',level:'secondary',radius:100},'live:schools_suriname_lower_secondary',d=>{
+    check(d.strictCountry===true,'live school search did not enforce country boundary');
+    check(d.center?.countryCode==='SR','live school search resolved outside Suriname');
+    check(d.taxonomy?.secondary==='lower_secondary','live school search taxonomy is not lower-secondary strict');
+    const schools=Array.isArray(d.schools)?d.schools:[];
+    check(schools.length>0,'live Suriname lower-secondary search returned no schools');
+    check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('lower_secondary')),'live lower-secondary search leaked other education levels');
+    const explicitForeign=schools.filter(s=>{const c=String(s.tags?.['addr:country']||'').trim().toUpperCase();return c&&c!=='SR'&&c!=='SURINAME'});
+    check(explicitForeign.length===0,'live Suriname search returned explicitly foreign schools');
+  },180000);
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
     acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
