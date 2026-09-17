@@ -15,6 +15,7 @@ COPY studio-research-route.mjs /app/studio-research-route.mjs
 COPY studio-public-page-route.mjs /app/studio-public-page-route.mjs
 COPY studio-public-artifact-route.mjs /app/studio-public-artifact-route.mjs
 COPY scholark-learning-route.mjs /app/scholark-learning-route.mjs
+COPY scholark-school-resilience.mjs /app/scholark-school-resilience.mjs
 COPY scholark-school-route.mjs /app/scholark-school-route.mjs
 COPY scholark-api-guard.mjs /app/scholark-api-guard.mjs
 COPY scholark-gemini-primary.mjs /app/scholark-gemini-primary.mjs
@@ -131,4 +132,4 @@ ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash
 ENV GEMINI_FAST_MODEL=gemini-3.8-flash
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "--import", "./scholark-gemini-primary.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-resilience.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "--import", "./scholark-gemini-primary.mjs", "backend/server.mjs"]
