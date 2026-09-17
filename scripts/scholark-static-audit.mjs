@@ -21,6 +21,8 @@ const schoolStrict=read('scholark-school-strict.mjs');
 const schoolClient=read('scholark-v104-school-filter-guard.js');
 const quiz=read('scholark-v102-language-quiz.js');
 const nextLesson=read('scholark-v103-language-next-lesson.js');
+const countryEducation=read('scholark-v96-country-education.js');
+const schoolVwo=read('scholark-v105-school-vwo.js');
 
 ok(runtime.includes(`const VERSION = '${VERSION}'`),'runtime VERSION is not '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -65,6 +67,11 @@ ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
 ok(quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes('HTMLButtonElement'),'Language Learner choices are not interactive');
 ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
+ok(schoolVwo.includes("const VERSION='20260917-school-vwo-v4'"),'VWO frontend module version is stale');
+ok(schoolVwo.includes("opt.textContent='VWO'")&&schoolVwo.includes("schoolLabel:'VWO'"),'Schools Near Me VWO label is not exactly VWO');
+ok(schoolVwo.includes('dashboardStage:true')&&schoolVwo.includes('separateDashboardVwoLabel'),'Separate dashboard VWO stage is missing');
+ok(schoolVwo.includes('documentWideObserver:false')&&!schoolVwo.includes('bootObserver.observe(root')&&!schoolVwo.includes('observer.observe(document.documentElement'),'VWO module still risks a document-wide mutation loop');
+ok(countryEducation.includes("student:'VOS · HAVO · NATIN/IMEAO'")&&!countryEducation.includes("student:'VOS · HAVO/VWO · NATIN/IMEAO'"),'Suriname dashboard still bundles VWO into the combined VOS/HAVO stage');
 ok(docker.includes('scholark-v102-language-quiz.js'),'Language quiz fix is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
@@ -72,10 +79,10 @@ const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs',
   ...active
 ])];
