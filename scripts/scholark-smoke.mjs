@@ -33,6 +33,29 @@ async function post(path,body,label,validator,timeout=90000){
     return data;
   }catch(e){failures.push(`${label} threw ${e?.message||e}`);return null}
 }
+async function postTransient(path,body,label,validator,timeout=90000,attempts=3){
+  let lastStatus=0,lastData=null,lastError=null;
+  for(let attempt=1;attempt<=attempts;attempt++){
+    try{
+      const {r,data}=await request(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)},timeout);
+      lastStatus=r.status;lastData=data;
+      if(r.ok&&data?.ok===true){
+        if(validator)validator(data);
+        results.push(`${label} ${r.status} attempt=${attempt}`);
+        return data;
+      }
+      if(![502,503,504].includes(r.status))break;
+    }catch(e){lastError=e}
+    if(attempt<attempts)await new Promise(r=>setTimeout(r,1200*attempt));
+  }
+  if(lastError)failures.push(`${label} threw ${lastError?.message||lastError}`);
+  else{
+    failures.push(`${label} HTTP ${lastStatus}: ${lastData?.error||lastData?.raw||''}`);
+    if(lastData?.ok!==true)failures.push(`${label} did not report ok=true`);
+  }
+  results.push(`${label} ${lastStatus||'error'}`);
+  return lastData;
+}
 
 await get('/api/health');
 await get('/api/guard/health');
@@ -104,7 +127,7 @@ if(!live){
     check(explicitForeign.length===0,'live Suriname search returned explicitly foreign schools');
     check(Array.isArray(d.sourceStatus)&&d.sourceStatus.some(s=>/MinOWC official school list/i.test(String(s.source||''))&&s.ok===true),'official Suriname school roster was not used');
   },180000);
-  await post('/api/schools/search',{country:'Suriname',city:'',level:'vwo',radius:700},'live:schools_suriname_vwo',d=>{
+  await postTransient('/api/schools/search',{country:'Suriname',city:'',level:'vwo',radius:700},'live:schools_suriname_vwo',d=>{
     check(d.strictCountry===true,'live VWO search did not enforce country boundary');
     check(d.center?.countryCode==='SR','live VWO search resolved outside Suriname');
     check(d.taxonomy?.vwo==='pre_university_vwo_atheneum_gymnasium','live VWO taxonomy is missing');
@@ -113,11 +136,17 @@ if(!live){
     check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('vwo')),'live VWO search leaked non-VWO schools');
   },180000);
   try{
-    const {r,data}=await request('/scholark-v105-school-vwo.js?v=20260917-school-vwo-v2',{},30000);
+    const {r,data}=await request('/scholark-v105-school-vwo.js?v=20260917-school-vwo-v4',{},30000);
     const src=String(data?.raw||'');
     check(r.ok,'live VWO frontend module HTTP '+r.status);
+    check(src.includes("const VERSION='20260917-school-vwo-v4'"),'live VWO frontend module is stale');
     check(src.includes('Arthur Alex Hogendoorn Atheneum'),'live VWO frontend module is missing Hogendoorn Atheneum fallback');
     check(src.includes('patchServerFetch')&&src.includes("level:'vwo'"),'live VWO frontend module is not patching VWO search results');
+    check(src.includes("opt.textContent='VWO'"),'Schools Near Me VWO label is not exactly VWO');
+    check(src.includes('dashboardStage:true'),'Dashboard VWO stage is missing');
+    check(src.includes('separateDashboardVwoLabel'),'Dashboard combined VOS/HAVO card still owns the VWO label');
+    check(src.includes('documentWideObserver:false'),'VWO performance guard is missing');
+    check(!src.includes('bootObserver.observe(root'),'VWO module still has a document-wide boot observer');
     results.push(`live:vwo_frontend ${r.status}`);
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
