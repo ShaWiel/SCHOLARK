@@ -51,6 +51,7 @@ jobs:
           grep -q 'scholark-runtime-loader.js?v=20260910-r136' /tmp/scholark-home.html
           grep -q 'scholark-v102-language-quiz.js?v=20260916-language-choice-v2' /tmp/scholark-home.html
           grep -q 'scholark-v103-language-next-lesson.js?v=20260917-language-next-v1' /tmp/scholark-home.html
+          grep -q 'scholark-v105-school-vwo.js?v=20260917-school-vwo-v4' /tmp/scholark-home.html
           if grep -Eqi 'Student[[:space:]]*OS' /tmp/scholark-home.html; then
             echo 'Legacy StudentOS text leaked into served homepage'
             exit 1
@@ -84,6 +85,18 @@ jobs:
             sleep 4
           done
           cat /tmp/gemini-health.json 2>/dev/null || true
+          exit 1
+      - name: Wait for deployed VWO v4 frontend
+        run: |
+          for i in {1..90}; do
+            if curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v105-school-vwo.js?ci=${GITHUB_SHA}" >/tmp/vwo.js; then
+              if grep -q "20260917-school-vwo-v4" /tmp/vwo.js; then
+                exit 0
+              fi
+            fi
+            sleep 4
+          done
+          head -c 500 /tmp/vwo.js 2>/dev/null || true
           exit 1
       - name: Test live health, AI Tutor, Language Learner and Studio presentation
         run: node scripts/scholark-smoke.mjs https://scholark-app-shawiel.onrender.com --live
