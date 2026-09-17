@@ -8,12 +8,15 @@ const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
 const RELEASE='r136';
 const VERSION='20260910-r136';
+const ROUTER='20260917-gemini-resilience-v3';
 
 const runtime=read('scholark-runtime-loader.js');
 const docker=read('Dockerfile');
 const foundation=read('scholark-v101-core-foundation.js');
 const prepaint=read('scholark-prepaint-head.html');
 const gemini=read('scholark-gemini-primary.mjs');
+const quiz=read('scholark-v102-language-quiz.js');
+const nextLesson=read('scholark-v103-language-next-lesson.js');
 
 ok(runtime.includes(`const VERSION = '${VERSION}'`),'runtime VERSION is not '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -32,20 +35,26 @@ ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'
 ok(gemini.includes('GEMINI_FALLBACK_MODELS'),'Gemini fallback models are not configurable');
 ok(gemini.includes('gemini-3.7-flash')&&gemini.includes('gemini-3.6-flash')&&gemini.includes('gemini-3.5-flash-lite'),'Gemini fallback chain is incomplete');
 ok(gemini.includes('retryableStatuses')&&gemini.includes('503'),'Gemini overload retry protection is missing');
-ok(gemini.includes("ROUTER_VERSION = '20260916-gemini-fallback-v1'"),'Gemini fallback router version is not current');
+ok(gemini.includes(`ROUTER_VERSION = '${ROUTER}'`),'Gemini resilience router version is not current');
+ok(gemini.includes('cooldownUntil')&&gemini.includes('markFailure')&&gemini.includes('markSuccess'),'Gemini circuit breaker is missing');
+ok(gemini.includes('emergencyPollinations')&&gemini.includes('syntheticGeminiResponse'),'Emergency provider fallback is missing');
 ok(prepaint.includes("p==='/index.html'")||prepaint.includes("p === '/index.html'"),'prepaint lacks static-page/app-path guard');
 ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
+ok(quiz.includes('data-v102-choice')&&quiz.includes('Correct'),'Language Learner choices are not interactive');
+ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
+ok(docker.includes('scholark-v102-language-quiz.js'),'Language quiz fix is not shipped');
+ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
 const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||'';
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs',
   ...active
 ])];
@@ -60,4 +69,4 @@ if(fail.length){
   fail.forEach(x=>console.error(' - '+x));
   process.exit(1);
 }
-console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · ${active.length} active runtime modules checked`);
+console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · ${active.length} active runtime modules checked`);
