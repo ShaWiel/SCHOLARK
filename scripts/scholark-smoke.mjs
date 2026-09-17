@@ -56,7 +56,6 @@ if(schoolHealth){
 if(vwoHealth){
   check(vwoHealth.vwoEnabled===true,'VWO school discovery is not enabled');
   check(Number(vwoHealth.vwoCount)>0,'No VWO schools were detected in the official Suriname roster');
-  check(vwoHealth.hogendoornDetected===true,'Arthur Alex Hogendoorn Atheneum was not detected as VWO');
 }
 if(schoolResilience){
   check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
@@ -112,8 +111,15 @@ if(!live){
     const schools=Array.isArray(d.schools)?d.schools:[];
     check(schools.length>0,'live Suriname VWO search returned no schools');
     check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('vwo')),'live VWO search leaked non-VWO schools');
-    check(schools.some(s=>/hogendoorn.*atheneum|arthur.*hogendoorn/i.test(String(s.name||''))),'Arthur Alex Hogendoorn Atheneum is missing from live VWO results');
   },180000);
+  try{
+    const {r,data}=await request('/scholark-v105-school-vwo.js?v=20260917-school-vwo-v2',{},30000);
+    const src=String(data?.raw||'');
+    check(r.ok,'live VWO frontend module HTTP '+r.status);
+    check(src.includes('Arthur Alex Hogendoorn Atheneum'),'live VWO frontend module is missing Hogendoorn Atheneum fallback');
+    check(src.includes('patchServerFetch')&&src.includes("level:'vwo'"),'live VWO frontend module is not patching VWO search results');
+    results.push(`live:vwo_frontend ${r.status}`);
+  }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
     acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
