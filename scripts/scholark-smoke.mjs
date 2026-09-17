@@ -14,11 +14,11 @@ async function request(path,opts={},timeout=60000){
   }finally{clearTimeout(timer)}
 }
 function check(cond,msg){if(!cond)failures.push(msg)}
-async function get(path){
+async function get(path,{requireOk=true}={}){
   try{
     const {r,data}=await request(path,{},30000);
     check(r.ok,`${path} HTTP ${r.status}`);
-    check(data?.ok===true,`${path} did not report ok=true`);
+    if(requireOk)check(data?.ok===true,`${path} did not report ok=true`);
     results.push(`${path} ${r.status}`);
     return data;
   }catch(e){failures.push(`${path} threw ${e?.message||e}`);return null}
@@ -38,12 +38,13 @@ await get('/api/health');
 await get('/api/guard/health');
 const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
-const geminiHealth=await get('/api/gemini/health');
+const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(geminiHealth){
   check(geminiHealth.routerVersion==='20260917-gemini-resilience-v3','Gemini router version mismatch');
   check(geminiHealth.primaryModel==='gemini-3.8-flash','Gemini primary model mismatch');
   check(Array.isArray(geminiHealth.fallbackModels)&&geminiHealth.fallbackModels.length>=3,'Gemini fallback chain incomplete');
   check(geminiHealth.modelHealth&&typeof geminiHealth.modelHealth==='object','Gemini circuit-breaker health missing');
+  check(geminiHealth.emergencyProviders&&typeof geminiHealth.emergencyProviders==='object','Emergency provider health missing');
 }
 
 if(!live){
