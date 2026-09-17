@@ -1,14 +1,14 @@
 import http from 'node:http';
 
-const VERSION='20260917-school-country-levels-v2';
+const VERSION='20260917-school-country-levels-v3';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
-const PORT=Number(process.env.PORT||10000);
 const OVERPASS=[
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
   'https://overpass-api.de/api/interpreter'
 ];
+const SR_OFFICIAL_URL='https://gov.sr/wp-content/uploads/2022/10/Lijst-met-Scholen-Suriname-1.xlsx';
 const COUNTRY_CODES={
   suriname:'SR',netherlands:'NL',nederland:'NL','united states':'US',usa:'US','united kingdom':'GB',uk:'GB',
   germany:'DE',duitsland:'DE',france:'FR',frankrijk:'FR',spain:'ES',spanje:'ES',portugal:'PT',italy:'IT',
@@ -16,9 +16,12 @@ const COUNTRY_CODES={
   india:'IN','south africa':'ZA','zuid-afrika':'ZA',guyana:'GY','trinidad & tobago':'TT','trinidad and tobago':'TT',
   jamaica:'JM',belgium:'BE',belgië:'BE',belgie:'BE'
 };
+let officialCache=null;
+let officialPromise=null;
 
 const clean=v=>String(v??'').replace(/\u0000/g,'').replace(/\s+/g,' ').trim();
 const low=v=>clean(v).toLowerCase();
+const key=v=>low(v).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 const json=(res,status,body)=>{if(res.headersSent)return;res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(body))};
 const readJson=req=>new Promise((resolve,reject)=>{let raw='',size=0;req.setEncoding('utf8');req.on('data',c=>{size+=Buffer.byteLength(c);if(size>200000){reject(new Error('Payload too large'));req.destroy();return}raw+=c});req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch(e){reject(e)}});req.on('error',reject)});
 const rad=x=>x*Math.PI/180;
@@ -49,9 +52,10 @@ function levelSet(tags={},extra=''){
   const digits=new Set((i.match(/[0-8]/g)||[]));
   if(a==='kindergarten'||digits.has('0')||/preschool|pre-school|nursery|kindergarten|kleuter|peuter|voorschool|early childhood|maternelle|infantil/.test(text))out.add('early');
   if(digits.has('1')||/primary|elementary|basisschool|lagere school|\bglo\b|grundschule|école primaire|primaria/.test(text))out.add('primary');
-  if(digits.has('2')||/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|\bmulo\b|secundair i|secondary i|senior phase/.test(text))out.add('lower_secondary');
+  if(digits.has('2')||/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|\bmulo\b|\blbo\b|secundair i|secondary i|senior phase/.test(text))out.add('lower_secondary');
   if(digits.has('3')||digits.has('4')||/upper secondary|senior secondary|high school|sixth form|sekundarstufe ii|lycée|secondaria di ii|\bvos\b|\bhavo\b|\bvwo\b|grades? 9|grades? 10|grades? 11|grades? 12|fet\b/.test(text))out.add('upper_secondary');
   if(/technical|vocational|trade school|trade college|beroeps|technisch|polytechnic|\btvet\b|\bnatin\b|\bimeao\b|\bamto\b|\blbo\b|\bmbo\b|ausbildung|profissional|professional institute/.test(text))out.add('vocational');
+  if(/\bnatin\b|\bimeao\b|\bamto\b/.test(text))out.add('upper_secondary');
   if(a==='university'||digits.has('5')||digits.has('6')||digits.has('7')||digits.has('8')||/university|universiteit|université|universität|universidad|università|faculty|faculteit|hogeschool|higher education|tertiary education|college of|institute of higher/.test(text))out.add('higher');
   if(a==='college'&&!out.has('upper_secondary'))out.add('higher');
   if(a==='language_school'||/adult education|adult learning|continuing education|training centre|training center|professional learning/.test(text))out.add('adult');
@@ -61,8 +65,9 @@ function levelSet(tags={},extra=''){
 function matchesLevel(levels,wanted){
   if(wanted==='all')return true;
   const set=new Set(levels||[]);
-  if(wanted==='secondary')return set.has('lower_secondary');
-  if(wanted==='vocational')return set.has('upper_secondary')||set.has('vocational');
+  if(wanted==='secondary'||wanted==='lower_secondary')return set.has('lower_secondary');
+  if(wanted==='upper_secondary')return set.has('upper_secondary');
+  if(wanted==='vocational')return set.has('upper_secondary')||(set.has('vocational')&&!set.has('lower_secondary'));
   if(wanted==='higher')return set.has('higher');
   if(wanted==='adult')return set.has('adult');
   if(wanted==='primary')return set.has('primary');
@@ -72,8 +77,9 @@ function matchesLevel(levels,wanted){
 function publicLevel(levels){
   const s=new Set(levels||[]);
   if(s.has('higher'))return'higher';
-  if(s.has('upper_secondary')||s.has('vocational'))return'vocational';
+  if(s.has('upper_secondary'))return'upper_secondary';
   if(s.has('lower_secondary'))return'secondary';
+  if(s.has('vocational'))return'vocational';
   if(s.has('primary'))return'primary';
   if(s.has('early'))return'early';
   if(s.has('adult'))return'adult';
@@ -85,8 +91,61 @@ function normalized(e,pos){
   const description=[t.description,t.operator,t['addr:street'],t['addr:housenumber'],t['addr:city']||t['addr:town']||t['addr:village']].filter(Boolean).map(clean).join(' · '),levels=levelSet({...t,name},description);
   return{name,description,lat,lon,distance:distance(pos.lat,pos.lon,lat,lon),website:clean(t.website||t['contact:website']),phone:clean(t.phone||t['contact:phone']),email:clean(t.email||t['contact:email']),source:'OpenStreetMap',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags:{...t}};
 }
-function officialRow(row){const levels=levelSet({...(row.tags||{}),name:row.name},row.description||'');return{...row,levels,level:publicLevel(levels),levelDetail:levels.join(',')}}
-function dedupe(rows){const out=[],seen=new Set();for(const x of rows){const k=low(x?.name).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();if(!k||seen.has(k))continue;seen.add(k);out.push(x)}return out}
+
+function decodeHtml(s=''){return String(s).replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#x2F;/g,'/').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()}
+function cellCol(ref=''){const letters=String(ref).match(/^[A-Z]+/i)?.[0]?.toUpperCase()||'';let n=0;for(const ch of letters)n=n*26+(ch.charCodeAt(0)-64);return Math.max(0,n-1)}
+function normHeader(v){return key(v)}
+function xmlValue(raw){return decodeHtml(String(raw||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1'))}
+function sharedStringsFrom(xml){return[...String(xml||'').matchAll(/<si\b[\s\S]*?<\/si>/gi)].map(m=>clean([...m[0].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gi)].map(x=>xmlValue(x[1])).join('')))}
+function rowCells(rowXml,shared){const out=[];for(const m of String(rowXml||'').matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/gi)){const attrs=m[1]||'',body=m[2]||'',ref=(attrs.match(/\br="([^"]+)"/i)||[])[1]||'',type=(attrs.match(/\bt="([^"]+)"/i)||[])[1]||'';let value='';if(type==='inlineStr')value=[...body.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gi)].map(x=>xmlValue(x[1])).join(' ');else{const raw=(body.match(/<v>([\s\S]*?)<\/v>/i)||[])[1]??'';value=type==='s'?shared[Number(raw)]??'':xmlValue(raw)}out[cellCol(ref)]=clean(value)}return out}
+async function officialSurinameSchools(){
+  if(officialCache&&Date.now()-officialCache.at<6*60*60*1000)return officialCache.rows;
+  if(officialPromise)return officialPromise;
+  officialPromise=(async()=>{
+    try{
+      const response=await timedFetch(SR_OFFICIAL_URL,{headers:{accept:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','user-agent':'SCHOLARK/1.0 strict-school-roster'}},16000);
+      if(!response.ok)throw new Error('Official school roster HTTP '+response.status);
+      const buffer=Buffer.from(await response.arrayBuffer());if(buffer.length<1000||buffer.length>20*1024*1024)throw new Error('Official school roster returned an unexpected file size');
+      const mod=await import('jszip'),JSZip=mod.default||mod,zip=await JSZip.loadAsync(buffer,{checkCRC32:false});
+      const sharedXml=await zip.file('xl/sharedStrings.xml')?.async('string').catch(()=>''),shared=sharedStringsFrom(sharedXml||''),workbook=await zip.file('xl/workbook.xml')?.async('string'),rels=await zip.file('xl/_rels/workbook.xml.rels')?.async('string');
+      if(!workbook||!rels)throw new Error('Official school workbook structure is incomplete');
+      const targets={};for(const m of rels.matchAll(/<Relationship\b([^>]*)\/?>(?:<\/Relationship>)?/gi)){const attrs=m[1]||'',id=(attrs.match(/\bId="([^"]+)"/i)||[])[1],target=(attrs.match(/\bTarget="([^"]+)"/i)||[])[1];if(id&&target)targets[id]=target.replace(/^\//,'')}
+      const sheets=[];for(const m of workbook.matchAll(/<sheet\b([^>]*)\/?>(?:<\/sheet>)?/gi)){const attrs=m[1]||'',name=xmlValue((attrs.match(/\bname="([^"]+)"/i)||[])[1]||''),rid=(attrs.match(/\br:id="([^"]+)"/i)||[])[1];let target=targets[rid]||'';if(target&&!target.startsWith('xl/'))target='xl/'+target.replace(/^\.\//,'');if(name&&target)sheets.push({name,target})}
+      const rows=[];
+      for(const sheet of sheets){
+        const xml=await zip.file(sheet.target)?.async('string');if(!xml)continue;
+        const parsed=[...xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/gi)].map(m=>rowCells(m[1],shared));let headerIndex=-1,header=[];
+        for(let i=0;i<Math.min(parsed.length,25);i++){const normalized=parsed[i].map(normHeader);if(normalized.some(x=>/schoolnaam|school name|naam school/.test(x))||(normalized.some(x=>x==='schoolcode')&&normalized.some(x=>/adres|address/.test(x)))){headerIndex=i;header=normalized;break}}
+        if(headerIndex<0)continue;
+        const find=patterns=>header.findIndex(h=>patterns.some(p=>p.test(h))),nameCol=find([/^schoolnaam$/,/^school name$/,/^naam school$/]),codeCol=find([/schoolcode/,/^code$/]),addressCol=find([/^adres$/,/address/]),districtCol=find([/district/]),phoneCol=find([/telefoon/,/contactnummer/,/phone/]),denomCol=find([/denominatie/,/religie/,/denomination/]);
+        if(nameCol<0)continue;let lastDistrict='';
+        for(let i=headerIndex+1;i<parsed.length;i++){
+          const row=parsed[i],name=clean(row[nameCol]);if(!name||/^totaal|^total/i.test(name))continue;
+          const district=clean(districtCol>=0?row[districtCol]:'')||lastDistrict;if(district)lastDistrict=district;
+          const address=clean(addressCol>=0?row[addressCol]:''),phone=clean(phoneCol>=0?row[phoneCol]:''),denomination=clean(denomCol>=0?row[denomCol]:''),code=clean(codeCol>=0?row[codeCol]:'');
+          const description=[address,district,denomination,code?'Schoolcode '+code:''].filter(Boolean).join(' · '),tags={district,sheet:sheet.name,schoolcode:code,denomination},levels=levelSet({...tags,name},description);
+          rows.push({name,description,lat:null,lon:null,distance:null,website:'',phone,email:'',source:'MinOWC official school list',sourceUrl:SR_OFFICIAL_URL,level:publicLevel(levels),levels,levelDetail:levels.join(','),official:true,tags});
+        }
+      }
+      const cleanRows=mergeRows(rows);if(!cleanRows.length)throw new Error('Official school workbook contained no readable school rows');
+      officialCache={at:Date.now(),rows:cleanRows};console.log('[SCHOLARK] Strict school official Suriname roster ready · '+cleanRows.length+' records');return cleanRows;
+    }catch(e){console.warn('[SCHOLARK] Strict school official roster unavailable: '+clean(e?.message||e));return[]}
+    finally{officialPromise=null}
+  })();
+  return officialPromise;
+}
+function officialLocationMatch(row,city){
+  if(!city)return true;const c=key(city),district=key(row.tags?.district),hay=key([row.name,row.description,row.tags?.district].filter(Boolean).join(' '));
+  if(!c)return true;if(district===c)return true;if(hay.includes(c))return true;if(c.length>=5&&district&&(c.includes(district)||district.includes(c)))return true;return false;
+}
+function mergeRows(rows){
+  const map=new Map();
+  for(const row of rows){const k=key(row?.name);if(!k)continue;const prev=map.get(k);if(!prev){map.set(k,{...row,levels:[...new Set(row.levels||[])]});continue}
+    const levels=[...new Set([...(prev.levels||[]),...(row.levels||[])])],lat=Number.isFinite(Number(prev.lat))?prev.lat:row.lat,lon=Number.isFinite(Number(prev.lon))?prev.lon:row.lon,d=prev.distance!=null?prev.distance:row.distance;
+    map.set(k,{...prev,...row,lat,lon,distance:d,website:prev.website||row.website||'',phone:prev.phone||row.phone||'',email:prev.email||row.email||'',description:prev.official?prev.description:(row.official?row.description:prev.description||row.description),source:prev.source===row.source?prev.source:[prev.source,row.source].filter(Boolean).join(' + '),official:!!(prev.official||row.official),tags:{...(prev.tags||{}),...(row.tags||{})},levels,level:publicLevel(levels),levelDetail:levels.join(',')});
+  }
+  return[...map.values()];
+}
 
 async function overpass(query){
   const failures=[];
@@ -96,40 +155,32 @@ async function overpass(query){
   const e=new Error('Strict country school sources unavailable');e.failures=failures;throw e;
 }
 function countryAreaQuery(country,countryCode,pos,radius,national){
-  const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),around=`(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`,scope=national?'(area.country)':`(area.country)${around}`;
+  const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),scope=national?'(area.country)':`(area.country)(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`;
   const area=iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
-  return`[out:json][timeout:18];${area}(nwr${scope}["amenity"~"kindergarten|school|college|university|language_school"];nwr${scope}["building"="school"];nwr${scope}["office"="educational_institution"];);out center tags 1800;`;
-}
-async function baseSearch(body){
-  try{const r=await timedFetch(`http://127.0.0.1:${PORT}/api/schools/search`,{method:'POST',headers:{'content-type':'application/json','x-scholark-school-base':'1'},body:JSON.stringify(body)},45000);return await r.json().catch(()=>null)}catch{return null}
+  return`[out:json][timeout:18];${area}(nwr["amenity"~"kindergarten|school|college|university|language_school"]${scope};nwr["building"="school"]${scope};nwr["office"="educational_institution"]${scope};);out center tags 1800;`;
 }
 
 async function discover(body){
   const country=clean(body.country||'Suriname')||'Suriname',city=clean(body.city),level=clean(body.level||'all').toLowerCase(),radius=Math.max(1,Math.min(700,Number(body.radius)||50)),center=await resolveCenter(body,country,city);
   if(!Number.isFinite(center.lat)||!Number.isFinite(center.lon))throw new Error('Selected place could not be resolved');
   const countryCode=center.countryCode||expectedCode(country),national=/^suriname$/i.test(country)&&!city,query=countryAreaQuery(country,countryCode,center,radius,national),sourceStatus=[];
+  const officialPromiseForRequest=/^suriname$/i.test(country)?officialSurinameSchools():Promise.resolve([]);
   let rows=[],provider='OpenStreetMap country-boundary search';
   try{const o=await overpass(query);sourceStatus.push({source:o.endpoint,ok:true,count:o.elements.length});rows=o.elements.map(e=>normalized(e,center)).filter(Boolean)}catch(e){sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false})));rows=[]}
-  rows=rows.filter(x=>matchesLevel(x.levels,level));
   if(!national)rows=rows.filter(x=>x.distance<=radius+1);
-
-  if(/^suriname$/i.test(country)&&!city){
-    const base=await baseSearch({country:'Suriname',city:'',level:'all',radius:700});
-    const official=(base?.schools||[]).filter(x=>String(x.source||'').startsWith('MinOWC official school list')).map(officialRow).filter(x=>matchesLevel(x.levels,level));
-    if(official.length){rows=dedupe([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}
-  }
-
-  rows=dedupe(rows).sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
-  console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level} · ${rows.length} matches · country ${countryCode||'unknown'}`);
-  return{ok:true,strictCountry:true,country,city,level,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:{version:VERSION,secondary:'lower_secondary',vocational:'upper_secondary_or_vocational',higher:'higher_only',genericSchoolMatchesSpecific:false}};
+  const officialAll=await officialPromiseForRequest,official=officialAll.filter(x=>officialLocationMatch(x,city));
+  if(official.length){rows=mergeRows([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}else rows=mergeRows(rows);
+  rows=rows.filter(x=>matchesLevel(x.levels,level));
+  rows.sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
+  console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
+  return{ok:true,strictCountry:true,country,city,level,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:{version:VERSION,secondary:'lower_secondary',lower_secondary:'lower_secondary',upper_secondary:'upper_secondary',vocational:'upper_secondary_or_nonlower_vocational',higher:'higher_only',genericSchoolMatchesSpecific:false}};
 }
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
-  if(req.headers?.['x-scholark-school-base']==='1')return previousEmit.call(this,type,...args);
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','Photon geocoder fallback'],levels:{early:'ISCED 0 / early childhood',primary:'ISCED 1 / primary',secondary:'lower secondary only',vocational:'upper secondary or vocational/technical',higher:'higher education only',adult:'adult/professional learning'}});return true;
+    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','Photon geocoder fallback'],levels:{early:'ISCED 0 / early childhood',primary:'ISCED 1 / primary',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'upper-secondary or non-lower vocational/technical',higher:'higher education only',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0}});return true;
   }
   if(req.method==='POST'&&pathname==='/api/schools/search'){
     readJson(req).then(discover).then(x=>json(res,200,x)).catch(e=>json(res,400,{ok:false,strictCountry:true,error:clean(e?.message||e),version:VERSION}));return true;
@@ -137,4 +188,5 @@ http.Server.prototype.emit=function(type,...args){
   return previousEmit.call(this,type,...args);
 };
 
+setTimeout(()=>officialSurinameSchools().catch(()=>{}),2200);
 console.log('[SCHOLARK] Strict school country + level search '+VERSION+' ready');
