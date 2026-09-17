@@ -2,6 +2,7 @@
   if(window.__SCHOLARK_V105_SCHOOL_VWO__)return;
   window.__SCHOLARK_V105_SCHOOL_VWO__=true;
 
+  const VERSION='20260917-school-vwo-v3';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
@@ -25,16 +26,32 @@
   ].filter(Boolean).join(' '));
   const shouldIncludeHogendoorn=(country,city)=>key(country)==='suriname'&&(!key(city)||key(city)==='paramaribo'||key(city).includes('paramaribo'));
   const hasHogendoorn=rows=>(rows||[]).some(row=>/hogendoorn.*atheneum|arthur.*hogendoorn/i.test(clean(row?.name||row?.school_name)));
+  const currentCountry=()=>window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname';
+  const isSuriname=()=>key(currentCountry())==='suriname';
 
-  const LABELS={
-    nl:'VWO · Atheneum / Gymnasium',
-    en:'VWO · Atheneum / Gymnasium',
-    es:'VWO · Atheneum / Gymnasium',
-    fr:'VWO · Atheneum / Gymnasium',
-    de:'VWO · Atheneum / Gymnasium',
-    pt:'VWO · Atheneum / Gymnasium',
-    it:'VWO · Atheneum / Gymnasium'
+  const VWO_DESCRIPTION={
+    nl:'Voorbereidend wetenschappelijk onderwijs.',
+    en:'Pre-university secondary education.',
+    es:'Educación secundaria preuniversitaria.',
+    fr:'Enseignement secondaire préuniversitaire.',
+    de:'Voruniversitäre Sekundarbildung.',
+    pt:'Ensino secundário pré-universitário.',
+    it:'Istruzione secondaria pre-universitaria.'
   };
+  const uiLang=()=>localStorage.getItem('scholark_ui_language')||'en';
+
+  let scheduled=false;
+  let dashboardObserver=null;
+  let dashboardHost=null;
+  let resultsObserver=null;
+  let resultsHost=null;
+  let bootObserver=null;
+
+  function scheduleApply(){
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;apply()});
+  }
 
   function patchSelector(){
     const sel=document.querySelector('#v50-level');if(!sel)return false;
@@ -42,11 +59,10 @@
     if(!opt){
       opt=document.createElement('option');opt.value='vwo';
       const upper=sel.querySelector('option[value="upper_secondary"]');
-      upper?.insertAdjacentElement('afterend',opt)||sel.appendChild(opt);
+      if(upper)upper.insertAdjacentElement('afterend',opt);else sel.appendChild(opt);
     }
-    const lang=localStorage.getItem('scholark_ui_language')||'en';
-    opt.textContent=LABELS[lang]||LABELS.en;
-    sel.dataset.v105Vwo='1';
+    if(opt.textContent!=='VWO')opt.textContent='VWO';
+    if(sel.dataset.v105Vwo!==VERSION)sel.dataset.v105Vwo=VERSION;
     return true;
   }
 
@@ -64,7 +80,7 @@
       const schools=data.schools.filter(isVwoRow);
       if(shouldIncludeHogendoorn(payload.country,payload.city)&&!hasHogendoorn(schools))schools.push({...HOGENDOORN});
       data.schools=schools;data.count=schools.length;data.taxonomy={...(data.taxonomy||{}),vwo:'pre_university_vwo_atheneum_gymnasium'};
-      const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json; charset=utf-8');headers.set('x-scholark-school-vwo','vwo-atheneum-gymnasium-v2');
+      const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json; charset=utf-8');headers.set('x-scholark-school-vwo',VERSION);
       return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers});
     };
     window.__SCHOLARK_V105_VWO_FETCH__=true;
@@ -85,10 +101,49 @@
       if(!Array.isArray(rows))return response;
       const filtered=rows.filter(isVwoRow);
       if(shouldIncludeHogendoorn(payload.p_country,payload.p_city)&&!hasHogendoorn(filtered))filtered.push({...HOGENDOORN});
-      const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json; charset=utf-8');headers.set('x-scholark-school-vwo','vwo-atheneum-gymnasium-v2');
+      const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json; charset=utf-8');headers.set('x-scholark-school-vwo',VERSION);
       return new Response(JSON.stringify(filtered),{status:response.status,statusText:response.statusText,headers});
     };
     cloud.__v105Vwo=true;
+    return true;
+  }
+
+  function setVwoActive(button){
+    const host=button?.closest('.v51-levels');if(!host)return;
+    host.querySelectorAll('.v51-level').forEach(x=>x.classList.toggle('active',x===button));
+  }
+
+  function ensureDashboardVwo(){
+    const host=document.querySelector('#v51-main [data-v51-page="dashboard"] .v51-levels');
+    if(!host)return false;
+    if(!isSuriname()){
+      host.querySelector('[data-v105-vwo-stage="1"]')?.remove();
+      return true;
+    }
+    let button=host.querySelector('[data-v105-vwo-stage="1"]');
+    if(!button){
+      button=document.createElement('button');
+      button.type='button';
+      button.className='v51-level';
+      button.dataset.v105VwoStage='1';
+      button.innerHTML='<span>🎓</span><b>VWO</b><small></small>';
+      const student=host.querySelector('.v51-level[data-level="student"]');
+      if(student)student.insertAdjacentElement('afterend',button);else host.appendChild(button);
+      button.addEventListener('click',()=>{
+        localStorage.setItem('scholark_learning_level','student');
+        localStorage.setItem('scholark_ai_audience_level','student');
+        localStorage.setItem('scholark_education_track','vwo');
+        localStorage.setItem('scholark_vwo_selected','1');
+        setVwoActive(button);
+        window.dispatchEvent(new CustomEvent('scholark-vwo-selected',{detail:{level:'vwo',aiLevel:'student',country:'Suriname'}}));
+      });
+    }
+    const title=button.querySelector('b'),desc=button.querySelector('small');
+    if(title&&title.textContent!=='VWO')title.textContent='VWO';
+    const description=VWO_DESCRIPTION[uiLang()]||VWO_DESCRIPTION.en;
+    if(desc&&desc.textContent!==description)desc.textContent=description;
+    const selected=localStorage.getItem('scholark_education_track')==='vwo'&&localStorage.getItem('scholark_learning_level')==='student';
+    if(selected)setVwoActive(button);else button.classList.remove('active');
     return true;
   }
 
@@ -103,9 +158,48 @@
     });
   }
 
-  function apply(){patchSelector();patchServerFetch();patchCurated();annotateResults()}
-  const observer=new MutationObserver(()=>apply());observer.observe(document.documentElement,{childList:true,subtree:true});
-  ['hashchange','scholark-runtime-ready','scholark-country-change','scholark-language-applied','scholark-language-ready','scholark-language-complete'].forEach(ev=>addEventListener(ev,()=>setTimeout(apply,30)));
-  let attempts=0;const timer=setInterval(()=>{apply();if(++attempts>240&&window.__SCHOLARK_V72_CLOUD__?.__v105Vwo)clearInterval(timer)},250);
-  [20,50,180,500,1200].forEach(ms=>setTimeout(apply,ms));
+  function wireTargetObservers(){
+    const nextDashboard=document.querySelector('#v51-main [data-v51-page="dashboard"] .v51-levels');
+    if(nextDashboard&&nextDashboard!==dashboardHost){
+      dashboardObserver?.disconnect();dashboardHost=nextDashboard;
+      dashboardObserver=new MutationObserver(()=>scheduleApply());
+      dashboardObserver.observe(nextDashboard,{childList:true});
+    }
+    const nextResults=document.querySelector('#v50-results');
+    if(nextResults&&nextResults!==resultsHost){
+      resultsObserver?.disconnect();resultsHost=nextResults;
+      resultsObserver=new MutationObserver(()=>scheduleApply());
+      resultsObserver.observe(nextResults,{childList:true,subtree:true});
+    }
+  }
+
+  function apply(){
+    patchSelector();patchServerFetch();patchCurated();ensureDashboardVwo();annotateResults();wireTargetObservers();
+  }
+
+  document.addEventListener('click',e=>{
+    const existing=e.target?.closest?.('#v51-main .v51-level[data-level]');
+    if(existing&&!existing.matches('[data-v105-vwo-stage="1"]')){
+      if(localStorage.getItem('scholark_education_track')==='vwo'){
+        localStorage.removeItem('scholark_education_track');
+        localStorage.removeItem('scholark_vwo_selected');
+        scheduleApply();
+      }
+    }
+  },true);
+
+  ['hashchange','scholark-runtime-ready','scholark-country-change','scholark-language-applied','scholark-language-ready','scholark-language-complete'].forEach(ev=>addEventListener(ev,()=>setTimeout(scheduleApply,30)));
+
+  // Short boot observer only. The old permanent document-wide observer rewrote option
+  // text on every mutation and could create a self-sustaining mutation loop in Chrome.
+  const root=document.body||document.documentElement;
+  bootObserver=new MutationObserver(()=>scheduleApply());
+  bootObserver.observe(root,{childList:true,subtree:true});
+  setTimeout(()=>{bootObserver?.disconnect();bootObserver=null},8000);
+
+  let attempts=0;
+  const bootTimer=setInterval(()=>{scheduleApply();if(++attempts>=16)clearInterval(bootTimer)},500);
+  [20,80,220,600,1400].forEach(ms=>setTimeout(scheduleApply,ms));
+
+  window.__SCHOLARK_VWO__={version:VERSION,apply:()=>scheduleApply(),schoolLabel:'VWO',dashboardStage:true,performanceGuard:'targeted-observers'};
 })();
