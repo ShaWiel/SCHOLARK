@@ -1,3 +1,3 @@
 SCHOLARK deploy trigger
-Studio AI now uses Pollinations free-first generation with OpenAI only as an optional fallback
-Triggered: 2026-08-16 22:02 America/Paramaribo
+Purpose: deploy resilient Gemini model failover.
+Commit target: 87221afdfe350390140ebf15661e40295bace88e
