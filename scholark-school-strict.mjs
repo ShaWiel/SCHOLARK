@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260917-school-country-levels-v1';
+const VERSION='20260917-school-country-levels-v2';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const PORT=Number(process.env.PORT||10000);
@@ -26,11 +26,11 @@ function distance(a,b,c,d){const R=6371,p=rad(c-a),q=rad(d-b),z=Math.sin(p/2)**2
 function expectedCode(country){return COUNTRY_CODES[low(country)]||''}
 function sameCode(a,b){return clean(a).toUpperCase()&&clean(a).toUpperCase()===clean(b).toUpperCase()}
 
-async function timedFetch(url,init={},ms=26000){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),ms);try{return await safeFetch(url,{...init,signal:ctrl.signal})}finally{clearTimeout(timer)}}
+async function timedFetch(url,init={},ms=22000){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),ms);try{return await safeFetch(url,{...init,signal:ctrl.signal})}finally{clearTimeout(timer)}}
 async function geocode(country,city=''){
   const q=[city,country].filter(Boolean).join(', '),u=new URL('https://nominatim.openstreetmap.org/search');
   u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','1');u.searchParams.set('q',q);
-  const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-search'}},10000);
+  const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-search'}},9000);
   if(!r.ok)throw new Error('Geocoder HTTP '+r.status);
   const d=await r.json().catch(()=>null),row=d?.[0];if(!row)throw new Error('Place not found in selected country');
   const code=clean(row.address?.country_code).toUpperCase(),expected=expectedCode(country);
@@ -91,17 +91,17 @@ function dedupe(rows){const out=[],seen=new Set();for(const x of rows){const k=l
 async function overpass(query){
   const failures=[];
   for(const endpoint of OVERPASS){
-    try{const r=await timedFetch(endpoint,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8',accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-search'},body:'data='+encodeURIComponent(query)},32000);if(!r.ok){failures.push(endpoint+' HTTP '+r.status);continue}const d=await r.json().catch(()=>null);if(Array.isArray(d?.elements))return{elements:d.elements,endpoint};failures.push(endpoint+' invalid JSON')}catch(e){failures.push(endpoint+' '+clean(e?.name==='AbortError'?'timeout':e?.message||e))}
+    try{const r=await timedFetch(endpoint,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8',accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-search'},body:'data='+encodeURIComponent(query)},18000);if(!r.ok){failures.push(endpoint+' HTTP '+r.status);continue}const d=await r.json().catch(()=>null);if(Array.isArray(d?.elements))return{elements:d.elements,endpoint};failures.push(endpoint+' invalid JSON')}catch(e){failures.push(endpoint+' '+clean(e?.name==='AbortError'?'timeout':e?.message||e))}
   }
   const e=new Error('Strict country school sources unavailable');e.failures=failures;throw e;
 }
 function countryAreaQuery(country,countryCode,pos,radius,national){
   const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),around=`(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`,scope=national?'(area.country)':`(area.country)${around}`;
   const area=iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
-  return`[out:json][timeout:32];${area}(nwr${scope}["amenity"~"kindergarten|school|college|university|language_school"];nwr${scope}["building"="school"];nwr${scope}["office"="educational_institution"];);out center tags 1800;`;
+  return`[out:json][timeout:18];${area}(nwr${scope}["amenity"~"kindergarten|school|college|university|language_school"];nwr${scope}["building"="school"];nwr${scope}["office"="educational_institution"];);out center tags 1800;`;
 }
 async function baseSearch(body){
-  try{const r=await timedFetch(`http://127.0.0.1:${PORT}/api/schools/search`,{method:'POST',headers:{'content-type':'application/json','x-scholark-school-base':'1'},body:JSON.stringify(body)},70000);return await r.json().catch(()=>null)}catch{return null}
+  try{const r=await timedFetch(`http://127.0.0.1:${PORT}/api/schools/search`,{method:'POST',headers:{'content-type':'application/json','x-scholark-school-base':'1'},body:JSON.stringify(body)},45000);return await r.json().catch(()=>null)}catch{return null}
 }
 
 async function discover(body){
@@ -113,13 +113,14 @@ async function discover(body){
   rows=rows.filter(x=>matchesLevel(x.levels,level));
   if(!national)rows=rows.filter(x=>x.distance<=radius+1);
 
-  if(/^suriname$/i.test(country)&&(!city||!rows.length)){
+  if(/^suriname$/i.test(country)&&!city){
     const base=await baseSearch({country:'Suriname',city:'',level:'all',radius:700});
     const official=(base?.schools||[]).filter(x=>String(x.source||'').startsWith('MinOWC official school list')).map(officialRow).filter(x=>matchesLevel(x.levels,level));
-    if(!city&&official.length){rows=dedupe([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}
+    if(official.length){rows=dedupe([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}
   }
 
   rows=dedupe(rows).sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
+  console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level} · ${rows.length} matches · country ${countryCode||'unknown'}`);
   return{ok:true,strictCountry:true,country,city,level,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:{version:VERSION,secondary:'lower_secondary',vocational:'upper_secondary_or_vocational',higher:'higher_only',genericSchoolMatchesSpecific:false}};
 }
 
