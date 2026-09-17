@@ -77,10 +77,13 @@ jobs:
           exit 1
       - name: Verify AI Tutor uses Gemini
         run: |
-          curl --fail --silent --show-error \
+          status=$(curl --silent --show-error -o /tmp/gemini-learning.json -w '%{http_code}' \
             -H 'content-type: application/json' \
             --data '{"mode":"tutor","prompt":"Explain photosynthesis in one concise sentence.","level":"student","language":"English"}' \
-            https://scholark-app-shawiel.onrender.com/api/learning/generate >/tmp/gemini-learning.json
+            https://scholark-app-shawiel.onrender.com/api/learning/generate)
+          echo "AI Tutor HTTP $status"
+          cat /tmp/gemini-learning.json
+          test "$status" = "200"
           python - <<'PY'
           import json
           d=json.load(open('/tmp/gemini-learning.json'))
@@ -91,10 +94,13 @@ jobs:
           PY
       - name: Verify Studio AI uses Gemini
         run: |
-          curl --fail --silent --show-error \
+          status=$(curl --silent --show-error -o /tmp/gemini-studio.json -w '%{http_code}' \
             -H 'content-type: application/json' \
             --data '{"mode":"graphic","prompt":"Create a concise study reminder about staying hydrated.","count":1,"language":"English"}' \
-            https://scholark-app-shawiel.onrender.com/api/studio/generate >/tmp/gemini-studio.json
+            https://scholark-app-shawiel.onrender.com/api/studio/generate)
+          echo "Studio AI HTTP $status"
+          cat /tmp/gemini-studio.json
+          test "$status" = "200"
           python - <<'PY'
           import json
           d=json.load(open('/tmp/gemini-studio.json'))
