@@ -6,8 +6,8 @@ const root=process.cwd();
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
-const RELEASE='r138';
-const VERSION='20260918-r138';
+const RELEASE='r139';
+const VERSION='20260918-r139';
 const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260917-school-country-levels-v3';
 
@@ -27,6 +27,12 @@ const homeFoundation=read('scholark-v99-home-foundation.js');
 const countryEducation=read('scholark-v96-country-education.js');
 const schoolClient=read('scholark-v104-school-filter-guard.js');
 const schoolVwo=read('scholark-v105-school-vwo.js');
+const fastTools=read('scholark-v52-workspace-qa.js');
+const learningApi=read('scholark-v62-learning-ai.js');
+const studyAhead=read('scholark-v83-study-ahead-cloud.js');
+const examMastery=read('scholark-v87-exam-mastery.js');
+const learningEngine=read('scholark-v88-learning-engine.js');
+const languageLearner=read('scholark-v93-language-learner.js');
 
 ok(runtime.includes(`const VERSION = '${VERSION}'`),'runtime VERSION is not '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -69,7 +75,7 @@ ok(prepaint.includes("p==='/index.html'")||prepaint.includes("p === '/index.html
 ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
-ok(quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes('HTMLButtonElement'),'Language Learner choices are not interactive');
+ok(quiz.includes("const VERSION = '20260918-language-choice-v3'")&&quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes("scholark:language-choice"),'Language Learner choices/adaptive events are incomplete');
 ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
 ok(schoolClient.includes("VERSION='20260918-school-filter-v3'"),'School client filter guard version is stale');
 ok(schoolClient.includes('documentWideObserver:false')&&!schoolClient.includes('observer.observe(document.documentElement')&&!schoolClient.includes('setInterval('),'School client filter still risks an unbounded DOM/polling loop');
@@ -89,7 +95,17 @@ ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("a
 ok(countryEducation.includes("['upper_secondary',ui.upperFilter+upperSuffix]")&&countryEducation.includes("['vwo','VWO']")&&countryEducation.includes("['vocational',ui.vocFilter+vocSuffix]"),'school level order/labels are incomplete');
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['upper_secondary','vwo','vocational','higher','adult'])"),'Study field is not limited to upper-secondary through adult levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
-ok(docker.includes('scholark-v102-language-quiz.js'),'Language quiz fix is not shipped');
+ok(!schoolFinder.includes('<option value="early">')&&!countryEducation.includes("['early',localizedStage('young',c).title]"),'Early childhood is still exposed in Schools Near Me');
+ok(schoolFinder.includes("merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early')"),'Early-childhood results are not filtered from school search');
+ok(fastTools.includes("const PLAN_KEY='scholark_v51_planner'")&&fastTools.includes("type:'next_action'")&&fastTools.includes('goalProgress(g)'),'Planner/Goals integration is incomplete');
+ok(fastTools.includes('Open actions')&&fastTools.includes('Due today')&&fastTools.includes('Where to focus next'),'Planner/Progress dashboard depth is incomplete');
+ok(fastTools.includes('Next review')&&fastTools.includes('Practice')&&fastTools.includes('Add this study session to Planner'),'Education & Learning actionable workflows are incomplete');
+ok(examMastery.includes('saveLocalMastery(groups)')&&examMastery.includes("saved locally to Progress + Mastery"),'Diagnostics do not persist to local Progress + Mastery');
+ok(learningEngine.includes('localReviewRows')&&learningEngine.includes('renderLocalQueue'),'Spaced Review lacks local functionality');
+ok(studyAhead.includes("data-v83="goal"")&&studyAhead.includes("scholark_v51_planner")&&studyAhead.includes("scholark_v52_mastery"),'Study Ahead is not connected to local Planner/Mastery/Goals');
+ok(learningApi.includes("const depthInstruction=")&&learningApi.includes("depth,prompt:'Prepare me to study '"),'Study Ahead depth selector is not used by AI generation');
+ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
+ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
 const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||'';
