@@ -312,7 +312,7 @@
   function applyGroupLabels(){
     if(currentCountry()!=='Suriname')return;
     const copy=groupCopy();
-    $('.v51-level-cluster[data-v51-group]').forEach(cluster=>{
+    document.querySelectorAll('.v51-level-cluster[data-v51-group]').forEach(cluster=>{
       const id=cluster.dataset.v51Group,label=$('.v51-level-group',cluster);
       cluster.dataset.schI18nOwned='1';
       if(label&&copy[id]){label.dataset.schI18nOwned='1';label.textContent=copy[id]}
