@@ -472,7 +472,23 @@
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
-  function loadMap(c){return {...parseStored(key(c)),...(STATIC_UI[c]||{})}}
+  const STATIC_VARIANTS=new Map();
+  for(const m of Object.values(STATIC_UI)){
+    for(const [source,translated] of Object.entries(m||{})){
+      const src=clean(source),tr=clean(translated);if(!src)continue;
+      STATIC_VARIANTS.set(src,src);if(tr&&!STATIC_VARIANTS.has(tr))STATIC_VARIANTS.set(tr,src);
+    }
+  }
+  function sanitizeStoredMap(raw){
+    const out={};
+    for(const [source,translated] of Object.entries(raw||{})){
+      const src=clean(source),canonical=STATIC_VARIANTS.get(src);
+      if(canonical&&canonical!==src)continue;
+      out[source]=translated;
+    }
+    return out;
+  }
+  function loadMap(c){return {...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}}
   const reverseKnown=new Map();
   function indexMap(m){
     for(const [source,translated] of Object.entries(m||{})){
@@ -484,12 +500,12 @@
     reverseKnown.clear();
     for(const m of Object.values(STATIC_UI))indexMap(m);
     for(const [lc] of LANGS){
-      indexMap(parseStored(key(lc)));
-      for(const version of LEGACY_CACHE_VERSIONS)indexMap(parseStored(legacyKey(version,lc)));
+      indexMap(sanitizeStoredMap(parseStored(key(lc))));
+      for(const version of LEGACY_CACHE_VERSIONS)indexMap(sanitizeStoredMap(parseStored(legacyKey(version,lc))));
     }
   }
   rebuildReverseKnown();
-  function saveMap(c,m){try{const safe={...(m||{}),...(STATIC_UI[c]||{})};localStorage.setItem(key(c),JSON.stringify(safe));indexMap(safe)}catch{}}
+  function saveMap(c,m){try{const safe={...sanitizeStoredMap(m||{}),...(STATIC_UI[c]||{})};localStorage.setItem(key(c),JSON.stringify(safe));indexMap(safe)}catch{}}
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
