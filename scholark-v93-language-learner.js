@@ -23,7 +23,7 @@
     .v93-grammar{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:9px}.v93-grammar-card{border-radius:16px;background:#f6f4ef;padding:15px}.v93-grammar-card b{font:950 11px Inter}.v93-examples{margin:8px 0 0;padding-left:17px}.v93-examples li{font:700 8px/1.5 Inter;margin:4px 0}
     .v93-dialogue{display:grid;gap:7px}.v93-line{display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:start;padding:11px;border-radius:14px;background:#f7f6f3}.v93-line b{font:900 8px Inter;color:#6d5dfc}.v93-line strong{display:block;font:850 10px/1.45 Inter}.v93-line span{display:block;margin-top:4px;font:650 8px/1.4 Inter;color:#777}
     .v93-exercise{border-top:1px solid #ece9e4;padding:14px 0}.v93-exercise:first-child{border-top:0}.v93-exercise b{font:900 9px/1.45 Inter}.v93-choices{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.v93-choice{padding:7px 9px;border-radius:9px;background:#f0eff7;font:750 7.5px Inter}.v93-answer{display:none;margin-top:9px;padding:10px;border-radius:10px;background:#ecffe1;font:700 8px/1.5 Inter}.v93-answer.open{display:block}
-    .v93-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.v93-history{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}.v93-history button{border:1px solid rgba(23,25,31,.08);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer}.v93-history b{display:block;font:900 9px Inter}.v93-history span{display:block;margin-top:4px;font:650 7.5px/1.4 Inter;color:#777}
+    .v93-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.v93-footer-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.v93-footer-actions .v93-btn{min-width:112px}.v93-history{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}.v93-history button{border:1px solid rgba(23,25,31,.08);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer}.v93-history b{display:block;font:900 9px Inter}.v93-history span{display:block;margin-top:4px;font:650 7.5px/1.4 Inter;color:#777}
     .v93-pronounce{margin-top:8px;font:750 8px/1.4 Inter;color:#5e52c1}
     @media(max-width:1050px){.v93{padding:30px 20px 60px}.v93-hero{grid-template-columns:1fr}.v93-row{grid-template-columns:1fr 1fr}}@media(max-width:620px){.v93{padding:72px 12px 50px}.v93-row{grid-template-columns:1fr}.v93-progress-grid{grid-template-columns:1fr 1fr 1fr}.v93-line{grid-template-columns:1fr}.v93-line .v93-mini{justify-self:start}}
   `;document.head.appendChild(css);
@@ -55,11 +55,29 @@
 
   function dayKey(d=new Date()){return d.toISOString().slice(0,10)}
   function daysBetween(a,b){if(!a||!b)return 99;return Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/86400000)}
+  function isCompleted(row=current){
+    if(!row)return false;return loadProgress()[row.targetCode]?.lastCompletedLesson===row.id;
+  }
   function complete(){
     if(!current)return;const code=current.targetCode,p=loadProgress(),x=p[code]||{xp:0,streak:0,lessons:0,level:current.level||'A1'},today=dayKey(),gap=daysBetween(x.lastDay,today);
-    if(x.lastCompletedLesson===current.id)return;
+    if(x.lastCompletedLesson===current.id){const b=$('#v93-complete');if(b){b.disabled=true;b.textContent='✓ Lesson complete'}return}
     x.xp=(Number(x.xp)||0)+100;x.lessons=(Number(x.lessons)||0)+1;x.streak=x.lastDay===today?(Number(x.streak)||1):gap===1?(Number(x.streak)||0)+1:1;x.lastDay=today;x.lastTopic=current.topic||'';x.level=current.level||x.level||'A1';x.lastCompletedLesson=current.id;p[code]=x;saveProgress(p);renderStats(code);pushCloudProgress(code);
     const st=$('#v93-status');if(st)st.textContent='Lesson complete · +100 XP. Your progress has been saved.';const b=$('#v93-complete');if(b){b.disabled=true;b.textContent='✓ Lesson complete'}
+  }
+  async function nextLesson(){
+    if(busy||!current)return null;
+    const source=current,next=clean(source.result?.nextStep)||'Continue with the next practical lesson';
+    const target=$('#v93-target'),support=$('#v93-support'),level=$('#v93-level'),goal=$('#v93-goal'),topic=$('#v93-topic'),button=$('#v93-next'),status=$('#v93-status');
+    if(target&&[...target.options].some(o=>o.value===source.targetCode))target.value=source.targetCode;
+    if(support&&[...support.options].some(o=>o.value===source.supportCode))support.value=source.supportCode;
+    if(level&&[...level.options].some(o=>o.value===source.level))level.value=source.level;
+    if(goal&&[...goal.options].some(o=>o.value===source.goal))goal.value=source.goal;
+    if(topic){topic.value=next;topic.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(button){button.disabled=true;button.textContent='Building next lesson…'}
+    if(status)status.textContent='Preparing your next lesson…';
+    const built=await buildLesson();
+    if(button?.isConnected){button.disabled=false;button.textContent='Next lesson'}
+    return built;
   }
 
   function renderStats(code){
@@ -106,8 +124,8 @@
       const adaptive=accuracy==null?'This is the learner’s first measured practice.':accuracy<65?'Recent exercise accuracy is '+accuracy+'%. Add more scaffolding, shorter examples and extra guided practice on the same skills.':accuracy>=85?'Recent exercise accuracy is '+accuracy+'%. Increase challenge slightly and use more independent production.':'Recent exercise accuracy is '+accuracy+'%. Keep the current difficulty but reinforce weak points.';
       const data=await call({targetLanguage:langName(targetCode),nativeLanguage:langName(supportCode),language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises. '+adaptive,level:localStorage.getItem('scholark_learning_level')||'student'});
       current={id:'lang-'+Date.now().toString(36),targetCode,supportCode,level,goal,topic,result:data.result,provider:data.provider||'',model:data.model||'',at:Date.now()};
-      saveHistory(current);renderLesson(current);renderHistory();localStorage.setItem('scholark_v93_target',targetCode);const p=loadProgress();p[targetCode]={...(p[targetCode]||{}),level,lastTopic:topic};saveProgress(p);renderStats(targetCode);pushCloudProgress(targetCode);st.textContent='Lesson ready. Listen, speak, practice and mark it complete when you finish.';
-    }catch(e){st.textContent=clean(e?.message||e)}finally{busy=false;btn.disabled=false}
+      saveHistory(current);renderLesson(current);renderHistory();localStorage.setItem('scholark_v93_target',targetCode);const p=loadProgress();p[targetCode]={...(p[targetCode]||{}),level,lastTopic:topic};saveProgress(p);renderStats(targetCode);pushCloudProgress(targetCode);st.textContent='Lesson ready. Listen, speak, practice and mark it complete when you finish.';return current;
+    }catch(e){st.textContent=clean(e?.message||e);return null}finally{busy=false;btn.disabled=false}
   }
 
   function ai(s){return '<span class="v93-ai">'+esc(s||'')+'</span>'}
@@ -119,12 +137,16 @@
       '<section class="v93-section"><h3>Grammar made clear</h3><div class="v93-grammar">'+(r.grammar||[]).map(g=>'<article class="v93-grammar-card"><b>'+ai(g.point||'')+'</b><p>'+ai(g.explanation||'')+'</p><ul class="v93-examples">'+(g.examples||[]).map(x=>'<li>'+ai(x)+'</li>').join('')+'</ul></article>').join('')+'</div></section>'+
       '<section class="v93-section"><h3>Practice dialogue</h3><div class="v93-dialogue">'+(r.dialogue||[]).map((d,i)=>'<div class="v93-line"><b>'+ai(d.speaker||('Speaker '+(i+1)))+'</b><div><strong class="v93-ai v93-target">'+esc(d.target||'')+'</strong><span class="v93-ai v93-native">'+esc(d.native||'')+'</span></div><button class="v93-mini" data-v93-dialogue="'+i+'">Listen</button></div>').join('')+'</div></section>'+
       '<section class="v93-section"><h3>Exercises</h3><div>'+(r.exercises||[]).map((e,i)=>'<div class="v93-exercise"><b>'+String(i+1)+'. '+ai(e.prompt||'')+'</b>'+(e.choices?.length?'<div class="v93-choices">'+e.choices.map(x=>'<span class="v93-choice">'+ai(x)+'</span>').join('')+'</div>':'')+'<div class="v93-actions"><button class="v93-mini alt" data-v93-answer="'+i+'">Show answer</button></div><div class="v93-answer" data-v93-answer-box="'+i+'"><b>Answer:</b> '+ai(e.answer||'')+'<br><b>Why:</b> '+ai(e.explanation||'')+'</div></div>').join('')+'</div></section>'+
-      '<section class="v93-section"><div class="v93-row"><div><h3>Culture tip</h3><p>'+ai(r.cultureTip||'')+'</p></div><div><h3>Next lesson</h3><p>'+ai(r.nextStep||'')+'</p></div></div><div class="v93-footer"><span class="v93-kicker">'+esc(row.provider||'AI')+' · '+esc(row.model||'')+'</span><button class="v93-btn lime" id="v93-complete">Lesson complete</button></div></section>';
+      '<section class="v93-section"><div class="v93-row"><div><h3>Culture tip</h3><p>'+ai(r.cultureTip||'')+'</p></div><div><h3>Next lesson</h3><p>'+ai(r.nextStep||'')+'</p></div></div><div class="v93-footer"><span class="v93-kicker">'+esc(row.provider||'AI')+' · '+esc(row.model||'')+'</span><div class="v93-footer-actions"><button class="v93-btn lime" id="v93-complete">Lesson complete</button><button class="v93-btn ghost" id="v93-next">Next lesson</button></div></div></section>';
     $$('[data-v93-listen]',out).forEach(b=>b.onclick=()=>speak((r.vocabulary||[])[+b.dataset.v93Listen]?.term||'',row.targetCode));
     $$('[data-v93-practice]',out).forEach(b=>b.onclick=()=>practice((r.vocabulary||[])[+b.dataset.v93Practice]?.term||'',row.targetCode,$('[data-v93-feedback="'+b.dataset.v93Practice+'"]',out)));
     $$('[data-v93-dialogue]',out).forEach(b=>b.onclick=()=>speak((r.dialogue||[])[+b.dataset.v93Dialogue]?.target||'',row.targetCode));
     $$('[data-v93-answer]',out).forEach(b=>b.onclick=()=>{const box=$('[data-v93-answer-box="'+b.dataset.v93Answer+'"]',out),open=box.classList.toggle('open');b.textContent=open?'Hide answer':'Show answer'});
-    $('#v93-complete',out).onclick=complete;out.scrollIntoView({behavior:'smooth',block:'start'});window.__SCHOLARK_I18N__?.apply?.(out);
+    const completeButton=$('#v93-complete',out),nextButton=$('#v93-next',out);
+    if(completeButton){completeButton.onclick=complete;if(isCompleted(row)){completeButton.disabled=true;completeButton.textContent='✓ Lesson complete'}}
+    if(nextButton)nextButton.onclick=nextLesson;
+    out.scrollIntoView({behavior:'smooth',block:'start'});window.__SCHOLARK_I18N__?.apply?.(out);
+    window.dispatchEvent(new CustomEvent('scholark-language-lesson-rendered',{detail:{id:row.id,targetCode:row.targetCode,level:row.level}}));
   }
 
   function speak(text,code){
@@ -151,5 +173,5 @@
   });
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(open,40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open()},260);
-  window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson};
+  window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson,nextLesson,completeLesson:complete,getCurrent:()=>current};
 })();
