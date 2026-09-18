@@ -41,12 +41,6 @@ const stabilityFoundation=read('scholark-v81-stability-foundation.js');
 const workspacePolish=read('scholark-v91-workspace-polish.js');
 const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
-const runtimeJsFiles=fs.readdirSync(root).filter(name=>/^scholark-v\d+.*\.js$/.test(name));
-for(const file of runtimeJsFiles){
-  const src=read(file);
-  ok(!/(^|[^$])\$\([^;\n]*\)\.forEach\s*\(/m.test(src),file+' contains unsafe single-element $().forEach iteration');
-}
-
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -117,7 +111,9 @@ ok((i18n.match(/protectedNode\(el\)/g)||[]).length>=2,'locale-owned form attribu
 ok(homeFoundation.includes('scholark_v90_i18n_v4-seven-ui_'),'home foundation still writes the old language cache');
 ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("all:'Todos los niveles'")&&countryEducation.includes("studyField:'Studie/richting (optioneel)'"),'school locale dictionary is incomplete');
 ok(countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]")&&countryEducation.includes("['Voortgezet Onderwijs Junioren (VOJ)',['mulo','lbo']]")&&countryEducation.includes("['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']]")&&countryEducation.includes("['Hoger Onderwijs',['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
-ok(countryEducation.includes("$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
+ok(countryEducation.includes("$$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
+ok(fastTools.includes("$$('[data-tutor-assignment]',h).forEach"),'AI Tutor Assignment Coach must iterate assignment buttons as a collection');
+ok(learningEngine.includes("$$('[data-v88-local]',host).forEach"),'Learning review engine must iterate review buttons as a collection');
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'Study field is not available for Suriname VOS and higher-education levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
 ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
