@@ -93,6 +93,19 @@
 
   function readTutorHistory(){try{return JSON.parse(localStorage.getItem('scholark_v62_tutor_history')||'[]')}catch{return[]}}
   function writeTutorHistory(a){try{localStorage.setItem('scholark_v62_tutor_history',JSON.stringify(a.slice(-12)))}catch{}}
+  function readAssignments(){
+    try{
+      const rows=JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]');
+      return (Array.isArray(rows)?rows:[]).map(x=>({id:clean(x?.id),title:clean(x?.title),subject:clean(x?.subject),type:clean(x?.type)||'assignment',dueDate:clean(x?.dueDate),instructions:clean(x?.instructions),progress:Math.max(0,Math.min(100,Number(x?.progress)||0)),status:(x?.status==='complete'||Number(x?.progress)>=100)?'complete':'active'})).filter(x=>x.title);
+    }catch{return[]}
+  }
+  function assignmentContextFor(prompt){
+    const rows=readAssignments().filter(x=>x.status!=='complete').sort((a,b)=>String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999')));
+    let selected='';try{selected=sessionStorage.getItem('scholark_v62_assignment_id')||''}catch{}
+    if(selected){try{sessionStorage.removeItem('scholark_v62_assignment_id')}catch{}const one=rows.find(x=>x.id===selected);if(one)return {intent:true,rows:[one]}}
+    const intent=/assignment|homework|project|essay|report|presentation|deadline|opdracht|huiswerk|verslag|scriptie|werkstuk|what should i do|wat moet ik doen/i.test(prompt);
+    return {intent,rows:intent?rows.slice(0,10):[]};
+  }
   async function runTutor(){
     const q=$('#v52-tutor-q'),chat=$('#v52-chat'),btn=$('#v52-tutor-send');
     const prompt=clean(q?.value); if(!prompt){q?.focus();return}
@@ -104,7 +117,8 @@
     try{
       const hist=readTutorHistory();
       const context=hist.slice(-6).map(x=>x.role+': '+String(x.text||'').slice(0,x.role==='assistant'?4200:1800)).join('\n');
-      const data=await call('tutor',{prompt,context,tutorMode:'teach'});
+      const assignment=assignmentContextFor(prompt);
+      const data=await call('tutor',{prompt,context,tutorMode:assignment.intent?'assignment_coach':'teach',assignmentContext:assignment.rows});
       const r=data.result,full=tutorPlain(r);
       wait.innerHTML=tutorHtml(r,data);
       hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist);
