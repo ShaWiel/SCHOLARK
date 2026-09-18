@@ -36,6 +36,10 @@ await page.evaluate(()=>{
   localStorage.setItem('scholark_ui_language','nl');
   localStorage.setItem('scholark_learning_level','secondary');
   localStorage.removeItem('scholark_education_track');
+  for(const key of [
+    'scholark_v51_planner','scholark_v51_goals','scholark_v52_mastery',
+    'scholark_v106_focus','scholark_v106_focus_history','scholark_v106_flashcards','scholark_v106_assignments'
+  ]) localStorage.removeItem(key);
 });
 await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
@@ -57,22 +61,73 @@ check(await page.locator('.v51-level[data-level="mulo"]').evaluate(el=>el.classL
 
 await route('studio','#v41-studio-workspace:not([hidden])');
 check(await page.locator('#v41-prompt').count()===1,'Studio prompt missing');
+await page.fill('#v41-prompt','Workspace smoke presentation');
+check((await page.inputValue('#v41-prompt'))==='Workspace smoke presentation','Studio prompt is not editable');
+
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
+await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
+await page.click('#v52-tutor-send');
+check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept a user question');
+check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
+
 await route('education','#v51-fallback .v52-tool');
+await page.click('[data-edu="mastery"]');
+check(await visible('#v52-m-add',3000),'Education Mastery Map did not open');
+await page.fill('#v52-m-subject','Biology');
+await page.fill('#v52-m-topic','Photosynthesis');
+await page.click('#v52-m-add');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v52_mastery')||'[]').some(x=>x.topic==='Photosynthesis')}catch{return false}}),'Education Mastery topic did not persist');
+
 await route('language','#v51-fallback .v93');
 check(await page.locator('#v93-build').count()===1,'Language lesson builder missing');
+
 await route('planner','#v51-fallback .v52-tool');
 check(await page.locator('#v52-plan-add').count()===1,'Planner add action missing');
+await page.fill('#v52-plan','Review biology notes');
+await page.click('#v52-plan-add');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>x.text==='Review biology notes')}catch{return false}}),'Planner item did not persist');
+
 await route('focus','#v106-root');
 check(await page.locator('#v106-focus-main').count()===1,'Focus start button missing');
+await page.fill('#v106-focus-task','Biology focus smoke');
+await page.click('#v106-focus-main');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').running===true}catch{return false}}),'Focus session did not start');
+await page.click('#v106-focus-main');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').running===false}catch{return false}}),'Focus session did not pause');
+
 await route('flashcards','#v106-root');
 check(await page.locator('#v106-card-add').count()===1,'Flashcard add button missing');
+await page.fill('#v106-card-front','Capital of Suriname?');
+await page.fill('#v106-card-back','Paramaribo');
+await page.click('#v106-card-add');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_flashcards')||'[]').some(x=>x.front==='Capital of Suriname?')}catch{return false}}),'Flashcard did not persist');
+await page.click('#v106-study-start');
+check(await visible('#v106-flip',3000),'Flashcard review did not start');
+await page.click('#v106-flip');
+await page.click('[data-rate="good"]');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_flashcards')||'[]').some(x=>x.front==='Capital of Suriname?'&&Number(x.reps)>=1)}catch{return false}}),'Flashcard review rating did not persist');
+
 await route('assignments','#v106-root');
 check(await page.locator('#v106-a-add').count()===1,'Assignment add button missing');
+await page.fill('#v106-a-title','Workspace smoke assignment');
+await page.fill('#v106-a-subject','Biology');
+await page.click('#v106-a-add');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]').some(x=>x.title==='Workspace smoke assignment')}catch{return false}}),'Assignment did not persist');
+await page.click('[data-a-plan]');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.id||'').startsWith('assignment-'))}catch{return false}}),'Assignment did not create Planner steps');
+
 await route('progress','#v51-fallback .v52-tool');
+const progressText=(await page.locator('#v51-fallback .v52-tool').innerText()).toLowerCase();
+check(progressText.includes('photosynthesis'),'Progress did not consume Mastery data');
+
 await route('goal','#v51-fallback .v52-tool');
 check(await page.locator('#v52-goal-add').count()===1,'Goal add button missing');
+await page.fill('#v52-goal','Master biology');
+await page.click('#v52-goal-add');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_goals')||'[]').some(x=>x.text==='Master biology')}catch{return false}}),'Goal did not persist');
+await page.click('[data-goal-next]');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.text||'').includes('Master biology'))}catch{return false}}),'Goal did not create a Planner next action');
 await route('files','#v51-fallback .v86');
 check(await page.locator('#v86-files').count()===1,'Files upload input missing');
 await route('project','#v51-fallback .v64-projects');
