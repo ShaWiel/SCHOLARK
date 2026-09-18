@@ -29,7 +29,7 @@
   function updateSummary(){
     const sum=$('#v87-summary');if(!sum||!exam)return;const total=questions().length,done=marks.size,correct=[...marks.values()].filter(x=>x==='correct').length,score=done?Math.round(correct/done*100):0;
     if(done<total){sum.innerHTML='<b>'+done+' / '+total+'</b><p>Grade each question after revealing the answer. SCHOLARK will turn the completed result into real Progress + Mastery data.</p>';return}
-    sum.innerHTML='<b>'+score+'%</b><p>'+correct+' correct · '+(total-correct)+' needs work. Your result is '+(cloud()?.currentSession?.()?.user?.id?'being saved to your account and connected to Mastery.':'ready locally. Sign in to save it to Progress and Mastery.')+'</p><small>'+esc(exam.name||'Practice exam')+'</small>';
+    sum.innerHTML='<b>'+score+'%</b><p>'+correct+' correct · '+(total-correct)+' needs work. Your result is '+(cloud()?.currentSession?.()?.user?.id?'being saved to your account and connected to Mastery.':'being saved locally to Progress + Mastery.')+'</p><small>'+esc(exam.name||'Practice exam')+'</small>';
     if(!saved){saved=true;persist(correct,total,score)}
   }
   function nextDue(mastery){const days=mastery<35?1:mastery<60?3:mastery<80?7:14,d=new Date();d.setDate(d.getDate()+days);return {days,due:d.toISOString()}}
@@ -49,15 +49,30 @@
     }
     return row;
   }
+  function saveLocalMastery(groups){
+    let rows=[];try{rows=JSON.parse(localStorage.getItem('scholark_v52_mastery')||'[]')||[]}catch{}
+    const now=new Date().toISOString(),subject=clean(exam.name)||'Practice';
+    for(const [topic,g] of groups){
+      let row=rows.find(x=>clean(x.topic).toLowerCase()===clean(topic).toLowerCase()&&clean(x.subject||'General').toLowerCase()===subject.toLowerCase());
+      const attempts=(Number(row?.attempts)||0)+g.total,correct=(Number(row?.correct)||0)+g.correct,accuracy=attempts?correct/attempts:0,confidence=Math.min(1,attempts/8),mastery=Math.round(accuracy*100*(.55+.45*confidence)),status=mastery>=85?'Mastered':mastery>=60?'Practising':mastery>=30?'Learning':'New',next=nextDue(mastery);
+      const payload={id:row?.id||('mastery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)),subject,topic,attempts,correct,incorrect:Math.max(0,attempts-correct),mastery,status,nextReviewAt:next.due,updatedAt:now,lastPracticedAt:now};
+      if(row)Object.assign(row,payload);else rows.push(payload);
+    }
+    try{localStorage.setItem('scholark_v52_mastery',JSON.stringify(rows))}catch{}
+    window.dispatchEvent(new CustomEvent('scholark:local-mastery-updated',{detail:{source:'exam',score}}));
+  }
   async function persist(correct,total,score){
-    const x=await ctx();if(!x)return;const duration=Math.max(1,Math.round((Date.now()-(exam.startedAt||Date.now()))/1000)),qs=questions();
+    const duration=Math.max(1,Math.round((Date.now()-(exam.startedAt||Date.now()))/1000)),qs=questions(),groups=new Map();
+    qs.forEach((q,i)=>{const topic=clean(q.topic)||clean(exam.topics?.[0])||'General';const g=groups.get(topic)||{total:0,correct:0};g.total++;if(marks.get(i)==='correct')g.correct++;groups.set(topic,g)});
+    saveLocalMastery(groups);
+    const x=await ctx();
+    if(!x){const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · saved locally to Progress + Mastery';return}
     try{
       await x.c.request('/rest/v1/quiz_results',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,subject:clean(exam.name)||null,topic:clean((exam.topics||[]).join(', '))||null,mode:'practice',correct,incorrect:total-correct,score,duration_seconds:duration,details:{difficulty:exam.difficulty||'',provider:exam.provider||'',model:exam.model||'',questions:qs.map((q,i)=>({topic:q.topic||'',result:marks.get(i)||''}))}})});
-      const groups=new Map();qs.forEach((q,i)=>{const topic=clean(q.topic)||clean(exam.topics?.[0])||'General';const g=groups.get(topic)||{total:0,correct:0};g.total++;if(marks.get(i)==='correct')g.correct++;groups.set(topic,g)});
       for(const [topic,g] of groups)await ensureMastery(x,clean(exam.name)||'Practice',topic,g.correct,g.total);
       window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(false);window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.syncProgress?.();
-      const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · saved to Progress + Mastery';
-    }catch(e){const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · cloud save failed: '+clean(e?.message||e)}
+      const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · synced to SCHOLARK Cloud';
+    }catch(e){const sum=$('#v87-summary small');if(sum)sum.textContent=(sum.textContent||'')+' · saved locally; cloud sync failed: '+clean(e?.message||e)}
   }
   addEventListener('scholark:exam-generated',e=>{exam=e.detail||null;marks=new Map();saved=false;setTimeout(decorate,30)});
   // Exam generation emits scholark:exam-generated, so a page-wide observer is unnecessary.
