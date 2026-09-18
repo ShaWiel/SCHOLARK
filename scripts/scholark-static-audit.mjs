@@ -112,6 +112,7 @@ ok((i18n.match(/protectedNode\(el\)/g)||[]).length>=2,'locale-owned form attribu
 ok(homeFoundation.includes('scholark_v90_i18n_v4-seven-ui_'),'home foundation still writes the old language cache');
 ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("all:'Todos los niveles'")&&countryEducation.includes("studyField:'Studie/richting (optioneel)'"),'school locale dictionary is incomplete');
 ok(countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]")&&countryEducation.includes("['Voortgezet Onderwijs Junioren (VOJ)',['mulo','lbo']]")&&countryEducation.includes("['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']]")&&countryEducation.includes("['Hoger Onderwijs',['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
+ok(countryEducation.includes("$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'Study field is not available for Suriname VOS and higher-education levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
 ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
