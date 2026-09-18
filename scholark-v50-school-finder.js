@@ -5,7 +5,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let root=null,currentPos=null,renderedItems=[],renderOpts=null,visibleLimit=0;
   const PAGE_SIZE=80;
-  const STUDY_FIELD_LEVELS=new Set(['upper_secondary','vwo','vocational','higher','adult']);
+  const STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult']);
   const cloud=()=>window.__SCHOLARK_V72_CLOUD__;
   function syncStudyField(){
     const level=$('#v50-level')?.value||'all',study=$('#v50-study'),controls=document.querySelector('#v50-school .v50-controls');
@@ -41,17 +41,24 @@
 
   function levelOf(t){
     const a=(t.amenity||'').toLowerCase(),n=(t.name||'').toLowerCase(),i=String(t['isced:level']||t.isced||'').toLowerCase();
-    if(a==='kindergarten'||/preschool|pre-school|nursery|kleuterschool|peuterschool/.test(n))return'early';
-    if(a==='university'||/university|universiteit|faculty|faculty of/.test(n))return'higher';
-    if(a==='college'||/college|polytechnic|hogeschool/.test(n))return /technical|vocational|trade|beroeps|technisch/.test(n)?'vocational':'higher';
+    if(a==='kindergarten'||/preschool|pre-school|nursery|kleuterschool|kleuteronderwijs|peuterschool/.test(n))return'kindergarten';
+    if(/\badekus\b|anton de kom|university|universiteit|faculty|faculty of/.test(n))return'wo';
+    if(/\bhbo\b|hogeschool|university of applied sciences/.test(n))return'hbo';
+    if(/\bnatin\b|\bimeao\b|kweekschool|\bmbo\b/.test(n))return'mbo';
+    if(/\bvwo\b|atheneum|gymnasium/.test(n))return'vwo';
+    if(/\bhavo\b/.test(n))return'havo';
+    if(/\bmulo\b/.test(n))return'mulo';
+    if(/\blbo\b/.test(n))return'lbo';
+    if(a==='university')return'wo';
+    if(a==='college'||/college|polytechnic/.test(n))return /technical|vocational|trade|beroeps|technisch/.test(n)?'mbo':'hbo';
     if(a==='language_school'||/adult education|continuing education|training centre|training center/.test(n))return'adult';
     if(/technical|vocational|trade school|beroeps|technisch/.test(n))return'vocational';
-    if(/secondary|high school|lyceum|gymnasium|middelbare|voj|vos|mulo|lbo/.test(n)||/[23]/.test(i))return'secondary';
-    if(/primary|elementary|basisschool|glo/.test(n)||/1/.test(i))return'primary';
+    if(/secondary|high school|lyceum|middelbare|voj|vos/.test(n)||/[23]/.test(i))return'secondary';
+    if(/primary|elementary|basisschool|lagere school|glo/.test(n)||/1/.test(i))return'primary';
     if(a==='school')return'school';return'other';
   }
-  const levelLabel={all:'All levels',primary:'Primary school',secondary:'Secondary school',upper_secondary:'Upper secondary',vwo:'VWO',vocational:'Vocational / technical',higher:'College / university',adult:'Adult / professional',school:'School',other:'Education'};
-  function levelMatch(found,wanted){if(wanted==='all')return 1;if(found===wanted)return 1;if(found==='school'&&['primary','secondary'].includes(wanted))return .65;if(found==='higher'&&wanted==='vocational')return .35;if(found==='vocational'&&wanted==='higher')return .35;return .08}
+  const levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs',primary:'Lagere school / Basisschool',mulo:'MULO',lbo:'LBO',havo:'HAVO',vwo:'VWO',mbo:'MBO',hbo:'HBO',wo:'WO / Universiteit',secondary:'Secondary school',upper_secondary:'Upper secondary',vocational:'Vocational / technical',higher:'College / university',adult:'Adult / professional',school:'School',other:'Education'};
+  function levelMatch(found,wanted){if(wanted==='all')return 1;if(found===wanted)return 1;if(found==='school'&&['kindergarten','primary','mulo','lbo','havo','vwo','mbo','secondary'].includes(wanted))return .5;if(['hbo','wo'].includes(found)&&wanted==='higher')return .9;if(found==='higher'&&['hbo','wo'].includes(wanted))return .3;if(found==='mbo'&&wanted==='vocational')return .9;if(found==='vocational'&&wanted==='mbo')return .5;return .08}
   function words(s){return String(s||'').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>2)}
 
   const OVERPASS_EPS=['https://overpass.kumi.systems/api/interpreter?data=','https://overpass-api.de/api/interpreter?data=','https://overpass.nchc.org.tw/api/interpreter?data='];
@@ -127,8 +134,8 @@
   }
 
   function build(){
-    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Search education from primary school through secondary, vocational, university and adult/professional learning. Country is required; study/field is optional.</p></div><button class="v50-x">×</button></div>
-    <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><select id="v50-level"><option value="all">All levels</option><option value="primary">Primary school</option><option value="secondary">Secondary school</option><option value="vocational">Vocational / technical</option><option value="higher">College / university</option><option value="adult">Adult / professional</option></select><input id="v50-study" placeholder="Study / field (optional)"></div>
+    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Search education from kleuter- and basisonderwijs through VOJ, VOS, MBO, HBO and university. Country is required; study/field is optional.</p></div><button class="v50-x">×</button></div>
+    <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><select id="v50-level"><option value="all">Alle niveaus</option><optgroup label="Basisonderwijs"><option value="kindergarten">Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar</option><option value="primary">Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Junioren (VOJ)"><option value="mulo">MULO · 12–16 jaar</option><option value="lbo">LBO · 12–16 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Senioren (VOS)"><option value="havo">HAVO · 16–18 jaar</option><option value="vwo">VWO · 16–19 jaar</option><option value="mbo">MBO · NATIN, IMEAO, Kweekschool · 16–20+ jaar</option></optgroup><optgroup label="Hoger Onderwijs"><option value="hbo">HBO · 18/19+ jaar</option><option value="wo">WO / Universiteit · AdeKUS · 19+ jaar</option></optgroup></select><input id="v50-study" placeholder="Study / field (optional)"></div>
     <div class="v50-controls2"><select id="v50-radius"><option value="10">Within 10 km</option><option value="25">Within 25 km</option><option value="50" selected>Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option><option value="400">Within 400 km</option><option value="550">Within 550 km</option><option value="700">Within 700 km</option></select><select id="v50-sort"><option value="worst">Worst → best match</option><option value="best">Best match first</option></select><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
     <div class="v50-location" id="v50-location">Enter the country you are in or travelling to. Add a city/area for much better nearby results, or use your real location.</div>
     <div class="v50-info">The SCHOLARK score is a <b>fit score, not an official academic-quality ranking</b>. Curated SCHOLARK database records are checked first, then live public sources can enrich coverage. The score uses requested level, distance, available school/contact information and optional study relevance. Always check official school information before deciding. <b>All levels + Suriname searches nationwide</b>, not just around Paramaribo. Public review summaries can be loaded per school.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong></div><div class="v50-results" id="v50-results"></div></div>`;
