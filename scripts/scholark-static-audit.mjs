@@ -71,7 +71,7 @@ ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
 ok(quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes('HTMLButtonElement'),'Language Learner choices are not interactive');
 ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
-ok(schoolClient.includes("VERSION='20260918-school-filter-v2'"),'School client filter guard version is stale');
+ok(schoolClient.includes("VERSION='20260918-school-filter-v3'"),'School client filter guard version is stale');
 ok(schoolClient.includes('documentWideObserver:false')&&!schoolClient.includes('observer.observe(document.documentElement')&&!schoolClient.includes('setInterval('),'School client filter still risks an unbounded DOM/polling loop');
 ok(!schoolClient.includes("VOS / HAVO / VWO")&&countryEducation.includes("upperFilter:'Hoger secundair onderwijs'"),'School upper-secondary labels are not locale-owned');
 ok(schoolVwo.includes("const VERSION='20260918-school-vwo-v6'"),'VWO frontend module version is stale');
