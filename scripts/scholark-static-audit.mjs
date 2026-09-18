@@ -6,8 +6,8 @@ const root=process.cwd();
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
-const RELEASE='r143';
-const VERSION='20260918-r143';
+const RELEASE='r144';
+const VERSION='20260918-r144';
 const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260918-school-suriname-taxonomy-v4';
 
@@ -82,7 +82,10 @@ ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
 ok(quiz.includes("const VERSION = '20260918-language-choice-v3'")&&quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes("scholark:language-choice"),'Language Learner choices/adaptive events are incomplete');
-ok(nextLesson.includes('startNext')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson flow is incomplete');
+ok(nextLesson.includes("VERSION='20260918-language-next-v2'")&&nextLesson.includes('startNext')&&nextLesson.includes('api?.nextLesson')&&nextLesson.includes('buildLesson'),'Language Learner next-lesson compatibility flow is incomplete');
+ok(!nextLesson.includes('MutationObserver')&&!nextLesson.includes('observer.observe'),'Language next-lesson helper still adds a broad DOM observer');
+ok(languageLearner.includes('async function nextLesson()')&&languageLearner.includes('id="v93-next"')&&languageLearner.includes("nextButton.onclick=nextLesson"),'Language Learner does not expose a functional Next lesson button beside completion');
+ok(languageLearner.includes("source.result?.nextStep")&&languageLearner.includes("topic.value=next")&&languageLearner.includes("await buildLesson()"),'Next lesson does not actually build from the previous lesson recommendation');
 ok(schoolClient.includes("VERSION='20260918-school-filter-v4'"),'School client filter guard version is stale');
 ok(schoolClient.includes('documentWideObserver:false')&&!schoolClient.includes('observer.observe(document.documentElement')&&!schoolClient.includes('setInterval('),'School client filter still risks an unbounded DOM/polling loop');
 ok(countryEducation.includes("Voortgezet Onderwijs Senioren (VOS)")&&countryEducation.includes("Kleuterschool / Kleuteronderwijs"),'Suriname school labels are not country-owned');
@@ -90,6 +93,9 @@ ok(schoolVwo.includes("const VERSION='20260918-school-vwo-v7'"),'VWO frontend mo
 ok(schoolVwo.includes("opt.textContent='VWO'")&&schoolVwo.includes("schoolLabel:'VWO'"),'Schools Near Me VWO label is not exactly VWO');
 ok(schoolVwo.includes("dashboardStage:'native-v51'")&&schoolVwo.includes('documentWideObserver:false'),'VWO dashboard integration is not native/guarded');
 ok(workspaceShell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&workspaceShell.includes("['mulo','🎒','MULO'")&&workspaceShell.includes("['havo','🎓','HAVO'")&&workspaceShell.includes("['mbo','🧰','MBO'")&&workspaceShell.includes("['hbo','🏫','HBO'")&&workspaceShell.includes("['wo','🏛️','WO / Universiteit'"),'Exact Suriname dashboard levels are missing');
+ok(workspaceShell.includes("{id:'basic',label:'Basisonderwijs',tone:'green'}")&&workspaceShell.includes("{id:'voj',label:'VOJ',tone:'dark'}")&&workspaceShell.includes("{id:'vos',label:'VOS',tone:'green'}")&&workspaceShell.includes("{id:'higher',label:'Hoger Onderwijs',tone:'dark'}"),'Suriname dashboard group labels/colors do not match the requested brand pattern');
+ok(workspaceShell.includes('v51-levels-suriname')&&workspaceShell.includes('overflow-x:auto')&&workspaceShell.includes("host.scrollBy({left:")&&workspaceShell.includes('data-v51-level-scroll="-1"'),'Suriname dashboard level strip is not horizontally scrollable');
+ok(workspaceShell.includes("$('[data-level]',host).forEach"),'Dashboard level buttons are not wired as a collection');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
 ok(countryEducation.includes("kindergarten:{title:'Kleuterschool / Kleuteronderwijs'")&&countryEducation.includes("mbo:{title:'MBO'")&&countryEducation.includes("wo:{title:'WO / Universiteit'"),'Suriname country education tracks are incomplete');
@@ -137,7 +143,7 @@ ok(powerTools.includes('What should I do next?')&&powerTools.includes("sessionSt
 ok(fastTools.includes("best:['Biology','History','Law'")&&fastTools.includes("example:'Biology example:")&&fastTools.includes("practice:{name:'Practice Testing'")&&fastTools.includes("elaborate:{name:'Elaborative Interrogation'"),'Study Methods Lab lacks subject guidance/examples or expanded methods');
 ok(fastTools.includes('BEST FOR')&&fastTools.includes('Show me with my topic'),'Study Methods Lab does not render best-subject guidance and worked examples');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
-ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
+ok(docker.includes('scholark-v103-language-next-lesson.js?v=20260918-language-next-v2'),'Language next-lesson fix is not shipped at v2');
 
 const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||'';
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
