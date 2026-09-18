@@ -6,8 +6,8 @@ const root=process.cwd();
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
-const RELEASE='r140';
-const VERSION='20260918-r140';
+const RELEASE='r141';
+const VERSION='20260918-r141';
 const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260917-school-country-levels-v3';
 
@@ -33,6 +33,7 @@ const studyAhead=read('scholark-v83-study-ahead-cloud.js');
 const examMastery=read('scholark-v87-exam-mastery.js');
 const learningEngine=read('scholark-v88-learning-engine.js');
 const languageLearner=read('scholark-v93-language-learner.js');
+const powerTools=read('scholark-v106-workspace-power-tools.js');
 
 ok(runtime.includes(`const VERSION = '${VERSION}'`),'runtime VERSION is not '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -108,6 +109,15 @@ ok(learningApi.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learningA
 ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("if(live&&$('#v62-field',live))"),'Study Ahead mount is not idempotent');
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
+ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']"),'New workspace tools are missing from navigation');
+ok(workspaceShell.includes("card('focus','◷','Focus Sessions'")&&workspaceShell.includes("card('flashcards','▤','Flashcards'")&&workspaceShell.includes("card('assignments','✓','Assignments'"),'New workspace tools are missing from Dashboard cards');
+ok(runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("flashcards:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'Power tools are not lazy-routed through runtime');
+ok(prepaint.includes('focus|flashcards|assignments'),'Prepaint does not recognize new workspace routes');
+ok(docker.includes('scholark-v106-workspace-power-tools.js'),'Workspace power tools are not copied into production');
+ok(powerTools.includes("version:'20260918-workspace-power-v1'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
+ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
+ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
+ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
@@ -115,10 +125,10 @@ const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs',
   ...active
 ])];
