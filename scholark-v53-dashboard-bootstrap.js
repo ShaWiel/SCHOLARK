@@ -5,7 +5,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const hash=()=>String(location.hash||'').toLowerCase();
-  const workspaceRx=/dashboard|studio|tutor|education|language|planner|progress|goal|project|files|schools|study|book|presentation|webpage|document|report|graphic|social/;
+  const workspaceRx=/dashboard|studio|tutor|education|language|planner|focus|flashcards|assignments|progress|goal|project|files|schools|study|book|presentation|webpage|document|report|graphic|social/;
   const isWorkspace=()=>workspaceRx.test(hash());
   const isDashboard=()=>hash()==='#dashboard';
   const isPublicHome=()=>!isWorkspace()&&!/pricing/.test(hash());
@@ -56,7 +56,7 @@
     if($('#v53-emergency'))return;
     const root=document.createElement('div');root.id='v53-emergency';
     root.innerHTML=`<aside class="v53-side"><div class="v53-brand">SCHOLARK<small>WORKSPACE</small></div><div class="v53-nav">
-      <button class="active" data-v53-tool="dashboard">⌂ Dashboard</button><button data-v53-tool="studio">✦ Studio AI</button><button data-v53-tool="tutor">AI Tutor</button><button data-v53-tool="education">Education & Learning</button><button data-v53-tool="language">Language Learner</button><button data-v53-tool="planner">Planner</button><button data-v53-tool="progress">Progress</button><button data-v53-tool="goal">Goals</button><button data-v53-tool="project">My Projects</button><button data-v53-tool="schools">Schools Near Me</button><button data-v53-tool="study">Study Ahead</button><button data-v53-tool="book">Book Studio</button>
+      <button class="active" data-v53-tool="dashboard">⌂ Dashboard</button><button data-v53-tool="studio">✦ Studio AI</button><button data-v53-tool="tutor">AI Tutor</button><button data-v53-tool="education">Education & Learning</button><button data-v53-tool="language">Language Learner</button><button data-v53-tool="planner">Planner</button><button data-v53-tool="focus">Focus Sessions</button><button data-v53-tool="flashcards">Flashcards</button><button data-v53-tool="assignments">Assignments</button><button data-v53-tool="progress">Progress</button><button data-v53-tool="goal">Goals</button><button data-v53-tool="project">My Projects</button><button data-v53-tool="schools">Schools Near Me</button><button data-v53-tool="study">Study Ahead</button><button data-v53-tool="book">Book Studio</button>
     </div></aside><main class="v53-main"><div class="v53-shell"><div class="v53-kicker">SCHOLARK WORKSPACE</div><h1>Your learning & creation workspace.</h1><p>The primary workspace is still initializing. This fail-safe prevents a white screen.</p><div class="v53-grid">
       <button class="v53-card primary" data-v53-tool="studio"><h3>Studio AI</h3><p>Create presentations, webpages, documents, social content and graphics.</p><b>OPEN STUDIO →</b></button>
       <button class="v53-card" data-v53-tool="tutor"><h3>AI Tutor</h3><p>Learn and practice with adaptive AI support.</p><b>OPEN TUTOR →</b></button>
