@@ -1,4 +1,5 @@
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
+const bust=Date.now().toString(36);
 const live=process.argv.includes('--live');
 const failures=[];
 const results=[];
@@ -165,9 +166,9 @@ if(!live){
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   try{
     const [shellRes,filterRes,homeRes]=await Promise.all([
-      request('/scholark-v51-workspace-shell.js?v=20260918-r144',{},30000),
+      request('/scholark-v51-workspace-shell.js?smoke='+bust,{},30000),
       request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4',{},30000),
-      request('/scholark-v99-home-foundation.js?v=20260918-r144',{},30000)
+      request('/scholark-v99-home-foundation.js?smoke='+bust,{},30000)
     ]);
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&shell.includes("['mulo','🎒','MULO'")&&shell.includes("['havo','🎓','HAVO'")&&shell.includes("['mbo','🧰','MBO'")&&shell.includes("['hbo','🏫','HBO'")&&shell.includes("['wo','🏛️','WO / Universiteit'"),'live Workspace dashboard is missing exact Suriname levels');
@@ -182,9 +183,9 @@ if(!live){
   }catch(e){failures.push(`live:responsive_foundation threw ${e?.message||e}`)}
   try{
     const [i18nRes,countryRes,schoolRes]=await Promise.all([
-      request('/scholark-v90-i18n-engine.js?v=20260918-r144',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r144',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r144',{},30000)
+      request('/scholark-v90-i18n-engine.js?smoke='+bust,{},30000),
+      request('/scholark-v96-country-education.js?smoke='+bust,{},30000),
+      request('/scholark-v50-school-finder.js?smoke='+bust,{},30000)
     ]);
     const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
     check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
@@ -197,16 +198,16 @@ if(!live){
   }catch(e){failures.push(`live:language_study_foundation threw ${e?.message||e}`)}
   try{
     const [toolsRes,examRes,reviewRes,studyRes,learnRes,langRes,quizRes,nextRes,schoolFinderRes,countryRes]=await Promise.all([
-      request('/scholark-v52-workspace-qa.js?v=20260918-r144',{},30000),
-      request('/scholark-v87-exam-mastery.js?v=20260918-r144',{},30000),
-      request('/scholark-v88-learning-engine.js?v=20260918-r144',{},30000),
-      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r144',{},30000),
-      request('/scholark-v62-learning-ai.js?v=20260918-r144',{},30000),
-      request('/scholark-v93-language-learner.js?v=20260918-r144',{},30000),
+      request('/scholark-v52-workspace-qa.js?smoke='+bust,{},30000),
+      request('/scholark-v87-exam-mastery.js?smoke='+bust,{},30000),
+      request('/scholark-v88-learning-engine.js?smoke='+bust,{},30000),
+      request('/scholark-v83-study-ahead-cloud.js?smoke='+bust,{},30000),
+      request('/scholark-v62-learning-ai.js?smoke='+bust,{},30000),
+      request('/scholark-v93-language-learner.js?smoke='+bust,{},30000),
       request('/scholark-v102-language-quiz.js?v=20260918-language-choice-v3',{},30000),
       request('/scholark-v103-language-next-lesson.js?v=20260918-language-next-v2',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r144',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r144',{},30000)
+      request('/scholark-v50-school-finder.js?smoke='+bust,{},30000),
+      request('/scholark-v96-country-education.js?smoke='+bust,{},30000)
     ]);
     const tools=String(toolsRes.data?.raw||''),exam=String(examRes.data?.raw||''),review=String(reviewRes.data?.raw||''),study=String(studyRes.data?.raw||''),learn=String(learnRes.data?.raw||''),lang=String(langRes.data?.raw||''),quiz=String(quizRes.data?.raw||''),next=String(nextRes.data?.raw||''),school=String(schoolFinderRes.data?.raw||''),country=String(countryRes.data?.raw||'');
     check(toolsRes.r.ok&&tools.includes('Open actions')&&tools.includes('Due today')&&tools.includes('NEXT ACTION'),'live Planner workflow is incomplete');
@@ -232,9 +233,9 @@ if(!live){
   }catch(e){failures.push(`live:expanded_learning_workflows threw ${e?.message||e}`)}
   try{
     const [powerRes,shellRes,runtimeRes,prepaintRes]=await Promise.all([
-      request('/scholark-v106-workspace-power-tools.js?v=20260918-r144',{},30000),
-      request('/scholark-v51-workspace-shell.js?v=20260918-r144',{},30000),
-      request('/scholark-runtime-loader.js?v=20260918-r144',{},30000),
+      request('/scholark-v106-workspace-power-tools.js?smoke='+bust,{},30000),
+      request('/scholark-v51-workspace-shell.js?smoke='+bust,{},30000),
+      request('/scholark-runtime-loader.js?smoke='+bust,{},30000),
       request('/',{},30000)
     ]);
     const power=String(powerRes.data?.raw||''),shell=String(shellRes.data?.raw||''),runtime=String(runtimeRes.data?.raw||''),home=String(prepaintRes.data?.raw||'');
