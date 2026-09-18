@@ -49,6 +49,7 @@ ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+R
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
+ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
 ok(docker.includes('scholark-api-guard.mjs'),'API guard is not shipped');
 ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not imported at runtime');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
