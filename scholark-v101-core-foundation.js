@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r139';
+  const RELEASE = 'r140';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
   let repairing = false;
@@ -135,7 +135,7 @@
     if (info.base === 'project') return isVisible($('#v51-fallback .v64-projects'),180,120);
     if (info.base === 'book') return isVisible($('#v51-fallback .v65-book'),180,120);
     if (info.base === 'schools') return isVisible($('#v50-school.open'),180,120);
-    if (info.base === 'study') return isVisible($('#v25-study.open'),180,120) || isVisible($('#v62-field'),120,80) || isVisible($('.v83'),120,80);
+    if (info.base === 'study') return isVisible($('#v25-study.open'),180,120) || isVisible($('.v62-study'),180,140) || isVisible($('.v62-study .v62-form'),180,120) || isVisible($('.v83'),120,80);
     if (info.base === 'language') return isVisible($('.v93'),120,80);
     return document.body.classList.contains('v51-workspace') && isVisible($('#v51-main'),180,120);
   }
