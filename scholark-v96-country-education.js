@@ -194,6 +194,16 @@
     pt:{young:['Educação infantil','Desenvolvimento inicial e preparação para o ensino primário.'],primary:['Ensino primário','Competências básicas de literacia, numeracia e aprendizagem.'],secondary:['Ensino secundário inferior','Primeira etapa secundária do sistema nacional.'],student:['Ensino secundário superior / profissional','Preparação para estudos posteriores ou trabalho.'],adult:['Ensino superior','Ensino terciário, profissional e universitário.'],all:'Todos os níveis',upperFilter:'Ensino secundário superior',vocFilter:'Ensino profissional / técnico',adultFilter:'Aprendizagem adulta / profissional',studyField:'Estudo / área (opcional)',system:'Sistema educativo',country:'País',note:'níveis de ensino adaptados ao país',choose:'ESCOLHA O SEU NÍVEL DE ENSINO'},
     it:{young:['Educazione della prima infanzia','Sviluppo iniziale e preparazione alla primaria.'],primary:['Istruzione primaria','Competenze fondamentali di lingua, matematica e apprendimento.'],secondary:['Secondaria inferiore','Prima fase secondaria del sistema nazionale.'],student:['Secondaria superiore / professionale','Preparazione a studi successivi o lavoro.'],adult:['Istruzione superiore','Istruzione terziaria, professionale e universitaria.'],all:'Tutti i livelli',upperFilter:'Secondaria superiore',vocFilter:'Istruzione professionale / tecnica',adultFilter:'Apprendimento adulto / professionale',studyField:'Studio / ambito (opzionale)',system:'Sistema educativo',country:'Paese',note:'livelli scolastici adattati al paese',choose:'SCEGLI IL TUO LIVELLO DI ISTRUZIONE'}
   };
+  const GROUP_COPY={
+    nl:{basic:'Basisonderwijs',voj:'Voortgezet Onderwijs Junioren (VOJ)',vos:'Voortgezet Onderwijs Senioren (VOS)',higher:'Hoger Onderwijs'},
+    en:{basic:'Primary Education',voj:'Lower Secondary (VOJ)',vos:'Upper Secondary (VOS)',higher:'Higher Education'},
+    es:{basic:'Educación Primaria',voj:'Secundaria Inferior (VOJ)',vos:'Secundaria Superior (VOS)',higher:'Educación Superior'},
+    fr:{basic:'Enseignement primaire',voj:'Secondaire inférieur (VOJ)',vos:'Secondaire supérieur (VOS)',higher:'Enseignement supérieur'},
+    de:{basic:'Primarbildung',voj:'Sekundarstufe I (VOJ)',vos:'Sekundarstufe II (VOS)',higher:'Hochschulbildung'},
+    pt:{basic:'Ensino primário',voj:'Ensino secundário inferior (VOJ)',vos:'Ensino secundário superior (VOS)',higher:'Ensino superior'},
+    it:{basic:'Istruzione primaria',voj:'Secondaria inferiore (VOJ)',vos:'Secondaria superiore (VOS)',higher:'Istruzione superiore'}
+  };
+  const groupCopy=()=>GROUP_COPY[uiLang()]||GROUP_COPY.nl;
   const OFFICIAL={
     Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
@@ -299,16 +309,26 @@
     const label=$('#v51-main [data-v51-page="dashboard"] .v51-level-label');
     if(label){label.dataset.v96I18nOwned='1';label.textContent=ui.choose+' · '+countryName(c).toUpperCase()}
   }
+  function applyGroupLabels(){
+    if(currentCountry()!=='Suriname')return;
+    const copy=groupCopy();
+    $('.v51-level-cluster[data-v51-group]').forEach(cluster=>{
+      const id=cluster.dataset.v51Group,label=$('.v51-level-group',cluster);
+      cluster.dataset.schI18nOwned='1';
+      if(label&&copy[id]){label.dataset.schI18nOwned='1';label.textContent=copy[id]}
+    });
+  }
   function applySchoolLevels(){
     const sel=$('#v50-level');if(!sel)return;
     const c=currentCountry(),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en,current=sel.value||'all';
-    sel.dataset.v96I18nOwned='1';
+    sel.dataset.v96I18nOwned='1';sel.dataset.schI18nOwned='1';
     if(c==='Suriname'){
+      const gc=groupCopy();
       const groups=[
-        ['Basisonderwijs',['kindergarten','primary']],
-        ['Voortgezet Onderwijs Junioren (VOJ)',['mulo','lbo']],
-        ['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']],
-        ['Hoger Onderwijs',['hbo','wo']]
+        [gc.basic,['kindergarten','primary']],
+        [gc.voj,['mulo','lbo']],
+        [gc.vos,['havo','vwo','mbo']],
+        [gc.higher,['hbo','wo']]
       ];
       sel.innerHTML='<option value="all">'+ui.all+'</option>'+groups.map(([label,ids])=>'<optgroup label="'+label+'">'+ids.map(id=>{const x=SURINAME_TRACKS[id];return '<option value="'+id+'">'+x.title+' · '+x.description+'</option>'}).join('')+'</optgroup>').join('');
       sel.value=SURINAME_TRACKS[current]?current:'all';
@@ -328,7 +348,7 @@
       sel.value=rows.some(([value])=>value===current)?current:'all';
     }
     const study=$('#v50-study');
-    if(study){study.dataset.v96I18nOwned='1';study.placeholder=ui.studyField}
+    if(study){study.dataset.v96I18nOwned='1';study.dataset.schI18nOwned='1';study.placeholder=ui.studyField}
     window.__SCHOLARK_V50_SCHOOLS__?.syncStudyField?.();
   }
   function seedInputs(){
@@ -347,7 +367,7 @@
   }
   function apply(){
     document.documentElement.dataset.scholarkCountry=currentCountry();
-    ensureSidebarCountry();ensureDashboardSelector();applyLevels();applySchoolLevels();seedInputs();
+    ensureSidebarCountry();ensureDashboardSelector();applyLevels();applyGroupLabels();applySchoolLevels();seedInputs();
   }
 
   const style=document.createElement('style');style.id='scholark-v96-country-style';style.textContent=`
@@ -361,6 +381,7 @@
   observeCountryInputs();
   addEventListener('hashchange',()=>{setTimeout(apply,60);setTimeout(apply,260)});
   addEventListener('scholark-runtime-ready',()=>setTimeout(apply,60));
+  addEventListener('scholark-language-change',()=>apply());
   addEventListener('scholark-language-applied',()=>apply());
   addEventListener('scholark-language-ready',()=>{apply();setTimeout(apply,80)});
   addEventListener('scholark-language-complete',()=>apply());
