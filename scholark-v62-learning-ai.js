@@ -9,6 +9,36 @@
   const LANG={nl:'Dutch',en:'English',es:'Spanish',fr:'French',de:'German',pt:'Portuguese',it:'Italian',ar:'Arabic',hi:'Hindi',zh:'Chinese',ja:'Japanese',ko:'Korean',id:'Indonesian',tr:'Turkish',pl:'Polish',sw:'Swahili'};
   const level=()=>{const id=localStorage.getItem('scholark_learning_level')||'secondary',stage=window.__SCHOLARK_COUNTRY__?.stage?.(id),country=window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'';return stage?(stage[2]+' · '+country+' ['+id+']'):id};
   const language=()=>{const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';return window.__SCHOLARK_I18N__?.languageName?.(code)||LANG[code]||code||'English'};
+  const STUDY_DRAFT_KEY='scholark_v62_study_draft';
+  let studyDraftTimer=0;
+  function readStudyDraft(){try{return JSON.parse(sessionStorage.getItem(STUDY_DRAFT_KEY)||'{}')||{}}catch{return{}}}
+  function writeStudyDraft(){
+    clearTimeout(studyDraftTimer);
+    studyDraftTimer=setTimeout(()=>{
+      try{sessionStorage.setItem(STUDY_DRAFT_KEY,JSON.stringify({
+        field:$('#v62-field')?.value||'',
+        country:$('#v62-country')?.value||'',
+        school:$('#v62-school')?.value||'',
+        depth:$('#v62-depth')?.value||'foundation',
+        context:$('#v62-context')?.value||'',
+        updatedAt:Date.now()
+      }))}catch{}
+    },80);
+  }
+  function bindStudyDraft(){
+    const form=$('.v62-study .v62-form');if(!form||form.dataset.v62DraftBound==='1')return;
+    form.dataset.v62DraftBound='1';
+    form.addEventListener('input',writeStudyDraft,{passive:true});
+    form.addEventListener('change',writeStudyDraft,{passive:true});
+  }
+  function restoreStudyDraft(){
+    const d=readStudyDraft();
+    if($('#v62-field')&&!$('#v62-field').value)$('#v62-field').value=d.field||'';
+    if($('#v62-country')&&!$('#v62-country').value)$('#v62-country').value=d.country||'';
+    if($('#v62-school')&&!$('#v62-school').value)$('#v62-school').value=d.school||'';
+    if($('#v62-context')&&!$('#v62-context').value)$('#v62-context').value=d.context||'';
+    if($('#v62-depth')&&d.depth&&[...$('#v62-depth').options].some(o=>o.value===d.depth))$('#v62-depth').value=d.depth;
+  }
 
   const css=document.createElement('style');
   css.id='scholark-v62-style';
@@ -133,9 +163,17 @@
   }
   function openStudyAhead(){
     const h=studyHost();if(!h)return;
+    // Idempotent mount: foundation/runtime recovery may call this more than once.
+    // Never replace a live Study Ahead form because doing so erases what the user is typing.
+    const live=$('.v62-study',h);
+    if(live&&$('#v62-field',live)){
+      restoreStudyDraft();bindStudyDraft();return live;
+    }
     h.innerHTML='<div class="v62-study"><div class="v52-kicker">SCHOLARK · STUDY AHEAD</div><h1>Know the field before you enter it.</h1><p>Tell SCHOLARK what you plan to study. Country and target school are optional; the roadmap focuses on knowledge, skills and preparation rather than inventing admissions rules.</p><div class="v62-form"><div class="v62-row"><input id="v62-field" placeholder="Field of study, e.g. Law, Computer Science"><input id="v62-country" placeholder="Country (optional)"></div><div class="v62-row"><input id="v62-school" placeholder="Target university / school (optional)"><select id="v62-depth"><option value="foundation">Start from foundations</option><option value="advanced">I already know the basics</option></select></div><textarea id="v62-context" placeholder="Anything SCHOLARK should know about your goals, strengths or current subjects (optional)"></textarea><button id="v62-study-run" class="v62-btn">Build my Study Ahead roadmap</button></div><div id="v62-study-results" class="v62-results"></div></div>';
+    restoreStudyDraft();bindStudyDraft();return $('.v62-study',h);
   }
   async function runStudyAhead(){
+    writeStudyDraft();
     const field=clean($('#v62-field')?.value),country=clean($('#v62-country')?.value),targetSchool=clean($('#v62-school')?.value),context=clean($('#v62-context')?.value),depth=$('#v62-depth')?.value||'foundation',btn=$('#v62-study-run'),out=$('#v62-study-results');
     if(!field){$('#v62-field')?.focus();return}
     busy(btn,true,'Building roadmap…');if(out)out.innerHTML='<div class="v62-loading"><i class="v62-spin"></i>Researching the field and structuring your preparation…</div>';
