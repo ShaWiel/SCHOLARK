@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__)return;
   window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__=true;
 
-  const VERSION='20260918-school-filter-v2';
+  const VERSION='20260918-school-filter-v3';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const COUNTRY_CODES={suriname:'SR',netherlands:'NL',nederland:'NL','united states':'US',usa:'US','united kingdom':'GB',uk:'GB',germany:'DE',france:'FR',spain:'ES',portugal:'PT',italy:'IT',brazil:'BR',canada:'CA',australia:'AU',india:'IN','south africa':'ZA',guyana:'GY','trinidad & tobago':'TT',jamaica:'JM',belgium:'BE'};
@@ -67,25 +67,12 @@
     return true;
   }
 
-  const LEVEL_LABELS={
-    nl:{upper:'Hoger secundair onderwijs',voc:'Beroeps- / technisch onderwijs'},
-    en:{upper:'Upper secondary education',voc:'Vocational / technical education'},
-    es:{upper:'Educación secundaria superior',voc:'Formación profesional / técnica'},
-    fr:{upper:'Secondaire supérieur',voc:'Enseignement professionnel / technique'},
-    de:{upper:'Sekundarstufe II',voc:'Berufs- / technische Bildung'},
-    pt:{upper:'Ensino secundário superior',voc:'Ensino profissional / técnico'},
-    it:{upper:'Secondaria superiore',voc:'Istruzione professionale / tecnica'}
-  };
   function patchLevelOptions(){
     const sel=document.querySelector('#v50-level');if(!sel)return false;
-    const lang=localStorage.getItem('scholark_ui_language')||'en',labels=LEVEL_LABELS[lang]||LEVEL_LABELS.en,country=window.__SCHOLARK_COUNTRY__?.current?.()||clean(document.querySelector('#v50-country')?.value)||'Suriname';
     let upper=sel.querySelector('option[value="upper_secondary"]');
-    if(!upper){upper=document.createElement('option');upper.value='upper_secondary';const lower=sel.querySelector('option[value="secondary"]');lower?.insertAdjacentElement('afterend',upper)||sel.appendChild(upper)}
-    const upperText=country==='Suriname'?labels.upper+' · VOS / HAVO':labels.upper;
-    if(upper.textContent!==upperText)upper.textContent=upperText;
-    const voc=sel.querySelector('option[value="vocational"]');
-    if(voc){const vocText=country==='Suriname'?labels.voc+' · LBO / NATIN / IMEAO / AMTO':labels.voc;if(voc.textContent!==vocText)voc.textContent=vocText}
-    if(sel.dataset.v104StrictLevels!==VERSION)sel.dataset.v104StrictLevels=VERSION;
+    if(!upper){upper=document.createElement('option');upper.value='upper_secondary';sel.appendChild(upper)}
+    window.__SCHOLARK_COUNTRY__?.apply?.();
+    sel.dataset.v104StrictLevels=VERSION;
     return true;
   }
   function apply(){return {cloud:patchCloud(),levels:patchLevelOptions()}}
