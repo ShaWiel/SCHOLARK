@@ -48,10 +48,10 @@ jobs:
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
           grep -q '/scholark-logo.png' /tmp/scholark-home.html
-          grep -q 'scholark-runtime-loader.js?v=20260918-r137' /tmp/scholark-home.html
+          grep -q 'scholark-runtime-loader.js?v=20260918-r138' /tmp/scholark-home.html
           grep -q 'scholark-v102-language-quiz.js?v=20260916-language-choice-v2' /tmp/scholark-home.html
           grep -q 'scholark-v103-language-next-lesson.js?v=20260917-language-next-v1' /tmp/scholark-home.html
-          grep -q 'scholark-v105-school-vwo.js?v=20260918-school-vwo-v5' /tmp/scholark-home.html
+          grep -q 'scholark-v105-school-vwo.js?v=20260918-school-vwo-v6' /tmp/scholark-home.html
           if grep -Eqi 'Student[[:space:]]*OS' /tmp/scholark-home.html; then
             echo 'Legacy StudentOS text leaked into served homepage'
             exit 1
@@ -86,14 +86,14 @@ jobs:
           done
           cat /tmp/gemini-health.json 2>/dev/null || true
           exit 1
-      - name: Wait for deployed R137 responsive foundation
+      - name: Wait for deployed R138 language foundation
         run: |
           for i in {1..90}; do
             ok=1
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v105-school-vwo.js?ci=${GITHUB_SHA}" >/tmp/vwo.js || ok=0
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v51-workspace-shell.js?ci=${GITHUB_SHA}" >/tmp/shell.js || ok=0
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v104-school-filter-guard.js?ci=${GITHUB_SHA}" >/tmp/filter.js || ok=0
-            if [ "$ok" = "1" ] && grep -q "20260918-school-vwo-v5" /tmp/vwo.js && grep -q "20260918-school-filter-v2" /tmp/filter.js && grep -q "scholark_education_track" /tmp/shell.js; then
+            if [ "$ok" = "1" ] && grep -q "20260918-school-vwo-v6" /tmp/vwo.js && grep -q "20260918-school-filter-v3" /tmp/filter.js && grep -q "scholark_education_track" /tmp/shell.js; then
               exit 0
             fi
             sleep 4
