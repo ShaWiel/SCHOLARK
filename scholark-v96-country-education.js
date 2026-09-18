@@ -287,7 +287,6 @@
     const vocSuffix=c==='Suriname'?' · NATIN / IMEAO / AMTO':'';
     const rows=[
       ['all',ui.all],
-      ['early',localizedStage('young',c).title],
       ['primary',localizedStage('primary',c).title],
       ['secondary',localizedStage('secondary',c).title],
       ['upper_secondary',ui.upperFilter+upperSuffix],
