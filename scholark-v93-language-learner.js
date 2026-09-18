@@ -43,7 +43,7 @@
       const x=await ctx();if(!x)return;
       const r=await x.c.request('/rest/v1/language_learning_progress?select=language_code,level,xp,streak,lessons_completed,last_topic,data,updated_at&user_id=eq.'+encodeURIComponent(x.uid)+'&language_code=eq.'+encodeURIComponent(code)+'&limit=1',{method:'GET'});
       const d=await r.json().catch(()=>[]),row=Array.isArray(d)?d[0]:d;if(!r.ok||!row)return;
-      const p=loadProgress();p[code]={...(p[code]||{}),xp:Number(row.xp)||0,streak:Number(row.streak)||0,lessons:Number(row.lessons_completed)||0,level:row.level||p[code]?.level||'A1',lastTopic:row.last_topic||'',lastDay:row.data?.lastDay||p[code]?.lastDay||''};saveProgress(p);renderStats(code);
+      const p=loadProgress();p[code]={...(p[code]||{}),xp:Number(row.xp)||0,streak:Number(row.streak)||0,lessons:Number(row.lessons_completed)||0,level:row.level||p[code]?.level||'A1',lastTopic:row.last_topic||'',lastDay:row.data?.lastDay||p[code]?.lastDay||'',attempts:Number(row.data?.attempts)||Number(p[code]?.attempts)||0,correct:Number(row.data?.correct)||Number(p[code]?.correct)||0,incorrect:Number(row.data?.incorrect)||Number(p[code]?.incorrect)||0,lastWeakTopic:row.data?.lastWeakTopic||p[code]?.lastWeakTopic||''};saveProgress(p);renderStats(code);
     }catch{}
   }
   async function pushCloudProgress(code){
