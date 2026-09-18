@@ -74,12 +74,17 @@
     window.dispatchEvent(new CustomEvent('scholark:focus-complete',{detail:{task:x.task||'',minutes:elapsed}}));
   }
   function syncFocusView(){
+    const x=focusState(),remaining=focusRemaining(x);
+    if(x.running&&remaining<=0){
+      finishFocus(x);
+      const root=$('#v106-root');if(root?.dataset.tool==='focus')renderFocus();
+      else{clearInterval(focusTicker);focusTicker=null}
+      return
+    }
     const root=$('#v106-root');if(!root||root.dataset.tool!=='focus')return;
-    const x=focusState(),remaining=focusRemaining(x),timer=$('#v106-focus-time');
-    if(timer)timer.textContent=fmt(remaining);
+    const timer=$('#v106-focus-time');if(timer)timer.textContent=fmt(remaining);
     const status=$('#v106-focus-status');if(status)status.textContent=x.running?'FOCUSING NOW':remaining<x.duration*60000?'PAUSED':'READY';
     const main=$('#v106-focus-main');if(main)main.textContent=x.running?'Pause':remaining<x.duration*60000?'Resume':'Start focus';
-    if(x.running&&remaining<=0){finishFocus(x);renderFocus();return}
   }
   function startFocus(){
     const task=$('#v106-focus-task')?.value.trim()||'Focus session',duration=Number($('#v106-focus-duration')?.dataset.value)||25,linkedPlannerId=$('#v106-focus-link')?.value||'',autoComplete=!!$('#v106-focus-auto')?.checked;
@@ -144,7 +149,7 @@
   }
 
   // ---------- Assignments ----------
-  function assignments(){return read(ASSIGN_KEY,[]).map(x=>({...x,id:x.id||uid('assign'),title:x.title||'',subject:x.subject||'',dueDate:x.dueDate||'',type:x.type||'assignment',instructions:x.instructions||'',status:x.status||'active',progress:Math.max(0,Math.min(100,Number(x.progress)||0)),createdAt:x.createdAt||nowIso()}))}
+  function assignments(){return read(ASSIGN_KEY,[]).map(x=>{const progress=Math.max(0,Math.min(100,Number(x.progress)||0));return {...x,id:x.id||uid('assign'),title:x.title||'',subject:x.subject||'',dueDate:x.dueDate||'',type:x.type||'assignment',instructions:x.instructions||'',status:x.status==='complete'||progress>=100?'complete':'active',progress,createdAt:x.createdAt||nowIso()}})}
   function saveAssignments(a){write(ASSIGN_KEY,a)}
   function planAssignment(a){
     const rows=plannerObjects(),existing=new Set(rows.map(x=>x.id)),due=a.dueDate?new Date(a.dueDate+'T18:00:00').getTime():Date.now()+7*86400000,start=Date.now(),span=Math.max(86400000,due-start);
