@@ -540,7 +540,7 @@
       if(!base||out.size>=limit)continue;
       const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
       let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
-      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{if(out.size>=limit)return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
+      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{if(out.size>=limit||protectedNode(el))return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
     }
     return [...out];
   }
@@ -582,6 +582,7 @@
         const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail;
       }
       Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{
+        if(protectedNode(el))return;
         const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){
           const src=clean(srcs[a]);if(!src)continue;const tr=c==='en'?src:map[src];if(!tr)continue;
           if(clean(el.getAttribute(a))!==clean(tr))el.setAttribute(a,tr);
