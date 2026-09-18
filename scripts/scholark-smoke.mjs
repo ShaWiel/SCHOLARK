@@ -165,12 +165,15 @@ if(!live){
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   try{
     const [shellRes,filterRes,homeRes]=await Promise.all([
-      request('/scholark-v51-workspace-shell.js?v=20260918-r143',{},30000),
+      request('/scholark-v51-workspace-shell.js?v=20260918-r144',{},30000),
       request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4',{},30000),
-      request('/scholark-v99-home-foundation.js?v=20260918-r143',{},30000)
+      request('/scholark-v99-home-foundation.js?v=20260918-r144',{},30000)
     ]);
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&shell.includes("['mulo','🎒','MULO'")&&shell.includes("['havo','🎓','HAVO'")&&shell.includes("['mbo','🧰','MBO'")&&shell.includes("['hbo','🏫','HBO'")&&shell.includes("['wo','🏛️','WO / Universiteit'"),'live Workspace dashboard is missing exact Suriname levels');
+    check(shell.includes("{id:'basic',label:'Basisonderwijs',tone:'green'}")&&shell.includes("{id:'voj',label:'VOJ',tone:'dark'}")&&shell.includes("{id:'vos',label:'VOS',tone:'green'}")&&shell.includes("{id:'higher',label:'Hoger Onderwijs',tone:'dark'}"),'live Suriname group labels/colors are wrong');
+    check(shell.includes('v51-levels-suriname')&&shell.includes('overflow-x:auto')&&shell.includes('data-v51-level-scroll="-1"')&&shell.includes("host.scrollBy({left:"),'live Suriname level strip is not horizontally scrollable');
+    check(shell.includes("$('[data-level]',host).forEach"),'live dashboard level button wiring is not collection-safe');
     check(shell.includes('SURINAME_AI_LEVEL')&&shell.includes("localStorage.setItem('scholark_education_track',id)"),'live Suriname dashboard selection wiring is incomplete');
     check(filterRes.r.ok&&filter.includes("20260918-school-filter-v4"),'live school filter guard is stale');
     check(filter.includes('documentWideObserver:false')&&!filter.includes('observer.observe(document.documentElement')&&!filter.includes('setInterval('),'live school filter still has a runaway mutation/poll loop');
@@ -179,9 +182,9 @@ if(!live){
   }catch(e){failures.push(`live:responsive_foundation threw ${e?.message||e}`)}
   try{
     const [i18nRes,countryRes,schoolRes]=await Promise.all([
-      request('/scholark-v90-i18n-engine.js?v=20260918-r143',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r143',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r143',{},30000)
+      request('/scholark-v90-i18n-engine.js?v=20260918-r144',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r144',{},30000),
+      request('/scholark-v50-school-finder.js?v=20260918-r144',{},30000)
     ]);
     const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
     check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
@@ -193,18 +196,19 @@ if(!live){
     results.push(`live:language_study_foundation ${i18nRes.r.status}/${countryRes.r.status}/${schoolRes.r.status}`);
   }catch(e){failures.push(`live:language_study_foundation threw ${e?.message||e}`)}
   try{
-    const [toolsRes,examRes,reviewRes,studyRes,learnRes,langRes,quizRes,schoolFinderRes,countryRes]=await Promise.all([
-      request('/scholark-v52-workspace-qa.js?v=20260918-r143',{},30000),
-      request('/scholark-v87-exam-mastery.js?v=20260918-r143',{},30000),
-      request('/scholark-v88-learning-engine.js?v=20260918-r143',{},30000),
-      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r143',{},30000),
-      request('/scholark-v62-learning-ai.js?v=20260918-r143',{},30000),
-      request('/scholark-v93-language-learner.js?v=20260918-r143',{},30000),
+    const [toolsRes,examRes,reviewRes,studyRes,learnRes,langRes,quizRes,nextRes,schoolFinderRes,countryRes]=await Promise.all([
+      request('/scholark-v52-workspace-qa.js?v=20260918-r144',{},30000),
+      request('/scholark-v87-exam-mastery.js?v=20260918-r144',{},30000),
+      request('/scholark-v88-learning-engine.js?v=20260918-r144',{},30000),
+      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r144',{},30000),
+      request('/scholark-v62-learning-ai.js?v=20260918-r144',{},30000),
+      request('/scholark-v93-language-learner.js?v=20260918-r144',{},30000),
       request('/scholark-v102-language-quiz.js?v=20260918-language-choice-v3',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r143',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r143',{},30000)
+      request('/scholark-v103-language-next-lesson.js?v=20260918-language-next-v2',{},30000),
+      request('/scholark-v50-school-finder.js?v=20260918-r144',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r144',{},30000)
     ]);
-    const tools=String(toolsRes.data?.raw||''),exam=String(examRes.data?.raw||''),review=String(reviewRes.data?.raw||''),study=String(studyRes.data?.raw||''),learn=String(learnRes.data?.raw||''),lang=String(langRes.data?.raw||''),quiz=String(quizRes.data?.raw||''),school=String(schoolFinderRes.data?.raw||''),country=String(countryRes.data?.raw||'');
+    const tools=String(toolsRes.data?.raw||''),exam=String(examRes.data?.raw||''),review=String(reviewRes.data?.raw||''),study=String(studyRes.data?.raw||''),learn=String(learnRes.data?.raw||''),lang=String(langRes.data?.raw||''),quiz=String(quizRes.data?.raw||''),next=String(nextRes.data?.raw||''),school=String(schoolFinderRes.data?.raw||''),country=String(countryRes.data?.raw||'');
     check(toolsRes.r.ok&&tools.includes('Open actions')&&tools.includes('Due today')&&tools.includes('NEXT ACTION'),'live Planner workflow is incomplete');
     check(tools.includes('Add next action')&&tools.includes('linked actions done')&&tools.includes('Average goal progress'),'live Goals/Progress integration is incomplete');
     check(tools.includes('Next review')&&tools.includes("data-m-tutor")&&tools.includes('Add this study session to Planner'),'live Education & Learning actions are incomplete');
@@ -219,16 +223,18 @@ if(!live){
     check(learn.includes('assignmentContextFor(prompt)')&&learn.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'live Tutor does not attach Assignment context');
     check(langRes.r.ok&&lang.includes('Exercise accuracy')&&lang.includes('adaptive=accuracy==null'),'live Language Learner adaptation is missing');
     check(quizRes.r.ok&&quiz.includes("20260918-language-choice-v3")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
+    check(nextRes.r.ok&&next.includes("20260918-language-next-v2")&&!next.includes('MutationObserver'),'live next-lesson compatibility helper is stale or observer-heavy');
+    check(lang.includes('async function nextLesson()')&&lang.includes('id="v93-next"')&&lang.includes("nextButton.onclick=nextLesson")&&lang.includes("source.result?.nextStep"),'live Language Learner next lesson button is not functional');
     check(schoolFinderRes.r.ok&&school.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&school.includes('<option value="mbo">MBO · NATIN, IMEAO, Kweekschool'), 'Suriname school options are incomplete');
     check(countryRes.r.ok&&country.includes("kindergarten:{title:'Kleuterschool / Kleuteronderwijs'")&&country.includes("wo:{title:'WO / Universiteit'"),'Suriname country-aware track definitions are incomplete');
     check(learn.includes("window.__SCHOLARK_COUNTRY__?.surinameTracks?.[track]"),'AI learning context is missing exact Suriname track');
-    results.push(`live:expanded_learning_workflows ${toolsRes.r.status}/${examRes.r.status}/${reviewRes.r.status}/${studyRes.r.status}/${learnRes.r.status}/${langRes.r.status}/${quizRes.r.status}/${schoolFinderRes.r.status}`);
+    results.push(`live:expanded_learning_workflows ${toolsRes.r.status}/${examRes.r.status}/${reviewRes.r.status}/${studyRes.r.status}/${learnRes.r.status}/${langRes.r.status}/${quizRes.r.status}/${nextRes.r.status}/${schoolFinderRes.r.status}`);
   }catch(e){failures.push(`live:expanded_learning_workflows threw ${e?.message||e}`)}
   try{
     const [powerRes,shellRes,runtimeRes,prepaintRes]=await Promise.all([
-      request('/scholark-v106-workspace-power-tools.js?v=20260918-r143',{},30000),
-      request('/scholark-v51-workspace-shell.js?v=20260918-r143',{},30000),
-      request('/scholark-runtime-loader.js?v=20260918-r143',{},30000),
+      request('/scholark-v106-workspace-power-tools.js?v=20260918-r144',{},30000),
+      request('/scholark-v51-workspace-shell.js?v=20260918-r144',{},30000),
+      request('/scholark-runtime-loader.js?v=20260918-r144',{},30000),
       request('/',{},30000)
     ]);
     const power=String(powerRes.data?.raw||''),shell=String(shellRes.data?.raw||''),runtime=String(runtimeRes.data?.raw||''),home=String(prepaintRes.data?.raw||'');
