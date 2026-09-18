@@ -23,6 +23,7 @@ COPY scholark-gemini-primary.mjs /app/scholark-gemini-primary.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 COPY scholark-v105-school-vwo.js /tmp/scholark-v105-school-vwo.js
+COPY scholark-v106-workspace-power-tools.js /tmp/scholark-v106-workspace-power-tools.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v24-ui.js \
@@ -95,6 +96,7 @@ COPY scholark-v24-ui.js \
      /tmp/
 
 RUN node --check /tmp/scholark-v105-school-vwo.js \
+    && node --check /tmp/scholark-v106-workspace-power-tools.js \
     && unzip /tmp/scholark.zip -d /app \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
