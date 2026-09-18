@@ -148,7 +148,11 @@
   document.addEventListener('pointerover',e=>{if(e.target.closest?.('[data-v51-tool="studio"],.v51-card[data-v51-tool="studio"]'))prewarmStudio()},{passive:true});
   addEventListener('scholark-home-mode-change',()=>schedule(0));addEventListener('scholark-language-applied',()=>schedule(10));addEventListener('scholark-language-ready',()=>{schedule(20);setTimeout(repairLocalization,100)});addEventListener('scholark-language-complete',()=>{schedule(10);setTimeout(repairLocalization,80)});
   addEventListener('scholark-runtime-ready',()=>{reloadPatchedLanguageMap();prewarmStudio();schedule(60);setTimeout(health,900)});addEventListener('scholark-return-home',()=>{schedule(0);setTimeout(repairHome,60);setTimeout(repairLocalization,220)});addEventListener('hashchange',()=>{schedule(25);setTimeout(()=>{repairProject();repairStudio();repairLocalization()},110);setTimeout(health,650)});addEventListener('popstate',()=>schedule(30));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(50)});const obs=new MutationObserver(()=>schedule(90));obs.observe(document.body||document.documentElement,{childList:true,subtree:true});[80,300,900,1700].forEach(ms=>setTimeout(()=>schedule(0),ms));setTimeout(health,2400);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(50)});
+  addEventListener('scholark-route-painted',()=>schedule(40));
+  [80,300,900,1700].forEach(ms=>setTimeout(()=>schedule(0),ms));setTimeout(health,2400);
 
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r129'};
+  // Repairs are intentionally event-driven. Watching the entire document caused
+  // expensive full-surface localization scans during dynamic workspace mounts.
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r129',documentWideObserver:false};
 })();
