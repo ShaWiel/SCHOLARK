@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V105_SCHOOL_VWO__)return;
   window.__SCHOLARK_V105_SCHOOL_VWO__=true;
 
-  const VERSION='20260918-school-vwo-v6';
+  const VERSION='20260918-school-vwo-v7';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
@@ -154,7 +154,7 @@
     }
     const title=button.querySelector('b'),desc=button.querySelector('small');
     if(title&&title.textContent!=='VWO')title.textContent='VWO';
-    const description=VWO_DESCRIPTION[uiLang()]||VWO_DESCRIPTION.en;
+    const description=isSuriname()?'16–19 jaar':(VWO_DESCRIPTION[uiLang()]||VWO_DESCRIPTION.en);
     if(desc&&desc.textContent!==description)desc.textContent=description;
     const selected=localStorage.getItem('scholark_education_track')==='vwo'&&localStorage.getItem('scholark_learning_level')==='student';
     if(selected)setVwoActive(button);else button.classList.remove('active');
