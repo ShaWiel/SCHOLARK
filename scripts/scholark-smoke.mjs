@@ -151,9 +151,9 @@ if(!live){
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   try{
     const [shellRes,filterRes,homeRes]=await Promise.all([
-      request('/scholark-v51-workspace-shell.js?v=20260918-r139',{},30000),
+      request('/scholark-v51-workspace-shell.js?v=20260918-r140',{},30000),
       request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v3',{},30000),
-      request('/scholark-v99-home-foundation.js?v=20260918-r139',{},30000)
+      request('/scholark-v99-home-foundation.js?v=20260918-r140',{},30000)
     ]);
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['vwo','🎓','VWO'"),'live workspace shell is missing native VWO');
@@ -165,9 +165,9 @@ if(!live){
   }catch(e){failures.push(`live:responsive_foundation threw ${e?.message||e}`)}
   try{
     const [i18nRes,countryRes,schoolRes]=await Promise.all([
-      request('/scholark-v90-i18n-engine.js?v=20260918-r139',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r139',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r139',{},30000)
+      request('/scholark-v90-i18n-engine.js?v=20260918-r140',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r140',{},30000),
+      request('/scholark-v50-school-finder.js?v=20260918-r140',{},30000)
     ]);
     const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
     check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
@@ -180,15 +180,15 @@ if(!live){
   }catch(e){failures.push(`live:language_study_foundation threw ${e?.message||e}`)}
   try{
     const [toolsRes,examRes,reviewRes,studyRes,learnRes,langRes,quizRes,schoolFinderRes,countryRes]=await Promise.all([
-      request('/scholark-v52-workspace-qa.js?v=20260918-r139',{},30000),
-      request('/scholark-v87-exam-mastery.js?v=20260918-r139',{},30000),
-      request('/scholark-v88-learning-engine.js?v=20260918-r139',{},30000),
-      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r139',{},30000),
-      request('/scholark-v62-learning-ai.js?v=20260918-r139',{},30000),
-      request('/scholark-v93-language-learner.js?v=20260918-r139',{},30000),
+      request('/scholark-v52-workspace-qa.js?v=20260918-r140',{},30000),
+      request('/scholark-v87-exam-mastery.js?v=20260918-r140',{},30000),
+      request('/scholark-v88-learning-engine.js?v=20260918-r140',{},30000),
+      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r140',{},30000),
+      request('/scholark-v62-learning-ai.js?v=20260918-r140',{},30000),
+      request('/scholark-v93-language-learner.js?v=20260918-r140',{},30000),
       request('/scholark-v102-language-quiz.js?v=20260918-language-choice-v3',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r139',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r139',{},30000)
+      request('/scholark-v50-school-finder.js?v=20260918-r140',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r140',{},30000)
     ]);
     const tools=String(toolsRes.data?.raw||''),exam=String(examRes.data?.raw||''),review=String(reviewRes.data?.raw||''),study=String(studyRes.data?.raw||''),learn=String(learnRes.data?.raw||''),lang=String(langRes.data?.raw||''),quiz=String(quizRes.data?.raw||''),school=String(schoolFinderRes.data?.raw||''),country=String(countryRes.data?.raw||'');
     check(toolsRes.r.ok&&tools.includes('Open actions')&&tools.includes('Due today')&&tools.includes('NEXT ACTION'),'live Planner workflow is incomplete');
@@ -198,6 +198,8 @@ if(!live){
     check(reviewRes.r.ok&&review.includes('localReviewRows')&&review.includes('renderLocalQueue'),'live local spaced review is missing');
     check(studyRes.r.ok&&study.includes('data-v83="goal"')&&study.includes("scholark_v51_planner")&&study.includes("scholark_v52_mastery"),'live Study Ahead integration is incomplete');
     check(learnRes.r.ok&&learn.includes('const depthInstruction=')&&learn.includes("depth,prompt:'Prepare me to study '"),'live Study Ahead depth is not functional');
+    check(learn.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learn.includes('restoreStudyDraft();bindStudyDraft();return live'),'live Study Ahead draft preservation is missing');
+    check(learn.includes("const live=$('.v62-study',h)")&&learn.includes("if(live&&$('#v62-field',live))"),'live Study Ahead idempotent mount is missing');
     check(langRes.r.ok&&lang.includes('Exercise accuracy')&&lang.includes('adaptive=accuracy==null'),'live Language Learner adaptation is missing');
     check(quizRes.r.ok&&quiz.includes("20260918-language-choice-v3")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
     check(schoolFinderRes.r.ok&&!school.includes('<option value="early">')&&school.includes("filter(x=>x.level!=='early')"),'Early childhood is still exposed by Schools Near Me');
