@@ -351,6 +351,40 @@
     if(study){study.dataset.v96I18nOwned='1';study.dataset.schI18nOwned='1';study.placeholder=ui.studyField}
     window.__SCHOLARK_V50_SCHOOLS__?.syncStudyField?.();
   }
+  const ownedLocaleObservers=new WeakMap();
+  let ownedLocaleRepairing=false;
+  function wireOwnedLocaleGuard(){
+    const watch=(node,healthy,repair)=>{
+      if(!node||ownedLocaleObservers.has(node))return;
+      const observer=new MutationObserver(()=>{
+        if(ownedLocaleRepairing)return;
+        queueMicrotask(()=>{
+          if(ownedLocaleRepairing||healthy())return;
+          ownedLocaleRepairing=true;
+          try{repair()}finally{ownedLocaleRepairing=false}
+        });
+      });
+      observer.observe(node,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['label']});
+      ownedLocaleObservers.set(node,observer);
+    };
+    const levels=$('#v51-main [data-v51-page="dashboard"] .v51-levels');
+    watch(levels,()=>{
+      if(currentCountry()!=='Suriname')return true;
+      const copy=groupCopy();
+      return [...levels.querySelectorAll('.v51-level-cluster[data-v51-group]')].every(cluster=>{
+        const label=cluster.querySelector('.v51-level-group');
+        return !copy[cluster.dataset.v51Group]||clean(label?.textContent)===clean(copy[cluster.dataset.v51Group]);
+      });
+    },applyGroupLabels);
+    const sel=$('#v50-level');
+    watch(sel,()=>{
+      const ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
+      if(clean(sel.querySelector('option[value="all"]')?.textContent)!==clean(ui.all))return false;
+      if(currentCountry()!=='Suriname')return true;
+      const gc=groupCopy(),labels=[...sel.querySelectorAll('optgroup')].map(x=>clean(x.label));
+      return [gc.basic,gc.voj,gc.vos,gc.higher].every((x,i)=>labels[i]===clean(x));
+    },applySchoolLevels);
+  }
   function seedInputs(){
     const c=currentCountry();
     for(const el of [$('#v50-country'),$('#v62-country'),$('#v52-cur-country')]){
@@ -367,7 +401,7 @@
   }
   function apply(){
     document.documentElement.dataset.scholarkCountry=currentCountry();
-    ensureSidebarCountry();ensureDashboardSelector();applyLevels();applyGroupLabels();applySchoolLevels();seedInputs();
+    ensureSidebarCountry();ensureDashboardSelector();applyLevels();applyGroupLabels();applySchoolLevels();seedInputs();wireOwnedLocaleGuard();
   }
 
   const style=document.createElement('style');style.id='scholark-v96-country-style';style.textContent=`
