@@ -461,15 +461,32 @@
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
-  const CACHE_VERSION='v3-seven-ui';
+  const CACHE_VERSION='v4-seven-ui';
+  const LEGACY_CACHE_VERSIONS=['v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
-  function loadMap(c){let saved={};try{saved=JSON.parse(localStorage.getItem(key(c))||'{}')||{}}catch{}return {...(STATIC_UI[c]||{}),...saved}}
-  function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m))}catch{}}
+  const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
+  function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
+  function loadMap(c){return {...(STATIC_UI[c]||{}),...parseStored(key(c))}}
+  const reverseKnown=new Map();
+  function indexMap(m){
+    for(const [source,translated] of Object.entries(m||{})){
+      const src=clean(source),tr=clean(translated);if(!src)continue;
+      reverseKnown.set(src,src);if(tr)reverseKnown.set(tr,src);
+    }
+  }
+  function rebuildReverseKnown(){
+    reverseKnown.clear();
+    for(const m of Object.values(STATIC_UI))indexMap(m);
+    for(const [lc] of LANGS){
+      indexMap(parseStored(key(lc)));
+      for(const version of LEGACY_CACHE_VERSIONS)indexMap(parseStored(legacyKey(version,lc)));
+    }
+  }
+  rebuildReverseKnown();
+  function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m));indexMap(m)}catch{}}
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
-  const reverseStatic=new Map();
-  for(const [lc,m] of Object.entries(STATIC_UI)){for(const [source,translated] of Object.entries(m||{})){reverseStatic.set(clean(source),source);if(clean(translated))reverseStatic.set(clean(translated),source)}}
-  const canonicalSource=value=>reverseStatic.get(clean(value))||clean(value);
+  const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
   function primeDeviceTranslator(target,onProgress){
@@ -491,8 +508,21 @@
     await Promise.all(Array.from({length:Math.min(6,strings.length)},()=>worker()));
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
-  const rememberText=n=>{if(!textSource.has(n))textSource.set(n,canonicalSource(n.nodeValue));return textSource.get(n)||canonicalSource(n.nodeValue)};
-  const rememberAttrs=el=>{let o=attrSource.get(el);if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}return o};
+  const rememberText=n=>{
+    const current=canonicalSource(n.nodeValue);
+    if(!textSource.has(n))textSource.set(n,current);
+    else{
+      const remembered=canonicalSource(textSource.get(n));
+      if(remembered!==textSource.get(n))textSource.set(n,remembered);
+    }
+    return textSource.get(n)||current;
+  };
+  const rememberAttrs=el=>{
+    let o=attrSource.get(el);
+    if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}
+    else for(const a of Object.keys(o))o[a]=canonicalSource(o[a]);
+    return o;
+  };
 
   function eligibleText(s){
     const t=clean(s);if(!t||t.length<2||t.length>420)return false;
@@ -671,6 +701,7 @@
     if(!home)document.documentElement.classList.add('scholark-language-switching');
 
     localStorage.setItem('scholark_ui_language',target);
+    rebuildReverseKnown();
     map=loadMap(target);mapCode=target;
     document.documentElement.lang=target;
     document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
@@ -749,10 +780,11 @@
       const m=loadMap(lc),hit=required.filter(x=>clean(m[x])&&clean(m[x])!==x).length;
       localeCoverage[lc]=hit/required.length;
     }
-    const ok=LANGS.length===7&&!LANGS.some(x=>x[0]==='srn')&&Object.values(localeCoverage).every(x=>x>=.88);
-    const report={ok,count:LANGS.length,code:code(),localeCoverage};
+    const canonicalCrossLocale=canonicalSource('Todos los niveles')==='All levels'||!reverseKnown.has('Todos los niveles');
+    const ok=LANGS.length===7&&!LANGS.some(x=>x[0]==='srn')&&Object.values(localeCoverage).every(x=>x>=.88)&&canonicalCrossLocale;
+    const report={ok,count:LANGS.length,code:code(),localeCoverage,cacheVersion:CACHE_VERSION,canonicalCrossLocale};
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,count:LANGS.length};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource};
 })();
