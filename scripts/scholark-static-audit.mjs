@@ -119,13 +119,13 @@ ok(i18n.includes('rebuildReverseKnown')&&i18n.includes('reverseKnown.get(clean(v
 ok((i18n.match(/protectedNode\(el\)/g)||[]).length>=2,'locale-owned form attributes are not protected from generic translation');
 ok(homeFoundation.includes('scholark_v90_i18n_v4-seven-ui_'),'home foundation still writes the old language cache');
 ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("all:'Todos los niveles'")&&countryEducation.includes("studyField:'Studie/richting (optioneel)'"),'school locale dictionary is incomplete');
-ok(countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]")&&countryEducation.includes("['Voortgezet Onderwijs Junioren (VOJ)',['mulo','lbo']]")&&countryEducation.includes("['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']]")&&countryEducation.includes("['Hoger Onderwijs',['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
+ok(countryEducation.includes("[gc.basic,['kindergarten','primary']]")&&countryEducation.includes("[gc.voj,['mulo','lbo']]")&&countryEducation.includes("[gc.vos,['havo','vwo','mbo']]")&&countryEducation.includes("[gc.higher,['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
 ok(countryEducation.includes("$$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
 ok(fastTools.includes("$$('[data-tutor-assignment]',h).forEach"),'AI Tutor Assignment Coach must iterate assignment buttons as a collection');
 ok(learningEngine.includes("$$('[data-v88-local]',host).forEach"),'Learning review engine must iterate review buttons as a collection');
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'Study field is not available for Suriname VOS and higher-education levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
-ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("['Basisonderwijs',['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
+ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("[gc.basic,['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
 ok(schoolFinder.includes("levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs'"),'School result labels do not use Suriname taxonomy');
 ok(fastTools.includes("const PLAN_KEY='scholark_v51_planner'")&&fastTools.includes("type:'next_action'")&&fastTools.includes('goalProgress(g)'),'Planner/Goals integration is incomplete');
 ok(fastTools.includes('Open actions')&&fastTools.includes('Due today')&&fastTools.includes('Where to focus next'),'Planner/Progress dashboard depth is incomplete');
