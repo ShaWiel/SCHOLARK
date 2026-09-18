@@ -13,11 +13,22 @@
   const LEVELS=[
     ['young','🧸','Young learner','Playful foundations, language and number sense'],
     ['primary','📚','Primary school','Math, language, exploration and smart practice'],
-    ['secondary','🎒','VOJ & VOS','Mastery, planning, study space and challenging subjects'],
+    ['secondary','🎒','Secondary school','Mastery, planning, study space and challenging subjects'],
     ['student','🎓','Student','Research, reports, presentations and study planning'],
-    ['vwo','🎓','VWO','Pre-university secondary education'],
     ['adult','💼','Adult','Digital skills, work skills and practical help']
   ];
+  const SURINAME_LEVELS=[
+    ['kindergarten','🧸','Kleuterschool / Kleuteronderwijs','Leerjaar 1–2 · 4–6 jaar','Basisonderwijs','young'],
+    ['primary','📚','Lagere school / Basisschool','Leerjaar 3–8 · 6–12 jaar','Basisonderwijs','primary'],
+    ['mulo','🎒','MULO','12–16 jaar','Voortgezet Onderwijs Junioren (VOJ)','secondary'],
+    ['lbo','🛠️','LBO','12–16 jaar','Voortgezet Onderwijs Junioren (VOJ)','secondary'],
+    ['havo','🎓','HAVO','16–18 jaar','Voortgezet Onderwijs Senioren (VOS)','student'],
+    ['vwo','🎓','VWO','16–19 jaar','Voortgezet Onderwijs Senioren (VOS)','student'],
+    ['mbo','🧰','MBO','NATIN, IMEAO, Kweekschool · 16–20+ jaar','Voortgezet Onderwijs Senioren (VOS)','student'],
+    ['hbo','🏫','HBO','18/19+ jaar','Hoger Onderwijs','adult'],
+    ['wo','🏛️','WO / Universiteit','AdeKUS · 19+ jaar','Hoger Onderwijs','adult']
+  ];
+  const SURINAME_AI_LEVEL=Object.fromEntries(SURINAME_LEVELS.map(([id,,,,,ai])=>[id,ai]));
   const TOOLS=[
     ['dashboard','⌂','Dashboard'],['studio','✦','Studio AI'],['tutor','AI','AI Tutor'],['education','◎','Education & Learning'],['language','Aa','Language Learner'],['planner','▦','Planner'],['focus','◷','Focus Sessions'],['flashcards','▤','Flashcards'],['assignments','✓','Assignments'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
   ];
@@ -41,7 +52,7 @@
     body.v51-collapsed{--v51-side:0px}body.v51-collapsed #v51-sidebar{transform:translateX(-102%);opacity:0;visibility:hidden;pointer-events:none}body.v51-collapsed #v51-side-toggle{left:0;border-radius:0 11px 11px 0}
 
     #v51-main{position:fixed;z-index:2147482100;left:var(--v51-side);top:0;right:0;bottom:0;background:#f4f3ef;color:#17191f;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;transition:left .24s ease;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .v51-page{display:none;min-height:100%;padding:34px;box-sizing:border-box}.v51-page.active{display:block}.v51-shell{max-width:1450px;margin:0 auto}.v51-level-label{font:900 8px Inter;letter-spacing:.14em;color:#716d7a;margin:0 0 8px}.v51-levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 26px}.v51-level{border:1px solid rgba(23,25,31,.1);background:#fff;border-radius:17px;padding:13px 12px;text-align:left;cursor:pointer;min-height:88px;min-width:0}.v51-level.active{background:#17191f;color:#fff;border-color:#17191f}.v51-level b{display:block;font:900 10px/1.25 Inter;margin:7px 0 3px;overflow-wrap:anywhere}.v51-level small{display:block;font:600 7.5px/1.42 Inter;color:#817d87;overflow-wrap:anywhere}.v51-level.active small{color:#bcb8c5}.v51-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px;padding-right:118px}.v51-head small{display:block;color:#6d5dfc;font:950 9px Inter;letter-spacing:.15em;margin-bottom:8px}.v51-head h1{font:950 clamp(36px,5vw,60px)/.94 Inter;margin:0;letter-spacing:-.052em}.v51-head p{max-width:760px;color:#706c77;font:600 12px/1.55 Inter;margin:10px 0 0}.v51-badge{border-radius:999px;background:#17191f;color:#c9ff6a;padding:9px 12px;font:900 8.5px Inter;white-space:nowrap}.v51-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.v51-card{border:1px solid rgba(23,25,31,.1);background:#fff;border-radius:22px;padding:19px;min-height:165px;text-align:left;cursor:pointer;box-shadow:0 17px 50px rgba(31,27,63,.045)}.v51-card.primary{grid-column:span 2;min-width:0;background:linear-gradient(145deg,#17191f,#30275d);color:#fff}.v51-card .icon{width:37px;height:37px;border-radius:12px;background:#eeecff;color:#5c4de0;display:grid;place-items:center;font:950 14px Inter}.v51-card.primary .icon{background:#c9ff6a;color:#17191f}.v51-card h3{font:950 20px/1.08 Inter;margin:16px 0 7px;overflow-wrap:anywhere}.v51-card p{font:600 10px/1.5 Inter;color:#77727d;margin:0;overflow-wrap:anywhere}.v51-card.primary p{color:#cac6d2}.v51-card b{display:inline-block;margin-top:16px;font:900 8.5px Inter;color:#6d5dfc}.v51-card.primary b{color:#c9ff6a}
+    .v51-page{display:none;min-height:100%;padding:34px;box-sizing:border-box}.v51-page.active{display:block}.v51-shell{max-width:1450px;margin:0 auto}.v51-level-label{font:900 8px Inter;letter-spacing:.14em;color:#716d7a;margin:0 0 8px}.v51-levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 26px}.v51-level-group{grid-column:1/-1;margin:7px 0 -2px;font:950 8px Inter;letter-spacing:.11em;text-transform:uppercase;color:#6d5dfc}.v51-level{border:1px solid rgba(23,25,31,.1);background:#fff;border-radius:17px;padding:13px 12px;text-align:left;cursor:pointer;min-height:88px;min-width:0}.v51-level.active{background:#17191f;color:#fff;border-color:#17191f}.v51-level b{display:block;font:900 10px/1.25 Inter;margin:7px 0 3px;overflow-wrap:anywhere}.v51-level small{display:block;font:600 7.5px/1.42 Inter;color:#817d87;overflow-wrap:anywhere}.v51-level.active small{color:#bcb8c5}.v51-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px;padding-right:118px}.v51-head small{display:block;color:#6d5dfc;font:950 9px Inter;letter-spacing:.15em;margin-bottom:8px}.v51-head h1{font:950 clamp(36px,5vw,60px)/.94 Inter;margin:0;letter-spacing:-.052em}.v51-head p{max-width:760px;color:#706c77;font:600 12px/1.55 Inter;margin:10px 0 0}.v51-badge{border-radius:999px;background:#17191f;color:#c9ff6a;padding:9px 12px;font:900 8.5px Inter;white-space:nowrap}.v51-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.v51-card{border:1px solid rgba(23,25,31,.1);background:#fff;border-radius:22px;padding:19px;min-height:165px;text-align:left;cursor:pointer;box-shadow:0 17px 50px rgba(31,27,63,.045)}.v51-card.primary{grid-column:span 2;min-width:0;background:linear-gradient(145deg,#17191f,#30275d);color:#fff}.v51-card .icon{width:37px;height:37px;border-radius:12px;background:#eeecff;color:#5c4de0;display:grid;place-items:center;font:950 14px Inter}.v51-card.primary .icon{background:#c9ff6a;color:#17191f}.v51-card h3{font:950 20px/1.08 Inter;margin:16px 0 7px;overflow-wrap:anywhere}.v51-card p{font:600 10px/1.5 Inter;color:#77727d;margin:0;overflow-wrap:anywhere}.v51-card.primary p{color:#cac6d2}.v51-card b{display:inline-block;margin-top:16px;font:900 8.5px Inter;color:#6d5dfc}.v51-card.primary b{color:#c9ff6a}
 
     .v51-native-host{position:fixed!important;z-index:2147482150!important;left:var(--v51-side)!important;top:0!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain!important;scrollbar-gutter:stable!important;-webkit-overflow-scrolling:touch;background:#f4f3ef!important;transition:left .24s ease!important}.v51-native-host[hidden]{display:block!important}
     body.v51-native #v51-main{display:none!important}
@@ -64,19 +75,25 @@
   const state={active:'dashboard'};
 
   function workspaceCountry(){return String(window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname').trim().toLowerCase()}
-  function dashboardLevels(){return LEVELS.filter(x=>x[0]!=='vwo'||workspaceCountry()==='suriname')}
+  function dashboardLevels(){return workspaceCountry()==='suriname'?SURINAME_LEVELS:LEVELS}
   function levelId(){
-    if(workspaceCountry()==='suriname'&&localStorage.getItem('scholark_education_track')==='vwo')return 'vwo';
+    if(workspaceCountry()==='suriname'){
+      const track=localStorage.getItem('scholark_education_track')||'';
+      if(SURINAME_AI_LEVEL[track])return track;
+      const ai=localStorage.getItem('scholark_learning_level')||'secondary';
+      return ai==='young'?'kindergarten':ai==='primary'?'primary':ai==='student'?'havo':ai==='adult'?'hbo':'mulo';
+    }
     return localStorage.getItem('scholark_learning_level')||'secondary';
   }
   function setLevel(id){
-    if(id==='vwo'&&workspaceCountry()==='suriname'){
-      localStorage.setItem('scholark_learning_level','student');
-      localStorage.setItem('scholark_ai_audience_level','student');
-      localStorage.setItem('scholark_education_track','vwo');
-      localStorage.setItem('scholark_vwo_selected','1');
+    if(workspaceCountry()==='suriname'&&SURINAME_AI_LEVEL[id]){
+      const ai=SURINAME_AI_LEVEL[id];
+      localStorage.setItem('scholark_learning_level',ai);
+      localStorage.setItem('scholark_ai_audience_level',ai);
+      localStorage.setItem('scholark_education_track',id);
+      if(id==='vwo')localStorage.setItem('scholark_vwo_selected','1');else localStorage.removeItem('scholark_vwo_selected');
     }else{
-      if(!LEVELS.some(x=>x[0]===id)||id==='vwo')id='secondary';
+      if(!LEVELS.some(x=>x[0]===id))id='secondary';
       localStorage.setItem('scholark_learning_level',id);
       localStorage.setItem('scholark_ai_audience_level',id);
       localStorage.removeItem('scholark_education_track');
@@ -106,7 +123,19 @@
     renderLevels();setCollapsed(localStorage.getItem('scholark_v51_collapsed')==='1',false);refreshLogo();
   }
   function card(id,ic,title,desc,primary=false){return `<button class="v51-card ${primary?'primary':''}" data-v51-tool="${id}"><span class="icon">${ic}</span><h3>${title}</h3><p>${desc}</p><b>OPEN ${title.toUpperCase()} →</b></button>`}
-  function renderLevels(){if(!side)return;const host=$('.v51-levels',main);if(!host)return;host.innerHTML=dashboardLevels().map(([id,ic,l,d])=>`<button class="v51-level ${id===levelId()?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level))}
+  function renderLevels(){
+    if(!side)return;const host=$('.v51-levels',main);if(!host)return;
+    const rows=dashboardLevels(),selected=levelId();
+    if(workspaceCountry()==='suriname'){
+      let group='';
+      host.innerHTML=rows.map(([id,ic,l,d,g])=>{
+        const heading=g!==group?`<div class="v51-level-group" data-v51-level-group="${esc(g)}">${esc(g)}</div>`:'';
+        group=g;
+        return heading+`<button class="v51-level ${id===selected?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`;
+      }).join('');
+    }else host.innerHTML=rows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
+    $('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
+  }
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
