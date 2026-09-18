@@ -6,8 +6,8 @@ const root=process.cwd();
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
-const RELEASE='r141';
-const VERSION='20260918-r141';
+const RELEASE='r142';
+const VERSION='20260918-r142';
 const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260917-school-country-levels-v3';
 
@@ -33,6 +33,7 @@ const studyAhead=read('scholark-v83-study-ahead-cloud.js');
 const examMastery=read('scholark-v87-exam-mastery.js');
 const learningEngine=read('scholark-v88-learning-engine.js');
 const languageLearner=read('scholark-v93-language-learner.js');
+const learningRoute=read('scholark-learning-route.mjs');
 const dashboardBootstrap=read('scholark-v53-dashboard-bootstrap.js');
 const stabilityFoundation=read('scholark-v81-stability-foundation.js');
 const workspacePolish=read('scholark-v91-workspace-polish.js');
@@ -118,7 +119,7 @@ ok(workspaceShell.includes("card('focus','◷','Focus Sessions'")&&workspaceShel
 ok(runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("flashcards:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'Power tools are not lazy-routed through runtime');
 ok(prepaint.includes('focus|flashcards|assignments'),'Prepaint does not recognize new workspace routes');
 ok(docker.includes('scholark-v106-workspace-power-tools.js'),'Workspace power tools are not copied into production');
-ok(powerTools.includes("version:'20260918-workspace-power-v1'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
+ok(powerTools.includes("version:'20260918-workspace-power-v2'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
 ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
 ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
 ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
@@ -127,6 +128,12 @@ ok(stabilityFoundation.includes('planner|focus|flashcards|assignments|progress')
 ok(foundationHealth.includes("'planner','focus','flashcards','assignments','progress'"),'Foundation health does not treat new workspace routes as modern');
 ok(workspacePolish.includes("['focus','Focus Sessions'")&&workspacePolish.includes("['flashcards','Flashcards'")&&workspacePolish.includes("['assignments','Assignments'"),'Workspace polish metadata is missing power tools');
 ok(i18n.includes('[data-v106-user="1"]')&&powerTools.includes('data-v106-user="1"'),'User flashcard/assignment content is not isolated from UI translation');
+ok(fastTools.includes('Assignment Coach')&&fastTools.includes('Prioritise all my assignments')&&fastTools.includes('data-tutor-assignment'),'AI Tutor does not expose saved Assignment coaching');
+ok(learningApi.includes('assignmentContextFor(prompt)')&&learningApi.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'AI Tutor does not pass live Assignment context to backend');
+ok(learningRoute.includes("clean(p.tutorMode)==='assignment_coach'")&&learningRoute.includes('assignmentContext:Array.isArray(p.assignmentContext)')&&learningRoute.includes('highest-value next action'),'Backend Assignment Coach intelligence is incomplete');
+ok(powerTools.includes('What should I do next?')&&powerTools.includes("sessionStorage.setItem('scholark_v62_assignment_id'"),'Assignments do not launch contextual AI coaching');
+ok(fastTools.includes("best:['Biology','History','Law'")&&fastTools.includes("example:'Biology example:")&&fastTools.includes("practice:{name:'Practice Testing'")&&fastTools.includes("elaborate:{name:'Elaborative Interrogation'"),'Study Methods Lab lacks subject guidance/examples or expanded methods');
+ok(fastTools.includes('BEST FOR')&&fastTools.includes('Show me with my topic'),'Study Methods Lab does not render best-subject guidance and worked examples');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
