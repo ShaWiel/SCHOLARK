@@ -5,7 +5,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260918-r147';
+  const VERSION = '20260918-r148';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -27,20 +27,23 @@
   const BASE = new Set([
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v32-mode-preview.js',
     'scholark-v33-preview-compat.js','scholark-v35-pro-creator-limits.js','scholark-v42-route-guard.js',
-    'scholark-v55-home-topbar-workspace-entry.js','scholark-v81-stability-foundation.js','scholark-v90-i18n-engine.js',
+    'scholark-v81-stability-foundation.js','scholark-v90-i18n-engine.js',
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js',
-    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
+    'scholark-v98-brand-migration.js'
   ]);
-  const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js'];
+  const HOME = ['scholark-v28-home-experience.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js','scholark-v55-home-topbar-workspace-entry.js','scholark-v99-home-foundation.js'];
   const WORKSPACE = [
-    'scholark-v36-workspace-i18n.js','scholark-v43-studio-workspace.js','scholark-v51-workspace-shell.js','scholark-v52-workspace-qa.js','scholark-v53-dashboard-bootstrap.js',
-    'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v64-projects.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
+    'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v53-dashboard-bootstrap.js',
+    'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
     'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js'
   ];
   const FEATURES = {
     studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
-    tutor:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
-    education:['scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
+    tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
+    education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
+    planner:['scholark-v52-workspace-qa.js'],
+    progress:['scholark-v52-workspace-qa.js'],
+    goal:['scholark-v52-workspace-qa.js'],
     schools:['scholark-v50-school-finder.js'],
     study:['scholark-v62-learning-ai.js','scholark-v83-study-ahead-cloud.js'],
     language:['scholark-v93-language-learner.js'],

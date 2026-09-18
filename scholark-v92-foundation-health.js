@@ -41,7 +41,7 @@
   async function runSelftest(){
     const r=route(),workspaceNeeded=modern.has(r);
     const checks={
-      release:'r136',route:r||'home',online:navigator.onLine!==false,
+      release:(window.__SCHOLARK_RUNTIME__?.version||document.documentElement.dataset.scholarkRelease||'unknown'),route:r||'home',online:navigator.onLine!==false,
       sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
       learningApi:!['tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__,
       bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,

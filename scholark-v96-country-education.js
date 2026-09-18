@@ -283,7 +283,7 @@
   }
   function applyLevels(){
     const c=currentCountry(),sys=system(c),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
-    $('.v51-level[data-level]').forEach(btn=>{
+    $$('.v51-level[data-level]').forEach(btn=>{
       const id=btn.dataset.level,icon=btn.querySelector(':scope > span'),title=btn.querySelector('b'),desc=btn.querySelector('small');
       btn.dataset.v96I18nOwned='1';
       if(c==='Suriname'&&SURINAME_TRACKS[id]){

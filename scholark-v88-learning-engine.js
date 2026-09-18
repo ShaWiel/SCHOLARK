@@ -41,7 +41,7 @@
     if(!list.length){st.textContent='You are caught up.';host.innerHTML='<div class="v88-empty">No local mastery reviews are due right now. Weak topics will return automatically based on their review date.</div>';return true}
     st.textContent=prefix+' · '+list.length+' review'+(list.length===1?' is':'s are')+' due.';
     host.innerHTML=list.map((m,i)=>'<div class="v88-review"><div><b>'+esc(m.topic||'Review topic')+'</b><span>'+esc(m.subject||'General')+' · mastery '+Math.round(Number(m.mastery)||0)+'% · '+esc(m.status||'Learning')+'</span></div><button type="button" data-v88-local="'+i+'">Review now</button></div>').join('');
-    $('[data-v88-local]',host).forEach(b=>b.onclick=()=>reviewTopic(list[+b.dataset.v88Local]));
+    $$('[data-v88-local]',host).forEach(b=>b.onclick=()=>reviewTopic(list[+b.dataset.v88Local]));
     return true;
   }
   async function queue(){
