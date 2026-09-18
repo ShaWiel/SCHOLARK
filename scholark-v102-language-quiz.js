@@ -2,7 +2,7 @@
   if (window.__SCHOLARK_V102_LANGUAGE_QUIZ__) return;
   window.__SCHOLARK_V102_LANGUAGE_QUIZ__ = true;
 
-  const VERSION = '20260916-language-choice-v2';
+  const VERSION = '20260918-language-choice-v3';
   const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
   const key = value => clean(value)
     .normalize('NFD')
