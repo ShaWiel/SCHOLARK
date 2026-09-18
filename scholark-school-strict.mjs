@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260917-school-country-levels-v3';
+const VERSION='20260918-school-suriname-taxonomy-v4';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -51,14 +51,20 @@ function levelSet(tags={},extra=''){
   const a=low(tags.amenity),n=low(tags.name||tags['name:en']||tags.operator),i=low(tags['isced:level']||tags.isced),sheet=low(tags.sheet),text=[n,low(extra),low(tags.education),low(tags.description),sheet].join(' '),out=new Set();
   const digits=new Set((i.match(/[0-8]/g)||[]));
   const vwoLike=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/.test(text);
-  if(a==='kindergarten'||digits.has('0')||/preschool|pre-school|nursery|kindergarten|kleuter|peuter|voorschool|early childhood|maternelle|infantil/.test(text))out.add('early');
+  const kindergartenLike=a==='kindergarten'||digits.has('0')||/preschool|pre-school|nursery|kindergarten|kleuterschool|kleuteronderwijs|kleuter|peuter|voorschool|early childhood|maternelle|infantil/.test(text);
+  if(kindergartenLike){out.add('early');out.add('kindergarten')}
   if(digits.has('1')||/primary|elementary|basisschool|lagere school|\bglo\b|grundschule|école primaire|primaria/.test(text))out.add('primary');
-  if(digits.has('2')||/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|\bmulo\b|\blbo\b|secundair i|secondary i|senior phase/.test(text))out.add('lower_secondary');
-  if(digits.has('3')||digits.has('4')||vwoLike||/upper secondary|senior secondary|high school|sixth form|sekundarstufe ii|lycée|secondaria di ii|\bvos\b|\bhavo\b|grades? 9|grades? 10|grades? 11|grades? 12|fet\b/.test(text))out.add('upper_secondary');
-  if(vwoLike)out.add('vwo');
-  if(/technical|vocational|trade school|trade college|beroeps|technisch|polytechnic|\btvet\b|\bnatin\b|\bimeao\b|\bamto\b|\blbo\b|\bmbo\b|ausbildung|profissional|professional institute/.test(text))out.add('vocational');
-  if(/\bnatin\b|\bimeao\b|\bamto\b/.test(text))out.add('upper_secondary');
-  if(a==='university'||digits.has('5')||digits.has('6')||digits.has('7')||digits.has('8')||/university|universiteit|université|universität|universidad|università|faculty|faculteit|hogeschool|higher education|tertiary education|college of|institute of higher/.test(text))out.add('higher');
+  if(/\bmulo\b/.test(text)){out.add('lower_secondary');out.add('mulo')}
+  if(/\blbo\b/.test(text)){out.add('lower_secondary');out.add('vocational');out.add('lbo')}
+  if(digits.has('2')||/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|secundair i|secondary i|senior phase/.test(text))out.add('lower_secondary');
+  if(/\bhavo\b/.test(text)){out.add('upper_secondary');out.add('havo')}
+  if(vwoLike){out.add('upper_secondary');out.add('vwo')}
+  if(/\bnatin\b|\bimeao\b|kweekschool|\bmbo\b/.test(text)){out.add('upper_secondary');out.add('vocational');out.add('mbo')}
+  if(digits.has('3')||digits.has('4')||/upper secondary|senior secondary|high school|sixth form|sekundarstufe ii|lycée|secondaria di ii|\bvos\b|grades? 9|grades? 10|grades? 11|grades? 12|fet\b/.test(text))out.add('upper_secondary');
+  if(/technical|vocational|trade school|trade college|beroeps|technisch|polytechnic|\btvet\b|\bamto\b|ausbildung|profissional|professional institute/.test(text))out.add('vocational');
+  if(/\bhbo\b|hogeschool|university of applied sciences/.test(text)){out.add('higher');out.add('hbo')}
+  if(/\badekus\b|anton de kom|a?dekus|university|universiteit|université|universität|universidad|università|faculty|faculteit/.test(text)){out.add('higher');out.add('wo')}
+  if(digits.has('5')||digits.has('6')||digits.has('7')||digits.has('8')||/higher education|tertiary education|college of|institute of higher/.test(text))out.add('higher');
   if(a==='college'&&!out.has('upper_secondary'))out.add('higher');
   if(a==='language_school'||/adult education|adult learning|continuing education|training centre|training center|professional learning/.test(text))out.add('adult');
   if(a==='school'&&!out.size)out.add('school');
@@ -69,18 +75,25 @@ function matchesLevel(levels,wanted){
   const set=new Set(levels||[]);
   if(wanted==='secondary'||wanted==='lower_secondary')return set.has('lower_secondary');
   if(wanted==='upper_secondary')return set.has('upper_secondary');
-  if(wanted==='vwo')return set.has('vwo');
   if(wanted==='vocational')return set.has('upper_secondary')||(set.has('vocational')&&!set.has('lower_secondary'));
   if(wanted==='higher')return set.has('higher');
   if(wanted==='adult')return set.has('adult');
   if(wanted==='primary')return set.has('primary');
-  if(wanted==='early')return set.has('early');
+  if(wanted==='early'||wanted==='kindergarten')return set.has('kindergarten')||set.has('early');
+  if(['mulo','lbo','havo','vwo','mbo','hbo','wo'].includes(wanted))return set.has(wanted);
   return set.has(wanted);
 }
 function publicLevel(levels){
   const s=new Set(levels||[]);
-  if(s.has('higher'))return'higher';
+  if(s.has('wo'))return'wo';
+  if(s.has('hbo'))return'hbo';
+  if(s.has('mbo'))return'mbo';
   if(s.has('vwo'))return'vwo';
+  if(s.has('havo'))return'havo';
+  if(s.has('lbo'))return'lbo';
+  if(s.has('mulo'))return'mulo';
+  if(s.has('kindergarten'))return'kindergarten';
+  if(s.has('higher'))return'higher';
   if(s.has('upper_secondary'))return'upper_secondary';
   if(s.has('lower_secondary'))return'secondary';
   if(s.has('vocational'))return'vocational';
@@ -177,14 +190,14 @@ async function discover(body){
   rows=rows.filter(x=>matchesLevel(x.levels,level));
   rows.sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
   console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
-  return{ok:true,strictCountry:true,country,city,level,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:{version:VERSION,secondary:'lower_secondary',lower_secondary:'lower_secondary',upper_secondary:'upper_secondary',vwo:'pre_university_vwo_atheneum_gymnasium',vocational:'upper_secondary_or_nonlower_vocational',higher:'higher_only',genericSchoolMatchesSpecific:false}};
+  return{ok:true,strictCountry:true,country,city,level,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:{version:VERSION,kindergarten:'kleuteronderwijs_leerjaar_1_2',primary:'lagere_school_basisschool_leerjaar_3_8',mulo:'voj_mulo',lbo:'voj_lbo',havo:'vos_havo',vwo:'vos_vwo',mbo:'vos_mbo_natin_imeao_kweekschool',hbo:'higher_professional_hbo',wo:'university_wo_adekus',secondary:'lower_secondary',lower_secondary:'lower_secondary',upper_secondary:'upper_secondary',vocational:'vocational_generic',higher:'higher_generic',genericSchoolMatchesSpecific:false}};
 }
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','Photon geocoder fallback'],levels:{early:'ISCED 0 / early childhood',primary:'ISCED 1 / primary',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vwo:'VWO / atheneum / gymnasium / pre-university',vocational:'upper-secondary or non-lower vocational/technical',higher:'higher education only',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0}});return true;
+    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0}});return true;
   }
   if(req.method==='GET'&&pathname==='/api/schools/vwo-health'){
     officialSurinameSchools().then(rows=>{
