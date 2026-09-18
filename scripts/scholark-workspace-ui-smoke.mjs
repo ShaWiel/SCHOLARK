@@ -68,9 +68,10 @@ for(const [code,expected] of Object.entries(localeExpect)){
   await page.selectOption('#v90-language',code);
   await page.waitForFunction(c=>localStorage.getItem('scholark_ui_language')===c&&document.documentElement.lang===c,code,{timeout:4000});
   await page.waitForTimeout(80);
+  const localeState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
   const actual=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.getAttribute('data-v51-group'),n.querySelector('.v51-level-group')?.textContent?.trim()])));
-  check(actual.basic===expected.basic,`Dashboard basic group language mismatch for ${code}: ${actual.basic}`);
-  check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher}`);
+  check(actual.basic===expected.basic,`Dashboard basic group language mismatch for ${code}: ${actual.basic} | state=${JSON.stringify(localeState)}`);
+  check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher} | state=${JSON.stringify(localeState)}`);
 }
 await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
@@ -157,7 +158,11 @@ check(await page.locator('#v86-files').count()===1,'Files upload input missing')
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
-check((await page.locator('#v50-level option[value="all"]').textContent()).trim()==='Alle niveaus','Dutch school selector leaked another language');
+{
+  const schoolAll=(await page.locator('#v50-level option[value="all"]').textContent()).trim();
+  const schoolState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
+  check(schoolAll==='Alle niveaus',`Dutch school selector leaked another language: ${schoolAll} | state=${JSON.stringify(schoolState)}`);
+}
 await page.selectOption('#v90-language','es');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.lang==='es',{timeout:4000});
 await page.waitForTimeout(100);
@@ -165,7 +170,11 @@ check((await page.locator('#v50-level option[value="all"]').textContent()).trim(
 await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
 await page.waitForTimeout(100);
-check((await page.locator('#v50-level option[value="all"]').textContent()).trim()==='Alle niveaus','School selector kept stale Spanish after switching back to Dutch');
+{
+  const schoolAll=(await page.locator('#v50-level option[value="all"]').textContent()).trim();
+  const schoolState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
+  check(schoolAll==='Alle niveaus',`School selector kept stale Spanish after switching back to Dutch: ${schoolAll} | state=${JSON.stringify(schoolState)}`);
+}
 const schoolGroups=await page.locator('#v50-level optgroup').evaluateAll(nodes=>nodes.map(n=>n.label));
 check(schoolGroups.includes('Basisonderwijs')&&schoolGroups.includes('Hoger Onderwijs'),'Dutch school optgroup labels are inconsistent after language round-trip');
 await route('study','#v51-fallback .v62-study');
