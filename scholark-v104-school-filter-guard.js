@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__)return;
   window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__=true;
 
-  const VERSION='20260918-school-filter-v3';
+  const VERSION='20260918-school-filter-v4';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const COUNTRY_CODES={suriname:'SR',netherlands:'NL',nederland:'NL','united states':'US',usa:'US','united kingdom':'GB',uk:'GB',germany:'DE',france:'FR',spain:'ES',portugal:'PT',italy:'IT',brazil:'BR',canada:'CA',australia:'AU',india:'IN','south africa':'ZA',guyana:'GY','trinidad & tobago':'TT',jamaica:'JM',belgium:'BE'};
@@ -16,13 +16,19 @@
 
   function classify(row={}){
     const text=key([row.name,row.school_name,row.institution_type,row.level,row.education_level,row.school_level,row.description,row.programs,row.study_types].filter(Boolean).join(' ')),out=new Set();
-    if(/preschool|pre school|nursery|kindergarten|kleuter|peuter|voorschool|early childhood/.test(text))out.add('early');
+    if(/preschool|pre school|nursery|kindergarten|kleuterschool|kleuteronderwijs|kleuter|peuter|voorschool|early childhood/.test(text)){out.add('early');out.add('kindergarten')}
     if(/primary|elementary|basisschool|lagere school|\bglo\b/.test(text))out.add('primary');
-    if(/lower secondary|junior secondary|middle school|junior high|\bvoj\b|\bmulo\b|\blbo\b/.test(text))out.add('lower_secondary');
-    if(/upper secondary|senior secondary|high school|sixth form|\bvos\b|\bhavo\b|\bvwo\b/.test(text))out.add('upper_secondary');
-    if(/vocational|technical|trade school|beroeps|technisch|\blbo\b|\bnatin\b|\bimeao\b|\bamto\b|\bmbo\b|tvet/.test(text))out.add('vocational');
-    if(/\bnatin\b|\bimeao\b|\bamto\b/.test(text))out.add('upper_secondary');
-    if(/university|universiteit|faculty|faculteit|hogeschool|higher education|tertiary|college/.test(text))out.add('higher');
+    if(/\bmulo\b/.test(text)){out.add('lower_secondary');out.add('mulo')}
+    if(/\blbo\b/.test(text)){out.add('lower_secondary');out.add('vocational');out.add('lbo')}
+    if(/lower secondary|junior secondary|middle school|junior high|\bvoj\b/.test(text))out.add('lower_secondary');
+    if(/\bhavo\b/.test(text)){out.add('upper_secondary');out.add('havo')}
+    if(/\bvwo\b|atheneum|gymnasium/.test(text)){out.add('upper_secondary');out.add('vwo')}
+    if(/\bnatin\b|\bimeao\b|kweekschool|\bmbo\b/.test(text)){out.add('upper_secondary');out.add('vocational');out.add('mbo')}
+    if(/upper secondary|senior secondary|high school|sixth form|\bvos\b/.test(text))out.add('upper_secondary');
+    if(/vocational|technical|trade school|beroeps|technisch|\bamto\b|tvet/.test(text))out.add('vocational');
+    if(/\bhbo\b|hogeschool|university of applied sciences/.test(text)){out.add('higher');out.add('hbo')}
+    if(/\badekus\b|anton de kom|university|universiteit|faculty|faculteit/.test(text)){out.add('higher');out.add('wo')}
+    if(/higher education|tertiary|college/.test(text))out.add('higher');
     if(/adult education|adult learning|continuing education|professional learning/.test(text))out.add('adult');
     return out;
   }
@@ -33,6 +39,8 @@
     if(wanted==='upper_secondary')return levels.has('upper_secondary');
     if(wanted==='vocational')return levels.has('vocational');
     if(wanted==='higher')return levels.has('higher');
+    if(wanted==='kindergarten')return levels.has('kindergarten')||levels.has('early');
+    if(['mulo','lbo','havo','vwo','mbo','hbo','wo'].includes(wanted))return levels.has(wanted);
     return levels.has(wanted);
   }
   function rowMatches(row,payload){
@@ -69,8 +77,8 @@
 
   function patchLevelOptions(){
     const sel=document.querySelector('#v50-level');if(!sel)return false;
-    let upper=sel.querySelector('option[value="upper_secondary"]');
-    if(!upper){upper=document.createElement('option');upper.value='upper_secondary';sel.appendChild(upper)}
+    // Country education is the single owner of visible level options.
+    // Do not append generic options here because that can corrupt Suriname's exact taxonomy.
     window.__SCHOLARK_COUNTRY__?.apply?.();
     sel.dataset.v104StrictLevels=VERSION;
     return true;
