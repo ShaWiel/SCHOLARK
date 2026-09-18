@@ -31,11 +31,24 @@
     $('#v88-run').onclick=async()=>{const subject=clean($('#v88-subject').value),topics=clean($('#v88-topics').value).split(',').map(clean).filter(Boolean),btn=$('#v88-run'),st=$('#v88-status');if(!subject&&!topics.length){$('#v88-subject').focus();return}btn.disabled=true;st.textContent='Building a diagnostic at your current learning level…';try{const name=subject||topics[0]||'Diagnostic',data=await ai({prompt:'Create a diagnostic assessment that distinguishes secure knowledge from weak areas. Do not make every question the same type.',subject:name,topics:topics.length?topics:[name],count:Number($('#v88-count').value)||12,difficulty:$('#v88-diff').value||'mixed'});examMarkup(data,{name:'Diagnostic · '+name,topics:topics.length?topics:[name],difficulty:$('#v88-diff').value||'mixed'})}catch(e){st.textContent=clean(e?.message||e)}finally{btn.disabled=false}}
   }
 
+  function localReviewRows(){
+    let rows=[];try{rows=JSON.parse(localStorage.getItem('scholark_v52_mastery')||'[]')||[]}catch{}
+    const now=Date.now();
+    return rows.filter(x=>x?.topic&&(!x.nextReviewAt||new Date(x.nextReviewAt).getTime()<=now)).sort((a,b)=>(new Date(a.nextReviewAt||0).getTime()||0)-(new Date(b.nextReviewAt||0).getTime()||0));
+  }
+  function renderLocalQueue(prefix='Local review schedule'){
+    const list=localReviewRows(),st=$('#v88-status'),host=$('#v88-queue');if(!st||!host)return false;
+    if(!list.length){st.textContent='You are caught up.';host.innerHTML='<div class="v88-empty">No local mastery reviews are due right now. Weak topics will return automatically based on their review date.</div>';return true}
+    st.textContent=prefix+' · '+list.length+' review'+(list.length===1?' is':'s are')+' due.';
+    host.innerHTML=list.map((m,i)=>'<div class="v88-review"><div><b>'+esc(m.topic||'Review topic')+'</b><span>'+esc(m.subject||'General')+' · mastery '+Math.round(Number(m.mastery)||0)+'% · '+esc(m.status||'Learning')+'</span></div><button type="button" data-v88-local="'+i+'">Review now</button></div>').join('');
+    $('[data-v88-local]',host).forEach(b=>b.onclick=()=>reviewTopic(list[+b.dataset.v88Local]));
+    return true;
+  }
   async function queue(){
     const host=$('#v52-edu-detail');if(!host)return;host.innerHTML='<div class="v88-form"><h3>Spaced Review Queue</h3><p>Topics become due based on your Mastery performance. Strong topics return later; weak topics return sooner.</p><button class="v88-btn" id="v88-refresh">Refresh queue</button><div class="v88-status" id="v88-status">Loading reviews…</div><div class="v88-queue" id="v88-queue"></div></div>';$('#v88-refresh').onclick=queue;
-    const x=await ctx();if(!x){$('#v88-status').textContent='Sign in to use a cloud review schedule.';$('#v88-queue').innerHTML='<div class="v88-empty">Your local Mastery Map still works, but spaced review is synced to your SCHOLARK account.</div>';return}
+    const x=await ctx();if(!x){renderLocalQueue();return}
     try{
-      const due=encodeURIComponent(new Date().toISOString()),r=await x.c.request('/rest/v1/spaced_reviews?select=id,mastery_topic_id,due_at,interval_days,ease,repetitions,last_result&due_at=lte.'+due+'&order=due_at.asc&limit=30',{method:'GET'}),rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load reviews');const list=Array.isArray(rows)?rows:[];if(!list.length){$('#v88-status').textContent='You are caught up.';$('#v88-queue').innerHTML='<div class="v88-empty">No reviews are due right now. SCHOLARK will bring topics back when the schedule says they need reinforcement.</div>';return}
+      const due=encodeURIComponent(new Date().toISOString()),r=await x.c.request('/rest/v1/spaced_reviews?select=id,mastery_topic_id,due_at,interval_days,ease,repetitions,last_result&due_at=lte.'+due+'&order=due_at.asc&limit=30',{method:'GET'}),rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load reviews');const list=Array.isArray(rows)?rows:[];if(!list.length){renderLocalQueue('Cloud is caught up; local schedule');return}
       const ids=[...new Set(list.map(z=>z.mastery_topic_id).filter(Boolean))],map=new Map();
       if(ids.length){const mr=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,next_review_at&id=in.('+ids.join(',')+')',{method:'GET'}),md=await mr.json().catch(()=>[]);if(mr.ok)(Array.isArray(md)?md:[]).forEach(m=>map.set(m.id,m))}
       $('#v88-status').textContent=list.length+' review'+(list.length===1?' is':'s are')+' due.';
