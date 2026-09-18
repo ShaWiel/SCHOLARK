@@ -151,9 +151,9 @@ if(!live){
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   try{
     const [shellRes,filterRes,homeRes]=await Promise.all([
-      request('/scholark-v51-workspace-shell.js?v=20260918-r141',{},30000),
+      request('/scholark-v51-workspace-shell.js?v=20260918-r142',{},30000),
       request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v3',{},30000),
-      request('/scholark-v99-home-foundation.js?v=20260918-r141',{},30000)
+      request('/scholark-v99-home-foundation.js?v=20260918-r142',{},30000)
     ]);
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['vwo','🎓','VWO'"),'live workspace shell is missing native VWO');
@@ -165,9 +165,9 @@ if(!live){
   }catch(e){failures.push(`live:responsive_foundation threw ${e?.message||e}`)}
   try{
     const [i18nRes,countryRes,schoolRes]=await Promise.all([
-      request('/scholark-v90-i18n-engine.js?v=20260918-r141',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r141',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r141',{},30000)
+      request('/scholark-v90-i18n-engine.js?v=20260918-r142',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r142',{},30000),
+      request('/scholark-v50-school-finder.js?v=20260918-r142',{},30000)
     ]);
     const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
     check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
@@ -180,15 +180,15 @@ if(!live){
   }catch(e){failures.push(`live:language_study_foundation threw ${e?.message||e}`)}
   try{
     const [toolsRes,examRes,reviewRes,studyRes,learnRes,langRes,quizRes,schoolFinderRes,countryRes]=await Promise.all([
-      request('/scholark-v52-workspace-qa.js?v=20260918-r141',{},30000),
-      request('/scholark-v87-exam-mastery.js?v=20260918-r141',{},30000),
-      request('/scholark-v88-learning-engine.js?v=20260918-r141',{},30000),
-      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r141',{},30000),
-      request('/scholark-v62-learning-ai.js?v=20260918-r141',{},30000),
-      request('/scholark-v93-language-learner.js?v=20260918-r141',{},30000),
+      request('/scholark-v52-workspace-qa.js?v=20260918-r142',{},30000),
+      request('/scholark-v87-exam-mastery.js?v=20260918-r142',{},30000),
+      request('/scholark-v88-learning-engine.js?v=20260918-r142',{},30000),
+      request('/scholark-v83-study-ahead-cloud.js?v=20260918-r142',{},30000),
+      request('/scholark-v62-learning-ai.js?v=20260918-r142',{},30000),
+      request('/scholark-v93-language-learner.js?v=20260918-r142',{},30000),
       request('/scholark-v102-language-quiz.js?v=20260918-language-choice-v3',{},30000),
-      request('/scholark-v50-school-finder.js?v=20260918-r141',{},30000),
-      request('/scholark-v96-country-education.js?v=20260918-r141',{},30000)
+      request('/scholark-v50-school-finder.js?v=20260918-r142',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r142',{},30000)
     ]);
     const tools=String(toolsRes.data?.raw||''),exam=String(examRes.data?.raw||''),review=String(reviewRes.data?.raw||''),study=String(studyRes.data?.raw||''),learn=String(learnRes.data?.raw||''),lang=String(langRes.data?.raw||''),quiz=String(quizRes.data?.raw||''),school=String(schoolFinderRes.data?.raw||''),country=String(countryRes.data?.raw||'');
     check(toolsRes.r.ok&&tools.includes('Open actions')&&tools.includes('Due today')&&tools.includes('NEXT ACTION'),'live Planner workflow is incomplete');
@@ -200,6 +200,9 @@ if(!live){
     check(learnRes.r.ok&&learn.includes('const depthInstruction=')&&learn.includes("depth,prompt:'Prepare me to study '"),'live Study Ahead depth is not functional');
     check(learn.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learn.includes('restoreStudyDraft();bindStudyDraft();return live'),'live Study Ahead draft preservation is missing');
     check(learn.includes("const live=$('.v62-study',h)")&&learn.includes("if(live&&$('#v62-field',live))"),'live Study Ahead idempotent mount is missing');
+    check(tools.includes('Assignment Coach')&&tools.includes('Prioritise all my assignments')&&tools.includes('data-tutor-assignment'),'live AI Tutor Assignment Coach UI is missing');
+    check(tools.includes('BEST FOR')&&tools.includes("example:'Biology example:")&&tools.includes("practice:{name:'Practice Testing'")&&tools.includes("elaborate:{name:'Elaborative Interrogation'"),'live Study Methods examples/subject guidance is incomplete');
+    check(learn.includes('assignmentContextFor(prompt)')&&learn.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'live Tutor does not attach Assignment context');
     check(langRes.r.ok&&lang.includes('Exercise accuracy')&&lang.includes('adaptive=accuracy==null'),'live Language Learner adaptation is missing');
     check(quizRes.r.ok&&quiz.includes("20260918-language-choice-v3")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
     check(schoolFinderRes.r.ok&&!school.includes('<option value="early">')&&school.includes("filter(x=>x.level!=='early')"),'Early childhood is still exposed by Schools Near Me');
@@ -208,16 +211,16 @@ if(!live){
   }catch(e){failures.push(`live:expanded_learning_workflows threw ${e?.message||e}`)}
   try{
     const [powerRes,shellRes,runtimeRes,prepaintRes]=await Promise.all([
-      request('/scholark-v106-workspace-power-tools.js?v=20260918-r141',{},30000),
-      request('/scholark-v51-workspace-shell.js?v=20260918-r141',{},30000),
-      request('/scholark-runtime-loader.js?v=20260918-r141',{},30000),
+      request('/scholark-v106-workspace-power-tools.js?v=20260918-r142',{},30000),
+      request('/scholark-v51-workspace-shell.js?v=20260918-r142',{},30000),
+      request('/scholark-runtime-loader.js?v=20260918-r142',{},30000),
       request('/',{},30000)
     ]);
     const power=String(powerRes.data?.raw||''),shell=String(shellRes.data?.raw||''),runtime=String(runtimeRes.data?.raw||''),home=String(prepaintRes.data?.raw||'');
-    check(powerRes.r.ok&&power.includes("version:'20260918-workspace-power-v1'"),'live workspace power tools are missing/stale');
+    check(powerRes.r.ok&&power.includes("version:'20260918-workspace-power-v2'"),'live workspace power tools are missing/stale');
     check(power.includes("FOCUS_KEY='scholark_v106_focus'")&&power.includes('setInterval(syncFocusView,1000)')&&power.includes('clearInterval(focusTicker)'),'live Focus Sessions lifecycle is incomplete');
     check(power.includes('scheduleCard(card,rating)')&&power.includes("rating==='again'")&&power.includes("rating==='easy'"),'live Flashcards spaced scheduling is incomplete');
-    check(power.includes('Break into Planner')&&power.includes('Open in AI Tutor')&&power.includes("id='assignment-'"),'live Assignments integration is incomplete');
+    check(power.includes('Break into Planner')&&power.includes('What should I do next?')&&power.includes("id='assignment-'"),'live Assignments integration is incomplete');
     check(shellRes.r.ok&&shell.includes("['focus','◷','Focus Sessions']")&&shell.includes("['flashcards','▤','Flashcards']")&&shell.includes("['assignments','✓','Assignments']"),'live workspace navigation lacks new tools');
     check(shell.includes("card('focus','◷','Focus Sessions'")&&shell.includes("card('flashcards','▤','Flashcards'")&&shell.includes("card('assignments','✓','Assignments'"),'live Dashboard lacks new tool cards');
     check(runtimeRes.r.ok&&runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'live runtime is not lazy-routing power tools');
@@ -228,6 +231,11 @@ if(!live){
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
     acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
+  },180000);
+  await post('/api/learning/generate',{mode:'tutor',tutorMode:'assignment_coach',prompt:'Tell me exactly what I should do next for this assignment.',level:'student',language:'English',assignmentContext:[{id:'smoke-assignment',title:'Biology cell division report',subject:'Biology',type:'report',dueDate:'2026-09-21',instructions:'Write a structured report explaining mitosis and include a labelled diagram.',progress:20,status:'active'}]},'live:assignment_coach',d=>{
+    acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>30,'live:assignment_coach returned no guidance');
+    check(Array.isArray(d.result?.steps)&&d.result.steps.length>=3,'live:assignment_coach returned no actionable steps');
+    check(typeof d.result?.followUp==='string'&&d.result.followUp.length>8,'live:assignment_coach returned no next action');
   },180000);
   await post('/api/learning/generate',{mode:'language_learning',prompt:'Teach beginner greetings.',targetLanguage:'Spanish',nativeLanguage:'English',proficiency:'A1',learningGoal:'conversation',language:'English'},'live:language_learning',d=>{
     acceptedProvider(d);check(Array.isArray(d.result?.exercises)&&d.result.exercises.length>0,'live:language_learning returned no exercises');
