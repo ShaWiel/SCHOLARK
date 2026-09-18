@@ -41,6 +41,11 @@ const stabilityFoundation=read('scholark-v81-stability-foundation.js');
 const workspacePolish=read('scholark-v91-workspace-polish.js');
 const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
+const runtimeJsFiles=fs.readdirSync(root).filter(name=>/^scholark-v\d+.*\.js$/.test(name));
+for(const file of runtimeJsFiles){
+  const src=read(file);
+  ok(!/(^|[^$])\$\([^;\n]*\)\.forEach\s*\(/m.test(src),file+' contains unsafe single-element $().forEach iteration');
+}
 
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
