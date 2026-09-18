@@ -5,7 +5,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260918-r148';
+  const VERSION = '20260918-r149';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -83,6 +83,7 @@
     return 'dashboard';
   }
 
+  const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js'];
   function required(key) {
     const set = new Set(BASE);
     if (key === 'home') HOME.forEach(x => set.add(x));
@@ -90,7 +91,8 @@
       WORKSPACE.forEach(x => set.add(x));
       (FEATURES[key] || []).forEach(x => set.add(x));
     }
-    return ACTIVE.filter(file => set.has(file));
+    const chosen=ACTIVE.filter(file => set.has(file));
+    return [...LOCALE_FIRST.filter(file=>chosen.includes(file)),...chosen.filter(file=>!LOCALE_FIRST.includes(file))];
   }
 
   function yieldMain() {
