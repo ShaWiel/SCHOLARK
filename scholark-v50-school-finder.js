@@ -50,7 +50,7 @@
     if(/primary|elementary|basisschool|glo/.test(n)||/1/.test(i))return'primary';
     if(a==='school')return'school';return'other';
   }
-  const levelLabel={all:'All levels',early:'Early childhood',primary:'Primary school',secondary:'Secondary school',vocational:'Vocational / technical',higher:'College / university',adult:'Adult / professional',school:'School',other:'Education'};
+  const levelLabel={all:'All levels',primary:'Primary school',secondary:'Secondary school',upper_secondary:'Upper secondary',vwo:'VWO',vocational:'Vocational / technical',higher:'College / university',adult:'Adult / professional',school:'School',other:'Education'};
   function levelMatch(found,wanted){if(wanted==='all')return 1;if(found===wanted)return 1;if(found==='school'&&['primary','secondary'].includes(wanted))return .65;if(found==='higher'&&wanted==='vocational')return .35;if(found==='vocational'&&wanted==='higher')return .35;return .08}
   function words(s){return String(s||'').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>2)}
 
@@ -60,19 +60,19 @@
   }
   async function overpass(pos,radius){
     const km=Math.max(1,Math.min(700,Number(radius)||50));
-    const q=`[out:json][timeout:28];(node["amenity"~"kindergarten|school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});way["amenity"~"kindergarten|school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});relation["amenity"~"kindergarten|school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon}););out center tags 1200;`;
+    const q=`[out:json][timeout:28];(node["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});way["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});relation["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon}););out center tags 1200;`;
     return overpassQuery(q,22000);
   }
   async function overpassCountry(countryCode='SR',countryName='Suriname'){
     const iso=String(countryCode||'SR').toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'SR',name=String(countryName||'Suriname').replace(/["\\]/g,'');
     if(iso==='SR'){
       const box='1.75,-58.25,6.25,-53.75';
-      const q=`[out:json][timeout:35];(node["amenity"~"kindergarten|school|college|university|language_school"](${box});way["amenity"~"kindergarten|school|college|university|language_school"](${box});relation["amenity"~"kindergarten|school|college|university|language_school"](${box});node["building"="school"](${box});way["building"="school"](${box});relation["building"="school"](${box});node["office"="educational_institution"](${box});way["office"="educational_institution"](${box});relation["office"="educational_institution"](${box}););out center tags 1800;`;
+      const q=`[out:json][timeout:35];(node["amenity"~"school|college|university|language_school"](${box});way["amenity"~"school|college|university|language_school"](${box});relation["amenity"~"school|college|university|language_school"](${box});node["building"="school"](${box});way["building"="school"](${box});relation["building"="school"](${box});node["office"="educational_institution"](${box});way["office"="educational_institution"](${box});relation["office"="educational_institution"](${box}););out center tags 1800;`;
       const rows=await overpassQuery(q,22000);if(rows.length)return rows;
     }
-    const q=`[out:json][timeout:35];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country);node["building"="school"](area.country);way["building"="school"](area.country);relation["building"="school"](area.country););out center tags 1800;`;
+    const q=`[out:json][timeout:35];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"school|college|university|language_school"](area.country);way["amenity"~"school|college|university|language_school"](area.country);relation["amenity"~"school|college|university|language_school"](area.country);node["building"="school"](area.country);way["building"="school"](area.country);relation["building"="school"](area.country););out center tags 1800;`;
     const rows=await overpassQuery(q,22000);if(rows.length)return rows;
-    const byName=`[out:json][timeout:30];area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;(node["amenity"~"kindergarten|school|college|university|language_school"](area.country);way["amenity"~"kindergarten|school|college|university|language_school"](area.country);relation["amenity"~"kindergarten|school|college|university|language_school"](area.country););out center tags 1800;`;
+    const byName=`[out:json][timeout:30];area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;(node["amenity"~"school|college|university|language_school"](area.country);way["amenity"~"school|college|university|language_school"](area.country);relation["amenity"~"school|college|university|language_school"](area.country););out center tags 1800;`;
     return overpassQuery(byName,18000);
   }
   async function wikiGeo(pos,radius){const r=Math.min(10000,Math.max(1000,radius*1000)),u=`https://en.wikipedia.org/w/api.php?action=query&list=geosearch&format=json&origin=*&gslimit=50&gsradius=${r}&gscoord=${pos.lat}%7C${pos.lon}`;try{const j=await json(u,8000);return(j.query?.geosearch||[]).filter(x=>/school|university|college|academy|institute|polytechnic|lyceum|gymnasium/i.test(x.title)).map(x=>({name:x.title,lat:x.lat,lon:x.lon,distance:x.dist!=null?x.dist/1000:null,wiki:'https://en.wikipedia.org/?curid='+x.pageid,source:'Knowledge search',tags:{name:x.title,amenity:'school'}}))}catch{return[]}}
@@ -127,8 +127,8 @@
   }
 
   function build(){
-    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Search every education level — from early childhood and primary school to secondary, vocational, university and adult learning. Country is required; study/field is optional.</p></div><button class="v50-x">×</button></div>
-    <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><select id="v50-level"><option value="all">All levels</option><option value="early">Early childhood</option><option value="primary">Primary school</option><option value="secondary">Secondary school</option><option value="vocational">Vocational / technical</option><option value="higher">College / university</option><option value="adult">Adult / professional</option></select><input id="v50-study" placeholder="Study / field (optional)"></div>
+    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Search education from primary school through secondary, vocational, university and adult/professional learning. Country is required; study/field is optional.</p></div><button class="v50-x">×</button></div>
+    <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><select id="v50-level"><option value="all">All levels</option><option value="primary">Primary school</option><option value="secondary">Secondary school</option><option value="vocational">Vocational / technical</option><option value="higher">College / university</option><option value="adult">Adult / professional</option></select><input id="v50-study" placeholder="Study / field (optional)"></div>
     <div class="v50-controls2"><select id="v50-radius"><option value="10">Within 10 km</option><option value="25">Within 25 km</option><option value="50" selected>Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option><option value="400">Within 400 km</option><option value="550">Within 550 km</option><option value="700">Within 700 km</option></select><select id="v50-sort"><option value="worst">Worst → best match</option><option value="best">Best match first</option></select><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
     <div class="v50-location" id="v50-location">Enter the country you are in or travelling to. Add a city/area for much better nearby results, or use your real location.</div>
     <div class="v50-info">The SCHOLARK score is a <b>fit score, not an official academic-quality ranking</b>. Curated SCHOLARK database records are checked first, then live public sources can enrich coverage. The score uses requested level, distance, available school/contact information and optional study relevance. Always check official school information before deciding. <b>All levels + Suriname searches nationwide</b>, not just around Paramaribo. Public review summaries can be loaded per school.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong></div><div class="v50-results" id="v50-results"></div></div>`;
@@ -153,7 +153,7 @@
       if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
       const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)};
       const db=await dbSchools(country,live.national?'':city,level,study,pos).catch(()=>[]);
-      const items=merge(db,Array.isArray(live.schools)?live.schools:[]);
+      const items=merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early');
       const national=!!live.national;
       render(items,{country,city,level,study,radius:national?700:radius,sort,national});
       const sourceCount=(live.sourceStatus||[]).filter(x=>x.ok).reduce((n,x)=>n+(Number(x.count)||0),0);
@@ -168,7 +168,7 @@
         if(!pos||city){geoResult=await geocode(country,city);pos={lat:geoResult.lat,lon:geoResult.lon,countryCode:geoResult.countryCode};countryCode=geoResult.countryCode}
         const suriname=/^suriname$/i.test(country)||countryCode==='SR',national=suriname&&level==='all';
         const [db,raw,wiki]=await Promise.all([dbSchools(country,national?'':city,level,study,pos),national?overpassCountry(countryCode||'SR','Suriname'):overpass(pos,radius),national?Promise.resolve([]):wikiGeo(pos,radius)]);
-        const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems);
+        const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems).filter(x=>x.level!=='early');
         render(items,{country,city,level,study,radius:national?700:radius,sort,national});
         loc.textContent='Browser fallback used · '+items.length+' named education institutions found.';
       }catch(e){
