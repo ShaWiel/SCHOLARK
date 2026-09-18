@@ -222,6 +222,7 @@ if(!live){
     check(shell.includes("card('focus','◷','Focus Sessions'")&&shell.includes("card('flashcards','▤','Flashcards'")&&shell.includes("card('assignments','✓','Assignments'"),'live Dashboard lacks new tool cards');
     check(runtimeRes.r.ok&&runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'live runtime is not lazy-routing power tools');
     check(prepaintRes.r.ok&&home.includes('focus|flashcards|assignments'),'live prepaint is not protecting new workspace routes');
+    check(power.includes('data-v106-user="1"'),'live power tools are not marking user content for localization isolation');
     results.push(`live:workspace_power_tools ${powerRes.r.status}/${shellRes.r.status}/${runtimeRes.r.status}/${prepaintRes.r.status}`);
   }catch(e){failures.push(`live:workspace_power_tools threw ${e?.message||e}`)}
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
