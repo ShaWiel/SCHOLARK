@@ -136,16 +136,17 @@
     h.innerHTML='<div class="v62-study"><div class="v52-kicker">SCHOLARK · STUDY AHEAD</div><h1>Know the field before you enter it.</h1><p>Tell SCHOLARK what you plan to study. Country and target school are optional; the roadmap focuses on knowledge, skills and preparation rather than inventing admissions rules.</p><div class="v62-form"><div class="v62-row"><input id="v62-field" placeholder="Field of study, e.g. Law, Computer Science"><input id="v62-country" placeholder="Country (optional)"></div><div class="v62-row"><input id="v62-school" placeholder="Target university / school (optional)"><select id="v62-depth"><option value="foundation">Start from foundations</option><option value="advanced">I already know the basics</option></select></div><textarea id="v62-context" placeholder="Anything SCHOLARK should know about your goals, strengths or current subjects (optional)"></textarea><button id="v62-study-run" class="v62-btn">Build my Study Ahead roadmap</button></div><div id="v62-study-results" class="v62-results"></div></div>';
   }
   async function runStudyAhead(){
-    const field=clean($('#v62-field')?.value),country=clean($('#v62-country')?.value),targetSchool=clean($('#v62-school')?.value),context=clean($('#v62-context')?.value),btn=$('#v62-study-run'),out=$('#v62-study-results');
+    const field=clean($('#v62-field')?.value),country=clean($('#v62-country')?.value),targetSchool=clean($('#v62-school')?.value),context=clean($('#v62-context')?.value),depth=$('#v62-depth')?.value||'foundation',btn=$('#v62-study-run'),out=$('#v62-study-results');
     if(!field){$('#v62-field')?.focus();return}
     busy(btn,true,'Building roadmap…');if(out)out.innerHTML='<div class="v62-loading"><i class="v62-spin"></i>Researching the field and structuring your preparation…</div>';
     try{
-      const data=await call('study_ahead',{field,country,targetSchool,context,prompt:'Prepare me to study '+field});const r=data.result;
+      const depthInstruction=depth==='advanced'?'Assume I already know the basics. Focus on the harder concepts, academic expectations, advanced skills and realistic first-year preparation.':'Start from foundations. Build the prerequisites in the right order before moving into first-year concepts.';
+      const data=await call('study_ahead',{field,country,targetSchool,context,depth,prompt:'Prepare me to study '+field+'. '+depthInstruction});const r=data.result;
       if(out)out.innerHTML='<div class="v62-answer-card"><h3>'+esc(r.title||field)+'</h3><p>'+esc(r.overview||'')+'</p></div>'+
         '<div class="v62-row"><div class="v62-answer-card"><h4>Skills to build</h4>'+list(r.skills)+'</div><div class="v62-answer-card"><h4>Key subjects</h4>'+list(r.keySubjects)+'</div></div>'+
         '<div class="v62-row"><div class="v62-answer-card"><h4>Books & resources</h4>'+list(r.books)+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
         '<div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<p><b>'+esc(x.phase)+'</b></p>'+list(x.actions)).join(''))+'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div>';
-      window.dispatchEvent(new CustomEvent('scholark:study-ahead-generated',{detail:{field,country,targetSchool,context,result:r,provider:data.provider||'',model:data.model||''}}));
+      window.dispatchEvent(new CustomEvent('scholark:study-ahead-generated',{detail:{field,country,targetSchool,context,depth,result:r,provider:data.provider||'',model:data.model||''}}));
     }catch(e){error(out,e)}finally{busy(btn,false)}
   }
 
