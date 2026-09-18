@@ -100,11 +100,13 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
     && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
+    && node -e 'const fs=require("fs"),p="/app/i18n.js";let s=fs.readFileSync(p,"utf8");const re=/function\\s+translateNode\\s*\\(([^)]*)\\)\\s*\\{/;if(!re.test(s))throw new Error("legacy translateNode not found");s=s.replace(re,(m,args)=>`function translateNode(${args}){/* SCHOLARK_MODERN_WORKSPACE_I18N */if(document.body?.classList?.contains("v51-workspace"))return;`);fs.writeFileSync(p,s)' \
+    && grep -q 'SCHOLARK_MODERN_WORKSPACE_I18N' /app/i18n.js \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' -o -name '*.css' -o -name '*.md' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g; s#https://studentos-360-shawiel-7vsm.onrender.com#https://scholark-app-shawiel.onrender.com#g; s#studentos-360-shawiel-7vsm.onrender.com#scholark-app-shawiel.onrender.com#g; s#StudentOS 360#SCHOLARK#g; s#StudentOS#SCHOLARK#g; s#Student OS 360#SCHOLARK#g; s#Student OS#SCHOLARK#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260918-r149\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260910-r136\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260918-r149\"></script><script defer src=\"scholark-v102-language-quiz.js?v=20260918-language-choice-v3\"></script><script defer src=\"scholark-v103-language-next-lesson.js?v=20260918-language-next-v2\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260918-r150\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260910-r136\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260918-r150\"></script><script defer src=\"scholark-v102-language-quiz.js?v=20260918-language-choice-v3\"></script><script defer src=\"scholark-v103-language-next-lesson.js?v=20260918-language-next-v2\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
@@ -113,7 +115,7 @@ RUN npm install --omit=dev --no-audit --no-fund \
     && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r149
+ENV SCHOLARK_RELEASE=r150
 ENV SCHOLARK_TEST_MODE=1
 ENV SCHOLARK_AI_LIVE=1
 ENV SCHOLARK_AI_PROVIDER=gemini
