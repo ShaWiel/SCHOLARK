@@ -2,6 +2,7 @@
   if(window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__)return;
   window.__SCHOLARK_V104_SCHOOL_FILTER_GUARD__=true;
 
+  const VERSION='20260918-school-filter-v2';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const COUNTRY_CODES={suriname:'SR',netherlands:'NL',nederland:'NL','united states':'US',usa:'US','united kingdom':'GB',uk:'GB',germany:'DE',france:'FR',spain:'ES',portugal:'PT',italy:'IT',brazil:'BR',canada:'CA',australia:'AU',india:'IN','south africa':'ZA',guyana:'GY','trinidad & tobago':'TT',jamaica:'JM',belgium:'BE'};
@@ -80,14 +81,29 @@
     const lang=localStorage.getItem('scholark_ui_language')||'en',labels=LEVEL_LABELS[lang]||LEVEL_LABELS.en,country=window.__SCHOLARK_COUNTRY__?.current?.()||clean(document.querySelector('#v50-country')?.value)||'Suriname';
     let upper=sel.querySelector('option[value="upper_secondary"]');
     if(!upper){upper=document.createElement('option');upper.value='upper_secondary';const lower=sel.querySelector('option[value="secondary"]');lower?.insertAdjacentElement('afterend',upper)||sel.appendChild(upper)}
-    upper.textContent=country==='Suriname'?labels.upper+' · VOS / HAVO / VWO':labels.upper;
-    const voc=sel.querySelector('option[value="vocational"]');if(voc)voc.textContent=country==='Suriname'?labels.voc+' · LBO / NATIN / IMEAO / AMTO':labels.voc;
-    sel.dataset.v104StrictLevels='1';return true;
+    const upperText=country==='Suriname'?labels.upper+' · VOS / HAVO':labels.upper;
+    if(upper.textContent!==upperText)upper.textContent=upperText;
+    const voc=sel.querySelector('option[value="vocational"]');
+    if(voc){const vocText=country==='Suriname'?labels.voc+' · LBO / NATIN / IMEAO / AMTO':labels.voc;if(voc.textContent!==vocText)voc.textContent=vocText}
+    if(sel.dataset.v104StrictLevels!==VERSION)sel.dataset.v104StrictLevels=VERSION;
+    return true;
   }
-  function apply(){patchCloud();patchLevelOptions()}
+  function apply(){return {cloud:patchCloud(),levels:patchLevelOptions()}}
+  const schoolRoute=()=>String(location.hash||'').toLowerCase().includes('schools');
+  let retryTimer=null,retryCount=0;
+  function kick(delay=0,reset=true){
+    if(reset)retryCount=0;
+    clearTimeout(retryTimer);
+    retryTimer=setTimeout(function run(){
+      const state=apply();
+      if(schoolRoute()&&!state.levels&&retryCount++<12)retryTimer=setTimeout(run,180+retryCount*35);
+    },delay);
+  }
 
-  const observer=new MutationObserver(()=>apply());observer.observe(document.documentElement,{childList:true,subtree:true});
-  ['hashchange','scholark-runtime-ready','scholark-country-change','scholark-language-applied','scholark-language-ready','scholark-language-complete'].forEach(ev=>addEventListener(ev,()=>setTimeout(apply,30)));
-  let attempts=0;const timer=setInterval(()=>{apply();if(++attempts>240&&window.__SCHOLARK_V72_CLOUD__?.__v104SchoolStrict)clearInterval(timer)},250);
-  [50,180,500,1200].forEach(ms=>setTimeout(apply,ms));
+  // Event-driven only. The previous document-wide MutationObserver rewrote option
+  // text from inside its own callback and could create a self-sustaining main-thread loop.
+  ['hashchange','scholark-runtime-ready','scholark-country-change','scholark-language-applied','scholark-language-ready','scholark-language-complete'].forEach(ev=>addEventListener(ev,()=>kick(25,true)));
+  document.addEventListener('click',e=>{if(e.target?.closest?.('[data-v51-tool="schools"],[data-future="schools"]'))kick(0,true)},true);
+  [40,180,600].forEach(ms=>setTimeout(()=>kick(0,false),ms));
+  window.__SCHOLARK_SCHOOL_FILTER__={version:VERSION,apply:()=>kick(0,true),documentWideObserver:false,maxRouteRetries:12};
 })();
