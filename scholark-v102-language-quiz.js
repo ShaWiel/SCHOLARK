@@ -66,6 +66,7 @@
     const answer = answerText(exercise);
     const feedback = feedbackHost(exercise);
     const right = correctChoice(choice.textContent, answer);
+    window.dispatchEvent(new CustomEvent('scholark:language-choice',{detail:{correct:right,choice:clean(choice.textContent),answer,at:Date.now()}}));
 
     choice.classList.add('v102-selected');
     choice.setAttribute('aria-pressed', 'true');
