@@ -51,7 +51,7 @@
   function patchTranslationCaches(){
     for(const [lc] of UI_LANGUAGE_OPTIONS){
       if(lc==='en')continue;
-      const key='scholark_v90_i18n_v3-seven-ui_'+lc;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
+      const key='scholark_v90_i18n_v4-seven-ui_'+lc;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
       for(const [source,rows] of Object.entries(FIXED))saved[source]=rows[lc]||source;
       saved['SCHOLARK Free']='SCHOLARK Free';saved['SCHOLARK Plus']='SCHOLARK Plus';saved['SCHOLARK Pro']='SCHOLARK Pro';
       try{localStorage.setItem(key,JSON.stringify(saved))}catch{}
