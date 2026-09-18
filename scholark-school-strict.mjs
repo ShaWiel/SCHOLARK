@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260918-school-suriname-taxonomy-v4';
+const VERSION='20260918-school-suriname-taxonomy-v5';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
