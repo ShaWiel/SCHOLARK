@@ -7,7 +7,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const LANG={nl:'Dutch',en:'English',es:'Spanish',fr:'French',de:'German',pt:'Portuguese',it:'Italian',ar:'Arabic',hi:'Hindi',zh:'Chinese',ja:'Japanese',ko:'Korean',id:'Indonesian',tr:'Turkish',pl:'Polish',sw:'Swahili'};
-  const level=()=>{const id=localStorage.getItem('scholark_learning_level')||'secondary',stage=window.__SCHOLARK_COUNTRY__?.stage?.(id),country=window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'';return stage?(stage[2]+' · '+country+' ['+id+']'):id};
+  const level=()=>{const id=localStorage.getItem('scholark_learning_level')||'secondary',country=window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'',track=localStorage.getItem('scholark_education_track')||'',sr=window.__SCHOLARK_COUNTRY__?.surinameTracks?.[track];if(country==='Suriname'&&sr)return sr.title+' · '+sr.description+' · '+sr.group+' [ai:'+id+']';const stage=window.__SCHOLARK_COUNTRY__?.stage?.(id);return stage?(stage[2]+' · '+country+' ['+id+']'):id};
   const language=()=>{const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';return window.__SCHOLARK_I18N__?.languageName?.(code)||LANG[code]||code||'English'};
   const STUDY_DRAFT_KEY='scholark_v62_study_draft';
   let studyDraftTimer=0;
