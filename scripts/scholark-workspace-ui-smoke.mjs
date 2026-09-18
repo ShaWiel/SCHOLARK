@@ -3,6 +3,27 @@ import { chromium } from 'playwright';
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:1000}});
+await page.addInitScript(()=>{
+  window.__schLocaleWrites=[];
+  const record=(kind,node,value)=>{
+    try{
+      const el=node?.nodeType===1?node:node?.parentElement;
+      if(!el?.matches?.('.v51-level-group,#v50-level')&&!el?.closest?.('.v51-level-group,#v50-level'))return;
+      window.__schLocaleWrites.push({kind,tag:el.tagName,id:el.id||'',cls:el.className||'',value:String(value??'').slice(0,160),stack:String(new Error().stack||'').split('\n').slice(2,8).join(' | ')});
+      if(window.__schLocaleWrites.length>80)window.__schLocaleWrites.shift();
+    }catch{}
+  };
+  for(const [proto,key] of [[Node.prototype,'textContent'],[Element.prototype,'innerHTML']]){
+    const d=Object.getOwnPropertyDescriptor(proto,key);
+    if(!d?.set||!d?.get)continue;
+    Object.defineProperty(proto,key,{configurable:d.configurable,enumerable:d.enumerable,get:d.get,set:function(v){record(key,this,v);return d.set.call(this,v)}});
+  }
+  for(const [proto,key] of [[CharacterData.prototype,'data'],[Node.prototype,'nodeValue']]){
+    const d=Object.getOwnPropertyDescriptor(proto,key);
+    if(!d?.set||!d?.get)continue;
+    Object.defineProperty(proto,key,{configurable:d.configurable,enumerable:d.enumerable,get:d.get,set:function(v){record(key,this,v);return d.set.call(this,v)}});
+  }
+});
 const failures=[];
 const timings=[];
 const pageErrors=[];
@@ -70,7 +91,10 @@ for(const [code,expected] of Object.entries(localeExpect)){
   await page.waitForTimeout(80);
   const localeState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
   const actual=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.getAttribute('data-v51-group'),n.querySelector('.v51-level-group')?.textContent?.trim()])));
-  check(actual.basic===expected.basic,`Dashboard basic group language mismatch for ${code}: ${actual.basic} | state=${JSON.stringify(localeState)}`);
+  if(actual.basic!==expected.basic){
+    const writes=await page.evaluate(()=>window.__schLocaleWrites?.slice(-14)||[]);
+    failures.push(`Dashboard basic group language mismatch for ${code}: ${actual.basic} | state=${JSON.stringify(localeState)} | writes=${JSON.stringify(writes)}`);
+  }
   check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher} | state=${JSON.stringify(localeState)}`);
 }
 await page.selectOption('#v90-language','nl');
@@ -161,7 +185,10 @@ check(await page.locator('#v50-level').count()===1,'School level selector missin
 {
   const schoolAll=(await page.locator('#v50-level option[value="all"]').textContent()).trim();
   const schoolState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
-  check(schoolAll==='Alle niveaus',`Dutch school selector leaked another language: ${schoolAll} | state=${JSON.stringify(schoolState)}`);
+  if(schoolAll!=='Alle niveaus'){
+    const writes=await page.evaluate(()=>window.__schLocaleWrites?.slice(-18)||[]);
+    failures.push(`Dutch school selector leaked another language: ${schoolAll} | state=${JSON.stringify(schoolState)} | writes=${JSON.stringify(writes)}`);
+  }
 }
 await page.selectOption('#v90-language','es');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.lang==='es',{timeout:4000});
