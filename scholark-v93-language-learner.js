@@ -15,7 +15,7 @@
     .v93-card{background:#fff;border:1px solid rgba(23,25,31,.09);border-radius:24px;padding:22px;box-shadow:0 18px 55px rgba(31,27,63,.05);min-width:0}
     .v93-intro{background:linear-gradient(145deg,#17191f,#312761);color:#fff;position:relative;overflow:hidden}.v93-intro:after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:#c9ff6a;opacity:.08;right:-120px;top:-130px}
     .v93-kicker{font:950 8px/1 Inter;letter-spacing:.15em;color:#6d5dfc}.v93-intro .v93-kicker{color:#c9ff6a}.v93 h1{font:950 clamp(38px,5vw,64px)/.95 Inter;margin:10px 0 12px;letter-spacing:-.055em}.v93-intro p{max-width:760px;color:#d2cedc;font:650 11px/1.6 Inter}
-    .v93-progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:20px}.v93-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px}.v93-stat b{display:block;font:950 21px/1 Inter;color:#c9ff6a}.v93-stat span{display:block;margin-top:5px;font:700 7px/1.3 Inter;color:#c5c1ce}
+    .v93-progress-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:20px}.v93-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px}.v93-stat b{display:block;font:950 21px/1 Inter;color:#c9ff6a}.v93-stat span{display:block;margin-top:5px;font:700 7px/1.3 Inter;color:#c5c1ce}
     .v93-form{display:grid;gap:10px}.v93-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.v93-field label{display:block;font:900 7.5px/1 Inter;letter-spacing:.08em;color:#77717e;margin:0 0 6px}.v93 input,.v93 select,.v93 textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid rgba(23,25,31,.12);background:#fafafa;border-radius:12px;padding:11px 12px;font:700 9px/1.35 Inter;color:#17191f;outline:0}.v93 textarea{min-height:82px;resize:vertical}.v93 input:focus,.v93 select:focus,.v93 textarea:focus{border-color:#6d5dfc;box-shadow:0 0 0 3px rgba(109,93,252,.1)}
     .v93-btn{border:0;border-radius:12px;background:#17191f;color:#fff;padding:12px 14px;font:900 8.5px Inter;cursor:pointer}.v93-btn.primary{background:#6d5dfc}.v93-btn.lime{background:#c9ff6a;color:#17191f}.v93-btn.ghost{background:#efedff;color:#594dcc}.v93-btn:disabled{opacity:.5;cursor:wait}
     .v93-status{min-height:16px;margin-top:7px;font:750 8px/1.4 Inter;color:#6257c6}.v93-results{display:grid;gap:12px;margin-top:18px}.v93-section{background:#fff;border:1px solid rgba(23,25,31,.09);border-radius:22px;padding:20px;min-width:0}.v93-section h2,.v93-section h3{margin:0 0 10px;font:950 22px/1 Inter;letter-spacing:-.035em}.v93-section p{font:650 9.5px/1.62 Inter;color:#5f5a66}.v93-objectives{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.v93-chip{padding:10px;border-radius:12px;background:#f3f1ff;font:750 8px/1.45 Inter;color:#5148a9}
@@ -64,7 +64,8 @@
 
   function renderStats(code){
     const p=loadProgress()[code]||{},host=$('#v93-stats');if(!host)return;
-    host.innerHTML='<div class="v93-stat"><b>'+(Number(p.lessons)||0)+'</b><span>Lessons completed</span></div><div class="v93-stat"><b>'+(Number(p.streak)||0)+'</b><span>Current streak</span></div><div class="v93-stat"><b>'+(Number(p.xp)||0)+'</b><span>XP</span></div>';
+    const attempts=Number(p.attempts)||0,accuracy=attempts?Math.round((Number(p.correct)||0)/attempts*100):0;
+    host.innerHTML='<div class="v93-stat"><b>'+(Number(p.lessons)||0)+'</b><span>Lessons completed</span></div><div class="v93-stat"><b>'+(Number(p.streak)||0)+'</b><span>Current streak</span></div><div class="v93-stat"><b>'+(Number(p.xp)||0)+'</b><span>XP</span></div><div class="v93-stat"><b>'+(attempts?accuracy+'%':'—')+'</b><span>Exercise accuracy</span></div>';
     window.__SCHOLARK_I18N__?.apply?.(host);
   }
 
@@ -101,7 +102,9 @@
     if(busy)return;const targetCode=$('#v93-target').value,supportCode=$('#v93-support').value,level=$('#v93-level').value||'A1',goal=$('#v93-goal').value||'Conversation',topic=clean($('#v93-topic').value)||'practical everyday conversation',btn=$('#v93-build'),st=$('#v93-status');
     busy=true;btn.disabled=true;st.textContent='Building a complete '+langName(targetCode)+' lesson at '+level+' level…';
     try{
-      const data=await call({targetLanguage:langName(targetCode),nativeLanguage:langName(supportCode),language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises.',level:localStorage.getItem('scholark_learning_level')||'student'});
+      const prior=loadProgress()[targetCode]||{},attempts=Number(prior.attempts)||0,accuracy=attempts?Math.round((Number(prior.correct)||0)/attempts*100):null;
+      const adaptive=accuracy==null?'This is the learner’s first measured practice.':accuracy<65?'Recent exercise accuracy is '+accuracy+'%. Add more scaffolding, shorter examples and extra guided practice on the same skills.':accuracy>=85?'Recent exercise accuracy is '+accuracy+'%. Increase challenge slightly and use more independent production.':'Recent exercise accuracy is '+accuracy+'%. Keep the current difficulty but reinforce weak points.';
+      const data=await call({targetLanguage:langName(targetCode),nativeLanguage:langName(supportCode),language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises. '+adaptive,level:localStorage.getItem('scholark_learning_level')||'student'});
       current={id:'lang-'+Date.now().toString(36),targetCode,supportCode,level,goal,topic,result:data.result,provider:data.provider||'',model:data.model||'',at:Date.now()};
       saveHistory(current);renderLesson(current);renderHistory();localStorage.setItem('scholark_v93_target',targetCode);const p=loadProgress();p[targetCode]={...(p[targetCode]||{}),level,lastTopic:topic};saveProgress(p);renderStats(targetCode);pushCloudProgress(targetCode);st.textContent='Lesson ready. Listen, speak, practice and mark it complete when you finish.';
     }catch(e){st.textContent=clean(e?.message||e)}finally{busy=false;btn.disabled=false}
@@ -143,6 +146,9 @@
     $$('[data-v93-old]',host).forEach(b=>b.onclick=()=>renderLesson(h[+b.dataset.v93Old]));window.__SCHOLARK_I18N__?.apply?.(host);
   }
 
+  addEventListener('scholark:language-choice',e=>{
+    if(!current)return;const p=loadProgress(),code=current.targetCode,x=p[code]||{level:current.level||'A1'};x.attempts=(Number(x.attempts)||0)+1;if(e.detail?.correct)x.correct=(Number(x.correct)||0)+1;else{x.incorrect=(Number(x.incorrect)||0)+1;x.lastWeakTopic=current.topic||x.lastWeakTopic||''}p[code]=x;saveProgress(p);renderStats(code);pushCloudProgress(code);
+  });
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(open,40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open()},260);
   window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson};
