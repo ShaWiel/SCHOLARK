@@ -80,7 +80,7 @@
   let side,main,home,toggle,nativeHost=null,nativeTimer=null;
   const state={active:'dashboard'};
 
-  function workspaceCountry(){return String(window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname').trim().toLowerCase()}
+  function workspaceCountry(){const api=window.__SCHOLARK_COUNTRY__;const raw=api?.current?.()||localStorage.getItem('scholark_country')||'Suriname';const normalized=api?.normalize?.(raw)||raw;const key=String(normalized).trim().toLowerCase();return key==='sr'?'suriname':key}
   function dashboardLevels(){return workspaceCountry()==='suriname'?SURINAME_LEVELS:LEVELS}
   function levelId(){
     if(workspaceCountry()==='suriname'){
@@ -344,7 +344,8 @@
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),20)});
-  addEventListener('scholark-language-complete',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),10)});
+  addEventListener('scholark-language-complete',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},10)});
+  addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
