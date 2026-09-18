@@ -7,7 +7,7 @@ const failures=[];
 const timings=[];
 const pageErrors=[];
 
-page.on('pageerror',err=>pageErrors.push(String(err?.message||err)));
+page.on('pageerror',err=>pageErrors.push(String(err?.stack||err?.message||err)));
 page.on('console',msg=>{
   if(msg.type()==='error' && /\[SCHOLARK\]|Uncaught|TypeError|ReferenceError/i.test(msg.text())) pageErrors.push(msg.text());
 });
