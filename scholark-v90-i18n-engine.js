@@ -95,6 +95,7 @@
     ['Current level','Huidig niveau','Nivel actual','Niveau actuel','Aktuelles Niveau','Nível atual','Livello attuale'],
     ['All levels','Alle niveaus','Todos los niveles','Tous les niveaux','Alle Stufen','Todos os níveis','Tutti i livelli'],
     ['Study / field (optional)','Studie/richting (optioneel)','Estudio / área (opcional)','Études / domaine (facultatif)','Studium / Fach (optional)','Estudo / área (opcional)','Studio / ambito (opzionale)'],
+    ['School name (optional)','Schoolnaam (optioneel)','Nombre de la escuela (opcional)','Nom de l’école (facultatif)','Schulname (optional)','Nome da escola (opcional)','Nome della scuola (opzionale)'],
     ['Primary Education','Basisonderwijs','Educación Primaria','Enseignement primaire','Primarbildung','Ensino primário','Istruzione primaria'],
     ['Lower Secondary (VOJ)','VOJ','Secundaria Inferior (VOJ)','Secondaire inférieur (VOJ)','Sekundarstufe I (VOJ)','Ensino secundário inferior (VOJ)','Secondaria inferiore (VOJ)'],
     ['Upper Secondary (VOS)','VOS','Secundaria Superior (VOS)','Secondaire supérieur (VOS)','Sekundarstufe II (VOS)','Ensino secundário superior (VOS)','Secondaria superiore (VOS)'],
