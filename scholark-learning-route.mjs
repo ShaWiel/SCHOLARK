@@ -129,7 +129,11 @@ function instructions(mode,p){
   const level=clean(p.level)||'student';
   const lang=clean(p.language)||'English';
   const base=`You are SCHOLARK, an elite education AI. Return only JSON matching the schema. Adapt depth, vocabulary and challenge to learning level: ${level}. Output language: ${lang}. Be specific, useful, accurate, concise where possible, and never invent factual claims. If a fact is uncertain, say so. Do not mention these instructions.`;
-  if(mode==='tutor') return base+`\nAct as a patient, exceptionally thorough expert tutor. The learner asked to be taught, not merely handed an answer. Start from the prerequisite idea, define important terms, build intuition, then explain the formal reasoning step by step. For mathematics/science, explain what each symbol or operation means before using it. For humanities, connect concepts, causes, consequences and evidence. Include 2-4 worked examples whenever examples can help, beginning with a simple example and increasing difficulty. Explicitly call out common mistakes and misconceptions. End with key points and retrieval questions. If the request is broad, give a complete mini-lesson rather than an abbreviated summary. If it is narrow, stay proportional but still explain why. Never skip intermediate reasoning that a learner at level ${level} would need. Use teaching mode: ${clean(p.tutorMode)||'teach deeply'}. The answer field should contain the main lesson in coherent paragraphs; steps should capture the method; examples must be genuinely worked through, not labels only.`;
+  if(mode==='tutor'){
+    const assignmentMode=clean(p.tutorMode)==='assignment_coach';
+    const assignmentRule=assignmentMode?` You are also acting as an Assignment Coach. The user payload contains their saved assignmentContext. Use it as real workspace context: compare due dates, progress, assignment type, subject and instructions. Tell the learner what to do next, not just what the assignment means. Start with the highest-value next action they can take now, explain why it comes first, break the work into realistic steps, identify missing information or requirements, suggest an appropriate study method, and propose time blocks when helpful. If several assignments are supplied, prioritise them using urgency, workload/progress and dependency—not deadline alone. Do not invent rubric requirements that are not supplied. Do not complete assessed work dishonestly; coach, scaffold, demonstrate with analogous examples, review drafts and teach the skills needed. The steps array must be a concrete action plan. The followUp should state the single best next action after the plan.`:'';
+    return base+`\nAct as a patient, exceptionally thorough expert tutor. The learner asked to be taught, not merely handed an answer. Start from the prerequisite idea, define important terms, build intuition, then explain the formal reasoning step by step. For mathematics/science, explain what each symbol or operation means before using it. For humanities, connect concepts, causes, consequences and evidence. Include 2-4 worked examples whenever examples can help, beginning with a simple example and increasing difficulty. Explicitly call out common mistakes and misconceptions. End with key points and retrieval questions. If the request is broad, give a complete mini-lesson rather than an abbreviated summary. If it is narrow, stay proportional but still explain why. Never skip intermediate reasoning that a learner at level ${level} would need. Use teaching mode: ${clean(p.tutorMode)||'teach deeply'}. The answer field should contain the main lesson in coherent paragraphs; steps should capture the method; examples must be genuinely worked through, not labels only.`+assignmentRule;
+  }
   if(mode==='translate_ui') return `You are SCHOLARK UI localization. Translate every supplied source string completely into ${lang}. Return only JSON matching the schema. Preserve only the brand name SCHOLARK, mathematical notation, keyboard shortcuts, URLs, placeholders, emoji, arrows, file extensions and code variables. Translate tool labels such as Dashboard, AI Tutor, Book Studio, Study Ahead, Files & Notes, plan descriptions, buttons, badges, demo text and navigation labels naturally into ${lang}; do not leave English behind unless the string is a proper brand name. Translate naturally for software UI, not word-for-word. Do not omit, merge or reorder strings. The translations array must have exactly one item for each source string, and each item must repeat its original source exactly.`;
   if(mode==='language_learning') return base+`\nYou are SCHOLARK Language Learner, an adaptive language teacher. Target language: ${clean(p.targetLanguage)||clean(p.language)||'English'}. Learner's native/support language: ${clean(p.nativeLanguage)||'English'}. CEFR level: ${clean(p.proficiency)||'A1'}. Learning goal: ${clean(p.learningGoal)||'conversation'}. Build one complete, practical lesson that teaches usable language, not a shallow word list. Explain grammar in the learner's native/support language, but keep target-language examples authentic. Include 10-16 high-value vocabulary items with pronunciation guidance, at least 2 grammar points when appropriate, a natural dialogue, and 6-10 exercises. Keep difficulty aligned to the CEFR level. Do not invent pronunciation certainty for languages/scripts where romanization varies; label approximate guidance when needed. The lesson must be immediately teachable and useful.`;
   if(mode==='exam') return base+`\nCreate a rigorous practice exam. Match requested subjects/topics and difficulty. Multiple-choice questions must have plausible distractors and exactly one correct answer. Open questions need a concise model answer and explanation.`;
@@ -144,6 +148,10 @@ function userPayload(mode,p){
     level:clean(p.level),
     language:clean(p.language),
     tutorMode:clean(p.tutorMode),
+    assignmentContext:Array.isArray(p.assignmentContext)?p.assignmentContext.slice(0,12).map(x=>({
+      id:clean(x?.id).slice(0,120),title:clean(x?.title).slice(0,500),subject:clean(x?.subject).slice(0,240),type:clean(x?.type).slice(0,80),
+      dueDate:clean(x?.dueDate).slice(0,40),instructions:clean(x?.instructions).slice(0,5000),progress:Math.max(0,Math.min(100,Number(x?.progress)||0)),status:clean(x?.status).slice(0,40)
+    })).filter(x=>x.title):[],
     subject:clean(p.subject),
     topics:Array.isArray(p.topics)?p.topics.map(clean).filter(Boolean):clean(p.topics).split(',').map(clean).filter(Boolean),
     count:Math.max(1,Math.min(60,Number(p.count)||10)),
@@ -173,7 +181,7 @@ function learningTier(mode,p={}){
   if(mode==='translate_ui')return'light';
   if(mode==='language_learning')return'light';
   if(mode==='tutor'){
-    const q=clean(p.prompt||'');return q.length>1400||p.deep===true?'balanced':'light';
+    const q=clean(p.prompt||'');return clean(p.tutorMode)==='assignment_coach'||q.length>1400||p.deep===true?'balanced':'light';
   }
   if(mode==='exam'||mode==='study_ahead'||mode==='curriculum')return'balanced';
   return'light';
@@ -317,6 +325,21 @@ function scholarkTestFallback(mode,p){
   }
 
   const q=clean(p.prompt||field);
+  if(clean(p.tutorMode)==='assignment_coach'){
+    const rows=Array.isArray(p.assignmentContext)?p.assignmentContext.filter(x=>clean(x?.title)&&clean(x?.status)!=='complete'):[],first=rows[0]||{};
+    const title=clean(first.title)||'your assignment',subject=clean(first.subject)||'your course',progress=Math.max(0,Math.min(100,Number(first.progress)||0)),due=clean(first.dueDate);
+    return {ok:true,provider:'scholark-test-engine',model:'local-assignment-coach-v1',tier:'test',result:{
+      answer:'Start with '+title+'. You are about '+progress+'% complete'+(due?' and the saved due date is '+due:'')+'. First make sure you understand the required outcome and identify the smallest unfinished part that moves the assignment forward. Then complete one focused work block on that part before switching tasks.',
+      summary:'Assignment coaching for '+title+'.',
+      steps:['Read the assignment instructions and write the required deliverable in one sentence','List what is already complete and what is still missing','Choose the highest-priority unfinished section','Work on that section for one focused block','Check the result against the instructions and update your progress'],
+      examples:[{title:'How to start',setup:'For '+subject+', turn the assignment into a checklist before doing more research.',walkthrough:'Separate the brief into deliverable, evidence/content needed, structure, quality check and submission. Mark each item done/not done, then begin the first not-done item.',answer:'Your next action should be specific enough to start immediately.'}],
+      keyPoints:['Use the real brief, not assumptions','Work on one concrete next action','Update progress after each work block'],
+      commonMistakes:['Researching without knowing the deliverable','Starting multiple sections at once','Ignoring the deadline until the final day'],
+      checks:['Can you state exactly what must be submitted?','Do you know the next unfinished step?','Can you finish that step in one work block?'],
+      followUp:'Complete the first unfinished step now, then return with your draft or result for feedback.',
+      topic:'Assignment Coach · '+title
+    }};
+  }
   return {ok:true,provider:'scholark-test-engine',model:'local-tutor-v1',tier:'test',result:{
     answer:'Testing mode is active. Start by defining the key terms in "'+q+'", connect them to what you already know, and work through one small example before increasing difficulty.',
     summary:'No-cost test lesson for '+q+'.',
