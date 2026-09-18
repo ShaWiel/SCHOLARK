@@ -214,6 +214,17 @@
     Jamaica:{young:'Early Childhood',primary:'Primary',secondary:'Lower Secondary',student:'CSEC/CAPE / Sixth Form',adult:'Tertiary'},
     Belgium:{young:'Kleuter / Maternelle',primary:'Lager / Primaire',secondary:'Secundair / Secondaire I',student:'Secundair / Secondaire II',adult:'Hoger / Supérieur'}
   };
+  const SURINAME_TRACKS={
+    kindergarten:{title:'Kleuterschool / Kleuteronderwijs',description:'Leerjaar 1–2 · 4–6 jaar',group:'Basisonderwijs',ai:'young',schoolLevel:'kindergarten'},
+    primary:{title:'Lagere school / Basisschool',description:'Leerjaar 3–8 · 6–12 jaar',group:'Basisonderwijs',ai:'primary',schoolLevel:'primary'},
+    mulo:{title:'MULO',description:'12–16 jaar',group:'Voortgezet Onderwijs Junioren (VOJ)',ai:'secondary',schoolLevel:'mulo'},
+    lbo:{title:'LBO',description:'12–16 jaar',group:'Voortgezet Onderwijs Junioren (VOJ)',ai:'secondary',schoolLevel:'lbo'},
+    havo:{title:'HAVO',description:'16–18 jaar',group:'Voortgezet Onderwijs Senioren (VOS)',ai:'student',schoolLevel:'havo'},
+    vwo:{title:'VWO',description:'16–19 jaar',group:'Voortgezet Onderwijs Senioren (VOS)',ai:'student',schoolLevel:'vwo'},
+    mbo:{title:'MBO',description:'NATIN, IMEAO, Kweekschool · 16–20+ jaar',group:'Voortgezet Onderwijs Senioren (VOS)',ai:'student',schoolLevel:'mbo'},
+    hbo:{title:'HBO',description:'18/19+ jaar',group:'Hoger Onderwijs',ai:'adult',schoolLevel:'hbo'},
+    wo:{title:'WO / Universiteit',description:'AdeKUS · 19+ jaar',group:'Hoger Onderwijs',ai:'adult',schoolLevel:'wo'}
+  };
   const localizedStage=(id,country=currentCountry())=>{const ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en,row=ui[id]||['',''],official=OFFICIAL[country]?.[id];return {title:row[0]+(official?' · '+official:''),description:row[1]}};
 
   function normalizeCountry(value){
@@ -229,6 +240,10 @@
     const country=normalizeCountry(value);if(!country)return currentCountry();
     const previous=currentCountry();
     localStorage.setItem(KEY,country);
+    if(country!=='Suriname'){
+      localStorage.removeItem('scholark_education_track');
+      localStorage.removeItem('scholark_vwo_selected');
+    }
     document.documentElement.dataset.scholarkCountry=country;
     apply();
     if(previous!==country)window.dispatchEvent(new CustomEvent('scholark-country-change',{detail:{country,source,system:system(country).label}}));
@@ -268,10 +283,16 @@
   }
   function applyLevels(){
     const c=currentCountry(),sys=system(c),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
-    $$('.v51-level[data-level]').forEach(btn=>{
-      const st=sys.stages.find(x=>x[0]===btn.dataset.level);if(!st)return;
-      const icon=btn.querySelector(':scope > span'),title=btn.querySelector('b'),desc=btn.querySelector('small'),lc=localizedStage(btn.dataset.level,c);
+    $('.v51-level[data-level]').forEach(btn=>{
+      const id=btn.dataset.level,icon=btn.querySelector(':scope > span'),title=btn.querySelector('b'),desc=btn.querySelector('small');
       btn.dataset.v96I18nOwned='1';
+      if(c==='Suriname'&&SURINAME_TRACKS[id]){
+        const row=SURINAME_TRACKS[id];
+        if(title)title.textContent=row.title;if(desc)desc.textContent=row.description;
+        btn.dataset.countrySystem='Suriname';btn.dataset.educationGroup=row.group;return;
+      }
+      const st=sys.stages.find(x=>x[0]===id);if(!st)return;
+      const lc=localizedStage(id,c);
       if(icon)icon.textContent=st[1];if(title)title.textContent=lc.title;if(desc)desc.textContent=lc.description;
       btn.dataset.countrySystem=sys.label;
     });
@@ -282,21 +303,30 @@
     const sel=$('#v50-level');if(!sel)return;
     const c=currentCountry(),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en,current=sel.value||'all';
     sel.dataset.v96I18nOwned='1';
-    const supportsVwo=c==='Suriname'||c==='Netherlands';
-    const upperSuffix=c==='Suriname'?' · VOS / HAVO':'';
-    const vocSuffix=c==='Suriname'?' · NATIN / IMEAO / AMTO':'';
-    const rows=[
-      ['all',ui.all],
-      ['primary',localizedStage('primary',c).title],
-      ['secondary',localizedStage('secondary',c).title],
-      ['upper_secondary',ui.upperFilter+upperSuffix],
-      ...(supportsVwo?[['vwo','VWO']]:[]),
-      ['vocational',ui.vocFilter+vocSuffix],
-      ['higher',localizedStage('adult',c).title],
-      ['adult',ui.adultFilter]
-    ];
-    sel.innerHTML=rows.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');
-    sel.value=rows.some(([value])=>value===current)?current:'all';
+    if(c==='Suriname'){
+      const groups=[
+        ['Basisonderwijs',['kindergarten','primary']],
+        ['Voortgezet Onderwijs Junioren (VOJ)',['mulo','lbo']],
+        ['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']],
+        ['Hoger Onderwijs',['hbo','wo']]
+      ];
+      sel.innerHTML='<option value="all">'+ui.all+'</option>'+groups.map(([label,ids])=>'<optgroup label="'+label+'">'+ids.map(id=>{const x=SURINAME_TRACKS[id];return '<option value="'+id+'">'+x.title+' · '+x.description+'</option>'}).join('')+'</optgroup>').join('');
+      sel.value=SURINAME_TRACKS[current]?current:'all';
+    }else{
+      const supportsVwo=c==='Netherlands';
+      const rows=[
+        ['all',ui.all],
+        ['primary',localizedStage('primary',c).title],
+        ['secondary',localizedStage('secondary',c).title],
+        ['upper_secondary',ui.upperFilter],
+        ...(supportsVwo?[['vwo','VWO']]:[]),
+        ['vocational',ui.vocFilter],
+        ['higher',localizedStage('adult',c).title],
+        ['adult',ui.adultFilter]
+      ];
+      sel.innerHTML=rows.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');
+      sel.value=rows.some(([value])=>value===current)?current:'all';
+    }
     const study=$('#v50-study');
     if(study){study.dataset.v96I18nOwned='1';study.placeholder=ui.studyField}
     window.__SCHOLARK_V50_SCHOOLS__?.syncStudyField?.();
@@ -336,5 +366,5 @@
   addEventListener('scholark-language-complete',()=>apply());
   [80,260,700].forEach(ms=>setTimeout(apply,ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en};
 })();
