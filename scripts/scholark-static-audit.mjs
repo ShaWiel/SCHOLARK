@@ -33,6 +33,10 @@ const studyAhead=read('scholark-v83-study-ahead-cloud.js');
 const examMastery=read('scholark-v87-exam-mastery.js');
 const learningEngine=read('scholark-v88-learning-engine.js');
 const languageLearner=read('scholark-v93-language-learner.js');
+const dashboardBootstrap=read('scholark-v53-dashboard-bootstrap.js');
+const stabilityFoundation=read('scholark-v81-stability-foundation.js');
+const workspacePolish=read('scholark-v91-workspace-polish.js');
+const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
 
 ok(runtime.includes(`const VERSION = '${VERSION}'`),'runtime VERSION is not '+VERSION);
@@ -118,6 +122,11 @@ ok(powerTools.includes("version:'20260918-workspace-power-v1'")&&powerTools.incl
 ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
 ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
 ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
+ok(dashboardBootstrap.includes('focus|flashcards|assignments')&&dashboardBootstrap.includes('data-v53-tool="focus"')&&dashboardBootstrap.includes('data-v53-tool="assignments"'),'Dashboard bootstrap can misclassify new workspace routes');
+ok(stabilityFoundation.includes('planner|focus|flashcards|assignments|progress'),'Stability foundation does not recognize new workspace routes');
+ok(foundationHealth.includes("'planner','focus','flashcards','assignments','progress'"),'Foundation health does not treat new workspace routes as modern');
+ok(workspacePolish.includes("['focus','Focus Sessions'")&&workspacePolish.includes("['flashcards','Flashcards'")&&workspacePolish.includes("['assignments','Assignments'"),'Workspace polish metadata is missing power tools');
+ok(i18n.includes('[data-v106-user="1"]')&&powerTools.includes('data-v106-user="1"'),'User flashcard/assignment content is not isolated from UI translation');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
 
