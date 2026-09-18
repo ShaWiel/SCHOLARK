@@ -69,13 +69,15 @@ const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
-  check(schoolHealth.version==='20260918-school-suriname-taxonomy-v4','School country/level search version mismatch');
+  check(schoolHealth.version==='20260918-school-suriname-taxonomy-v5','School country/level search version mismatch');
   check(/Kleuterschool/i.test(String(schoolHealth.levels?.kindergarten||'')),'Kleuteronderwijs taxonomy missing');
   check(/Lagere school|Basisschool/i.test(String(schoolHealth.levels?.primary||'')),'Basisonderwijs taxonomy missing');
   check(/MULO/i.test(String(schoolHealth.levels?.mulo||''))&&/LBO/i.test(String(schoolHealth.levels?.lbo||'')),'VOJ taxonomy missing');
   check(/HAVO/i.test(String(schoolHealth.levels?.havo||''))&&/VWO/i.test(String(schoolHealth.levels?.vwo||''))&&/MBO/i.test(String(schoolHealth.levels?.mbo||'')),'VOS taxonomy missing');
   check(/HBO/i.test(String(schoolHealth.levels?.hbo||''))&&/AdeKUS|Universiteit/i.test(String(schoolHealth.levels?.wo||'')),'Higher-education taxonomy missing');
   check(schoolHealth.officialRoster?.configured===true,'Official Suriname school roster is not configured');
+  check(Number(schoolHealth.curatedSupplement?.count)>=60,'Current Suriname school supplement is too small');
+  check(schoolHealth.curatedSupplement?.includesPolanen===true,'J.H.N. Polanenschool is missing from the current Suriname supplement');
 }
 if(vwoHealth){
   check(vwoHealth.vwoEnabled===true,'VWO school discovery is not enabled');
