@@ -48,7 +48,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
           grep -q '/scholark-logo.png' /tmp/scholark-home.html
-          grep -q 'scholark-runtime-loader.js?v=20260918-r141' /tmp/scholark-home.html
+          grep -q 'scholark-runtime-loader.js?v=20260918-r142' /tmp/scholark-home.html
           grep -q 'scholark-v102-language-quiz.js?v=20260918-language-choice-v3' /tmp/scholark-home.html
           grep -q 'scholark-v103-language-next-lesson.js?v=20260917-language-next-v1' /tmp/scholark-home.html
           grep -q 'scholark-v105-school-vwo.js?v=20260918-school-vwo-v6' /tmp/scholark-home.html
@@ -86,7 +86,7 @@ jobs:
           done
           cat /tmp/gemini-health.json 2>/dev/null || true
           exit 1
-      - name: Wait for deployed R141 workspace power tools
+      - name: Wait for deployed R142 Assignment Coach
         run: |
           for i in {1..90}; do
             ok=1
@@ -97,7 +97,7 @@ jobs:
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v102-language-quiz.js?ci=${GITHUB_SHA}" >/tmp/quiz.js || ok=0
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v62-learning-ai.js?ci=${GITHUB_SHA}" >/tmp/learning.js || ok=0
             curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v106-workspace-power-tools.js?ci=${GITHUB_SHA}" >/tmp/power.js || ok=0
-            if [ "$ok" = "1" ] && grep -q "20260918-school-vwo-v6" /tmp/vwo.js && grep -q "20260918-school-filter-v3" /tmp/filter.js && grep -q "scholark_education_track" /tmp/shell.js && grep -q "Average goal progress" /tmp/tools.js && grep -q "20260918-language-choice-v3" /tmp/quiz.js && grep -q "scholark_v62_study_draft" /tmp/learning.js && grep -q "20260918-workspace-power-v1" /tmp/power.js; then
+            if [ "$ok" = "1" ] && grep -q "20260918-school-vwo-v6" /tmp/vwo.js && grep -q "20260918-school-filter-v3" /tmp/filter.js && grep -q "scholark_education_track" /tmp/shell.js && grep -q "Average goal progress" /tmp/tools.js && grep -q "20260918-language-choice-v3" /tmp/quiz.js && grep -q "scholark_v62_study_draft" /tmp/learning.js && grep -q "20260918-workspace-power-v2" /tmp/power.js; then
               exit 0
             fi
             sleep 4
