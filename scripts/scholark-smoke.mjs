@@ -136,10 +136,10 @@ if(!live){
     check(schools.every(s=>Array.isArray(s.levels)&&s.levels.includes('vwo')),'live VWO search leaked non-VWO schools');
   },180000);
   try{
-    const {r,data}=await request('/scholark-v105-school-vwo.js?v=20260918-school-vwo-v5',{},30000);
+    const {r,data}=await request('/scholark-v105-school-vwo.js?v=20260918-school-vwo-v6',{},30000);
     const src=String(data?.raw||'');
     check(r.ok,'live VWO frontend module HTTP '+r.status);
-    check(src.includes("const VERSION='20260918-school-vwo-v5'"),'live VWO frontend module is stale');
+    check(src.includes("const VERSION='20260918-school-vwo-v6'"),'live VWO frontend module is stale');
     check(src.includes('Arthur Alex Hogendoorn Atheneum'),'live VWO frontend module is missing Hogendoorn Atheneum fallback');
     check(src.includes('patchServerFetch')&&src.includes("level:'vwo'"),'live VWO frontend module is not patching VWO search results');
     check(src.includes("opt.textContent='VWO'"),'Schools Near Me VWO label is not exactly VWO');
@@ -151,18 +151,33 @@ if(!live){
   }catch(e){failures.push(`live:vwo_frontend threw ${e?.message||e}`)}
   try{
     const [shellRes,filterRes,homeRes]=await Promise.all([
-      request('/scholark-v51-workspace-shell.js?v=20260918-r137',{},30000),
-      request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v2',{},30000),
-      request('/scholark-v99-home-foundation.js?v=20260918-r137',{},30000)
+      request('/scholark-v51-workspace-shell.js?v=20260918-r138',{},30000),
+      request('/scholark-v104-school-filter-guard.js?v=20260918-school-filter-v3',{},30000),
+      request('/scholark-v99-home-foundation.js?v=20260918-r138',{},30000)
     ]);
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['vwo','🎓','VWO'"),'live workspace shell is missing native VWO');
     check(shell.includes('dashboardLevels()')&&shell.includes("scholark_education_track')==='vwo'"),'live native VWO selection wiring is missing');
-    check(filterRes.r.ok&&filter.includes("20260918-school-filter-v2"),'live school filter guard is stale');
+    check(filterRes.r.ok&&filter.includes("20260918-school-filter-v3"),'live school filter guard is stale');
     check(filter.includes('documentWideObserver:false')&&!filter.includes('observer.observe(document.documentElement')&&!filter.includes('setInterval('),'live school filter still has a runaway mutation/poll loop');
     check(homeRes.r.ok&&home.includes('documentWideObserver:false')&&!home.includes('obs.observe(document.body'),'live home foundation still watches the full DOM');
     results.push(`live:responsive_foundation ${shellRes.r.status}/${filterRes.r.status}/${homeRes.r.status}`);
   }catch(e){failures.push(`live:responsive_foundation threw ${e?.message||e}`)}
+  try{
+    const [i18nRes,countryRes,schoolRes]=await Promise.all([
+      request('/scholark-v90-i18n-engine.js?v=20260918-r138',{},30000),
+      request('/scholark-v96-country-education.js?v=20260918-r138',{},30000),
+      request('/scholark-v50-school-finder.js?v=20260918-r138',{},30000)
+    ]);
+    const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
+    check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
+    check(i18n.includes('rebuildReverseKnown')&&i18n.includes('reverseKnown.get(clean(value))'),'live i18n canonicalization guard is missing');
+    check(countryRes.r.ok&&country.includes("all:'Alle niveaus'")&&country.includes("all:'Todos los niveles'"),'live school language dictionary is incomplete');
+    check(country.includes("studyField:'Studie/richting (optioneel)'")&&country.includes("['upper_secondary',ui.upperFilter+upperSuffix]"),'live school locale owner is incomplete');
+    check(schoolRes.r.ok&&school.includes("STUDY_FIELD_LEVELS=new Set(['upper_secondary','vwo','vocational','higher','adult'])"),'live study-field level rule is missing');
+    check(school.includes("study.hidden=!visible")&&school.includes("study.disabled=!visible"),'live study-field visibility logic is missing');
+    results.push(`live:language_study_foundation ${i18nRes.r.status}/${countryRes.r.status}/${schoolRes.r.status}`);
+  }catch(e){failures.push(`live:language_study_foundation threw ${e?.message||e}`)}
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
   await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
     acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
