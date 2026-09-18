@@ -15,6 +15,7 @@
     ['primary','📚','Primary school','Math, language, exploration and smart practice'],
     ['secondary','🎒','VOJ & VOS','Mastery, planning, study space and challenging subjects'],
     ['student','🎓','Student','Research, reports, presentations and study planning'],
+    ['vwo','🎓','VWO','Pre-university secondary education'],
     ['adult','💼','Adult','Digital skills, work skills and practical help']
   ];
   const TOOLS=[
@@ -62,8 +63,27 @@
   let side,main,home,toggle,nativeHost=null,nativeTimer=null;
   const state={active:'dashboard'};
 
-  function levelId(){return localStorage.getItem('scholark_learning_level')||'secondary'}
-  function setLevel(id){if(!LEVELS.some(x=>x[0]===id))id='secondary';localStorage.setItem('scholark_learning_level',id);localStorage.setItem('scholark_ai_audience_level',id);renderLevels();forceQuality();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)}
+  function workspaceCountry(){return String(window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname').trim().toLowerCase()}
+  function dashboardLevels(){return LEVELS.filter(x=>x[0]!=='vwo'||workspaceCountry()==='suriname')}
+  function levelId(){
+    if(workspaceCountry()==='suriname'&&localStorage.getItem('scholark_education_track')==='vwo')return 'vwo';
+    return localStorage.getItem('scholark_learning_level')||'secondary';
+  }
+  function setLevel(id){
+    if(id==='vwo'&&workspaceCountry()==='suriname'){
+      localStorage.setItem('scholark_learning_level','student');
+      localStorage.setItem('scholark_ai_audience_level','student');
+      localStorage.setItem('scholark_education_track','vwo');
+      localStorage.setItem('scholark_vwo_selected','1');
+    }else{
+      if(!LEVELS.some(x=>x[0]===id)||id==='vwo')id='secondary';
+      localStorage.setItem('scholark_learning_level',id);
+      localStorage.setItem('scholark_ai_audience_level',id);
+      localStorage.removeItem('scholark_education_track');
+      localStorage.removeItem('scholark_vwo_selected');
+    }
+    renderLevels();forceQuality();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0);
+  }
   function forceQuality(){localStorage.setItem('scholark_ai_quality','highest');localStorage.setItem('scholark_default_ai_quality','highest');localStorage.setItem('scholark_workspace_quality','highest');const q=$('#v41-quality');if(q&&[...q.options].some(o=>o.value==='highest'))q.value='highest';const d=$('#v45-depth');if(d&&[...d.options].some(o=>o.value==='expert'))d.value='expert';['v45-strict','v45-research','v45-factcheck','v45-visuals','v45-autopolish','v41-citations','v41-sources'].forEach(id=>{const e=$('#'+id);if(e&&'checked'in e)e.checked=true})}
 
   function officialLogoNode(){
@@ -86,7 +106,7 @@
     renderLevels();setCollapsed(localStorage.getItem('scholark_v51_collapsed')==='1',false);refreshLogo();
   }
   function card(id,ic,title,desc,primary=false){return `<button class="v51-card ${primary?'primary':''}" data-v51-tool="${id}"><span class="icon">${ic}</span><h3>${title}</h3><p>${desc}</p><b>OPEN ${title.toUpperCase()} →</b></button>`}
-  function renderLevels(){if(!side)return;const host=$('.v51-levels',main);if(!host)return;host.innerHTML=LEVELS.map(([id,ic,l,d])=>`<button class="v51-level ${id===levelId()?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');$$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level))}
+  function renderLevels(){if(!side)return;const host=$('.v51-levels',main);if(!host)return;host.innerHTML=dashboardLevels().map(([id,ic,l,d])=>`<button class="v51-level ${id===levelId()?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level))}
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
@@ -101,9 +121,11 @@
     const lang=localStorage.getItem('scholark_ui_language')||'nl',i18n=window.__SCHOLARK_I18N__;
     document.documentElement.lang=lang;
     i18n?.upgradeSelectors?.();
+    const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
+    if(!force&&lang==='en'&&document.documentElement.dataset.scholarkWorkspaceLang==='en')return;
     const roots=[side,root||main,$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book'),$('#v58-suite.open'),$('#v57-deck.open'),$('#v57-present.open')].filter(Boolean);
     [...new Set(roots)].forEach(applyLanguageRoot);
-    const selector=$('#v90-language');if(selector&&[...selector.options].some(o=>o.value===lang))selector.value=lang;
+    document.documentElement.dataset.scholarkWorkspaceLang=lang;
     // #v41-language is the artifact OUTPUT language, not the SCHOLARK UI language.
     // Keep its broader language support independent from this 7-language selector.
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
@@ -264,6 +286,7 @@
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),20)});
   addEventListener('scholark-language-complete',()=>{if(workspaceRoute())setTimeout(()=>syncWorkspaceLanguage(null,true),10)});
+  addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
   window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,getActive:()=>state.active};
 })();
