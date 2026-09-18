@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)$/)||[])[1]||'';
 const ROUTER='20260917-gemini-resilience-v3';
-const SCHOOL_STRICT='20260918-school-suriname-taxonomy-v4';
+const SCHOOL_STRICT='20260918-school-suriname-taxonomy-v5';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
@@ -65,6 +65,8 @@ ok(docker.indexOf('./scholark-school-route.mjs')<docker.indexOf('./scholark-scho
 ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route version is not current');
 ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
+ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
+ok(schoolStrict.includes('schoolNameMatch(row,query)')&&schoolStrict.includes('nameQuery=clean(body.name)'),'Strict school API lacks school-name filtering');
 ok(schoolStrict.includes("out.add('mulo')")&&schoolStrict.includes("out.add('lbo')")&&schoolStrict.includes("out.add('havo')")&&schoolStrict.includes("out.add('mbo')")&&schoolStrict.includes("out.add('hbo')")&&schoolStrict.includes("out.add('wo')"),'Strict Suriname school taxonomy is incomplete');
 ok(schoolStrict.includes("['mulo','lbo','havo','vwo','mbo','hbo','wo'].includes(wanted)")&&schoolStrict.includes("wanted==='early'||wanted==='kindergarten'"),'Strict Suriname level matching is missing');
 ok(docker.includes('scholark-v104-school-filter-guard.js'),'School client filter guard is not copied');
@@ -126,6 +128,8 @@ ok(fastTools.includes("$$('[data-tutor-assignment]',h).forEach"),'AI Tutor Assig
 ok(learningEngine.includes("$$('[data-v88-local]',host).forEach"),'Learning review engine must iterate review buttons as a collection');
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'Study field is not available for Suriname VOS and higher-education levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
+ok(schoolFinder.includes('id="v50-name"')&&schoolFinder.includes("name:nameQuery")&&schoolFinder.includes('nameMatch(x,nameQuery)'),'Schools Near Me school-name search is incomplete');
+ok(i18n.includes("['School name (optional)','Schoolnaam (optioneel)'"),'School-name search field is not localized');
 ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("[gc.basic,['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
 ok(schoolFinder.includes("levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs'"),'School result labels do not use Suriname taxonomy');
 ok(fastTools.includes("const PLAN_KEY='scholark_v51_planner'")&&fastTools.includes("type:'next_action'")&&fastTools.includes('goalProgress(g)'),'Planner/Goals integration is incomplete');
