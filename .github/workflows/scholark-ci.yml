@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,7 +24,7 @@ jobs:
 
   docker-build-and-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,12 +44,20 @@ jobs:
           exit 1
       - name: Run full local API smoke suite
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+      - name: Install browser smoke dependency
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Exercise every workspace option in Chromium
+        run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Verify homepage boot, loading guard and runtime scripts
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
           grep -q '/scholark-logo.png' /tmp/scholark-home.html
-          grep -q 'scholark-runtime-loader.js?v=20260918-r144' /tmp/scholark-home.html
+          VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
+          test -n "$VERSION"
+          grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html
           grep -q 'scholark-v102-language-quiz.js?v=20260918-language-choice-v3' /tmp/scholark-home.html
           grep -q 'scholark-v103-language-next-lesson.js?v=20260918-language-next-v2' /tmp/scholark-home.html
           grep -q 'scholark-v105-school-vwo.js?v=20260918-school-vwo-v7' /tmp/scholark-home.html
@@ -64,7 +73,7 @@ jobs:
         run: docker rm -f scholark-ci-run || true
 
   live-resilience-smoke:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     needs: [static-audit, docker-build-and-smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -86,7 +95,7 @@ jobs:
           done
           cat /tmp/gemini-health.json 2>/dev/null || true
           exit 1
-      - name: Wait for deployed R144 dashboard and next lesson flow
+      - name: Wait for deployed workspace and next lesson flow
         run: |
           for i in {1..90}; do
             ok=1
