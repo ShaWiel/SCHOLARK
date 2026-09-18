@@ -5,7 +5,7 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = true;
 
-  const VERSION = '20260910-r136';
+  const VERSION = '20260918-r137';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -171,7 +171,11 @@
     return foregroundChain;
   }
 
-  function ensure(key, indicator=false) { return ensureFiles(required(key), indicator, false); }
+  function ensure(key, indicator=false) {
+    const files=required(key);
+    preloadFiles(files);
+    return ensureFiles(files, indicator, false);
+  }
   function prewarmStudioCore() {
     preloadFiles(STUDIO_CORE);
     setTimeout(() => ensureFiles(STUDIO_CORE, false, true), 20);
@@ -280,6 +284,7 @@
     preloadFiles([...STUDIO_CORE, ...FEATURES.project]);
     html.classList.add('scholark-runtime-loading');
     const key = routeKey();
+    preloadFiles(required(key));
     await ensure(key, false);
     html.classList.remove('scholark-runtime-loading');
     afterRouteLoad(key);
