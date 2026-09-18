@@ -13,6 +13,7 @@ const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260918-school-suriname-taxonomy-v4';
 
 const runtime=runtimePreview;
+const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
 const docker=read('Dockerfile');
 const foundation=read('scholark-v101-core-foundation.js');
 const prepaint=read('scholark-prepaint-head.html');
@@ -100,7 +101,7 @@ ok(workspaceShell.includes('v51-levels-suriname')&&workspaceShell.includes('over
 ok(workspaceShell.includes("$('[data-level]',host).forEach"),'Dashboard level buttons are not wired as a collection');
 ok(workspaceShell.includes("key==='sr'?'suriname':key")&&workspaceShell.includes("addEventListener('scholark-runtime-ready'")&&workspaceShell.includes('renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.()'),'Suriname workspace levels are not protected against runtime/country initialization races');
 ok(runtime.includes("const HOME = ['scholark-v28-home-experience.js'")&&runtime.includes("'scholark-v55-home-topbar-workspace-entry.js','scholark-v99-home-foundation.js'"),'Home-only modules are not isolated from workspace boot');
-ok(!/const WORKSPACE = \[[\s\S]*scholark-v43-studio-workspace\.js/.test(runtime)&&!/const WORKSPACE = \[[\s\S]*scholark-v52-workspace-qa\.js/.test(runtime)&&!/const WORKSPACE = \[[\s\S]*scholark-v64-projects\.js/.test(runtime),'Heavy feature modules still load on every workspace route');
+ok(!workspaceBlock.includes('scholark-v43-studio-workspace.js')&&!workspaceBlock.includes('scholark-v52-workspace-qa.js')&&!workspaceBlock.includes('scholark-v64-projects.js'),'Heavy feature modules still load on every workspace route');
 ok(runtime.includes("studio:['scholark-v43-studio-workspace.js'")&&runtime.includes("planner:['scholark-v52-workspace-qa.js']")&&runtime.includes("project:['scholark-v64-projects.js'"),'Lazy feature routing is incomplete after workspace boot optimization');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
