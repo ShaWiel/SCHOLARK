@@ -93,6 +93,12 @@
     ['Target language','Doeltaal','Idioma objetivo','Langue cible','Zielsprache','Idioma de destino','Lingua di destinazione'],
     ['Support language','Ondersteuningstaal','Idioma de apoyo','Langue d’aide','Unterstützungssprache','Idioma de apoio','Lingua di supporto'],
     ['Current level','Huidig niveau','Nivel actual','Niveau actuel','Aktuelles Niveau','Nível atual','Livello attuale'],
+    ['All levels','Alle niveaus','Todos los niveles','Tous les niveaux','Alle Stufen','Todos os níveis','Tutti i livelli'],
+    ['Study / field (optional)','Studie/richting (optioneel)','Estudio / área (opcional)','Études / domaine (facultatif)','Studium / Fach (optional)','Estudo / área (opcional)','Studio / ambito (opzionale)'],
+    ['Primary Education','Basisonderwijs','Educación Primaria','Enseignement primaire','Primarbildung','Ensino primário','Istruzione primaria'],
+    ['Lower Secondary (VOJ)','VOJ','Secundaria Inferior (VOJ)','Secondaire inférieur (VOJ)','Sekundarstufe I (VOJ)','Ensino secundário inferior (VOJ)','Secondaria inferiore (VOJ)'],
+    ['Upper Secondary (VOS)','VOS','Secundaria Superior (VOS)','Secondaire supérieur (VOS)','Sekundarstufe II (VOS)','Ensino secundário superior (VOS)','Secondaria superiore (VOS)'],
+    ['Higher Education','Hoger Onderwijs','Educación Superior','Enseignement supérieur','Hochschulbildung','Ensino superior','Istruzione superiore'],
     ['Learning goal','Leerdoel','Objetivo de aprendizaje','Objectif d’apprentissage','Lernziel','Objetivo de aprendizagem','Obiettivo di apprendimento'],
     ['Conversation','Gesprek','Conversación','Conversation','Konversation','Conversação','Conversazione'],
     ['Travel','Reizen','Viajes','Voyage','Reisen','Viagem','Viaggio'],
@@ -466,7 +472,7 @@
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
-  function loadMap(c){return {...(STATIC_UI[c]||{}),...parseStored(key(c))}}
+  function loadMap(c){return {...parseStored(key(c)),...(STATIC_UI[c]||{})}}
   const reverseKnown=new Map();
   function indexMap(m){
     for(const [source,translated] of Object.entries(m||{})){
@@ -483,7 +489,7 @@
     }
   }
   rebuildReverseKnown();
-  function saveMap(c,m){try{localStorage.setItem(key(c),JSON.stringify(m));indexMap(m)}catch{}}
+  function saveMap(c,m){try{const safe={...(m||{}),...(STATIC_UI[c]||{})};localStorage.setItem(key(c),JSON.stringify(safe));indexMap(safe)}catch{}}
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
@@ -532,7 +538,7 @@
     return /[\p{L}\p{N}]/u.test(t);
   }
   function protectedNode(el){
-    return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,[data-v96-i18n-owned="1"],[data-v96-i18n-owned="1"] option,#v96-country,#v96-country option,#v96-side-country select,#v96-side-country option,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]');
+    return !!el?.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,[data-v96-i18n-owned="1"],[data-v96-i18n-owned="1"] option,[data-sch-i18n-owned="1"],[data-sch-i18n-owned="1"] option,#v96-country,#v96-country option,#v96-side-country select,#v96-side-country option,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]');
   }
   function collectDom(limit=180){
     const out=new Set(),roots=typeof visibleRoots==='function'?visibleRoots():[document.body];
@@ -715,6 +721,7 @@
 
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target,previous,home}}));
     window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':'instant-cache',home}}));
+    setTimeout(()=>{if(code()!==target)return;window.__SCHOLARK_COUNTRY__?.apply?.();if(!home)window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true)},0);
 
     overlay.style.opacity='0';overlay.classList.remove('open');translating=false;
     if(!home)setTimeout(()=>document.documentElement.classList.remove('scholark-language-switching'),20);
