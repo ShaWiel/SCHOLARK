@@ -352,19 +352,20 @@
     window.__SCHOLARK_V50_SCHOOLS__?.syncStudyField?.();
   }
   const ownedLocaleObservers=new WeakMap();
-  let ownedLocaleRepairing=false;
   function wireOwnedLocaleGuard(){
     const watch=(node,healthy,repair)=>{
       if(!node||ownedLocaleObservers.has(node))return;
+      let timer=null;
+      const options={subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['label']};
       const observer=new MutationObserver(()=>{
-        if(ownedLocaleRepairing)return;
-        queueMicrotask(()=>{
-          if(ownedLocaleRepairing||healthy())return;
-          ownedLocaleRepairing=true;
-          try{repair()}finally{ownedLocaleRepairing=false}
-        });
+        clearTimeout(timer);
+        timer=setTimeout(()=>{
+          if(healthy())return;
+          observer.disconnect();
+          try{repair()}finally{observer.observe(node,options)}
+        },24);
       });
-      observer.observe(node,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['label']});
+      observer.observe(node,options);
       ownedLocaleObservers.set(node,observer);
     };
     const levels=$('#v51-main [data-v51-page="dashboard"] .v51-levels');
