@@ -6,8 +6,8 @@ const root=process.cwd();
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const fail=[];
 const ok=(cond,msg)=>{if(!cond)fail.push(msg)};
-const RELEASE='r139';
-const VERSION='20260918-r139';
+const RELEASE='r140';
+const VERSION='20260918-r140';
 const ROUTER='20260917-gemini-resilience-v3';
 const SCHOOL_STRICT='20260917-school-country-levels-v3';
 
@@ -104,6 +104,9 @@ ok(examMastery.includes('saveLocalMastery(groups)')&&examMastery.includes("saved
 ok(learningEngine.includes('localReviewRows')&&learningEngine.includes('renderLocalQueue'),'Spaced Review lacks local functionality');
 ok(studyAhead.includes('data-v83="goal"')&&studyAhead.includes("scholark_v51_planner")&&studyAhead.includes("scholark_v52_mastery"),'Study Ahead is not connected to local Planner/Mastery/Goals');
 ok(learningApi.includes("const depthInstruction=")&&learningApi.includes("depth,prompt:'Prepare me to study '"),'Study Ahead depth selector is not used by AI generation');
+ok(learningApi.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learningApi.includes('sessionStorage.setItem(STUDY_DRAFT_KEY')&&learningApi.includes('restoreStudyDraft();bindStudyDraft();return live'),'Study Ahead does not preserve typed form data across remounts');
+ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("if(live&&$('#v62-field',live))"),'Study Ahead mount is not idempotent');
+ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js'),'Language next-lesson fix is not shipped');
