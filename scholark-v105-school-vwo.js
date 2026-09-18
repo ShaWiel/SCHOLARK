@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V105_SCHOOL_VWO__)return;
   window.__SCHOLARK_V105_SCHOOL_VWO__=true;
 
-  const VERSION='20260917-school-vwo-v4';
+  const VERSION='20260918-school-vwo-v5';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
@@ -130,11 +130,12 @@
       host.querySelector('[data-v105-vwo-stage="1"]')?.remove();
       return true;
     }
-    let button=host.querySelector('[data-v105-vwo-stage="1"]');
+    let button=host.querySelector('.v51-level[data-level="vwo"],[data-v105-vwo-stage="1"]');
     if(!button){
       button=document.createElement('button');
       button.type='button';
       button.className='v51-level';
+      button.dataset.level='vwo';
       button.dataset.v105VwoStage='1';
       button.innerHTML='<span>🎓</span><b>VWO</b><small></small>';
       const student=host.querySelector('.v51-level[data-level="student"]');
@@ -189,7 +190,7 @@
 
   document.addEventListener('click',e=>{
     const existing=e.target?.closest?.('#v51-main .v51-level[data-level]');
-    if(existing&&!existing.matches('[data-v105-vwo-stage="1"]')){
+    if(existing&&!existing.matches('[data-v105-vwo-stage="1"],[data-level="vwo"]')){
       if(localStorage.getItem('scholark_education_track')==='vwo'){
         localStorage.removeItem('scholark_education_track');
         localStorage.removeItem('scholark_vwo_selected');
@@ -207,5 +208,5 @@
   const bootTimer=setInterval(()=>{scheduleApply();if(++attempts>=12)clearInterval(bootTimer)},500);
   [20,100,260,700,1500,3000].forEach(ms=>setTimeout(scheduleApply,ms));
 
-  window.__SCHOLARK_VWO__={version:VERSION,apply:()=>scheduleApply(),schoolLabel:'VWO',dashboardStage:true,performanceGuard:'targeted-observers',documentWideObserver:false};
+  window.__SCHOLARK_VWO__={version:VERSION,apply:()=>scheduleApply(),schoolLabel:'VWO',dashboardStage:'native-v51',performanceGuard:'targeted-observers',documentWideObserver:false};
 })();
