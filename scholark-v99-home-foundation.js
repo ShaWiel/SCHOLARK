@@ -73,7 +73,7 @@
     if(!root?.isConnected)return;
     const target=code(),walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
     while((n=walker.nextNode())){
-      if(n.parentElement?.closest?.('script,style,textarea,input,[contenteditable="true"],.v65-prose,.v57-slide,.v58-canvas,.v75-doc-editor,.v76-canvas,.v77-page-preview'))continue;
+      if(n.parentElement?.closest?.('script,style,textarea,input,[contenteditable="true"],[data-v96-i18n-owned="1"],[data-sch-i18n-owned="1"],.v65-prose,.v57-slide,.v58-canvas,.v75-doc-editor,.v76-canvas,.v77-page-preview'))continue;
       const raw=String(n.nodeValue||''),clean=raw.replace(/\s+/g,' ').trim(),source=variants.get(clean);if(!source)continue;
       const next=FIXED[source]?.[target]||source;if(clean===next)continue;
       const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+next+tail;
