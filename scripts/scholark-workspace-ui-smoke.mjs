@@ -55,6 +55,30 @@ for(const legacy of ['jonge leerling','middelbare school','volwassene']) check(!
 check(await page.locator('[data-v51-group="voj"]').evaluate(el=>getComputedStyle(el).backgroundColor==='rgba(0, 0, 0, 0)'||getComputedStyle(el).backgroundColor==='transparent').catch(()=>false),'VOJ cluster wrapper is not transparent');
 check(await page.locator('[data-v51-group="higher"]').evaluate(el=>getComputedStyle(el).backgroundColor==='rgba(0, 0, 0, 0)'||getComputedStyle(el).backgroundColor==='transparent').catch(()=>false),'Higher Education cluster wrapper is not transparent');
 
+const localeExpect={
+  nl:{basic:'Basisonderwijs',higher:'Hoger Onderwijs'},
+  en:{basic:'Primary Education',higher:'Higher Education'},
+  es:{basic:'Educación Primaria',higher:'Educación Superior'},
+  fr:{basic:'Enseignement primaire',higher:'Enseignement supérieur'},
+  de:{basic:'Primarbildung',higher:'Hochschulbildung'},
+  pt:{basic:'Ensino primário',higher:'Ensino superior'},
+  it:{basic:'Istruzione primaria',higher:'Istruzione superiore'}
+};
+for(const [code,expected] of Object.entries(localeExpect)){
+  await page.selectOption('#v90-language',code);
+  await page.waitForFunction(c=>localStorage.getItem('scholark_ui_language')===c&&document.documentElement.lang===c,code,{timeout:4000});
+  await page.waitForTimeout(80);
+  const actual=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.getAttribute('data-v51-group'),n.querySelector('.v51-level-group')?.textContent?.trim()])));
+  check(actual.basic===expected.basic,`Dashboard basic group language mismatch for ${code}: ${actual.basic}`);
+  check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher}`);
+}
+await page.selectOption('#v90-language','nl');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
+await page.waitForTimeout(80);
+
+const darkGroupBackground=await page.locator('[data-v51-group="higher"] .v51-level').first().evaluate(el=>getComputedStyle(el).backgroundImage);
+check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupBackground),`Higher Education cards do not use the requested dark navy palette: ${darkGroupBackground}`);
+
 await page.click('.v51-level[data-level="mulo"]');
 check(await page.evaluate(()=>localStorage.getItem('scholark_education_track')==='mulo'),'MULO selection did not persist');
 check(await page.locator('.v51-level[data-level="mulo"]').evaluate(el=>el.classList.contains('active')),'MULO did not become active');
@@ -133,6 +157,17 @@ check(await page.locator('#v86-files').count()===1,'Files upload input missing')
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
+check((await page.locator('#v50-level option[value="all"]').textContent()).trim()==='Alle niveaus','Dutch school selector leaked another language');
+await page.selectOption('#v90-language','es');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.lang==='es',{timeout:4000});
+await page.waitForTimeout(100);
+check((await page.locator('#v50-level option[value="all"]').textContent()).trim()==='Todos los niveles','Spanish school selector did not localize');
+await page.selectOption('#v90-language','nl');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
+await page.waitForTimeout(100);
+check((await page.locator('#v50-level option[value="all"]').textContent()).trim()==='Alle niveaus','School selector kept stale Spanish after switching back to Dutch');
+const schoolGroups=await page.locator('#v50-level optgroup').evaluateAll(nodes=>nodes.map(n=>n.label));
+check(schoolGroups.includes('Basisonderwijs')&&schoolGroups.includes('Hoger Onderwijs'),'Dutch school optgroup labels are inconsistent after language round-trip');
 await route('study','#v51-fallback .v62-study');
 check(await page.locator('#v62-study-run').count()===1,'Study Ahead action missing');
 await route('book','#v51-fallback .v65-book');
