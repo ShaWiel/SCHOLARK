@@ -18,6 +18,16 @@ const COUNTRY_CODES={
 };
 let officialCache=null;
 let officialPromise=null;
+const SURINAME_KNOWN_HIGHER=[
+  {
+    name:'Anton de Kom Universiteit van Suriname (AdeKUS)',
+    description:'WO / Universiteit · AdeKUS · Paramaribo',
+    lat:null,lon:null,distance:null,website:'',phone:'',email:'',
+    source:'SCHOLARK Suriname education directory',
+    level:'wo',levels:['higher','wo'],levelDetail:'higher,wo',
+    official:false,tags:{city:'Paramaribo',district:'Paramaribo',education:'university',name:'Anton de Kom Universiteit van Suriname AdeKUS','addr:country':'SR'}
+  }
+];
 
 const clean=v=>String(v??'').replace(/\u0000/g,'').replace(/\s+/g,' ').trim();
 const low=v=>clean(v).toLowerCase();
@@ -187,6 +197,11 @@ async function discover(body){
   if(!national)rows=rows.filter(x=>x.distance<=radius+1);
   const officialAll=await officialPromiseForRequest,official=officialAll.filter(x=>officialLocationMatch(x,city));
   if(official.length){rows=mergeRows([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}else rows=mergeRows(rows);
+  if(/^suriname$/i.test(country)){
+    const known=SURINAME_KNOWN_HIGHER.filter(x=>officialLocationMatch(x,city));
+    rows=mergeRows([...known,...rows]);
+    if(known.length)sourceStatus.unshift({source:'SCHOLARK Suriname education directory',ok:true,count:known.length});
+  }
   rows=rows.filter(x=>matchesLevel(x.levels,level));
   rows.sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
   console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
