@@ -50,7 +50,7 @@ ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.incl
 ok(schoolStrict.includes("out.add('lower_secondary')")&&schoolStrict.includes("out.add('upper_secondary')")&&schoolStrict.includes("out.add('vocational')"),'Strict school education taxonomy is incomplete');
 ok(schoolStrict.includes("wanted==='secondary'||wanted==='lower_secondary'")&&schoolStrict.includes("wanted==='upper_secondary'"),'Strict lower/upper secondary matching is missing');
 ok(docker.includes('scholark-v104-school-filter-guard.js'),'School client filter guard is not copied');
-ok(docker.includes('scholark-v104-school-filter-guard.js?v=20260917-school-filter-v1'),'School client filter guard is not injected');
+ok(docker.includes('scholark-v104-school-filter-guard.js?v=20260918-school-filter-v2'),'School client filter guard is not injected');
 ok(schoolClient.includes('/rest/v1/rpc/search_schools')&&schoolClient.includes('rowMatches'),'Curated school RPC country/place guard is missing');
 ok(schoolClient.includes('option[value="upper_secondary"]')&&schoolClient.includes('Vocational / technical education'),'Improved school level selector is missing');
 ok(docker.includes('ENV SCHOLARK_AI_PROVIDER=gemini'),'Gemini is not configured as the primary AI provider');
