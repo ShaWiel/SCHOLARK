@@ -182,6 +182,17 @@ check(await page.locator('#v86-files').count()===1,'Files upload input missing')
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
+check(await page.locator('#v50-name').count()===1,'School-name search field missing');
+await page.waitForTimeout(120);
+check((await page.locator('#v50-name').getAttribute('placeholder'))==='Schoolnaam (optioneel)','School-name search placeholder did not localize to Dutch');
+const polanenSearch=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'J.H.N. Polanen',level:'primary',radius:50})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(polanenSearch.status===200&&polanenSearch.data?.ok===true,'J.H.N. Polanen API search failed');
+const polanenRows=Array.isArray(polanenSearch.data?.schools)?polanenSearch.data.schools:[];
+check(polanenRows.some(x=>/J\.H\.N\.?\s*Polanen/i.test(String(x.name||''))),'J.H.N. Polanenschool is still missing from primary-school search');
+check(polanenRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('primary')),'J.H.N. Polanen name search leaked non-primary results');
 {
   const schoolAll=(await page.locator('#v50-level option[value="all"]').textContent()).trim();
   const schoolState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
