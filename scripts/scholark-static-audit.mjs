@@ -103,7 +103,7 @@ ok(workspaceShell.includes("key==='sr'?'suriname':key")&&workspaceShell.includes
 ok(workspaceShell.includes('const SURINAME_GROUP_LABELS=')&&workspaceShell.includes('surinameGroupLabel(group)'),'Suriname dashboard group labels are not explicitly locale-owned');
 ok(workspaceShell.includes('#1f2b5b')&&workspaceShell.includes('#385294')&&workspaceShell.includes('#172349'),'VOJ/Higher Education dark navy palette is missing');
 ok(countryEducation.includes('const GROUP_COPY=')&&countryEducation.includes('applyGroupLabels()')&&countryEducation.includes('sel.dataset.schI18nOwned'),'Country education language ownership is incomplete');
-ok(i18n.includes("function loadMap(c){return {...parseStored(key(c)),...(STATIC_UI[c]||{})}}")&&i18n.includes("const safe={...(m||{}),...(STATIC_UI[c]||{})}"),'Static UI translations do not override stale dynamic cache entries');
+ok(i18n.includes('const STATIC_VARIANTS=new Map()')&&i18n.includes('function sanitizeStoredMap(raw)')&&i18n.includes("function loadMap(c){return {...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}}")&&i18n.includes("const safe={...sanitizeStoredMap(m||{}),...(STATIC_UI[c]||{})}"),'Static UI translations do not sanitize stale cross-language cache entries');
 ok(i18n.includes('[data-sch-i18n-owned="1"]'),'Generic translator does not protect locale-owned education UI');
 ok(homeFoundation.includes('[data-sch-i18n-owned="1"]'),'Foundation repair can still overwrite locale-owned education UI');
 ok(accountSettings.includes("window.__SCHOLARK_I18N__?.changeLanguage?.(lang)"),'Account language save does not apply the UI language engine');
