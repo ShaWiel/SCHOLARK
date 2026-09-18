@@ -102,7 +102,7 @@ ok(fastTools.includes('Open actions')&&fastTools.includes('Due today')&&fastTool
 ok(fastTools.includes('Next review')&&fastTools.includes('Practice')&&fastTools.includes('Add this study session to Planner'),'Education & Learning actionable workflows are incomplete');
 ok(examMastery.includes('saveLocalMastery(groups)')&&examMastery.includes("saved locally to Progress + Mastery"),'Diagnostics do not persist to local Progress + Mastery');
 ok(learningEngine.includes('localReviewRows')&&learningEngine.includes('renderLocalQueue'),'Spaced Review lacks local functionality');
-ok(studyAhead.includes("data-v83="goal"")&&studyAhead.includes("scholark_v51_planner")&&studyAhead.includes("scholark_v52_mastery"),'Study Ahead is not connected to local Planner/Mastery/Goals');
+ok(studyAhead.includes('data-v83="goal"')&&studyAhead.includes("scholark_v51_planner")&&studyAhead.includes("scholark_v52_mastery"),'Study Ahead is not connected to local Planner/Mastery/Goals');
 ok(learningApi.includes("const depthInstruction=")&&learningApi.includes("depth,prompt:'Prepare me to study '"),'Study Ahead depth selector is not used by AI generation');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
