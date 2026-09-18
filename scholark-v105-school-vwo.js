@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V105_SCHOOL_VWO__)return;
   window.__SCHOLARK_V105_SCHOOL_VWO__=true;
 
-  const VERSION='20260918-school-vwo-v5';
+  const VERSION='20260918-school-vwo-v6';
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
@@ -54,11 +54,14 @@
 
   function patchSelector(){
     const sel=document.querySelector('#v50-level');if(!sel)return false;
+    const allowed=['suriname','netherlands'].includes(key(currentCountry()));
     let opt=sel.querySelector('option[value="vwo"]');
+    if(!allowed){opt?.remove();return true}
     if(!opt){
       opt=document.createElement('option');opt.value='vwo';
       const upper=sel.querySelector('option[value="upper_secondary"]');
       if(upper)upper.insertAdjacentElement('afterend',opt);else sel.appendChild(opt);
+      queueMicrotask(()=>window.__SCHOLARK_COUNTRY__?.apply?.());
     }
     if(opt.textContent!=='VWO')opt.textContent='VWO';
     if(sel.dataset.v105Vwo!==VERSION)sel.dataset.v105Vwo=VERSION;
