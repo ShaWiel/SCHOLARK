@@ -156,7 +156,7 @@ ok(prepaint.includes('focus|flashcards|assignments'),'Prepaint does not recogniz
 ok(docker.includes('scholark-v106-workspace-power-tools.js'),'Workspace power tools are not copied into production');
 ok(powerTools.includes("version:'20260918-workspace-power-v2'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
 ok(powerTools.includes('v106-focus-custom')&&powerTools.includes('v106-card-export')&&powerTools.includes('v106-card-shuffle')&&powerTools.includes('v106-a-priority'),'Workspace power-tool expansion is incomplete');
-ok(workspaceQa.includes('v52-plan-csv')&&workspaceQa.includes('v52-plan-ics')&&workspaceQa.includes('v52-plan-clear')&&workspaceQa.includes('v52-progress-export'),'Planner/Progress export expansion is incomplete');
+ok(fastTools.includes('v52-plan-csv')&&fastTools.includes('v52-plan-ics')&&fastTools.includes('v52-plan-clear')&&fastTools.includes('v52-progress-export'),'Planner/Progress export expansion is incomplete');
 ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
 ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
 ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
