@@ -130,11 +130,13 @@ ok(homeTopbar.includes("const TOPBAR_COPY=")&&homeTopbar.includes("data-sch-i18n
 ok(homeTopbar.includes("window.__SCHOLARK_I18N__?.langs")&&homeTopbar.includes('dynamicTopbarCopy')&&homeTopbar.includes('localizeTopbar'),'Homepage topbar is not wired for all adaptive interface languages');
 ok(i18n.includes("LANGS.length===37")&&i18n.includes("dynamicLocales.length===30")&&i18n.includes("['ar','he','ur','fa']"),'37-language catalog / RTL contract is incomplete');
 ok(i18n.includes("['pa','ਪੰਜਾਬੀ','Punjabi']")&&i18n.includes("['sw','Kiswahili','Swahili']")&&i18n.includes("['zh','中文','Chinese (Simplified)']"),'30 added world languages are incomplete');
-ok(i18n.includes("dynamic=!STATIC_CORE_LANGS.has(target)")&&i18n.includes("const seed=[...new Set([...CORE,...collectDom(520)])]")&&i18n.includes("scheduleLanguageCompletion(target,epoch)"),'Dynamic first-use translation priming is incomplete');
+ok(i18n.includes("dynamic=!STATIC_CORE_LANGS.has(target)")&&i18n.includes("home?collectDom(240):[...CORE,...collectDom(360)]")&&i18n.includes("scheduleLanguageCompletion(target,epoch)"),'Dynamic first-use translation priming is incomplete');
 ok(i18n.includes("overlay.classList.add('open');overlay.style.removeProperty('opacity')")&&i18n.includes("const remaining=Math.max(0,260-(performance.now()-overlayStarted))"),'Adapting SCHOLARK is not shown consistently for every language switch');
 ok(i18n.includes("classList.add('scholark-home-language-adapting')")&&i18n.includes("if(!home)applyVisible()")&&i18n.includes("dataset.scholarkI18nReady=target"),'Homepage language adaptation is not atomic');
+ok(i18n.includes('function freezeHomeSurface()')&&i18n.includes("data-sch-school-name")&&i18n.includes('releaseHomeSurface()'),'Homepage freeze or immutable-name translation protection is incomplete');
 ok(i18n.includes("timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000")&&i18n.includes('transitionFailsafe=setTimeout')&&i18n.includes('16000'),'Adaptive UI translation can still leave the interface blocked indefinitely');
 ok(prepaint.includes('localeReady')&&prepaint.includes('dataset.scholarkI18nReady===locale()'),'Prepaint can reveal an adaptive-language homepage before locale preparation is complete');
+ok(prepaint.includes('12000')&&prepaint.includes('18000')&&prepaint.includes('d.dataset.scholarkI18nReady=locale()'),'Adaptive prepaint fallback is not bounded safely');
 ok(i18n.includes("if(STATIC_CORE_LANGS.has(code())&&el.closest")&&i18n.includes("#v55-topbar"),'Locale-owned UI protection does not distinguish static and adaptive languages');
 ok(countryEducation.includes('STATIC_UI_LANGS')&&countryEducation.includes('Intl.DisplayNames')&&countryEducation.includes("GROUP_COPY[uiLang()]||GROUP_COPY.en"),'Country/education UI is not compatible with adaptive languages');
 ok(workspaceShell.includes("return SURINAME_GROUP_LABELS[v]?v:'en'"),'Workspace does not use English source copy for adaptive languages');
@@ -176,6 +178,7 @@ ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("i
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(foundation.includes("Date.now()-state.lastRepairAt<900")&&foundation.includes("scholark-home-language-adapting"),'Core foundation lacks low-churn fast path or language-transition coordination');
 ok(performance.includes("now-state.lastLayout<240")&&performance.includes("scholark-language-ready"),'Performance foundation does not suppress redundant layout work or retune after locale changes');
+ok(performance.includes("const candidates=$("),'Performance text fitting must iterate a collection safely');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(learningRoute.includes("const testMode=/^(1|true|yes|on)$/i")&&learningRoute.includes("if(remaining.length&&!testMode)")&&learningRoute.includes("freeUiTranslate(remaining,languageCode)")&&learningRoute.includes("slice(0,8)"),'Adaptive UI translation is not model-first with bounded public fallback');
 ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']"),'New workspace tools are missing from navigation');
