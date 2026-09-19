@@ -27,7 +27,7 @@ const SURINAME_CURATED_RAW=[
   // Basisonderwijs / current supplements not reliably exposed by the 2022 workbook.
   {name:'J.H.N. Polanenschool',exact:['primary'],description:'Commewijnestraat 27 · Paramaribo · Basisonderwijs / GLO',city:'Paramaribo',district:'Paramaribo',phone:'+597 499108',source:'GOV.SR 2026 school project + current directory',sourceUrl:SRC_POLANEN,aliases:'O.S. Polanen 1; Polanenschool; Kweek-A'},
   {name:'De Hoeksteen Basisschool',exact:['primary'],description:'Paramaribo · Basisschool',city:'Paramaribo',district:'Paramaribo',website:'https://hoeksteen.sr/',source:'School website',sourceUrl:SRC_HOEKSTEEN},
-  {name:'Kangoeroe Community School',exact:['primary'],description:'Edmundstraat 3-5 · Paramaribo · primary section',city:'Paramaribo',district:'Paramaribo',source:'Current public school directory',sourceUrl:'https://www.google.com/maps/search/?api=1&query=Kangoeroe+Community+School+Suriname'},
+  {name:'Kangoeroe Community School',exact:['kindergarten','primary'],description:'Edmundstraat 3-5 · Paramaribo · kinderopvang / basisonderwijs',city:'Paramaribo',district:'Paramaribo',website:'https://kangoeroeschool.com/',phone:'+597 430870',source:'Kangoeroe Community School official website',sourceUrl:'https://kangoeroeschool.com/over-ons/',aliases:'Kangaroo Community School; Kangoeroe School; KCS'},
   {name:'Nederlandse Basisschool Het Kleurenorkest',exact:['primary'],description:'Veldhuizenlaan 63 · Paramaribo · basisschool',city:'Paramaribo',district:'Paramaribo',phone:'+597 432120',source:'Current public school directory',sourceUrl:'https://www.google.com/maps/search/?api=1&query=Nederlandse+Basisschool+Het+Kleurenorkest+Suriname'},
   {name:'Prinses Amalia Nederlandse Basisschool',exact:['primary'],description:'Wonglaan 35 · Paramaribo · basisschool',city:'Paramaribo',district:'Paramaribo',phone:'+597 430090',source:'Current public school directory',sourceUrl:'https://www.google.com/maps/search/?api=1&query=Prinses+Amalia+Nederlandse+Basisschool+Suriname'},
   {name:'Basisschool De Cederboom',exact:['primary'],description:'Gravenberchstraat 2 · Paramaribo · basisschool',city:'Paramaribo',district:'Paramaribo',phone:'+597 493030',source:'Current public school directory',sourceUrl:'https://www.google.com/maps/search/?api=1&query=Basisschool+De+Cederboom+Suriname'},
@@ -78,7 +78,7 @@ const SURINAME_CURATED_RAW=[
   {name:'NATIN Paramaribo',exact:['mbo'],description:'J. Lachmonstraat 180-182 · Tammenga · Paramaribo',city:'Paramaribo',district:'Paramaribo',phone:'+597 490579',source:'MinOWC Directoraat Beroepsonderwijs',sourceUrl:SRC_TVET},
 
   // Current HAVO/VWO accreditation list published by Nuffic.
-  {name:'Ad Fontes Lyceum',exact:['havo','vwo'],description:'Suriname · geaccrediteerd HAVO/VWO',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
+  {name:'Ad Fontes Lyceum',exact:['havo','vwo'],description:'Paramaribo · geaccrediteerd HAVO/VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC,aliases:'Adfontes Lyceum; Ad Fontes; Advontis; Advantis'},
   {name:'Avond Havo/Vwo Lelydorp',exact:['havo','vwo'],description:'Lelydorp · Wanica',city:'Lelydorp',district:'Wanica',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Avond Havo/Vwo Nickerie',exact:['havo','vwo'],description:'Nieuw Nickerie · Nickerie',city:'Nieuw Nickerie',district:'Nickerie',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Avond Havo/Vwo Paramaribo',exact:['havo','vwo'],description:'Paramaribo',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
@@ -90,9 +90,9 @@ const SURINAME_CURATED_RAW=[
   {name:'Openbaar Atheneum',exact:['havo'],description:'Suriname · geaccrediteerd HAVO',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Openbaar 3-jarig HAVO Talenprofiel',exact:['havo'],description:'Suriname · geaccrediteerd HAVO',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Algemene Middelbare School (AMS)',exact:['vwo'],description:'Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
-  {name:'A. A. Hoogendoorn Atheneum',exact:['vwo'],description:'Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
+  {name:'Arthur Alex Hogendoorn Atheneum (AAHA)',exact:['vwo'],description:'Paramaribo · Particulier · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic + MinOWC 2026 exam results',sourceUrl:SRC_NUFFIC,aliases:'A.H.A. Atheneum; AHA Atheneum; A.A. Hoogendoorn Atheneum; A.A. Hoogedoorn Atheneum; Arthur Alex Hogendoorn Atheneum',metrics:{schoolYear:'2025-2026',directPassRate:93.5,directPassed:72,candidates:77,rejected:0,metricLabel:'Voorlopig VWO-eindexamenresultaat 2026',metricSource:'https://sun.sr/nieuws/lokaal/currie-resultaten-vwo-en-havo-examens-beter-dan-vorig-jaar?id=44345'}},
   {name:'E.P. Meyer Lyceum',exact:['vwo'],description:'Suriname · geaccrediteerd VWO',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
-  {name:'Kangoeroe High',exact:['vwo'],description:'Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
+  {name:'Kangoeroe High',exact:['vwo'],description:'Marinus van Doornstraat 6 · Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',website:'https://kangoeroeschool.com/kangoeroe-high/',phone:'+597 534147',source:'Nuffic + Kangoeroe High official website',sourceUrl:SRC_NUFFIC,aliases:'Kangaroo High; Kangoeroe middelbare school; KH'},
   {name:'Mr. Dr. J.C. de Miranda Lyceum',exact:['vwo'],description:'Passiebloemstraat 1 · Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',phone:'+597 401048',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Nassy Brouwer College',exact:['vwo'],description:'Paramaribo · geaccrediteerd VWO',city:'Paramaribo',district:'Paramaribo',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
   {name:'Scholengemeenschap Hanover',exact:['havo','vwo'],description:'Suriname · geaccrediteerd HAVO/VWO',source:'Nuffic current accreditation overview',sourceUrl:SRC_NUFFIC},
@@ -227,7 +227,8 @@ function curatedSurinameSchools(){
       website:row.website||'',phone:row.phone||'',email:row.email||'',
       source:row.source||'SCHOLARK verified Suriname supplement',sourceUrl:row.sourceUrl||'',
       level:publicLevel(levels),levels,levelDetail:levels.join(','),official:false,
-      tags:{city:row.city||'',district:row.district||'',aliases:row.aliases||'',curated:'true','addr:country':'SR'}
+      tags:{city:row.city||'',district:row.district||'',aliases:row.aliases||'',curated:'true','addr:country':'SR'},
+      metrics:row.metrics||null,verifiedCurrent:true
     };
   });
 }
@@ -235,6 +236,14 @@ function schoolNameMatch(row,query){
   const terms=key(query).split(' ').filter(Boolean);if(!terms.length)return true;
   const hay=key([row?.name,row?.description,row?.tags?.aliases,row?.tags?.schoolcode].filter(Boolean).join(' '));
   return terms.every(term=>hay.includes(term));
+}
+
+function canonicalSchoolIdentity(row){
+  const hay=key([row?.name,row?.tags?.aliases].filter(Boolean).join(' '));
+  if(/(^| )a h a atheneum( |$)/.test(hay)||/(arthur alex )?hog?endoorn atheneum/.test(hay)||/hoog?edoorn atheneum/.test(hay)){
+    return {key:'arthur alex hogendoorn atheneum',name:'Arthur Alex Hogendoorn Atheneum (AAHA)'};
+  }
+  return {key:key(row?.name),name:clean(row?.name)};
 }
 const SURINAME_TAXONOMY={version:VERSION,kindergarten:'kleuteronderwijs_leerjaar_1_2',primary:'lagere_school_basisschool_leerjaar_3_8',mulo:'voj_mulo',lbo:'voj_lbo',havo:'vos_havo',vwo:'vos_vwo',mbo:'vos_mbo_natin_imeao_kweekschool',hbo:'higher_professional_hbo',wo:'university_wo_adekus',secondary:'lower_secondary',lower_secondary:'lower_secondary',upper_secondary:'upper_secondary',vocational:'vocational_generic',higher:'higher_generic',genericSchoolMatchesSpecific:false};
 
@@ -293,9 +302,14 @@ function officialLocationMatch(row,city){
 }
 function mergeRows(rows){
   const map=new Map();
-  for(const row of rows){const k=key(row?.name);if(!k)continue;const prev=map.get(k);if(!prev){map.set(k,{...row,levels:[...new Set(row.levels||[])]});continue}
+  for(const raw of rows){
+    const identity=canonicalSchoolIdentity(raw),k=identity.key;if(!k)continue;
+    const row={...raw,name:identity.name||raw.name};
+    const prev=map.get(k);
+    if(!prev){map.set(k,{...row,levels:[...new Set(row.levels||[])]});continue}
     const levels=[...new Set([...(prev.levels||[]),...(row.levels||[])])],lat=Number.isFinite(Number(prev.lat))?prev.lat:row.lat,lon=Number.isFinite(Number(prev.lon))?prev.lon:row.lon,d=prev.distance!=null?prev.distance:row.distance;
-    map.set(k,{...prev,...row,lat,lon,distance:d,website:prev.website||row.website||'',phone:prev.phone||row.phone||'',email:prev.email||row.email||'',description:prev.official?prev.description:(row.official?row.description:prev.description||row.description),source:prev.source===row.source?prev.source:[prev.source,row.source].filter(Boolean).join(' + '),official:!!(prev.official||row.official),tags:{...(prev.tags||{}),...(row.tags||{})},levels,level:publicLevel(levels),levelDetail:levels.join(',')});
+    const officialDescription=prev.official?prev.description:(row.official?row.description:'');
+    map.set(k,{...prev,...row,name:identity.name||prev.name||row.name,lat,lon,distance:d,website:prev.website||row.website||'',phone:prev.phone||row.phone||'',email:prev.email||row.email||'',description:row.verifiedCurrent?(row.description||prev.description):(officialDescription||prev.description||row.description),source:[prev.source,row.source].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' + '),official:!!(prev.official||row.official),verifiedCurrent:!!(prev.verifiedCurrent||row.verifiedCurrent),metrics:row.metrics||prev.metrics||null,tags:{...(prev.tags||{}),...(row.tags||{})},levels,level:publicLevel(levels),levelDetail:levels.join(',')});
   }
   return[...map.values()];
 }
@@ -347,7 +361,7 @@ http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name))}});return true;
+    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name))}});return true;
   }
   if(req.method==='GET'&&pathname==='/api/schools/vwo-health'){
     officialSurinameSchools().then(rows=>{
