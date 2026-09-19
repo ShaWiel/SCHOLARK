@@ -116,13 +116,27 @@
   function dueCards(deck='all'){
     const now=Date.now();return cards().filter(c=>(deck==='all'||c.deck===deck)&&(!c.dueAt||c.dueAt<=now)).sort((a,b)=>(a.dueAt||0)-(b.dueAt||0));
   }
+  function nextInterval(card,rating){
+    const reps=Number(card.reps)||0,days=Math.max(0,Number(card.interval)||0),ease=Number(card.ease)||2.5;
+    if(reps===0){
+      if(rating==='again')return{ms:60000,label:'1m',days:0};
+      if(rating==='hard')return{ms:6*60000,label:'6m',days:0};
+      if(rating==='good')return{ms:2*86400000,label:'2d',days:2};
+      return{ms:5*86400000,label:'5d',days:5};
+    }
+    if(rating==='again')return{ms:10*60000,label:'10m',days:0};
+    if(rating==='hard'){const d=Math.max(1,Math.round(Math.max(1,days)*1.2));return{ms:d*86400000,label:d+'d',days:d}}
+    if(rating==='good'){const d=Math.max(2,Math.round(Math.max(1,days)*ease));return{ms:d*86400000,label:d+'d',days:d}}
+    const d=Math.max(5,Math.round(Math.max(2,days)*(ease+.15)));return{ms:d*86400000,label:d+'d',days:d};
+  }
   function scheduleCard(card,rating){
-    const now=Date.now();card.reps=(Number(card.reps)||0)+1;
-    if(rating==='again'){card.lapses=(Number(card.lapses)||0)+1;card.interval=0;card.ease=Math.max(1.3,(card.ease||2.5)-.2);card.dueAt=now+10*60000}
-    if(rating==='hard'){card.interval=Math.max(1,Math.round((card.interval||1)*1.2));card.ease=Math.max(1.3,(card.ease||2.5)-.08);card.dueAt=now+card.interval*86400000}
-    if(rating==='good'){card.interval=card.interval?Math.max(1,Math.round(card.interval*(card.ease||2.5))):1;card.dueAt=now+card.interval*86400000}
-    if(rating==='easy'){card.ease=Math.min(3.2,(card.ease||2.5)+.12);card.interval=card.interval?Math.max(4,Math.round(card.interval*card.ease)):4;card.dueAt=now+card.interval*86400000}
-    card.lastRating=rating;card.lastReviewedAt=now;return card;
+    const now=Date.now(),next=nextInterval(card,rating);card.reps=(Number(card.reps)||0)+1;
+    if(rating==='again'){card.lapses=(Number(card.lapses)||0)+1;card.ease=Math.max(1.3,(card.ease||2.5)-.2)}
+    if(rating==='hard')card.ease=Math.max(1.3,(card.ease||2.5)-.08);
+    if(rating==='easy')card.ease=Math.min(3.2,(card.ease||2.5)+.12);
+    card.interval=next.days;card.dueAt=now+next.ms;card.lastRating=rating;card.lastReviewedAt=now;
+    window.__SCHOLARK_WORKSPACE_CORE__?.record?.('flashcards','reviewed',{id:card.id,deck:card.deck,rating,next:next.label});
+    return card;
   }
   function renderFlashcards(){
     const root=mount();if(!root)return;root.dataset.tool='flashcards';
@@ -144,7 +158,7 @@
     if(shuffle)queue=queue.map(x=>({x,r:Math.random()})).sort((a,b)=>a.r-b.r).map(o=>o.x);
     const draw=()=>{
       if(index>=queue.length){zone.className='v106-empty';zone.innerHTML='<b>Review complete.</b><br>You cleared all due cards in this session.';return}
-      const c=queue[index];revealed=false;zone.className='';zone.innerHTML=`<div class="v106-flash-stage" id="v106-flip"><div><small data-v106-user="1" style="font:900 7px Inter;color:#6d5dfc">${esc(c.deck)} · ${index+1}/${queue.length}</small><b data-v106-user="1" id="v106-flash-main">${esc(c.front)}</b><p id="v106-flash-hint">Click to reveal answer</p></div></div><div class="v106-rating v106-hidden" id="v106-ratings"><button data-rate="again">Again</button><button data-rate="hard">Hard</button><button data-rate="good">Good</button><button data-rate="easy">Easy</button></div><div class="v106-actions"><button id="v106-flash-tutor">Ask AI Tutor about this</button></div>`;
+      const c=queue[index];revealed=false;zone.className='';zone.innerHTML=`<div class="v106-flash-stage" id="v106-flip"><div><small data-v106-user="1" style="font:900 7px Inter;color:#6d5dfc">${esc(c.deck)} · ${index+1}/${queue.length}</small><b data-v106-user="1" id="v106-flash-main">${esc(c.front)}</b><p id="v106-flash-hint">Click to reveal answer</p></div></div><div class="v106-rating v106-hidden" id="v106-ratings"><button data-rate="again">Again <small>${nextInterval(c,'again').label}</small></button><button data-rate="hard">Hard <small>${nextInterval(c,'hard').label}</small></button><button data-rate="good">Good <small>${nextInterval(c,'good').label}</small></button><button data-rate="easy">Easy <small>${nextInterval(c,'easy').label}</small></button></div><div class="v106-actions"><button id="v106-flash-tutor">Ask AI Tutor about this</button></div>`;
       $('#v106-flip').onclick=()=>{if(revealed)return;revealed=true;$('#v106-flash-main').textContent=c.back;$('#v106-flash-hint').textContent='Rate how well you remembered it';$('#v106-ratings').classList.remove('v106-hidden')};
       $$('[data-rate]',$('#v106-ratings')).forEach(b=>b.onclick=()=>{const a=cards(),row=a.find(x=>x.id===c.id);if(row)scheduleCard(row,b.dataset.rate);saveCards(a);index++;draw()});
       $('#v106-flash-tutor').onclick=()=>openTutor('Teach me this flashcard concept and then test me: '+c.front+' — answer reference: '+c.back);
@@ -201,6 +215,6 @@
     focus:{state:focusState,history:focusHistory},
     flashcards:{all:cards,due:dueCards},
     assignments:{all:assignments,plan:planAssignment},
-    version:'20260918-workspace-power-v2'
+    version:'20260919-r169'
   };
 })();
