@@ -84,6 +84,7 @@
   }
 
   const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js'];
+  const HOME_FIRST=['scholark-v55-home-topbar-workspace-entry.js'];
   function required(key) {
     const set = new Set(BASE);
     if (key === 'home') HOME.forEach(x => set.add(x));
@@ -92,7 +93,8 @@
       (FEATURES[key] || []).forEach(x => set.add(x));
     }
     const chosen=ACTIVE.filter(file => set.has(file));
-    return [...LOCALE_FIRST.filter(file=>chosen.includes(file)),...chosen.filter(file=>!LOCALE_FIRST.includes(file))];
+    const first=[...LOCALE_FIRST,...((key==='home')?HOME_FIRST:[])].filter((file,i,a)=>chosen.includes(file)&&a.indexOf(file)===i);
+    return [...first,...chosen.filter(file=>!first.includes(file))];
   }
 
   function yieldMain() {
