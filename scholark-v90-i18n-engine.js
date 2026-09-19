@@ -705,7 +705,12 @@
     };
     [$('#v55-language'),$('#v36-language'),$('#v89-lang')].filter(Boolean).forEach(normalize);
     const side=$('#v51-sidebar');if(side){
-      let box=$('.v90-langbox',side);if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>';$('.v85-wallet',side)?.insertAdjacentElement('beforebegin',box)||$('.v51-quality',side)?.insertAdjacentElement('beforebegin',box)}
+      let box=$('.v90-langbox',side);
+      if(!box){box=document.createElement('div');box.className='v90-langbox';box.innerHTML='<label>SCHOLARK LANGUAGE</label><select id="v90-language"></select>'}
+      const country=$('#v96-side-country',side),coming=[...side.querySelectorAll('.v51-section')].find(x=>clean(x.textContent).toUpperCase()==='COMING SOON');
+      if(country&&box.nextElementSibling!==country)country.insertAdjacentElement('beforebegin',box);
+      else if(!country&&coming&&box.nextElementSibling!==coming)coming.insertAdjacentElement('beforebegin',box);
+      else if(!box.isConnected)side.appendChild(box);
       normalize($('#v90-language',box));
     }
   }

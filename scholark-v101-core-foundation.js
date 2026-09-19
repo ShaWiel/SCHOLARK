@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r170';
+  const RELEASE = 'r171';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -234,6 +234,8 @@
       connectedCore:info.kind==='home'||!!window.__SCHOLARK_WORKSPACE_CORE__,
       connectedExperience:info.kind==='home'||!!window.__SCHOLARK_V111_EXPERIENCE__,
       workspaceRootLocked:info.kind==='home'||document.documentElement.classList.contains('v51-workspace-root'),
+      localeControls:info.kind==='home'||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
+      countryLevels:info.kind==='home'||document.querySelectorAll('#v51-main .v51-levels [data-education-group]').length>0,
       previewHealthy:info.kind !== 'home' || previewHealthy(),
       schoolsScrollable:info.base !== 'schools' || !$('#v50-school') || getComputedStyle($('#v50-school')).overflowY !== 'hidden',
       repairs:state.repairs,
@@ -241,7 +243,7 @@
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.previewHealthy && report.schoolsScrollable;
+    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.countryLevels && report.previewHealthy && report.schoolsScrollable;
     try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
