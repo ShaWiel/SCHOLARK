@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260918-school-suriname-taxonomy-v5';
+const VERSION='20260919-school-suriname-taxonomy-v6';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -23,9 +23,11 @@ const SRC_TVET='https://gov.sr/beroepsonderwijs/scholen/';
 const SRC_NUFFIC='https://www.nuffic.nl/onderwijssystemen/suriname/onderwijsinstellingen-en-opleidingen';
 const SRC_NOVA='https://novasur.org/accreditatie-register/';
 const SRC_HOEKSTEEN='https://hoeksteen.sr/';
+const SRC_PRAKIKI='https://www.ppg.com/en-CH/about-ppg/new-paint-for-a-new-start';
 const SURINAME_CURATED_RAW=[
   // Basisonderwijs / current supplements not reliably exposed by the 2022 workbook.
   {name:'J.H.N. Polanenschool',exact:['primary'],description:'Commewijnestraat 27 · Paramaribo · Basisonderwijs / GLO',city:'Paramaribo',district:'Paramaribo',phone:'+597 499108',source:'GOV.SR 2026 school project + current directory',sourceUrl:SRC_POLANEN,aliases:'O.S. Polanen 1; Polanenschool; Kweek-A'},
+  {name:'Prakiki Kleuterschool',exact:['kindergarten'],description:'Commewijnestraat · Paramaribo · Kleuteronderwijs',city:'Paramaribo',district:'Paramaribo',phone:'+597 499317',source:'PPG + current public school/map directory',sourceUrl:SRC_PRAKIKI,aliases:'Prakiki School; Prakikischool; Prakiki kleuterschool'},
   {name:'De Hoeksteen Basisschool',exact:['primary'],description:'Paramaribo · Basisschool',city:'Paramaribo',district:'Paramaribo',website:'https://hoeksteen.sr/',source:'School website',sourceUrl:SRC_HOEKSTEEN},
   {name:'Kangoeroe Community School',exact:['kindergarten','primary'],description:'Edmundstraat 3-5 · Paramaribo · kinderopvang / basisonderwijs',city:'Paramaribo',district:'Paramaribo',website:'https://kangoeroeschool.com/',phone:'+597 430870',source:'Kangoeroe Community School official website',sourceUrl:'https://kangoeroeschool.com/over-ons/',aliases:'Kangaroo Community School; Kangoeroe School; KCS'},
   {name:'Nederlandse Basisschool Het Kleurenorkest',exact:['primary'],description:'Veldhuizenlaan 63 · Paramaribo · basisschool',city:'Paramaribo',district:'Paramaribo',phone:'+597 432120',source:'Current public school directory',sourceUrl:'https://www.google.com/maps/search/?api=1&query=Nederlandse+Basisschool+Het+Kleurenorkest+Suriname'},
@@ -361,7 +363,7 @@ http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name))}});return true;
+    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesPrakiki:SURINAME_CURATED_RAW.some(x=>/Prakiki Kleuterschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name))}});return true;
   }
   if(req.method==='GET'&&pathname==='/api/schools/vwo-health'){
     officialSurinameSchools().then(rows=>{
