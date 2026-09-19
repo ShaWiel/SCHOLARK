@@ -132,6 +132,7 @@ if(!live){
     },45000);
   }
   const learningCases=[
+    ['general_ai',{mode:'general_ai',prompt:'What is 2 + 2?',history:[{role:'user',content:'We are testing general chat.'}],deep:false,level:'student',language:'English'}],
     ['tutor',{mode:'tutor',prompt:'Explain gravity briefly.',level:'student',language:'English'}],
     ['exam',{mode:'exam',prompt:'Create a short mathematics practice exam.',subject:'Mathematics',count:3,language:'English'}],
     ['curriculum',{mode:'curriculum',prompt:'Build a short biology learning roadmap.',subject:'Biology',language:'English'}],
@@ -141,6 +142,10 @@ if(!live){
   for(const [mode,body] of learningCases){
     await post('/api/learning/generate',body,`learning:${mode}`,d=>{
       check(d.result&&typeof d.result==='object',`learning:${mode} returned no structured result`);
+      if(mode==='general_ai'){
+        check(typeof d.result.answer==='string'&&/4/.test(d.result.answer),'learning:general_ai returned no usable general answer');
+        check(Array.isArray(d.result.suggestedFollowUps),'learning:general_ai returned no follow-up suggestions');
+      }
     },45000);
   }
 }else{
