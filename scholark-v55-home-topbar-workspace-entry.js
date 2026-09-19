@@ -90,9 +90,9 @@
     if(sel.options.length!==LANGS.length||!LANGS.every(([v])=>[...sel.options].some(o=>o.value===v)))sel.innerHTML=html;
     sel.value=LANGS.some(([v])=>v===saved)?saved:'nl';
     sel.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(sel.value)||applyLanguage(sel.value);
-    sel.removeAttribute('hidden');
-    sel.setAttribute('aria-label','Language');
-    sel.style.removeProperty('display');sel.style.removeProperty('visibility');sel.style.removeProperty('opacity');sel.style.removeProperty('pointer-events');
+    if(sel.hasAttribute('hidden'))sel.removeAttribute('hidden');
+    if(sel.getAttribute('aria-label')!=='Language')sel.setAttribute('aria-label','Language');
+    for(const p of ['display','visibility','opacity','pointer-events'])if(sel.style.getPropertyValue(p))sel.style.removeProperty(p);
     return sel;
   }
 
@@ -115,8 +115,8 @@
     clearTimeout(topbarRepairTimer);
     topbarRepairTimer=setTimeout(()=>{
       if(!publicHome())return;
-      buildTopbar();ensureLanguageSelector();
-      const bar=$('#v55-topbar');if(bar){bar.style.removeProperty('visibility');bar.style.removeProperty('opacity')}
+      buildTopbar();ensureLanguageSelector();bindCopyObserver();
+      const bar=$('#v55-topbar');if(bar){if(bar.style.visibility)bar.style.removeProperty('visibility');if(bar.style.opacity)bar.style.removeProperty('opacity')}
     },delay);
   }
 
@@ -144,10 +144,11 @@
     if(!topbar?.isConnected)return;
     const t=topbarCopy(),on=signedIn(),accountLabel=$('.v55-account-label',topbar),state=(on?'in:':'out:')+(localStorage.getItem('scholark_ui_language')||'nl');
     if(accountLabel&&accountLabel.textContent!==t.account)accountLabel.textContent=t.account;
-    if(authButton&&authButton.dataset.v55State!==state){
+    const expectedAuth=on?t.signout:t.signin;
+    if(authButton&&(authButton.dataset.v55State!==state||text(authButton)!==expectedAuth)){
       authButton.dataset.v55State=state;
       authButton.innerHTML=on?t.signout:'<b>'+t.signin+'</b>';
-      authButton.title=(on?t.signout:t.signin)+' · SCHOLARK';
+      authButton.title=expectedAuth+' · SCHOLARK';
     }
     if(accountWrap?.classList.contains('open')){
       const menu=$('.v55-menu',topbar);if(menu)menu.innerHTML=accountMenu();
@@ -191,7 +192,12 @@
     }
   });
   topbarObserver.observe(document.body||document.documentElement,{subtree:true,childList:true});
-  if(document.body)sync();else addEventListener('DOMContentLoaded',sync,{once:true});
+  const topbarCopyObserver=new MutationObserver(muts=>{
+    if(!publicHome()||!topbar?.isConnected)return;
+    if(muts.some(m=>m.target?.nodeType===3?m.target.parentElement?.closest?.('#v55-account,#v55-auth,.v55-menu'):m.target?.closest?.('#v55-account,#v55-auth,.v55-menu')))queueMicrotask(syncTopbarCopy);
+  });
+  const bindCopyObserver=()=>{if(topbar?.isConnected){topbarCopyObserver.disconnect();topbarCopyObserver.observe(topbar,{subtree:true,childList:true,characterData:true})}};
+  if(document.body){sync();bindCopyObserver()}else addEventListener('DOMContentLoaded',()=>{sync();bindCopyObserver()},{once:true});
   [160,650].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_V55_TOPBAR__={sync,ensureLanguageSelector,buildTopbar,scheduleRepair:scheduleTopbarRepair,publicHome,syncTopbarCopy};
 })();
