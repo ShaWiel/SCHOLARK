@@ -35,5 +35,5 @@
   const observer=new MutationObserver(()=>{if(document.body?.classList.contains('v55-public-home')||document.body?.classList.contains('v31-public-home'))ensurePreview()});
   observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden']});
   addEventListener('hashchange',()=>setTimeout(sync,40));addEventListener('pageshow',()=>setTimeout(sync,20));addEventListener('focus',()=>setTimeout(sync,20));addEventListener('scholark-language-applied',()=>setTimeout(rerender,20));addEventListener('scholark-language-ready',()=>setTimeout(rerender,40));addEventListener('scholark-language-complete',()=>setTimeout(rerender,20));addEventListener('scholark-home-mode-change',rerender);[0,50,150,400,900,1800].forEach(ms=>setTimeout(sync,ms));
-  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync,healthy,ensure:ensurePreview,release:'r165'};
+  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync,healthy,ensure:ensurePreview,release:'r166'};
 })();

@@ -150,16 +150,16 @@
     }
   };
   const promptSteps=Object.fromEntries(demoModes.map(m=>[m,0]));
-  let modeIndex=0, typingTimer=null, rotateTimer=null, statusTimer=null, pausedUntil=0;
+  let modeIndex=0, typingTimer=null, rotateTimer=null, statusTimer=null, pausedUntil=0, statusStep=0;
 
   function setAutoMode(mode){
     const layer=$('#v29-home-layer');if(!layer)return;
-    if(window.__SCHOLARK_V29_HOME__?.setMode)window.__SCHOLARK_V29_HOME__.setMode(mode);
+    if(window.__SCHOLARK_V29_HOME__?.setMode)window.__SCHOLARK_V29_HOME__.setMode(mode,'auto');
     else{
       const btn=$(`.v29-type[data-mode="${mode}"]`,layer)||$(`.v29-tab[data-mode="${mode}"]`,layer);btn?.click();
       Array.from(layer.querySelectorAll('.v29-type,.v29-tab')).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     }
-    autoType(mode);
+    statusStep=0;animateQualitySteps(mode);autoType(mode);
   }
 
   function resizePrompt(input=$('#v29-prompt')){
@@ -276,22 +276,44 @@
     futureStep++;
   }
 
-  const qualitySteps={
-    en:[['✦ Understanding goal','○ Checking context','○ Planning next step'],['✓ Goal understood','✦ Mapping weak topics','○ Building practice'],['✓ Priorities mapped','✓ Study plan updated','✦ Scheduling review'],['✓ Progress checked','✓ Next action selected','✓ Ready to continue']],
-    nl:[['✦ Doel begrijpen','○ Context controleren','○ Volgende stap plannen'],['✓ Doel begrepen','✦ Zwakke onderwerpen bepalen','○ Oefening opbouwen'],['✓ Prioriteiten bepaald','✓ Studieplan bijgewerkt','✦ Herhaling inplannen'],['✓ Voortgang gecontroleerd','✓ Volgende actie gekozen','✓ Klaar om door te gaan']],
-    es:[['✦ Entendiendo el objetivo','○ Revisando contexto','○ Planificando el siguiente paso'],['✓ Objetivo entendido','✦ Detectando temas débiles','○ Preparando práctica'],['✓ Prioridades definidas','✓ Plan de estudio actualizado','✦ Programando repaso'],['✓ Progreso revisado','✓ Siguiente acción elegida','✓ Listo para continuar']],
-    fr:[['✦ Compréhension de l’objectif','○ Vérification du contexte','○ Planification de la prochaine étape'],['✓ Objectif compris','✦ Repérage des points faibles','○ Préparation de la pratique'],['✓ Priorités définies','✓ Plan d’étude mis à jour','✦ Révision programmée'],['✓ Progrès vérifiés','✓ Prochaine action choisie','✓ Prêt à continuer']],
-    de:[['✦ Ziel verstehen','○ Kontext prüfen','○ Nächsten Schritt planen'],['✓ Ziel verstanden','✦ Schwache Themen erkennen','○ Übung vorbereiten'],['✓ Prioritäten gesetzt','✓ Lernplan aktualisiert','✦ Wiederholung planen'],['✓ Fortschritt geprüft','✓ Nächste Aktion gewählt','✓ Bereit weiterzumachen']],
-    pt:[['✦ A compreender o objetivo','○ A verificar contexto','○ A planear o próximo passo'],['✓ Objetivo compreendido','✦ A mapear tópicos fracos','○ A preparar prática'],['✓ Prioridades definidas','✓ Plano de estudo atualizado','✦ Revisão agendada'],['✓ Progresso verificado','✓ Próxima ação escolhida','✓ Pronto para continuar']],
-    it:[['✦ Comprensione dell’obiettivo','○ Controllo del contesto','○ Pianificazione del prossimo passo'],['✓ Obiettivo compreso','✦ Mappatura degli argomenti deboli','○ Preparazione della pratica'],['✓ Priorità definite','✓ Piano di studio aggiornato','✦ Ripasso programmato'],['✓ Progresso controllato','✓ Prossima azione scelta','✓ Pronto a continuare']]
+  const modeStatus={
+    arki:{
+      en:['✦ Reading your question','○ Connecting context','↗ Preparing a useful answer'],
+      nl:['✦ Je vraag begrijpen','○ Context koppelen','↗ Een bruikbaar antwoord maken']
+    },
+    tutor:{
+      en:['✦ Adapting the explanation','○ Checking understanding','↗ Preparing practice'],
+      nl:['✦ Uitleg aanpassen','○ Begrip controleren','↗ Oefening voorbereiden']
+    },
+    education:{
+      en:['✦ Running diagnostic','○ Updating mastery','↗ Scheduling the right review'],
+      nl:['✦ Diagnostiek uitvoeren','○ Mastery bijwerken','↗ Juiste herhaling plannen']
+    },
+    planner:{
+      en:['✦ Checking goals & deadlines','○ Prioritizing tasks','↗ Building study blocks'],
+      nl:['✦ Doelen & deadlines checken','○ Taken prioriteren','↗ Studieblokken maken']
+    },
+    flashcards:{
+      en:['✦ Checking due cards','○ Spacing the next reviews','↗ Updating your deck'],
+      nl:['✦ Kaarten controleren','○ Volgende reviews spreiden','↗ Deck bijwerken']
+    },
+    progress:{
+      en:['✦ Reading recent activity','○ Finding weak areas','↗ Recommending next focus'],
+      nl:['✦ Recente activiteit lezen','○ Zwakke punten vinden','↗ Volgende focus adviseren']
+    }
   };
-  function animateQualitySteps(){
+  function animateQualitySteps(mode=currentDemoMode()){
     const floats=$$('.v29-float');if(floats.length<3)return;
-    const steps=qualitySteps[uiLanguage()]||qualitySteps.en;
-    const row=steps[(futureStep)%steps.length];
-    floats.slice(0,3).forEach((f,i)=>f.textContent=row[i]);
+    const language=uiLanguage(),copy=modeStatus[mode]||modeStatus.arki,row=copy[language]||copy.en;
+    const phase=statusStep%3;
+    floats.slice(0,3).forEach((f,i)=>{
+      const text=row[i]||'';
+      const active=i===phase;
+      f.textContent=(active?'✦ ':'')+text.replace(/^[✦○↗]\s*/,'');
+      f.dataset.v30Mode=mode;
+    });
+    statusStep++;
   }
-
 
   function wirePause(){
     const layer=$('#v29-home-layer');if(!layer||layer.dataset.v30Wired)return;layer.dataset.v30Wired='1';
@@ -346,13 +368,26 @@
     const schoolLabel=$('.v30-school-live .v30-live-label'),caption=$('.v30-ahead-caption');
     if(schoolLabel)schoolLabel.textContent=schoolRows[displayed%schoolRows.length];
     if(caption)caption.textContent=aheadRows[displayed%aheadRows.length];
-    animateQualitySteps();
+    animateQualitySteps(mode);
     window.__SCHOLARK_I18N__?.apply?.($('#v29-home-layer'));
     window.__SCHOLARK_HOME_FOUNDATION__?.repair?.();
   }
 
+  function syncModeFrame(mode){
+    if(!demoModes.includes(mode)||!isHome())return;
+    const idx=demoModes.indexOf(mode);if(idx>=0)modeIndex=idx;
+    statusStep=0;animateQualitySteps(mode);
+    const input=$('#v29-prompt');
+    if(input&&document.activeElement!==input){
+      clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');
+      const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
+      input.value=bank[0];resizePrompt(input);
+    }
+  }
+
   function sync(){restoreLegacy();if(isHome())ensureDemo();else stopDemo();}
   addEventListener('hashchange',()=>setTimeout(sync,50));
+  addEventListener('scholark-home-mode-change',e=>{const mode=e.detail?.mode,source=e.detail?.source||'manual';if(!mode||source==='auto')return;requestAnimationFrame(()=>syncModeFrame(mode))});
   addEventListener('popstate',()=>setTimeout(sync,50));
   addEventListener('scholark-language-ready',()=>{if(isHome())requestAnimationFrame(refreshLanguage)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
