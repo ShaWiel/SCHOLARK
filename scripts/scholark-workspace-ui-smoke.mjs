@@ -133,12 +133,19 @@ check(await page.locator('#v93-build').count()===1,'Language lesson builder miss
 
 await route('planner','#v51-fallback .v52-tool');
 check(await page.locator('#v52-plan-add').count()===1,'Planner add action missing');
+check(await page.locator('#v52-plan-csv').count()===1,'Planner CSV export missing');
+check(await page.locator('#v52-plan-ics').count()===1,'Planner calendar export missing');
+check(await page.locator('#v52-plan-clear').count()===1,'Planner completed cleanup missing');
 await page.fill('#v52-plan','Review biology notes');
 await page.click('#v52-plan-add');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>x.text==='Review biology notes')}catch{return false}}),'Planner item did not persist');
 
 await route('focus','#v106-root');
 check(await page.locator('#v106-focus-main').count()===1,'Focus start button missing');
+check(await page.locator('#v106-focus-custom').count()===1,'Custom Focus duration missing');
+await page.fill('#v106-focus-custom','35');
+await page.locator('#v106-focus-custom').dispatchEvent('change');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').duration===35}catch{return false}}),'Custom Focus duration did not persist');
 await page.fill('#v106-focus-task','Biology focus smoke');
 await page.click('#v106-focus-main');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').running===true}catch{return false}}),'Focus session did not start');
@@ -147,6 +154,8 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 
 await route('flashcards','#v106-root');
 check(await page.locator('#v106-card-add').count()===1,'Flashcard add button missing');
+check(await page.locator('#v106-card-export').count()===1,'Flashcard export missing');
+check(await page.locator('#v106-card-shuffle').count()===1,'Flashcard shuffle option missing');
 await page.fill('#v106-card-front','Capital of Suriname?');
 await page.fill('#v106-card-back','Paramaribo');
 await page.click('#v106-card-add');
@@ -159,16 +168,19 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 
 await route('assignments','#v106-root');
 check(await page.locator('#v106-a-add').count()===1,'Assignment add button missing');
+check(await page.locator('#v106-a-priority').count()===1,'Assignment priority control missing');
+await page.selectOption('#v106-a-priority','high');
 await page.fill('#v106-a-title','Workspace smoke assignment');
 await page.fill('#v106-a-subject','Biology');
 await page.click('#v106-a-add');
-check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]').some(x=>x.title==='Workspace smoke assignment')}catch{return false}}),'Assignment did not persist');
+check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]').some(x=>x.title==='Workspace smoke assignment'&&x.priority==='high')}catch{return false}}),'Assignment priority did not persist');
 await page.click('[data-a-plan]');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.id||'').startsWith('assignment-'))}catch{return false}}),'Assignment did not create Planner steps');
 
 await route('progress','#v51-fallback .v52-tool');
 const progressText=(await page.locator('#v51-fallback .v52-tool').innerText()).toLowerCase();
 check(progressText.includes('photosynthesis'),'Progress did not consume Mastery data');
+check(await page.locator('#v52-progress-export').count()===1,'Progress snapshot export missing');
 
 await route('goal','#v51-fallback .v52-tool');
 check(await page.locator('#v52-goal-add').count()===1,'Goal add button missing');
