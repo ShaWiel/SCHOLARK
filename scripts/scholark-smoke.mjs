@@ -69,7 +69,7 @@ const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
-  check(schoolHealth.version==='20260918-school-suriname-taxonomy-v5','School country/level search version mismatch');
+  check(schoolHealth.version==='20260919-school-suriname-taxonomy-v6','School country/level search version mismatch');
   check(/Kleuterschool/i.test(String(schoolHealth.levels?.kindergarten||'')),'Kleuteronderwijs taxonomy missing');
   check(/Lagere school|Basisschool/i.test(String(schoolHealth.levels?.primary||'')),'Basisonderwijs taxonomy missing');
   check(/MULO/i.test(String(schoolHealth.levels?.mulo||''))&&/LBO/i.test(String(schoolHealth.levels?.lbo||'')),'VOJ taxonomy missing');
@@ -78,6 +78,7 @@ if(schoolHealth){
   check(schoolHealth.officialRoster?.configured===true,'Official Suriname school roster is not configured');
   check(Number(schoolHealth.curatedSupplement?.count)>=60,'Current Suriname school supplement is too small');
   check(schoolHealth.curatedSupplement?.includesPolanen===true,'J.H.N. Polanenschool is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesPrakiki===true,'Prakiki Kleuterschool is missing from the current Suriname supplement');
   check(schoolHealth.curatedSupplement?.includesAAHA===true,'AAHA is missing from the current Suriname supplement');
   check(schoolHealth.curatedSupplement?.includesKangoeroe===true,'Kangoeroe High is missing from the current Suriname supplement');
   check(schoolHealth.curatedSupplement?.includesAdFontes===true,'Ad Fontes Lyceum is missing from the current Suriname supplement');
