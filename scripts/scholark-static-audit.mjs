@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)$/)||[])[1]||'';
 const ROUTER='20260917-gemini-resilience-v3';
-const SCHOOL_STRICT='20260918-school-suriname-taxonomy-v5';
+const SCHOOL_STRICT='20260919-school-suriname-taxonomy-v6';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
@@ -66,6 +66,7 @@ ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route vers
 ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
 ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
+ok(schoolStrict.includes("name:'Prakiki Kleuterschool'")&&schoolStrict.includes("exact:['kindergarten']")&&schoolStrict.includes("phone:'+597 499317'"),'Prakiki Kleuterschool kindergarten record is incomplete');
 ok(schoolStrict.includes("name:'Arthur Alex Hogendoorn Atheneum (AAHA)'")&&schoolStrict.includes('directPassRate:93.5')&&schoolStrict.includes('canonicalSchoolIdentity'),'AAHA canonicalization/performance metadata is incomplete');
 ok(schoolStrict.includes("name:'Kangoeroe Community School'")&&schoolStrict.includes("name:'Kangoeroe High'")&&schoolStrict.includes("aliases:'Kangaroo"),'Kangoeroe school coverage/aliases are incomplete');
 ok(schoolStrict.includes("name:'Ad Fontes Lyceum'")&&schoolStrict.includes('Advontis; Advantis'),'Ad Fontes typo aliases are missing');
