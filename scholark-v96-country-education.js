@@ -263,7 +263,15 @@
     const x=clean(value);if(!x)return '';
     const low=x.toLowerCase();
     const localized=Object.entries(COUNTRY_NAMES).find(([,names])=>names.some(n=>clean(n).toLowerCase()===low))?.[0];
-    return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||x;
+    let worldLocalized='';
+    if(!localized&&typeof Intl!=='undefined'&&Intl.DisplayNames){
+      try{
+        const dn=new Intl.DisplayNames([uiLang()],{type:'region'});
+        const code=WORLD_CODES.find(code=>clean(dn.of(code)).toLowerCase()===low);
+        if(code)worldLocalized=WORLD_COUNTRIES.find(x=>x.code===code)?.name||'';
+      }catch{}
+    }
+    return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||worldLocalized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
   function system(country=currentCountry()){const n=normalizeCountry(country);return SYSTEMS[n]||{...GENERIC,label:n||GENERIC.label}}
