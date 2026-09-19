@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V92_FOUNDATION__)return;
   window.__SCHOLARK_V92_FOUNDATION__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
-  const modern=new Set(['dashboard','studio','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
+  const modern=new Set(['dashboard','studio','ai','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
   const route=()=>String(location.hash||'').replace(/^#/,'').split(/[\/-]/)[0].toLowerCase();
   let inflight=null,lastReport=null,lastRun=0,runtimeReady=false;
 
@@ -43,7 +43,7 @@
     const checks={
       release:(window.__SCHOLARK_RUNTIME__?.version||document.documentElement.dataset.scholarkRelease||'unknown'),route:r||'home',online:navigator.onLine!==false,
       sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
-      learningApi:!['tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__,
+      learningApi:!['ai','tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__||r==='ai',
       bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
       cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
       performanceFoundation:!!window.__SCHOLARK_PERF__,runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],duplicateIds:duplicateIds()
