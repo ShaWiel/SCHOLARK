@@ -46,8 +46,9 @@
     setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},160);
   }
   function answerNorm(value){return clean(value).toLowerCase().replace(/^[a-z]\s*[.):-]\s*/i,'').replace(/[“”"'!?.,;:()]/g,'').replace(/\s+/g,' ').trim()}
-  function answerMatches(given,answer){
-    const g=answerNorm(given),a=answerNorm(answer);if(!g||!a)return false;
+  function answerMatches(given,answer,choices=[]){
+    const g=answerNorm(given);let a=answerNorm(answer);if(!g||!a)return false;
+    if(/^[a-z]$/i.test(a)&&choices.length){const idx=a.charCodeAt(0)-97;if(choices[idx]!=null)a=answerNorm(choices[idx])}
     if(g===a||g.includes(a)||a.includes(g))return true;
     const aw=new Set(a.split(' ').filter(x=>x.length>2)),gw=new Set(g.split(' ').filter(x=>x.length>2));let hit=0;gw.forEach(x=>{if(aw.has(x))hit++});
     return !!gw.size&&hit/Math.max(1,Math.min(gw.size,aw.size))>=.6;
@@ -65,7 +66,7 @@
       zone.innerHTML='<b style="font:900 8px Inter">QUICK CHECK</b><p style="font:800 8px/1.45 Inter;margin:7px 0">'+esc(q.prompt)+'</p>'+
         (choices.length?'<div style="display:grid;gap:5px">'+choices.map((x,i)=>'<button type="button" data-v111-qc-choice="'+esc(x)+'" style="border:1px solid rgba(23,25,31,.1);background:#f7f6f3;border-radius:8px;padding:7px;text-align:left;font:750 6.5px Inter;cursor:pointer">'+String.fromCharCode(65+i)+'. '+esc(x)+'</button>').join('')+'</div>':'<div style="display:flex;gap:5px"><input data-v111-qc-input placeholder="Your answer…" style="flex:1;border:1px solid rgba(23,25,31,.12);border-radius:8px;padding:7px;font:700 7px Inter"><button type="button" data-v111-qc-submit style="border:0;border-radius:8px;background:#17191f;color:#c9ff6a;padding:7px 9px;font:850 6.5px Inter">Check</button></div>')+'<div data-v111-qc-feedback style="margin-top:7px"></div>';
       const grade=given=>{
-        if(zone.dataset.graded==='1')return;zone.dataset.graded='1';const ok=answerMatches(given,q.answer),fb=zone.querySelector('[data-v111-qc-feedback]');
+        if(zone.dataset.graded==='1')return;zone.dataset.graded='1';const ok=answerMatches(given,q.answer,choices),fb=zone.querySelector('[data-v111-qc-feedback]');
         if(fb)fb.innerHTML='<span class="v111-chip">'+(ok?'✓ Correct':'Needs review')+'</span><p style="font:650 6.5px/1.4 Inter;color:#777;margin:6px 0 0"><b>Answer:</b> '+esc(q.answer)+'<br>'+esc(q.explanation||'')+'</p>';
         const mastery=ok?82:35,status=ok?'Practising':'Learning';core()?.actions.upsertMastery({subject:'AI Tutor',topic:clean(q.topic)||topic,mastery,status,nextReviewAt:new Date(Date.now()+(ok?4:2)*86400000).toISOString()});
         core()?.record('tutor','quick_check',{topic:clean(q.topic)||topic,correct:ok});
