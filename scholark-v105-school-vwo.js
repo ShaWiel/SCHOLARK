@@ -25,7 +25,7 @@
     row?.description,row?.programs,row?.study_types,row?.tags?.name,row?.tags?.description,row?.tags?.sheet
   ].filter(Boolean).join(' '));
   const shouldIncludeHogendoorn=(country,city)=>key(country)==='suriname'&&(!key(city)||key(city)==='paramaribo'||key(city).includes('paramaribo'));
-  const hasHogendoorn=rows=>(rows||[]).some(row=>/hog?endoorn.*atheneum|hoog?edoorn.*atheneum|arthur.*hogendoorn|\ba\.?\s*h\.?\s*a\.?\s*atheneum/i.test(clean(row?.name||row?.school_name)));
+  const hasHogendoorn=rows=>(rows||[]).some(row=>/(hogendoorn|hoogendoorn|hoogedoorn).*atheneum|arthur.*hogendoorn|\ba\.?\s*h\.?\s*a\.?\s*atheneum/i.test(clean(row?.name||row?.school_name)));
   const currentCountry=()=>window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname';
   const isSuriname=()=>['suriname','sr'].includes(key(currentCountry()));
 
