@@ -71,9 +71,14 @@ async function freeOne(source,targetCode,start=0){
   return lingvaOne(source,targetCode,start);
 }
 async function freeUiTranslate(strings,targetCode){
-  const src=[...new Set((strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))],out={},queue=[...src.entries()];
-  const worker=async()=>{while(queue.length){const [i,s]=queue.shift(),k=translationKey(targetCode,s),hit=translationMemory.get(k);if(hit){out[s]=hit;continue}try{const tr=await freeOne(s,targetCode,i);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}}};
-  await Promise.all(Array.from({length:Math.min(4,src.length)},()=>worker()));
+  // Public translators are fallback-only. Keep the attempt deliberately small
+  // so interface switching never blocks for tens of seconds.
+  const src=[...new Set((strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))].slice(0,8),out={};
+  await Promise.all(src.map(async s=>{
+    const k=translationKey(targetCode,s),hit=translationMemory.get(k);
+    if(hit){out[s]=hit;return}
+    try{const tr=await myMemoryOne(s,targetCode);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}
+  }));
   return out;
 }
 
@@ -387,28 +392,28 @@ http.Server.prototype.emit = function(event,...args){
           if(hit)cached[source]=hit; else missing.push(source);
         }
         let provider='memory',model='translation-memory',remaining=[...missing];
-        if(remaining.length&&purpose==='ui'&&languageCode){
+        const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
+        if(remaining.length&&!testMode){
+          try{
+            const out=await generate(mode,{...p,language,strings:remaining});
+            provider=out.provider||provider;model=out.model||model;
+            for(const row of out.result?.translations||[]){
+              const source=String(row?.source||''),translated=clean(row?.translated);
+              if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
+            }
+            remaining=remaining.filter(s=>!cached[s]);
+          }catch(e){
+            if(purpose!=='ui'&&!Object.keys(cached).length)throw e;
+          }
+        }
+        if(remaining.length&&purpose==='ui'&&languageCode&&!testMode){
           const free=await freeUiTranslate(remaining,languageCode);
           for(const [source,translated] of Object.entries(free)){if(clean(translated)){cached[source]=translated;translationMemory.set(translationKey(languageCode||language,source),translated)}}
           remaining=remaining.filter(s=>!cached[s]);
-          if(Object.keys(free).length){provider='lingva';model='public-ui-translation'}
+          if(Object.keys(free).length){provider=provider==='memory'?'public-fallback':provider;model=provider==='public-fallback'?'mymemory-ui-fallback':model}
         }
-        if(remaining.length){
-          const testMode=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
-          if(!testMode){
-            try{
-              const out=await generate(mode,{...p,language,strings:remaining});
-              provider=out.provider||provider;model=out.model||model;
-              for(const row of out.result?.translations||[]){
-                const source=String(row?.source||''),translated=clean(row?.translated);
-                if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
-              }
-            }catch(e){
-              if(!Object.keys(cached).length)throw e;
-            }
-          }else if(!Object.keys(cached).length){
-            provider='zero-credit-ui';model='free-ui-translation';
-          }
+        if(testMode&&remaining.length&&!Object.keys(cached).length){
+          provider='zero-credit-ui';model='deterministic-ui-pass-through';
         }
         const translations=strings.map(source=>({source,translated:cached[source]||source}));
         const translatedCount=translations.filter(x=>clean(x.translated)&&x.translated!==x.source).length;
