@@ -59,7 +59,23 @@ async function postTransient(path,body,label,validator,timeout=90000,attempts=3)
 }
 
 await get('/api/health');
-await get('/api/guard/health');
+const guardHealth=await get('/api/guard/health');
+if(guardHealth){
+  check(guardHealth.originGuard===true,'API origin guard is not active');
+  check(guardHealth.securityHeaders===true,'API security-header guard is not active');
+  check(Number(guardHealth.maxBuckets)===10000,'API rate-limit bucket bound mismatch');
+}
+try{
+  const {r:guardResponse}=await request('/api/guard/health',{},15000);
+  check(/base-uri 'self'/.test(String(guardResponse.headers.get('content-security-policy')||'')),'CSP security header missing');
+  check(/geolocation=\(self\)/.test(String(guardResponse.headers.get('permissions-policy')||'')),'Permissions-Policy security header missing');
+  check(String(guardResponse.headers.get('x-content-type-options')||'').toLowerCase()==='nosniff','X-Content-Type-Options missing');
+}catch(e){failures.push('Security-header verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/studio/generate',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:'{}'},15000);
+  check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin expensive API request was not blocked: HTTP ${r.status}`);
+  results.push(`cross-origin-guard ${r.status}`);
+}catch(e){failures.push('Cross-origin guard verification threw '+(e?.message||e))}
 const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
 const schoolHealth=await get('/api/schools/health');
