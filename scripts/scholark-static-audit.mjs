@@ -66,6 +66,9 @@ ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route vers
 ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
 ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
+ok(schoolStrict.includes("name:'Arthur Alex Hogendoorn Atheneum (AAHA)'")&&schoolStrict.includes('directPassRate:93.5')&&schoolStrict.includes('canonicalSchoolIdentity'),'AAHA canonicalization/performance metadata is incomplete');
+ok(schoolStrict.includes("name:'Kangoeroe Community School'")&&schoolStrict.includes("name:'Kangoeroe High'")&&schoolStrict.includes("aliases:'Kangaroo"),'Kangoeroe school coverage/aliases are incomplete');
+ok(schoolStrict.includes("name:'Ad Fontes Lyceum'")&&schoolStrict.includes('Advontis; Advantis'),'Ad Fontes typo aliases are missing');
 ok(schoolStrict.includes('schoolNameMatch(row,query)')&&schoolStrict.includes('nameQuery=clean(body.name)'),'Strict school API lacks school-name filtering');
 ok(schoolStrict.includes("out.add('mulo')")&&schoolStrict.includes("out.add('lbo')")&&schoolStrict.includes("out.add('havo')")&&schoolStrict.includes("out.add('mbo')")&&schoolStrict.includes("out.add('hbo')")&&schoolStrict.includes("out.add('wo')"),'Strict Suriname school taxonomy is incomplete');
 ok(schoolStrict.includes("['mulo','lbo','havo','vwo','mbo','hbo','wo'].includes(wanted)")&&schoolStrict.includes("wanted==='early'||wanted==='kindergarten'"),'Strict Suriname level matching is missing');
@@ -129,6 +132,8 @@ ok(learningEngine.includes("$$('[data-v88-local]',host).forEach"),'Learning revi
 ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'Study field is not available for Suriname VOS and higher-education levels');
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
 ok(schoolFinder.includes('id="v50-name"')&&schoolFinder.includes("name:nameQuery")&&schoolFinder.includes('nameMatch(x,nameQuery)'),'Schools Near Me school-name search is incomplete');
+ok(schoolFinder.includes('id="v50-type"')&&schoolFinder.includes('id="v50-verified"')&&schoolFinder.includes('id="v50-compare-btn"')&&schoolFinder.includes('id="v50-saved-btn"'),'Expanded Schools Near Me filters/save/compare controls are missing');
+ok(schoolFinder.includes('match score measures fit with your search criteria')&&schoolFinder.includes('metricMarkup(x)'),'School match score/performance distinction is missing');
 ok(i18n.includes("['School name (optional)','Schoolnaam (optioneel)'"),'School-name search field is not localized');
 ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("[gc.basic,['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
 ok(schoolFinder.includes("levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs'"),'School result labels do not use Suriname taxonomy');
