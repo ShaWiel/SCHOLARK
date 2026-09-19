@@ -121,6 +121,7 @@ ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includ
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
 ok(countryEducation.includes("kindergarten:{title:'Kleuterschool / Kleuteronderwijs'")&&countryEducation.includes("mbo:{title:'MBO'")&&countryEducation.includes("wo:{title:'WO / Universiteit'"),'Suriname country education tracks are incomplete');
 ok(i18n.includes("CACHE_VERSION='v4-seven-ui'")&&i18n.includes("LEGACY_CACHE_VERSIONS=['v3-seven-ui']"),'i18n cache isolation/recovery is missing');
+ok(i18n.includes("['Custom minutes (5–240)','Aangepaste minuten (5–240)'")&&i18n.includes("['Export cards','Kaarten exporteren'")&&i18n.includes("['Export progress snapshot','Voortgangsoverzicht exporteren'"),'New workspace controls are not covered by seven-language static copy');
 ok(i18n.includes('rebuildReverseKnown')&&i18n.includes('reverseKnown.get(clean(value))'),'cross-language canonicalization is missing');
 ok((i18n.match(/protectedNode\(el\)/g)||[]).length>=2,'locale-owned form attributes are not protected from generic translation');
 ok(homeFoundation.includes('scholark_v90_i18n_v4-seven-ui_'),'home foundation still writes the old language cache');
@@ -154,6 +155,8 @@ ok(runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime
 ok(prepaint.includes('focus|flashcards|assignments'),'Prepaint does not recognize new workspace routes');
 ok(docker.includes('scholark-v106-workspace-power-tools.js'),'Workspace power tools are not copied into production');
 ok(powerTools.includes("version:'20260918-workspace-power-v2'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
+ok(powerTools.includes('v106-focus-custom')&&powerTools.includes('v106-card-export')&&powerTools.includes('v106-card-shuffle')&&powerTools.includes('v106-a-priority'),'Workspace power-tool expansion is incomplete');
+ok(workspaceQa.includes('v52-plan-csv')&&workspaceQa.includes('v52-plan-ics')&&workspaceQa.includes('v52-plan-clear')&&workspaceQa.includes('v52-progress-export'),'Planner/Progress export expansion is incomplete');
 ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
 ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
 ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
