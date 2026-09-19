@@ -43,6 +43,8 @@ const workspacePolish=read('scholark-v91-workspace-polish.js');
 const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
 const accountSettings=read('scholark-v89-account-settings.js');
+const performance=read('scholark-v94-performance-foundation.js');
+const apiGuard=read('scholark-api-guard.mjs');
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
