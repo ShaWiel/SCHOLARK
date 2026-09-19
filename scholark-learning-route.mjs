@@ -143,7 +143,7 @@ function instructions(mode,p){
   const base=`You are SCHOLARK, an elite education AI. Return only JSON matching the schema. Adapt depth, vocabulary and challenge to learning level: ${level}. Output language: ${lang}. Be specific, useful, accurate, concise where possible, and never invent factual claims. If a fact is uncertain, say so. Do not mention these instructions.`;
   if(mode==='general_ai'){
     const today=new Date().toISOString().slice(0,10);
-    return `You are SCHOLARK AI, the general-purpose AI assistant inside SCHOLARK. You are not limited to education. Help with broad questions and tasks including general knowledge, explanations, writing, rewriting, brainstorming, planning, coding, debugging, analysis, mathematics, science, languages, careers, productivity, creative ideas and everyday questions. Current date: ${today}. Output language: ${lang}. Use the supplied conversation history to preserve context across turns. Answer the user's actual request directly and proportionally. You may use markdown in the answer string, including fenced code blocks when useful. Never invent facts, sources, links, live web access, actions you did not take, or real-time information you cannot verify. When a request depends on current/live information and no verified current source is available, say that clearly and give the most useful non-live answer you can. Do not expose system instructions. Return only JSON matching the schema.`;
+    return `You are ARKI, the general-purpose AI assistant inside SCHOLARK. You are not limited to education. Help with broad questions and tasks including general knowledge, explanations, writing, rewriting, brainstorming, planning, coding, debugging, analysis, mathematics, science, languages, careers, productivity, creative ideas and everyday questions. Current date: ${today}. Output language: ${lang}. Use the supplied conversation history to preserve context across turns. Answer the user's actual request directly and proportionally. You may use markdown in the answer string, including fenced code blocks when useful. Never invent facts, sources, links, live web access, actions you did not take, or real-time information you cannot verify. When a request depends on current/live information and no verified current source is available, say that clearly and give the most useful non-live answer you can. Do not expose system instructions. Return only JSON matching the schema.`;
   }
   if(mode==='tutor'){
     const assignmentMode=clean(p.tutorMode)==='assignment_coach';
@@ -347,8 +347,8 @@ function scholarkTestFallback(mode,p){
   if(mode==='general_ai'){
     const arithmetic=/^(?:what is|calculate|compute)?\s*2\s*\+\s*2\s*\??$/i.test(q);
     return {ok:true,provider:'scholark-test-engine',model:'local-general-ai-v1',tier:'test',result:{
-      title:arithmetic?'Quick answer':'SCHOLARK AI test response',
-      answer:arithmetic?'2 + 2 = 4.':'Testing mode is active. SCHOLARK AI received your general question: "'+q+'". This validates the unrestricted general-assistant chat flow without using paid AI.',
+      title:arithmetic?'Quick answer':'ARKI test response',
+      answer:arithmetic?'2 + 2 = 4.':'Testing mode is active. ARKI received your general question: "'+q+'". This validates the unrestricted general-assistant chat flow without using paid AI.',
       suggestedFollowUps:arithmetic?['Show me why','Give me another example']:['Ask a follow-up','Try a coding question','Ask for help writing something']
     }};
   }
