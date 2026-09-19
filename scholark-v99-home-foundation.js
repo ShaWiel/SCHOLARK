@@ -4,7 +4,7 @@
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const home=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
   const route=()=>String(location.hash||'#home').toLowerCase();
-  const UI_LANGUAGE_OPTIONS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutch'],['pt','Portugues'],['it','Italian']];
+  const UI_LANGUAGE_OPTIONS=window.__SCHOLARK_I18N__?.langs||[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
   const code=()=>{const v=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'nl';return UI_LANGUAGE_OPTIONS.some(([x])=>x===v)?v:'nl'};
   let queued=false,repairTimer=null,cacheReloaded=false;
 
@@ -51,8 +51,8 @@
   function patchTranslationCaches(){
     for(const [lc] of UI_LANGUAGE_OPTIONS){
       if(lc==='en')continue;
-      const key='scholark_v90_i18n_v4-seven-ui_'+lc;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
-      for(const [source,rows] of Object.entries(FIXED))saved[source]=rows[lc]||source;
+      const key='scholark_v90_i18n_v5-global37_'+lc;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
+      for(const [source,rows] of Object.entries(FIXED))if(rows[lc])saved[source]=rows[lc];
       saved['SCHOLARK Free']='SCHOLARK Free';saved['SCHOLARK Plus']='SCHOLARK Plus';saved['SCHOLARK Pro']='SCHOLARK Pro';
       try{localStorage.setItem(key,JSON.stringify(saved))}catch{}
     }
@@ -75,7 +75,7 @@
     while((n=walker.nextNode())){
       if(n.parentElement?.closest?.('script,style,textarea,input,[contenteditable="true"],[data-v96-i18n-owned="1"],[data-sch-i18n-owned="1"],.v65-prose,.v57-slide,.v58-canvas,.v75-doc-editor,.v76-canvas,.v77-page-preview'))continue;
       const raw=String(n.nodeValue||''),clean=raw.replace(/\s+/g,' ').trim(),source=variants.get(clean);if(!source)continue;
-      const next=FIXED[source]?.[target]||source;if(clean===next)continue;
+      const next=FIXED[source]?.[target];if(!next||clean===next)continue;
       const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+next+tail;
     }
   }
