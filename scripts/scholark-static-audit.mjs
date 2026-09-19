@@ -42,6 +42,7 @@ const stabilityFoundation=read('scholark-v81-stability-foundation.js');
 const workspacePolish=read('scholark-v91-workspace-polish.js');
 const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
+const generalAi=read('scholark-v107-general-ai.js');
 const accountSettings=read('scholark-v89-account-settings.js');
 const performance=read('scholark-v94-performance-foundation.js');
 const apiGuard=read('scholark-api-guard.mjs');
@@ -94,6 +95,9 @@ ok(!schoolClient.includes("document.createElement('option')")&&schoolClient.incl
 ok(docker.includes('ENV SCHOLARK_AI_PROVIDER=gemini'),'Gemini is not configured as the primary AI provider');
 ok(docker.includes('ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash'),'Gemini 3.8 Flash is not the primary model');
 ok(gemini.includes("'/api/studio/generate'")&&gemini.includes("'/api/learning/generate'"),'Gemini adapter does not scope Studio + Learning generation routes');
+ok(learningRoute.includes("mode==='general_ai'")&&learningRoute.includes("You are SCHOLARK AI, the general-purpose AI assistant inside SCHOLARK")&&learningRoute.includes("history:Array.isArray(p.history)")&&learningRoute.includes("'general_ai','exam'"),'General-purpose AI backend mode is incomplete');
+ok(generalAi.includes("version:'20260919-general-ai-v1'")&&generalAi.includes("mode:'general_ai'")&&generalAi.includes("Deep answer")&&generalAi.includes("Ctrl/Cmd + Enter to send"),'General SCHOLARK AI chat UI is incomplete');
+ok(generalAi.includes("scholark_v107_general_ai_chats")&&generalAi.includes("suggestedFollowUps")&&generalAi.includes("navigator.clipboard.writeText"),'General SCHOLARK AI chat history/follow-up/copy features are incomplete');
 ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'"),'Gemini adapter does not safely bypass test mode for scoped AI routes');
 ok(gemini.includes('GEMINI_FALLBACK_MODELS'),'Gemini fallback models are not configurable');
 ok(gemini.includes('gemini-3.7-flash')&&gemini.includes('gemini-3.6-flash')&&gemini.includes('gemini-3.5-flash-lite'),'Gemini fallback chain is incomplete');
@@ -116,6 +120,7 @@ ok(countryEducation.includes("Voortgezet Onderwijs Senioren (VOS)")&&countryEduc
 ok(schoolVwo.includes("const VERSION='20260918-school-vwo-v7'"),'VWO frontend module version is stale');
 ok(schoolVwo.includes("opt.textContent='VWO'")&&schoolVwo.includes("schoolLabel:'VWO'"),'Schools Near Me VWO label is not exactly VWO');
 ok(schoolVwo.includes("dashboardStage:'native-v51'")&&schoolVwo.includes('documentWideObserver:false'),'VWO dashboard integration is not native/guarded');
+ok(workspaceShell.includes("['ai','✺','SCHOLARK AI']")&&workspaceShell.includes("card('ai','✺','SCHOLARK AI'")&&workspaceShell.includes("window.__SCHOLARK_V107_GENERAL_AI__"),'SCHOLARK AI is missing from workspace navigation/dashboard routing');
 ok(workspaceShell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&workspaceShell.includes("['mulo','🎒','MULO'")&&workspaceShell.includes("['havo','🎓','HAVO'")&&workspaceShell.includes("['mbo','🧰','MBO'")&&workspaceShell.includes("['hbo','🏫','HBO'")&&workspaceShell.includes("['wo','🏛️','WO / Universiteit'"),'Exact Suriname dashboard levels are missing');
 ok(workspaceShell.includes("{id:'basic',label:'Basisonderwijs',tone:'green'}")&&workspaceShell.includes("{id:'voj',label:'VOJ',tone:'dark'}")&&workspaceShell.includes("{id:'vos',label:'VOS',tone:'green'}")&&workspaceShell.includes("{id:'higher',label:'Hoger Onderwijs',tone:'dark'}"),'Suriname dashboard group labels/colors do not match the requested brand pattern');
 ok(workspaceShell.includes('v51-levels-suriname')&&workspaceShell.includes('overflow-x:auto')&&workspaceShell.includes("host.scrollBy({left:")&&workspaceShell.includes('data-v51-level-scroll="-1"'),'Suriname dashboard level strip is not horizontally scrollable');
@@ -149,6 +154,10 @@ ok(workspaceShell.includes("return SURINAME_GROUP_LABELS[v]?v:'en'"),'Workspace 
 ok(prepaint.includes("document.querySelectorAll('#v55-topbar').length===1")&&prepaint.includes("document.documentElement.classList.contains('v55-public-home')"),'Prepaint can reveal before the homepage topbar is stable');
 ok(!workspaceBlock.includes('scholark-v43-studio-workspace.js')&&!workspaceBlock.includes('scholark-v52-workspace-qa.js')&&!workspaceBlock.includes('scholark-v64-projects.js'),'Heavy feature modules still load on every workspace route');
 ok(runtime.includes("studio:['scholark-v43-studio-workspace.js'")&&runtime.includes("planner:['scholark-v52-workspace-qa.js']")&&runtime.includes("project:['scholark-v64-projects.js'"),'Lazy feature routing is incomplete after workspace boot optimization');
+ok(runtime.includes("ai:['scholark-v107-general-ai.js']")&&runtime.includes("'scholark-v107-general-ai.js'"),'General SCHOLARK AI is not lazy-loaded as a workspace feature');
+ok(docker.includes('COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js'),'General SCHOLARK AI module is not shipped in the production image');
+ok(prepaint.includes('dashboard|studio|ai|tutor'),'Direct #ai boot is not protected by prepaint');
+ok(stabilityFoundation.includes('dashboard|studio|ai|tutor')&&foundationHealth.includes("'dashboard','studio','ai','tutor'"),'Foundation route guards do not recognize SCHOLARK AI');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
 ok(countryEducation.includes("kindergarten:{title:'Kleuterschool / Kleuteronderwijs'")&&countryEducation.includes("mbo:{title:'MBO'")&&countryEducation.includes("wo:{title:'WO / Universiteit'"),'Suriname country education tracks are incomplete');
