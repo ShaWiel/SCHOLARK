@@ -38,6 +38,12 @@
     };
   }
 
+  addEventListener('storage',e=>{
+    if(e.storageArea===localStorage&&TRACKED.has(String(e.key||''))){
+      window.dispatchEvent(new CustomEvent('scholark-workspace-change',{detail:{key:String(e.key),kind:'external'}}));
+    }
+  });
+
   function planner(){
     return array(KEYS.planner).map(x=>({
       ...x,id:x.id||uid('plan'),text:clean(x.text),type:x.type||'task',subject:clean(x.subject),
