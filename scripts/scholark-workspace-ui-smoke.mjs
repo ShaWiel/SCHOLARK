@@ -287,6 +287,29 @@ check(prakikiSearch.status===200&&prakikiSearch.data?.ok===true,'Prakiki kinderg
 const prakikiRows=Array.isArray(prakikiSearch.data?.schools)?prakikiSearch.data.schools:[];
 check(prakikiRows.some(x=>/Prakiki Kleuterschool/i.test(String(x.name||''))),'Prakiki Kleuterschool is missing from kindergarten search');
 check(prakikiRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('kindergarten')),'Prakiki name search leaked non-kindergarten results');
+const currentSchoolCases=[
+  {name:'NATIN Nickerie',city:'Nieuw Nickerie',level:'mbo',expect:/NATIN Nickerie/i},
+  {name:'Waaldijk College',city:'Paramaribo',level:'lbo',expect:/Waaldijk College/i},
+  {name:'Christelijk Pedagogisch Instituut',city:'Paramaribo',level:'mbo',expect:/Christelijk Pedagogisch Instituut/i},
+  {name:'Surinaams Pedagogisch Instituut',city:'Paramaribo',level:'mbo',expect:/Surinaams Pedagogisch Instituut/i},
+  {name:'Vocational College Suriname',city:'Paramaribo',level:'mbo',expect:/Vocational College Suriname/i},
+  {name:'FHR Institute for Higher Education',city:'Paramaribo',level:'wo',expect:/FHR Institute for Higher Education/i}
+];
+for(const item of currentSchoolCases){
+  const res=await page.evaluate(async item=>{
+    const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:item.city,name:item.name,level:item.level,radius:80})});
+    return {status:r.status,data:await r.json().catch(()=>({}))};
+  },item);
+  check(res.status===200&&res.data?.ok===true,`Current school search failed for ${item.name}`);
+  const rows=Array.isArray(res.data?.schools)?res.data.schools:[];
+  check(rows.some(x=>item.expect.test(String(x.name||''))),`${item.name} is missing from ${item.level} search`);
+  check(rows.every(x=>Array.isArray(x.levels)&&x.levels.includes(item.level)),`${item.name} search leaked a wrong education level`);
+}
+const moengoMbo=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Moengotapoe',name:'Scholengemeenschap Moengotapoe',level:'mbo',radius:80})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(moengoMbo.status===200&&(moengoMbo.data?.schools||[]).some(x=>(x.levels||[]).includes('mbo')),'Scholengemeenschap Moengotapoe is missing its current MBO classification');
 const aahaSearch=await page.evaluate(async()=>{
   const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'A.H.A. Atheneum',level:'vwo',radius:50})});
   return {status:r.status,data:await r.json().catch(()=>({}))};
