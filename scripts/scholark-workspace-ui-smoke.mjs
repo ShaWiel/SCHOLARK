@@ -306,10 +306,11 @@ for(const item of currentSchoolCases){
   check(rows.every(x=>Array.isArray(x.levels)&&x.levels.includes(item.level)),`${item.name} search leaked a wrong education level`);
 }
 const moengoMbo=await page.evaluate(async()=>{
-  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Moengotapoe',name:'Scholengemeenschap Moengotapoe',level:'mbo',radius:80})});
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'',name:'Scholengemeenschap Moengotapoe',level:'mbo',radius:700})});
   return {status:r.status,data:await r.json().catch(()=>({}))};
 });
-check(moengoMbo.status===200&&(moengoMbo.data?.schools||[]).some(x=>(x.levels||[]).includes('mbo')),'Scholengemeenschap Moengotapoe is missing its current MBO classification');
+check(moengoMbo.status===200&&moengoMbo.data?.ok===true,'Scholengemeenschap Moengotapoe MBO search failed');
+check((moengoMbo.data?.schools||[]).some(x=>/Scholengemeenschap Moengotapoe/i.test(String(x.name||''))&&(x.levels||[]).includes('mbo')),'Scholengemeenschap Moengotapoe is missing its current MBO classification');
 const aahaSearch=await page.evaluate(async()=>{
   const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'A.H.A. Atheneum',level:'vwo',radius:50})});
   return {status:r.status,data:await r.json().catch(()=>({}))};
