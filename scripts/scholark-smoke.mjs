@@ -85,7 +85,7 @@ const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
-  check(schoolHealth.version==='20260919-school-suriname-taxonomy-v6','School country/level search version mismatch');
+  check(schoolHealth.version==='20260919-school-suriname-taxonomy-v7','School country/level search version mismatch');
   check(/Kleuterschool/i.test(String(schoolHealth.levels?.kindergarten||'')),'Kleuteronderwijs taxonomy missing');
   check(/Lagere school|Basisschool/i.test(String(schoolHealth.levels?.primary||'')),'Basisonderwijs taxonomy missing');
   check(/MULO/i.test(String(schoolHealth.levels?.mulo||''))&&/LBO/i.test(String(schoolHealth.levels?.lbo||'')),'VOJ taxonomy missing');
@@ -98,6 +98,13 @@ if(schoolHealth){
   check(schoolHealth.curatedSupplement?.includesAAHA===true,'AAHA is missing from the current Suriname supplement');
   check(schoolHealth.curatedSupplement?.includesKangoeroe===true,'Kangoeroe High is missing from the current Suriname supplement');
   check(schoolHealth.curatedSupplement?.includesAdFontes===true,'Ad Fontes Lyceum is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesNatinNickerie===true,'NATIN Nickerie is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesWaaldijkCollege===true,'Waaldijk College is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesCPI===true&&schoolHealth.curatedSupplement?.includesSPI===true,'Current pedagogical institutes are incomplete');
+  check(schoolHealth.curatedSupplement?.includesVCS===true,'Vocational College Suriname is missing from the current Suriname supplement');
+  check(schoolHealth.researchBaseline?.generalAndSecondaryTotal===597,'MinOWC 2024 school-count baseline mismatch');
+  check(schoolHealth.researchBaseline?.gradeBands?.years1to8===373&&schoolHealth.researchBaseline?.gradeBands?.years9to12===163&&schoolHealth.researchBaseline?.gradeBands?.years13to16===61,'MinOWC 2024 grade-band school counts mismatch');
+  check(schoolHealth.researchBaseline?.higherInstitutesApprox===30,'MinOWC higher-education institute baseline mismatch');
 }
 if(vwoHealth){
   check(vwoHealth.vwoEnabled===true,'VWO school discovery is not enabled');
