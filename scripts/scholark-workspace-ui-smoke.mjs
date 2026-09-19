@@ -205,6 +205,14 @@ check(polanenSearch.status===200&&polanenSearch.data?.ok===true,'J.H.N. Polanen 
 const polanenRows=Array.isArray(polanenSearch.data?.schools)?polanenSearch.data.schools:[];
 check(polanenRows.some(x=>/J\.H\.N\.?\s*Polanen/i.test(String(x.name||''))),'J.H.N. Polanenschool is still missing from primary-school search');
 check(polanenRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('primary')),'J.H.N. Polanen name search leaked non-primary results');
+const prakikiSearch=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'Prakiki',level:'kindergarten',radius:50})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(prakikiSearch.status===200&&prakikiSearch.data?.ok===true,'Prakiki kindergarten search failed');
+const prakikiRows=Array.isArray(prakikiSearch.data?.schools)?prakikiSearch.data.schools:[];
+check(prakikiRows.some(x=>/Prakiki Kleuterschool/i.test(String(x.name||''))),'Prakiki Kleuterschool is missing from kindergarten search');
+check(prakikiRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('kindergarten')),'Prakiki name search leaked non-kindergarten results');
 const aahaSearch=await page.evaluate(async()=>{
   const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'A.H.A. Atheneum',level:'vwo',radius:50})});
   return {status:r.status,data:await r.json().catch(()=>({}))};
