@@ -50,6 +50,54 @@ async function route(id,selector){
   check(active,`Sidebar active state missing for ${id}`);
 }
 
+// Homepage topbar must keep the exact visual structure without first-paint flicker or competing headers.
+await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
+await page.evaluate(()=>localStorage.setItem('scholark_ui_language','nl'));
+await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+const topbarStarted=Date.now();
+check(await visible('#v55-topbar',5000),'Homepage topbar did not become visible');
+const topbarReadyMs=Date.now()-topbarStarted;
+check(topbarReadyMs<1800,`Homepage topbar took ${topbarReadyMs}ms to become visible`);
+await page.waitForTimeout(220);
+const topbarSamples=[];
+for(let i=0;i<18;i++){
+  topbarSamples.push(await page.evaluate(()=>{
+    const bar=document.querySelector('#v55-topbar'),r=bar?.getBoundingClientRect(),cs=bar?getComputedStyle(bar):null;
+    return {count:document.querySelectorAll('#v55-topbar').length,langCount:document.querySelectorAll('#v55-language').length,visible:!!bar&&cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>0,top:r?.top??999,height:r?.height??0,width:r?.width??0};
+  }));
+  await page.waitForTimeout(55);
+}
+check(topbarSamples.every(x=>x.count===1&&x.langCount===1),'Homepage topbar/language selector duplicated during boot');
+check(topbarSamples.every(x=>x.visible),'Homepage topbar disappeared during boot stabilization');
+check(topbarSamples.every(x=>Math.abs(x.top)<1.5),'Homepage topbar moved away from the viewport top');
+const topbarHeights=topbarSamples.map(x=>x.height).filter(Boolean),heightSpread=Math.max(...topbarHeights)-Math.min(...topbarHeights);
+check(heightSpread<2.5,`Homepage topbar height jumped during boot: ${heightSpread.toFixed(1)}px`);
+const competingHeaders=await page.evaluate(()=>{
+  const bar=document.querySelector('#v55-topbar');
+  return [...document.querySelectorAll('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]')].filter(el=>{
+    if(el===bar||el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main'))return false;
+    const r=el.getBoundingClientRect(),cs=getComputedStyle(el),t=(el.textContent||'').replace(/\s+/g,' ').trim();
+    return r.width>Math.min(480,innerWidth*.65)&&r.height>=38&&r.height<170&&r.top<125&&cs.display!=='none'&&cs.visibility!=='hidden'&&(/scholark/i.test(t)||/account|sign in|login|inloggen|aanmelden/i.test(t));
+  }).length;
+});
+check(competingHeaders===0,`Legacy/competing homepage header is visible alongside the SCHOLARK topbar: ${competingHeaders}`);
+check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not boot directly in Dutch');
+await page.selectOption('#v55-language','es');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es',{timeout:4000});
+await page.waitForTimeout(120);
+check((await page.locator('#v55-account').innerText()).includes('Cuenta'),'Homepage Account label did not update cleanly to Spanish');
+await page.selectOption('#v55-language','nl');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl',{timeout:4000});
+await page.waitForTimeout(160);
+check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not return cleanly to Dutch');
+const idleTopbarMutations=await page.evaluate(async()=>{
+  const bar=document.querySelector('#v55-topbar');if(!bar)return 999;
+  let count=0;const o=new MutationObserver(m=>count+=m.length);o.observe(bar,{subtree:true,childList:true,characterData:true,attributes:true});
+  await new Promise(r=>setTimeout(r,700));o.disconnect();return count;
+});
+check(idleTopbarMutations<=1,`Homepage topbar kept mutating while idle: ${idleTopbarMutations} mutations`);
+timings.push(['home-topbar-boot',topbarReadyMs]);
+
 const bootStarted=Date.now();
 await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
 await page.evaluate(()=>{
