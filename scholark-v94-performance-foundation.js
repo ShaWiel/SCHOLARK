@@ -39,9 +39,12 @@
   function tuneImages(root=activeRoot()){
     $$('img',root).forEach(img=>{if(!img.decoding)img.decoding='async';if(!img.loading)img.loading='lazy'});
   }
-  function fitText(root=activeRoot()){
-    state.lastLayout=Date.now();
-    const candidates=$$('.v51-nav,.v51-level,.v91-quick button,.v29-tab,.v29-future-card button,.v55-entry strong,.v41-plan button',root);
+  function fitText(root=activeRoot(),force=false){
+    const now=Date.now();
+    if(!force&&now-state.lastLayout<240)return;
+    if(document.documentElement.classList.contains('scholark-home-language-adapting'))return;
+    state.lastLayout=now;
+    const candidates=$('.v51-nav,.v51-level,.v91-quick button,.v29-tab,.v29-future-card button,.v55-entry strong,.v41-plan button',root);
     for(const el of candidates){
       el.classList.remove('v94-compact-text');
       const r=el.getBoundingClientRect();
@@ -50,11 +53,13 @@
   }
   function routeTransition(){
     state.routeChanges++;state.lastRoute=String(location.hash||'#home');document.documentElement.classList.add('v94-route-fade');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitText();tuneImages();setTimeout(()=>document.documentElement.classList.remove('v94-route-fade'),120)}));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitText(activeRoot(),true);tuneImages();setTimeout(()=>document.documentElement.classList.remove('v94-route-fade'),120)}));
   }
   let raf=0;function scheduleLayout(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{fitText();tuneImages()})}
 
   addEventListener('hashchange',routeTransition);addEventListener('popstate',routeTransition);addEventListener('resize',scheduleLayout,{passive:true});
+  addEventListener('scholark-language-ready',()=>requestAnimationFrame(()=>{fitText(activeRoot(),true);tuneImages()}));
+  addEventListener('scholark-language-complete',()=>scheduleLayout());
 
   const lowPower=(Number(navigator.hardwareConcurrency)||8)<=4||(Number(navigator.deviceMemory)||8)<=4;
   if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');setTimeout(()=>window.__SCHOLARK_V30_DEMO__?.sync?.(),0)}
@@ -77,7 +82,7 @@
   }
 
   const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,600));
-  idle(()=>{tuneImages();fitText()});
+  idle(()=>{tuneImages();fitText(activeRoot(),true)});
   setTimeout(routeTransition,350);
 
   window.__SCHOLARK_PERF__={state,fitText,routeTransition};
