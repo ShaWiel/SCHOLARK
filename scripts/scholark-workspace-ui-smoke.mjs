@@ -94,6 +94,11 @@ await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='a
 await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-home-language-adapting')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
 check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Homepage did not reveal after adaptive translation completed');
 check((await page.locator('#v55-language').inputValue())==='ar','Arabic did not become the active homepage interface language');
+await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint'),{timeout:8000});
+check(await page.evaluate(()=>document.documentElement.dataset.scholarkI18nReady==='ar'),'Adaptive language reload was revealed before Arabic locale preparation finished');
+check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Adaptive-language homepage stayed hidden after reload preparation');
+check(await page.locator('#v55-topbar').count()===1,'Adaptive-language reload duplicated the homepage topbar');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dir==='ltr',{timeout:4000});
 await page.waitForTimeout(180);
