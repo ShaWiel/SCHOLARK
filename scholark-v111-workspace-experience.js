@@ -45,6 +45,38 @@
     core()?.actions.open('tutor');
     setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},160);
   }
+  function answerNorm(value){return clean(value).toLowerCase().replace(/^[a-z]\s*[.):-]\s*/i,'').replace(/[“”"'!?.,;:()]/g,'').replace(/\s+/g,' ').trim()}
+  function answerMatches(given,answer){
+    const g=answerNorm(given),a=answerNorm(answer);if(!g||!a)return false;
+    if(g===a||g.includes(a)||a.includes(g))return true;
+    const aw=new Set(a.split(' ').filter(x=>x.length>2)),gw=new Set(g.split(' ').filter(x=>x.length>2));let hit=0;gw.forEach(x=>{if(aw.has(x))hit++});
+    return !!gw.size&&hit/Math.max(1,Math.min(gw.size,aw.size))>=.6;
+  }
+  async function tutorQuickCheck(msg,topic,button){
+    let zone=msg.querySelector('.v111-quick-check');if(zone)zone.remove();
+    zone=document.createElement('div');zone.className='v111-quick-check';zone.style.cssText='margin-top:9px;padding:10px;border:1px solid rgba(23,25,31,.09);border-radius:12px;background:#fff;color:#17191f';
+    zone.innerHTML='<b style="font:900 8px Inter">QUICK CHECK</b><p style="font:650 7px/1.4 Inter;color:#777">Generating one understanding question…</p>';msg.appendChild(zone);
+    button.disabled=true;button.textContent='Building check…';
+    try{
+      const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'exam',subject:'AI Tutor',topics:[topic],count:1,difficulty:'medium',prompt:'Create one concise understanding check for this tutor lesson. Prefer multiple choice when appropriate.',context:clean(msg.innerText).slice(0,7000),level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||'English'})});
+      const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Quick check unavailable');
+      const q=d.result?.questions?.[0];if(!q)throw new Error('No question returned');
+      const choices=q.choices||[];
+      zone.innerHTML='<b style="font:900 8px Inter">QUICK CHECK</b><p style="font:800 8px/1.45 Inter;margin:7px 0">'+esc(q.prompt)+'</p>'+
+        (choices.length?'<div style="display:grid;gap:5px">'+choices.map((x,i)=>'<button type="button" data-v111-qc-choice="'+esc(x)+'" style="border:1px solid rgba(23,25,31,.1);background:#f7f6f3;border-radius:8px;padding:7px;text-align:left;font:750 6.5px Inter;cursor:pointer">'+String.fromCharCode(65+i)+'. '+esc(x)+'</button>').join('')+'</div>':'<div style="display:flex;gap:5px"><input data-v111-qc-input placeholder="Your answer…" style="flex:1;border:1px solid rgba(23,25,31,.12);border-radius:8px;padding:7px;font:700 7px Inter"><button type="button" data-v111-qc-submit style="border:0;border-radius:8px;background:#17191f;color:#c9ff6a;padding:7px 9px;font:850 6.5px Inter">Check</button></div>')+'<div data-v111-qc-feedback style="margin-top:7px"></div>';
+      const grade=given=>{
+        if(zone.dataset.graded==='1')return;zone.dataset.graded='1';const ok=answerMatches(given,q.answer),fb=zone.querySelector('[data-v111-qc-feedback]');
+        if(fb)fb.innerHTML='<span class="v111-chip">'+(ok?'✓ Correct':'Needs review')+'</span><p style="font:650 6.5px/1.4 Inter;color:#777;margin:6px 0 0"><b>Answer:</b> '+esc(q.answer)+'<br>'+esc(q.explanation||'')+'</p>';
+        const mastery=ok?82:35,status=ok?'Practising':'Learning';core()?.actions.upsertMastery({subject:'AI Tutor',topic:clean(q.topic)||topic,mastery,status,nextReviewAt:new Date(Date.now()+(ok?4:2)*86400000).toISOString()});
+        core()?.record('tutor','quick_check',{topic:clean(q.topic)||topic,correct:ok});
+        zone.querySelectorAll('button,input').forEach(x=>x.disabled=true);
+      };
+      zone.querySelectorAll('[data-v111-qc-choice]').forEach(b=>b.onclick=()=>grade(b.dataset.v111QcChoice));
+      zone.querySelector('[data-v111-qc-submit]')?.addEventListener('click',()=>grade(zone.querySelector('[data-v111-qc-input]')?.value||''));
+      button.textContent='Quick check ready';
+    }catch(err){zone.innerHTML='<b style="font:900 8px Inter">QUICK CHECK</b><p style="font:650 7px Inter;color:#8b3830">Could not build the check. Try again.</p>';button.disabled=false;button.textContent='Quick check'}
+  }
+
   async function generateCards(subject,topics=[],context=''){
     const api=core();if(!api)return 0;
     const body={mode:'flashcards',subject:subject||'SCHOLARK Review',topics:Array.isArray(topics)?topics:[topics],count:8,context:clean(context).slice(0,8000),level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||'English'};
@@ -140,10 +172,11 @@
       const user=[...msg.parentElement.querySelectorAll('.v52-msg.user')].filter(x=>x.compareDocumentPosition(msg)&Node.DOCUMENT_POSITION_FOLLOWING).at(-1);
       const topic=clean(user?.innerText).slice(0,160)||'Tutor lesson';
       const tools=document.createElement('div');tools.className='v111-tutor-tools';
-      tools.innerHTML='<button class="good" data-v111-understood>✓ Understood</button><button data-v111-review>Needs review</button><button data-v111-msg-cards>Create flashcards</button>';
+      tools.innerHTML='<button class="good" data-v111-understood>✓ Understood</button><button data-v111-review>Needs review</button><button data-v111-quick>Quick check</button><button data-v111-msg-cards>Create flashcards</button>';
       msg.appendChild(tools);
       $('[data-v111-understood]',tools).onclick=()=>{core()?.actions.upsertMastery({subject:'AI Tutor',topic,mastery:80,status:'Practising',nextReviewAt:new Date(Date.now()+4*86400000).toISOString()});tools.innerHTML='<span class="v111-chip">Saved to Mastery · 80%</span>'};
       $('[data-v111-review]',tools).onclick=()=>{core()?.actions.upsertMastery({subject:'AI Tutor',topic,mastery:35,status:'Learning',nextReviewAt:new Date(Date.now()+2*86400000).toISOString()});tools.innerHTML='<span class="v111-chip">Added to review queue</span>'};
+      $('[data-v111-quick]',tools).onclick=e=>tutorQuickCheck(msg,topic,e.currentTarget);
       $('[data-v111-msg-cards]',tools).onclick=async e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Generating…';try{const n=await generateCards('AI Tutor',[topic],clean(msg.innerText));e.currentTarget.textContent='✓ '+n+' cards'}catch{e.currentTarget.disabled=false;e.currentTarget.textContent='Try again'}};
     });
   }
