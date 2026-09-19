@@ -95,7 +95,8 @@
   }
   function diagNorm(value){return clean(value).toLowerCase().replace(/^[a-z]\s*[.):-]\s*/i,'').replace(/[“”"'!?.,;:()]/g,'').replace(/\s+/g,' ').trim()}
   function diagCorrect(given,answer,choices=[]){
-    const a=diagNorm(answer),g=diagNorm(given);if(!a||!g)return false;
+    let a=diagNorm(answer),g=diagNorm(given);if(!a||!g)return false;
+    if(/^[a-z]$/i.test(a)&&choices.length){const idx=a.charCodeAt(0)-97;if(choices[idx]!=null)a=diagNorm(choices[idx])}
     if(a===g||a.includes(g)||g.includes(a))return true;
     const aw=new Set(a.split(' ').filter(x=>x.length>2)),gw=new Set(g.split(' ').filter(x=>x.length>2));
     if(!aw.size||!gw.size)return false;let hit=0;gw.forEach(x=>{if(aw.has(x))hit++});
