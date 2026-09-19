@@ -614,7 +614,7 @@
     let cursor=0;
     const worker=async()=>{
       while(cursor<chunks.length){
-        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000);
+        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000,timer=setTimeout(()=>ctrl.abort(),timeoutMs);
         try{
           const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
@@ -762,6 +762,13 @@
     // Always show the same transition state for every interface language.
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
     $('#v90-switch-copy').textContent='Adapting SCHOLARK to '+nativeName(target)+'…';
+    const transitionFailsafe=setTimeout(()=>{
+      if(epoch!==translationEpoch)return;
+      document.documentElement.dataset.scholarkI18nReady=target;
+      document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
+      overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;
+      console.warn('[SCHOLARK] language transition released by failsafe',target);
+    },16000);
 
     // Keep the current layout/cinematic state intact while copy is replaced.
     if(!home)document.documentElement.classList.add('scholark-language-switching');
@@ -806,6 +813,7 @@
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
       document.documentElement.classList.remove('scholark-home-language-adapting');
     }
+    clearTimeout(transitionFailsafe);
     overlay.style.opacity='0';setTimeout(()=>{if(epoch===translationEpoch){overlay.classList.remove('open');overlay.style.removeProperty('opacity')}},120);
     translating=false;
     if(!home)setTimeout(()=>document.documentElement.classList.remove('scholark-language-switching'),20);
