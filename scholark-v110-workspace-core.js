@@ -187,6 +187,14 @@
     const rows=learningProjects(),row={id:input.id||uid('project'),title:clean(input.title)||'Learning project',subject:clean(input.subject),type:input.type||'learning',goalId:clean(input.goalId),status:input.status||'active',notes:clean(input.notes),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
     rows.unshift(row);write(KEYS.learningProjects,rows.slice(0,100));record('project','created',{id:row.id,title:row.title});return row;
   }
+  function updateProject(id,patch={}){
+    const rows=learningProjects(),row=rows.find(x=>x.id===id);if(!row)return null;
+    Object.assign(row,patch,{updatedAt:new Date().toISOString()});write(KEYS.learningProjects,rows);record('project','updated',{id:row.id,status:row.status||''});return row;
+  }
+  function deleteProject(id){
+    const rows=learningProjects(),row=rows.find(x=>x.id===id);if(!row)return false;
+    write(KEYS.learningProjects,rows.filter(x=>x.id!==id));record('project','deleted',{id,title:row.title||''});return true;
+  }
   function open(tool){
     const t=clean(tool).toLowerCase();if(!t)return;
     if(window.__SCHOLARK_WORKSPACE__?.openTool)window.__SCHOLARK_WORKSPACE__.openTool(t);
@@ -199,7 +207,7 @@
     read,array,write,
     data:{planner,goals,mastery,assignments,flashcards,focusHistory,activity,learningProjects},
     compute,context,record,
-    actions:{addPlan,addGoal,upsertMastery,addFlashcards,createProject,open}
+    actions:{addPlan,addGoal,upsertMastery,addFlashcards,createProject,updateProject,deleteProject,open}
   };
   window.__SCHOLARK_WORKSPACE_CORE__=api;
   window.dispatchEvent(new CustomEvent('scholark-workspace-core-ready',{detail:{version:api.version}}));
