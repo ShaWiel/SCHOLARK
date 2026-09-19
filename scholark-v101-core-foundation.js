@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r169';
+  const RELEASE = 'r170';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -233,6 +233,7 @@
       surfaceHealthy:surfaceHealthy(info),
       connectedCore:info.kind==='home'||!!window.__SCHOLARK_WORKSPACE_CORE__,
       connectedExperience:info.kind==='home'||!!window.__SCHOLARK_V111_EXPERIENCE__,
+      workspaceRootLocked:info.kind==='home'||document.documentElement.classList.contains('v51-workspace-root'),
       previewHealthy:info.kind !== 'home' || previewHealthy(),
       schoolsScrollable:info.base !== 'schools' || !$('#v50-school') || getComputedStyle($('#v50-school')).overflowY !== 'hidden',
       repairs:state.repairs,
@@ -240,7 +241,7 @@
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.previewHealthy && report.schoolsScrollable;
+    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.previewHealthy && report.schoolsScrollable;
     try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
