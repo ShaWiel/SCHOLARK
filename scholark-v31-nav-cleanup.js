@@ -5,7 +5,7 @@
   const style = document.createElement('style');
   style.id = 'scholark-v31-nav-cleanup-style';
   style.textContent = `
-    /* V31: floating Studio launcher is removed from the UI everywhere. */
+    /* V31: legacy floating creator launcher is removed from the UI everywhere. */
     #sv24-launch{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
     /* Home should never sit on top of the public SCHOLARK homepage. */
     body.v31-public-home #sv24-home{display:none!important}
@@ -32,7 +32,7 @@
     if(publicHomeActive()) return false;
     const h = (location.hash || '').toLowerCase();
     if(h.includes('dashboard')) return true;
-    const tokens = ['Dashboard','Education & Learning','Studio AI','Planner','Progress'];
+    const tokens = ['Dashboard','Education & Learning','ARKI','Planner','Progress'];
     return $all('aside,nav,section,div').some(el => {
       if(!isVisible(el) || el.closest('#v29-home-layer')) return false;
       const t = (el.textContent || '');

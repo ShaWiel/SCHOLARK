@@ -43,7 +43,7 @@
   }
 
   function findSidebar(){
-    const tokens=['Dashboard','Education & Learning','Studio AI','Planner','Progress'];
+    const tokens=['Dashboard','Education & Learning','ARKI','Planner','Progress'];
     let best=null,score=-1;
     $$('aside,nav,section,div').forEach(el=>{
       if(el.id==='v29-home-layer'||el.closest('#v29-home-layer')) return;
@@ -92,61 +92,61 @@
     if(layer)layer.hidden=true;
   }
 
-  const demoModes=['presentation','webpage','document','social','graphic','book'];
+  const demoModes=['arki','tutor','education','planner','flashcards','progress'];
   const promptBanks={
-    presentation:{
-      en:['Build a 10-slide NBA GOAT debate with evidence, charts and a strong conclusion.','Create a presentation explaining climate change to secondary-school students with sources.'],
-      nl:['Maak een 10-slide NBA GOAT debat met bewijs, grafieken en een sterke conclusie.','Maak een presentatie die klimaatverandering uitlegt aan middelbare scholieren met bronnen.'],
-      es:['Crea una presentación de 10 diapositivas sobre el debate del mejor jugador de la NBA con pruebas y gráficos.','Crea una presentación sobre el cambio climático para estudiantes de secundaria con fuentes.'],
-      fr:['Crée une présentation de 10 diapositives sur le débat du meilleur joueur NBA avec preuves et graphiques.','Crée une présentation sur le changement climatique pour des élèves du secondaire avec des sources.'],
-      de:['Erstelle eine 10-Folien-Präsentation zur NBA-GOAT-Debatte mit Belegen und Diagrammen.','Erstelle eine Präsentation über den Klimawandel für Schüler mit Quellen.'],
-      pt:['Cria uma apresentação de 10 slides sobre o debate do maior jogador da NBA com provas e gráficos.','Cria uma apresentação sobre alterações climáticas para estudantes do ensino secundário com fontes.'],
-      it:['Crea una presentazione di 10 slide sul dibattito NBA GOAT con prove e grafici.','Crea una presentazione sul cambiamento climatico per studenti delle superiori con fonti.']
+    arki:{
+      en:['Help me decide what to study today based on my goals and weak topics.'],
+      nl:['Help me bepalen wat ik vandaag moet studeren op basis van mijn doelen en zwakke onderwerpen.'],
+      es:['Ayúdame a decidir qué estudiar hoy según mis objetivos y temas débiles.'],
+      fr:['Aide-moi à décider quoi étudier aujourd’hui selon mes objectifs et mes points faibles.'],
+      de:['Hilf mir zu entscheiden, was ich heute anhand meiner Ziele und Schwächen lernen soll.'],
+      pt:['Ajuda-me a decidir o que estudar hoje com base nos meus objetivos e tópicos fracos.'],
+      it:['Aiutami a decidere cosa studiare oggi in base ai miei obiettivi e agli argomenti deboli.']
     },
-    webpage:{
-      en:['Create a landing page for a student tutoring startup with pricing and a clear CTA.','Build a modern portfolio website for a hospitality-management student.'],
-      nl:['Maak een landingspagina voor een studenten-tutoring startup met prijzen en een duidelijke CTA.','Bouw een moderne portfolio-website voor een student Hospitality Management.'],
-      es:['Crea una página de aterrizaje para una startup de tutoría estudiantil con precios y una CTA clara.','Crea un portafolio web moderno para un estudiante de gestión hotelera.'],
-      fr:['Crée une landing page pour une startup de tutorat étudiant avec tarifs et CTA clair.','Crée un portfolio web moderne pour un étudiant en gestion hôtelière.'],
-      de:['Erstelle eine Landingpage für ein Schüler-Nachhilfe-Startup mit Preisen und klarer Handlungsaufforderung.','Erstelle eine moderne Portfolio-Website für einen Hospitality-Management-Studenten.'],
-      pt:['Cria uma landing page para uma startup de explicações com preços e uma CTA clara.','Cria um portefólio moderno para um estudante de gestão hoteleira.'],
-      it:['Crea una landing page per una startup di tutoraggio con prezzi e una CTA chiara.','Crea un portfolio moderno per uno studente di hospitality management.']
+    tutor:{
+      en:['Explain photosynthesis like I am 13, then test me with one question.'],
+      nl:['Leg fotosynthese uit alsof ik 13 ben en test me daarna met één vraag.'],
+      es:['Explica la fotosíntesis como si tuviera 13 años y luego hazme una pregunta.'],
+      fr:['Explique la photosynthèse comme si j’avais 13 ans, puis pose-moi une question.'],
+      de:['Erkläre Fotosynthese so, als wäre ich 13, und teste mich danach mit einer Frage.'],
+      pt:['Explica a fotossíntese como se eu tivesse 13 anos e depois faz-me uma pergunta.'],
+      it:['Spiega la fotosintesi come se avessi 13 anni e poi fammi una domanda.']
     },
-    document:{
-      en:['Write a research-first report on renewable energy with citations and recommendations.','Draft a structured policy brief about responsible AI use in schools.'],
-      nl:['Schrijf een research-first verslag over hernieuwbare energie met bronnen en aanbevelingen.','Maak een gestructureerde policy brief over verantwoord AI-gebruik op scholen.'],
-      es:['Escribe un informe basado en investigación sobre energías renovables con citas y recomendaciones.','Redacta un informe de política sobre el uso responsable de la IA en las escuelas.'],
-      fr:['Rédige un rapport fondé sur la recherche sur les énergies renouvelables avec citations et recommandations.','Rédige une note de politique sur l’utilisation responsable de l’IA à l’école.'],
-      de:['Schreibe einen forschungsbasierten Bericht über erneuerbare Energien mit Quellen und Empfehlungen.','Entwirf ein Policy-Briefing zum verantwortungsvollen KI-Einsatz an Schulen.'],
-      pt:['Escreve um relatório baseado em pesquisa sobre energia renovável com citações e recomendações.','Redige um policy brief sobre a utilização responsável de IA nas escolas.'],
-      it:['Scrivi un rapporto basato sulla ricerca sulle energie rinnovabili con citazioni e raccomandazioni.','Prepara un policy brief sull’uso responsabile dell’IA nelle scuole.']
+    education:{
+      en:['Run a diagnostic on algebra and add my weak topics to Mastery.'],
+      nl:['Doe een diagnostische check voor algebra en voeg mijn zwakke onderwerpen toe aan Mastery.'],
+      es:['Haz un diagnóstico de álgebra y añade mis temas débiles a Mastery.'],
+      fr:['Fais un diagnostic d’algèbre et ajoute mes points faibles à Mastery.'],
+      de:['Führe eine Algebra-Diagnose durch und füge meine Schwachstellen zu Mastery hinzu.'],
+      pt:['Faz um diagnóstico de álgebra e adiciona os meus tópicos fracos ao Mastery.'],
+      it:['Fai una diagnostica di algebra e aggiungi gli argomenti deboli a Mastery.']
     },
-    social:{
-      en:['Create a 6-slide carousel about study habits with hook, caption and CTA.','Build a one-week social campaign for a school open day.'],
-      nl:['Maak een carousel van 6 slides over studiegewoonten met hook, caption en CTA.','Bouw een social campagne van één week voor een open dag van een school.'],
-      es:['Crea un carrusel de 6 diapositivas sobre hábitos de estudio con gancho, texto y CTA.','Crea una campaña social de una semana para una jornada de puertas abiertas escolar.'],
-      fr:['Crée un carrousel de 6 slides sur les habitudes d’étude avec accroche, légende et CTA.','Crée une campagne sociale d’une semaine pour une journée portes ouvertes.'],
-      de:['Erstelle ein 6-Slide-Karussell über Lerngewohnheiten mit Hook, Caption und CTA.','Erstelle eine einwöchige Social-Media-Kampagne für einen Tag der offenen Tür.'],
-      pt:['Cria um carrossel de 6 slides sobre hábitos de estudo com hook, legenda e CTA.','Cria uma campanha social de uma semana para um dia aberto da escola.'],
-      it:['Crea un carosello di 6 slide sulle abitudini di studio con hook, caption e CTA.','Crea una campagna social di una settimana per l’open day di una scuola.']
+    planner:{
+      en:['Turn my Biology assignment and Friday deadline into a realistic study plan.'],
+      nl:['Zet mijn biologie-opdracht met deadline vrijdag om in een realistisch studieplan.'],
+      es:['Convierte mi tarea de Biología con fecha límite el viernes en un plan de estudio realista.'],
+      fr:['Transforme mon devoir de biologie à rendre vendredi en un plan d’étude réaliste.'],
+      de:['Mach aus meiner Biologie-Aufgabe mit Abgabe am Freitag einen realistischen Lernplan.'],
+      pt:['Transforma o meu trabalho de Biologia com prazo na sexta-feira num plano de estudo realista.'],
+      it:['Trasforma il mio compito di Biologia con scadenza venerdì in un piano di studio realistico.']
     },
-    graphic:{
-      en:['Design an infographic about exam preparation with seven practical steps.','Create a poster concept for a school festival with clear visual hierarchy.'],
-      nl:['Ontwerp een infographic over examenvoorbereiding met zeven praktische stappen.','Maak een posterconcept voor een schoolfestival met duidelijke visuele hiërarchie.'],
-      es:['Diseña una infografía sobre preparación para exámenes con siete pasos prácticos.','Crea un concepto de póster para un festival escolar con jerarquía visual clara.'],
-      fr:['Conçois une infographie sur la préparation aux examens en sept étapes pratiques.','Crée un concept d’affiche pour un festival scolaire avec une hiérarchie visuelle claire.'],
-      de:['Entwirf eine Infografik zur Prüfungsvorbereitung mit sieben praktischen Schritten.','Erstelle ein Plakatkonzept für ein Schulfestival mit klarer visueller Hierarchie.'],
-      pt:['Cria um infográfico sobre preparação para exames com sete passos práticos.','Cria um conceito de cartaz para um festival escolar com hierarquia visual clara.'],
-      it:['Progetta un’infografica sulla preparazione agli esami con sette passaggi pratici.','Crea un concept di poster per un festival scolastico con una chiara gerarchia visiva.']
+    flashcards:{
+      en:['Create a spaced-repetition flashcard deck for cell division.'],
+      nl:['Maak een spaced-repetition flashcarddeck over celdeling.'],
+      es:['Crea un mazo de tarjetas con repetición espaciada sobre división celular.'],
+      fr:['Crée un jeu de flashcards à répétition espacée sur la division cellulaire.'],
+      de:['Erstelle ein Karteikarten-Deck mit Spaced Repetition zur Zellteilung.'],
+      pt:['Cria um baralho de flashcards com repetição espaçada sobre divisão celular.'],
+      it:['Crea un mazzo di flashcard con ripetizione dilazionata sulla divisione cellulare.']
     },
-    book:{
-      en:['Write a young-adult mystery novel with 18 chapters, recurring clues and a final reveal.','Plan and start a horror-romance novel with multiple POVs and a strong character arc.'],
-      nl:['Schrijf een young-adult mysteryroman met 18 hoofdstukken, terugkerende aanwijzingen en een finale onthulling.','Plan en start een horror-romance boek met meerdere POV’s en een sterke karakterontwikkeling.'],
-      es:['Escribe una novela de misterio juvenil de 18 capítulos con pistas recurrentes y una revelación final.','Planifica e inicia una novela de terror romántico con múltiples puntos de vista.'],
-      fr:['Écris un roman mystère young adult de 18 chapitres avec indices récurrents et révélation finale.','Planifie et commence un roman d’horreur romantique avec plusieurs points de vue.'],
-      de:['Schreibe einen Young-Adult-Mysteryroman mit 18 Kapiteln, wiederkehrenden Hinweisen und finaler Enthüllung.','Plane und beginne einen Horror-Romance-Roman mit mehreren Perspektiven.'],
-      pt:['Escreve um romance mistério jovem-adulto com 18 capítulos, pistas recorrentes e uma revelação final.','Planeia e começa um romance de terror romântico com múltiplos pontos de vista.'],
-      it:['Scrivi un romanzo mystery young adult di 18 capitoli con indizi ricorrenti e rivelazione finale.','Pianifica e inizia un romanzo horror-romance con punti di vista multipli.']
+    progress:{
+      en:['Show my weak topics and tell me what I should focus on next.'],
+      nl:['Laat mijn zwakke onderwerpen zien en vertel waarop ik me hierna moet focussen.'],
+      es:['Muéstrame mis temas débiles y dime en qué debería concentrarme después.'],
+      fr:['Montre mes points faibles et dis-moi sur quoi me concentrer ensuite.'],
+      de:['Zeig mir meine Schwachstellen und sag mir, worauf ich mich als Nächstes konzentrieren soll.'],
+      pt:['Mostra os meus tópicos fracos e diz-me em que devo focar a seguir.'],
+      it:['Mostrami gli argomenti deboli e dimmi su cosa dovrei concentrarmi dopo.']
     }
   };
   const promptSteps=Object.fromEntries(demoModes.map(m=>[m,0]));
@@ -175,7 +175,7 @@
     return ['nl','en','es','fr','de','pt','it'].find(x=>raw.startsWith(x))||'en';
   }
   function nextPrompt(mode){
-    const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
+    const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
     const step=promptSteps[mode]||0,p=bank[step%bank.length];promptSteps[mode]=step+1;return p;
   }
   function autoType(mode){
@@ -190,7 +190,7 @@
     },42);
   }
 
-  function cycleStudio(){
+  function cycleCapabilities(){
     if(Date.now()<pausedUntil)return;
     modeIndex=(modeIndex+1)%demoModes.length;setAutoMode(demoModes[modeIndex]);
   }
@@ -277,13 +277,13 @@
   }
 
   const qualitySteps={
-    en:[['✦ Understanding prompt','○ Building outline','○ Quality pass'],['✓ Prompt understood','✦ Research + structure','○ Quality pass'],['✓ Outline complete','✓ Draft generated','✦ Quality pass'],['✓ Research checked','✓ Design assembled','✓ Ready to edit']],
-    nl:[['✦ Prompt begrijpen','○ Outline opbouwen','○ Kwaliteitscheck'],['✓ Prompt begrepen','✦ Onderzoek + structuur','○ Kwaliteitscheck'],['✓ Outline compleet','✓ Draft gegenereerd','✦ Kwaliteitscheck'],['✓ Onderzoek gecontroleerd','✓ Design opgebouwd','✓ Klaar om te bewerken']],
-    es:[['✦ Entendiendo el prompt','○ Creando esquema','○ Control de calidad'],['✓ Prompt entendido','✦ Investigación + estructura','○ Control de calidad'],['✓ Esquema completo','✓ Borrador generado','✦ Control de calidad'],['✓ Investigación verificada','✓ Diseño ensamblado','✓ Listo para editar']],
-    fr:[['✦ Compréhension du prompt','○ Construction du plan','○ Contrôle qualité'],['✓ Prompt compris','✦ Recherche + structure','○ Contrôle qualité'],['✓ Plan terminé','✓ Brouillon généré','✦ Contrôle qualité'],['✓ Recherche vérifiée','✓ Design assemblé','✓ Prêt à modifier']],
-    de:[['✦ Prompt verstehen','○ Gliederung erstellen','○ Qualitätsprüfung'],['✓ Prompt verstanden','✦ Recherche + Struktur','○ Qualitätsprüfung'],['✓ Gliederung fertig','✓ Entwurf erstellt','✦ Qualitätsprüfung'],['✓ Recherche geprüft','✓ Design erstellt','✓ Bereit zum Bearbeiten']],
-    pt:[['✦ A compreender o prompt','○ A construir o esboço','○ Verificação de qualidade'],['✓ Prompt compreendido','✦ Pesquisa + estrutura','○ Verificação de qualidade'],['✓ Esboço completo','✓ Rascunho gerado','✦ Verificação de qualidade'],['✓ Pesquisa verificada','✓ Design montado','✓ Pronto para editar']],
-    it:[['✦ Comprensione del prompt','○ Creazione scaletta','○ Controllo qualità'],['✓ Prompt compreso','✦ Ricerca + struttura','○ Controllo qualità'],['✓ Scaletta completa','✓ Bozza generata','✦ Controllo qualità'],['✓ Ricerca verificata','✓ Design assemblato','✓ Pronto da modificare']]
+    en:[['✦ Understanding goal','○ Checking context','○ Planning next step'],['✓ Goal understood','✦ Mapping weak topics','○ Building practice'],['✓ Priorities mapped','✓ Study plan updated','✦ Scheduling review'],['✓ Progress checked','✓ Next action selected','✓ Ready to continue']],
+    nl:[['✦ Doel begrijpen','○ Context controleren','○ Volgende stap plannen'],['✓ Doel begrepen','✦ Zwakke onderwerpen bepalen','○ Oefening opbouwen'],['✓ Prioriteiten bepaald','✓ Studieplan bijgewerkt','✦ Herhaling inplannen'],['✓ Voortgang gecontroleerd','✓ Volgende actie gekozen','✓ Klaar om door te gaan']],
+    es:[['✦ Entendiendo el objetivo','○ Revisando contexto','○ Planificando el siguiente paso'],['✓ Objetivo entendido','✦ Detectando temas débiles','○ Preparando práctica'],['✓ Prioridades definidas','✓ Plan de estudio actualizado','✦ Programando repaso'],['✓ Progreso revisado','✓ Siguiente acción elegida','✓ Listo para continuar']],
+    fr:[['✦ Compréhension de l’objectif','○ Vérification du contexte','○ Planification de la prochaine étape'],['✓ Objectif compris','✦ Repérage des points faibles','○ Préparation de la pratique'],['✓ Priorités définies','✓ Plan d’étude mis à jour','✦ Révision programmée'],['✓ Progrès vérifiés','✓ Prochaine action choisie','✓ Prêt à continuer']],
+    de:[['✦ Ziel verstehen','○ Kontext prüfen','○ Nächsten Schritt planen'],['✓ Ziel verstanden','✦ Schwache Themen erkennen','○ Übung vorbereiten'],['✓ Prioritäten gesetzt','✓ Lernplan aktualisiert','✦ Wiederholung planen'],['✓ Fortschritt geprüft','✓ Nächste Aktion gewählt','✓ Bereit weiterzumachen']],
+    pt:[['✦ A compreender o objetivo','○ A verificar contexto','○ A planear o próximo passo'],['✓ Objetivo compreendido','✦ A mapear tópicos fracos','○ A preparar prática'],['✓ Prioridades definidas','✓ Plano de estudo atualizado','✦ Revisão agendada'],['✓ Progresso verificado','✓ Próxima ação escolhida','✓ Pronto para continuar']],
+    it:[['✦ Comprensione dell’obiettivo','○ Controllo del contesto','○ Pianificazione del prossimo passo'],['✓ Obiettivo compreso','✦ Mappatura degli argomenti deboli','○ Preparazione della pratica'],['✓ Priorità definite','✓ Piano di studio aggiornato','✦ Ripasso programmato'],['✓ Progresso controllato','✓ Prossima azione scelta','✓ Pronto a continuare']]
   };
   function animateQualitySteps(){
     const floats=$$('.v29-float');if(floats.length<3)return;
@@ -309,11 +309,11 @@
   }
   function currentDemoMode(){
     const apiMode=window.__SCHOLARK_V29_HOME__?.getMode?.();
-    return demoModes.includes(apiMode)?apiMode:(demoModes[modeIndex]||'presentation');
+    return demoModes.includes(apiMode)?apiMode:(demoModes[modeIndex]||'arki');
   }
   function startTimers(){
     const lite=document.documentElement.classList.contains('scholark-performance-safe');
-    if(!rotateTimer)rotateTimer=setInterval(cycleStudio,lite?12000:9000);
+    if(!rotateTimer)rotateTimer=setInterval(cycleCapabilities,lite?12000:9000);
     if(!statusTimer)statusTimer=setInterval(()=>{
       if(document.hidden||!isHome())return;
       animateLearning();animateFuture();animateQualitySteps();
@@ -337,7 +337,7 @@
     const input=$('#v29-prompt');
     if(input&&document.activeElement!==input){
       clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');
-      const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Create something useful with SCHOLARK.'];
+      const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
       const step=Math.max(0,(promptSteps[mode]||1)-1);
       input.value=bank[step%bank.length];resizePrompt(input);
     }

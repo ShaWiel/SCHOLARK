@@ -181,7 +181,7 @@
     let final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',home);
     if(!final){final=$$('section,div',home).filter(el=>/je volgende voorsprong kan vandaag beginnen|your next advantage can start today/i.test(text(el))).sort((a,b)=>a.querySelectorAll('*').length-b.querySelectorAll('*').length)[0]||null}
     if(!final)return;
-    const wrap=document.createElement('section');wrap.id='v55-workspace-cta';wrap.innerHTML=`<button class="v55-entry" type="button"><div><small>SCHOLARK WORKSPACE</small><strong>Go to Workspace</strong><p>Open your dashboard, Studio AI, Tutor, learning tools, planning, goals and Pro tools.</p></div><span class="v55-entry-arrow">→</span></button>`;$('.v55-entry',wrap).onclick=openWorkspace;final.insertAdjacentElement('afterend',wrap);window.__SCHOLARK_I18N__?.apply?.(wrap);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),40);
+    const wrap=document.createElement('section');wrap.id='v55-workspace-cta';wrap.innerHTML=`<button class="v55-entry" type="button"><div><small>SCHOLARK WORKSPACE</small><strong>Go to Workspace</strong><p>Open your dashboard, ARKI, AI Tutor, learning tools, planning, goals and Pro tools.</p></div><span class="v55-entry-arrow">→</span></button>`;$('.v55-entry',wrap).onclick=openWorkspace;final.insertAdjacentElement('afterend',wrap);window.__SCHOLARK_I18N__?.apply?.(wrap);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),40);
   }
 
   function sync(){
