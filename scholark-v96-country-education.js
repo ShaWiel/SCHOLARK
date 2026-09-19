@@ -299,7 +299,7 @@
     let box=$('#v96-side-country',side);
     if(!box){
       box=document.createElement('div');box.id='v96-side-country';box.dataset.v96I18nOwned='1';box.innerHTML='<small></small><select data-v96-i18n-owned="1"></select><span></span>';
-      const before=$('.v51-section',side).find(x=>clean(x.textContent).toUpperCase()==='COMING SOON');before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
+      const before=[...side.querySelectorAll('.v51-section')].find(x=>clean(x.textContent).toUpperCase()==='COMING SOON');before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
       $('select',box).addEventListener('change',e=>setCountry(e.target.value,'sidebar'));
     }
     const selected=currentCountry(),sel=$('select',box),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
@@ -410,6 +410,14 @@
   `;document.head.appendChild(style);
 
   observeCountryInputs();
+  let repairTimer=0;
+  const repairObserver=new MutationObserver(mutations=>{
+    const touched=mutations.some(m=>[...m.addedNodes,...m.removedNodes].some(n=>n?.nodeType===1&&(n.id==='v51-sidebar'||n.matches?.('#v51-sidebar,.v51-section')||n.querySelector?.('#v51-sidebar,.v51-section'))));
+    if(!touched)return;
+    clearTimeout(repairTimer);
+    repairTimer=setTimeout(()=>{if(document.body.classList.contains('v51-workspace'))apply()},80);
+  });
+  repairObserver.observe(document.documentElement,{childList:true,subtree:true});
   addEventListener('hashchange',()=>{setTimeout(apply,60);setTimeout(apply,260)});
   addEventListener('scholark-runtime-ready',()=>setTimeout(apply,60));
   addEventListener('scholark-language-change',()=>apply());
