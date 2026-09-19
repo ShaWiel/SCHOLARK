@@ -10,7 +10,7 @@
   const uid=p=>p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
   const PLAN='scholark_v51_planner',GOALS='scholark_v51_goals',MASTER='scholark_v52_mastery',ASSIGN='scholark_v106_assignments',FOCUS='scholark_v106_focus',FOCUS_H='scholark_v106_focus_history',CARDS='scholark_v106_flashcards';
   const state={curriculum:null,exam:null,diagnostic:null,busy:false};
-  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r168'});
+  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r169'});
 
   const css=document.createElement('style');css.id='scholark-v108-style';css.textContent=`
     .v108-tools{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.v108-tools button{border:0;border-radius:10px;background:#eceaf4;color:#4e465c;padding:8px 10px;font:850 7.5px Inter;cursor:pointer}.v108-tools button.primary{background:#17191f;color:#c9ff6a}
@@ -69,7 +69,7 @@
     let assignmentId='';try{assignmentId=sessionStorage.getItem('scholark_v62_assignment_id')||''}catch{}
     const all=read(ASSIGN,[]),ctx=assignmentId?all.filter(x=>x.id===assignmentId):[];
     try{
-      const d=await ai('tutor',{prompt,tutorMode:ctx.length?'assignment_coach':'teach',assignmentContext:ctx,deep:true});
+      const d=await ai('tutor',{prompt,tutorMode:ctx.length?'assignment_coach':'teach',assignmentContext:ctx,deep:true,context:JSON.stringify(window.__SCHOLARK_WORKSPACE_CORE__?.context?.()||{})});
       thinking.remove();chat.insertAdjacentHTML('beforeend','<div class="v52-msg ai">'+esc(tutorText(d.result)).replace(/\n/g,'<br>')+'<div class="v52-meta">'+esc(d.provider||'ARKI')+(d.model?' · '+esc(d.model):'')+'</div></div>');
       try{sessionStorage.removeItem('scholark_v62_assignment_id')}catch{}
     }catch(err){thinking.textContent='Could not finish: '+String(err?.message||err)}
@@ -152,7 +152,7 @@
 
   async function goalPlan(btn,id){
     const g=read(GOALS,[]).find(x=>x.id===id);if(!g)return;btn.disabled=true;btn.textContent='Planning…';
-    try{const d=await ai('tutor',{prompt:'Break this goal into 3 to 5 concrete next actions that can be scheduled: '+clean(g.text),tutorMode:'teach'});const steps=(d.result?.steps||[]).slice(0,5);steps.forEach((s,i)=>addPlan(s,{type:'next_action',subject:g.category||'',goalId:g.id,date:i===0?today():'',priority:i===0?'high':'medium'}));btn.textContent='✓ Added to Planner'}catch{btn.textContent='Try again';btn.disabled=false}
+    try{const d=await ai('tutor',{prompt:'Break this goal into 3 to 5 concrete next actions that can be scheduled: '+clean(g.text),tutorMode:'teach',context:JSON.stringify(window.__SCHOLARK_WORKSPACE_CORE__?.context?.()||{})});const steps=(d.result?.steps||[]).slice(0,5);steps.forEach((s,i)=>addPlan(s,{type:'next_action',subject:g.category||'',goalId:g.id,date:i===0?today():'',priority:i===0?'high':'medium'}));btn.textContent='✓ Added to Planner'}catch{btn.textContent='Try again';btn.disabled=false}
   }
 
   document.addEventListener('click',e=>{
@@ -178,5 +178,5 @@
   let raf=0;function enhance(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{applyArkiPending();enhancePlanner();enhanceGoals();enhanceProgress();enhanceProjects();enhanceFiles();enhancePower();enhanceContext()})}
   const mo=new MutationObserver(enhance);mo.observe(document.body,{childList:true,subtree:true});
   addEventListener('hashchange',enhance);addEventListener('popstate',enhance);addEventListener('scholark-runtime-ready',enhance);setTimeout(enhance,120);
-  window.__SCHOLARK_V108_UPGRADE__={version:'20260919-r168',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
+  window.__SCHOLARK_V108_UPGRADE__={version:'20260919-r169',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
 })();
