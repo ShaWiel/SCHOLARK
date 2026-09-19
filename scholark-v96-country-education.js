@@ -160,7 +160,11 @@
     'guyana':'Guyana','trinidad and tobago':'Trinidad & Tobago','trinidad & tobago':'Trinidad & Tobago','trinidad':'Trinidad & Tobago',
     'jamaica':'Jamaica','belgium':'Belgium','belgie':'Belgium','belgië':'Belgium'
   };
-  const countryList=Object.keys(SYSTEMS);
+  const WORLD_CODES='AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI CV KH CM CA CF TD CL CN CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FJ FI FR GA GM GE DE GH GR GD GT GN GW GY HT HN HU IS IN ID IR IQ IE IL IT JM JP JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE NG MK NO OM PK PW PA PG PY PE PH PL PT QA RO RU RW KN LC VC WS SM ST SA SN RS SC SL SG SK SI SB SO ZA SS ES LK SD SR SE CH SY TW TJ TZ TH TL TG TO TT TN TR TM TV UG UA AE GB US UY UZ VU VA VE VN YE ZM ZW'.split(/\s+/);
+  const englishRegions=typeof Intl!=='undefined'&&Intl.DisplayNames?new Intl.DisplayNames(['en'],{type:'region'}):null;
+  const WORLD_COUNTRIES=WORLD_CODES.map(code=>({code,name:englishRegions?.of(code)||code})).filter(x=>x.name&&x.name!==x.code);
+  const worldCodeByName=new Map(WORLD_COUNTRIES.map(x=>[x.name,x.code]));
+  const countryList=[...new Set([...Object.keys(SYSTEMS),...WORLD_COUNTRIES.map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'en'));
   const STATIC_UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
   const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.langs?.some?.(([code])=>code===x)?x:(STATIC_UI_LANGS.has(x)?x:'nl')};
   const COUNTRY_NAMES={
@@ -188,7 +192,7 @@
   const countryName=c=>{
     const lang=uiLang(),idx=LANG_INDEX[lang];
     if(idx!=null&&COUNTRY_NAMES[c]?.[idx])return COUNTRY_NAMES[c][idx];
-    const region=COUNTRY_CODES[c];
+    const region=COUNTRY_CODES[c]||worldCodeByName.get(c);
     if(region&&typeof Intl!=='undefined'&&Intl.DisplayNames){
       try{const v=new Intl.DisplayNames([lang],{type:'region'}).of(region);if(v)return v}catch{}
     }
@@ -212,7 +216,16 @@
     pt:{basic:'Ensino primário',voj:'Ensino secundário inferior (VOJ)',vos:'Ensino secundário superior (VOS)',higher:'Ensino superior'},
     it:{basic:'Istruzione primaria',voj:'Secondaria inferiore (VOJ)',vos:'Secondaria superiore (VOS)',higher:'Istruzione superiore'}
   };
-  const groupCopy=()=>GROUP_COPY[uiLang()]||GROUP_COPY.en;
+  const UNIVERSAL_GROUP_COPY={
+    nl:{basic:'Primair Onderwijs',voj:'Lager Secundair',vos:'Hoger Secundair',higher:'Hoger Onderwijs'},
+    en:{basic:'Primary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},
+    es:{basic:'Educación Primaria',voj:'Secundaria Inferior',vos:'Secundaria Superior',higher:'Educación Superior'},
+    fr:{basic:'Enseignement primaire',voj:'Secondaire inférieur',vos:'Secondaire supérieur',higher:'Enseignement supérieur'},
+    de:{basic:'Primarbildung',voj:'Sekundarstufe I',vos:'Sekundarstufe II',higher:'Hochschulbildung'},
+    pt:{basic:'Ensino primário',voj:'Ensino secundário inferior',vos:'Ensino secundário superior',higher:'Ensino superior'},
+    it:{basic:'Istruzione primaria',voj:'Secondaria inferiore',vos:'Secondaria superiore',higher:'Istruzione superiore'}
+  };
+  const groupCopy=()=>{const source=currentCountry()==='Suriname'?GROUP_COPY:UNIVERSAL_GROUP_COPY;return source[uiLang()]||source.en};
   const OFFICIAL={
     Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
@@ -250,7 +263,15 @@
     const x=clean(value);if(!x)return '';
     const low=x.toLowerCase();
     const localized=Object.entries(COUNTRY_NAMES).find(([,names])=>names.some(n=>clean(n).toLowerCase()===low))?.[0];
-    return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||x;
+    let worldLocalized='';
+    if(!localized&&typeof Intl!=='undefined'&&Intl.DisplayNames){
+      try{
+        const dn=new Intl.DisplayNames([uiLang()],{type:'region'});
+        const code=WORLD_CODES.find(code=>clean(dn.of(code)).toLowerCase()===low);
+        if(code)worldLocalized=WORLD_COUNTRIES.find(x=>x.code===code)?.name||'';
+      }catch{}
+    }
+    return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||worldLocalized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
   function system(country=currentCountry()){const n=normalizeCountry(country);return SYSTEMS[n]||{...GENERIC,label:n||GENERIC.label}}
@@ -278,7 +299,7 @@
     let box=$('#v96-side-country',side);
     if(!box){
       box=document.createElement('div');box.id='v96-side-country';box.dataset.v96I18nOwned='1';box.innerHTML='<small></small><select data-v96-i18n-owned="1"></select><span></span>';
-      const before=$('.v51-quality',side);before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
+      const before=$('.v51-section',side).find(x=>clean(x.textContent).toUpperCase()==='COMING SOON');before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
       $('select',box).addEventListener('change',e=>setCountry(e.target.value,'sidebar'));
     }
     const selected=currentCountry(),sel=$('select',box),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
@@ -313,13 +334,12 @@
       const st=sys.stages.find(x=>x[0]===id);if(!st)return;
       const lc=localizedStage(id,c);
       if(icon)icon.textContent=st[1];if(title)title.textContent=lc.title;if(desc)desc.textContent=lc.description;
-      btn.dataset.countrySystem=sys.label;
+      btn.dataset.countrySystem=sys.label;btn.dataset.educationGroup=id==='young'||id==='primary'?'basic':id==='secondary'?'voj':id==='student'?'vos':'higher';
     });
     const label=$('#v51-main [data-v51-page="dashboard"] .v51-level-label');
     if(label){label.dataset.v96I18nOwned='1';label.textContent=ui.choose+' · '+countryName(c).toUpperCase()}
   }
   function applyGroupLabels(){
-    if(currentCountry()!=='Suriname')return;
     const copy=groupCopy();
     document.querySelectorAll('.v51-level-cluster[data-v51-group]').forEach(cluster=>{
       const id=cluster.dataset.v51Group,label=$('.v51-level-group',cluster);

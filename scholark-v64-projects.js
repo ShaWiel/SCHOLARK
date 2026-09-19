@@ -51,7 +51,8 @@
   function render(){
     const h=host();if(!h)return;const a=dedupe(),trash=lastTrash();
     const notice=trash?.item?'<div class="v64-notice"><span>Project deleted. SCHOLARK kept a recovery copy.</span><button type="button" data-v64-undo>Undo delete</button></div>':'';
-    h.innerHTML='<div class="v64-projects"><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>My Projects</h1><p>Open saved Studio work directly. SCHOLARK keeps a backup of your project list and can recover the last deleted project.</p>'+notice+(a.length?'<div class="v64-grid">'+a.map((x,i)=>'<article class="v64-card" data-v64-open="'+i+'"><button class="v64-del" data-v64-del="'+i+'" title="Delete project">×</button><small>'+esc(label(x.mode))+'</small><h3>'+esc(x.project||'Untitled project')+'</h3><p>'+esc(clean(x.rawPrompt||x.prompt||'Saved SCHOLARK creation').slice(0,180))+'</p></article>').join('')+'</div>':'<div class="v64-empty">No saved projects yet. Saved creations will appear here. Studio AI is currently coming soon.</div>')+'</div>';
+    const archiveNotice=a.length&&window.__SCHOLARK_FEATURE_FLAGS__?.studio===false?'<div class="v64-notice"><span>Legacy Studio creations are safely archived while Studio AI is Coming Soon. Your connected learning projects appear above.</span></div>':'';
+    h.innerHTML='<div class="v64-projects"><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>My Projects</h1><p>Keep connected learning projects, research and archived creations in one place. SCHOLARK keeps recovery copies when you delete a legacy creation.</p>'+archiveNotice+notice+(a.length?'<div class="v64-grid">'+a.map((x,i)=>'<article class="v64-card" data-v64-open="'+i+'"><button class="v64-del" data-v64-del="'+i+'" title="Delete project">×</button><small>Archived '+esc(label(x.mode))+'</small><h3>'+esc(x.project||'Untitled project')+'</h3><p>'+esc(clean(x.rawPrompt||x.prompt||'Saved SCHOLARK creation').slice(0,180))+'</p></article>').join('')+'</div>':'<div class="v64-empty">No archived creations yet. Create a connected learning project above to organise ongoing work.</div>')+'</div>';
     window.__SCHOLARK_I18N__?.apply?.(h);window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(h);
     requestAnimationFrame(()=>{if(String(location.hash||'').toLowerCase()==='#project'){window.__SCHOLARK_WORKSPACE__?.setCollapsed?.(false,true);document.body.classList.remove('v51-collapsed');const main=$('#v51-main');if(main)main.style.setProperty('display','block','important');$$('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='project'))}});
   }
@@ -80,6 +81,7 @@
     }catch(e){console.warn('[SCHOLARK] Project recovery failed',e);return false}
   }
   async function openItem(i){const a=dedupe(),x=a[i];if(!x)return;
+    if(window.__SCHOLARK_FEATURE_FLAGS__?.studio===false){window.__SCHOLARK_WORKSPACE_CORE__?.record?.('project','legacy_open_blocked',{project:x.project||'',mode:x.mode||''});return false}
     if(x.bookId&&window.__SCHOLARK_FEATURE_FLAGS__?.book===false){window.__SCHOLARK_WORKSPACE__?.openTool?.('book');return}
     if(x.deckId){try{const d=JSON.parse(localStorage.getItem('scholark_v57_deck_'+x.deckId)||'null');if(d&&window.__SCHOLARK_V57_PRESENTATIONS__?.open)return window.__SCHOLARK_V57_PRESENTATIONS__.open(d)}catch{}}
     if(x.artifactId){try{const d=JSON.parse(localStorage.getItem('scholark_v58_artifact_'+x.artifactId)||'null');if(d&&window.__SCHOLARK_V58_ARTIFACTS__?.openArtifact)return window.__SCHOLARK_V58_ARTIFACTS__.openArtifact(d)}catch{}}

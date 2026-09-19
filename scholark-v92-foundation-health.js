@@ -47,7 +47,7 @@
       sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
       learningApi:!['ai','tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__||r==='ai',
       bookApi:true,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
-      cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
+      cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,connectedCore:!workspaceNeeded||!!window.__SCHOLARK_WORKSPACE_CORE__,connectedExperience:!workspaceNeeded||!!window.__SCHOLARK_V111_EXPERIENCE__,i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
       performanceFoundation:!!window.__SCHOLARK_PERF__,runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],duplicateIds:duplicateIds()
     };
     const paths=['/api/health','/api/guard/health','/api/learning/health','/api/export/health','/api/schools/health'];
@@ -55,7 +55,7 @@
     checks.endpoints=Object.fromEntries(paths.map((p,i)=>[p,results[i]]));
     checks.i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null;
     const endpointOk=!checks.online||results.every(x=>x.ok);
-    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.cloudApi&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
+    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.cloudApi&&checks.connectedCore&&checks.connectedExperience&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
     const report={ok,at:new Date().toISOString(),route:r||'home',checks};
     lastReport=report;lastRun=Date.now();
     try{sessionStorage.setItem('scholark_foundation_health',JSON.stringify(report))}catch{}
