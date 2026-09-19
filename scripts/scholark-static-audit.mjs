@@ -51,6 +51,8 @@ ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
 ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
+ok(docker.includes('__schLegacyNode')&&docker.includes('closest?.("#v55-topbar")'),'Legacy i18n can still rewrite the homepage topbar');
+ok(homeTopbar.includes('topbarCopyObserver')&&homeTopbar.includes("authButton.dataset.v55State!==state||text(authButton)!==expectedAuth")&&homeTopbar.includes("if(sel.getAttribute('aria-label')!=='Language')"),'Homepage topbar idempotent copy protection is incomplete');
 ok(docker.includes('scholark-api-guard.mjs'),'API guard is not shipped');
 ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not imported at runtime');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
