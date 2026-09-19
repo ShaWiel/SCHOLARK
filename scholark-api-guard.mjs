@@ -5,6 +5,7 @@ const buckets = new Map();
 let activeExpensive = 0;
 const WINDOW_MS = 5 * 60 * 1000;
 const MAX_CONCURRENT = 18;
+const MAX_BUCKETS = 10000;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
 
 const rules = [
@@ -29,6 +30,11 @@ function securityHeaders(res) {
     if (!res.hasHeader('referrer-policy')) res.setHeader('referrer-policy','strict-origin-when-cross-origin');
     if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','SAMEORIGIN');
     if (!res.hasHeader('cross-origin-opener-policy')) res.setHeader('cross-origin-opener-policy','same-origin-allow-popups');
+    if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
+    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), payment=(), usb=()');
+    if (!res.hasHeader('x-permitted-cross-domain-policies')) res.setHeader('x-permitted-cross-domain-policies','none');
+    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'self'");
+    if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains');
   } catch {}
 }
 
@@ -42,12 +48,32 @@ function json(res,status,obj,extra={}) {
 function consume(ip, path, limit) {
   const now = Date.now();
   const key = ip + '|' + path;
+  if (!buckets.has(key) && buckets.size >= MAX_BUCKETS) {
+    let removed = 0;
+    for (const oldKey of buckets.keys()) {
+      buckets.delete(oldKey);
+      if (++removed >= 500) break;
+    }
+  }
   let b = buckets.get(key);
   if (!b || now - b.started >= WINDOW_MS) b = {started:now,count:0};
   b.count++;
   buckets.set(key,b);
   const remaining = Math.max(0,limit-b.count);
   return {allowed:b.count<=limit, remaining, retryAfter:Math.max(1,Math.ceil((WINDOW_MS-(now-b.started))/1000))};
+}
+
+function requestOriginAllowed(req) {
+  const site = String(req.headers?.['sec-fetch-site'] || '').toLowerCase();
+  if (site === 'cross-site') return false;
+  const origin = String(req.headers?.origin || '').trim();
+  if (!origin) return true;
+  try {
+    const originHost = new URL(origin).host.toLowerCase();
+    const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim().toLowerCase();
+    const host = forwardedHost || String(req.headers?.host || '').trim().toLowerCase();
+    return !!host && originHost === host;
+  } catch { return false; }
 }
 
 http.Server.prototype.emit = function(type,...args) {
@@ -59,12 +85,17 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,originGuard:true,securityHeaders:true});
     return true;
   }
 
   const rule = rules.find(r => r.match(req.method,url.pathname));
   if (!rule) return previousEmit.call(this,type,...args);
+
+  if (!requestOriginAllowed(req)) {
+    json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED',error:'Cross-origin request blocked.'});
+    return true;
+  }
 
   const rate = consume(clientKey(req),url.pathname,rule.limit);
   res.setHeader('x-ratelimit-limit',String(rule.limit));
