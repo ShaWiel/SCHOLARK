@@ -52,6 +52,9 @@ ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 c
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
 ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
 ok(docker.includes('__schLegacyNode')&&docker.includes('closest?.("#v55-topbar")'),'Legacy i18n can still rewrite the homepage topbar');
+ok(apiGuard.includes("content-security-policy")&&apiGuard.includes("permissions-policy")&&apiGuard.includes("strict-transport-security"),'API responses are missing hardened browser security headers');
+ok(apiGuard.includes('requestOriginAllowed')&&apiGuard.includes("site === 'cross-site'")&&apiGuard.includes("CROSS_ORIGIN_BLOCKED"),'Expensive API routes lack same-origin / cross-site protection');
+ok(apiGuard.includes('MAX_BUCKETS = 10000')&&apiGuard.includes('buckets.size >= MAX_BUCKETS'),'API rate-limit state lacks a bounded-memory guard');
 ok(homeTopbar.includes('topbarCopyObserver')&&homeTopbar.includes("authButton.dataset.v55State!==state||text(authButton)!==expectedAuth")&&homeTopbar.includes("if(sel.getAttribute('aria-label')!=='Language')"),'Homepage topbar idempotent copy protection is incomplete');
 ok(docker.includes('scholark-api-guard.mjs'),'API guard is not shipped');
 ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not imported at runtime');
@@ -127,6 +130,8 @@ ok(i18n.includes("LANGS.length===37")&&i18n.includes("dynamicLocales.length===30
 ok(i18n.includes("['pa','ਪੰਜਾਬੀ','Punjabi']")&&i18n.includes("['sw','Kiswahili','Swahili']")&&i18n.includes("['zh','中文','Chinese (Simplified)']"),'30 added world languages are incomplete');
 ok(i18n.includes("dynamic=!STATIC_CORE_LANGS.has(target)")&&i18n.includes("const seed=[...new Set([...CORE,...collectDom(520)])]")&&i18n.includes("scheduleLanguageCompletion(target,epoch)"),'Dynamic first-use translation priming is incomplete');
 ok(i18n.includes("overlay.classList.add('open');overlay.style.removeProperty('opacity')")&&i18n.includes("const remaining=Math.max(0,260-(performance.now()-overlayStarted))"),'Adapting SCHOLARK is not shown consistently for every language switch');
+ok(i18n.includes("classList.add('scholark-home-language-adapting')")&&i18n.includes("if(!home)applyVisible()")&&i18n.includes("dataset.scholarkI18nReady=target"),'Homepage language adaptation is not atomic');
+ok(prepaint.includes('localeReady')&&prepaint.includes('dataset.scholarkI18nReady===locale()'),'Prepaint can reveal an adaptive-language homepage before locale preparation is complete');
 ok(i18n.includes("if(STATIC_CORE_LANGS.has(code())&&el.closest")&&i18n.includes("#v55-topbar"),'Locale-owned UI protection does not distinguish static and adaptive languages');
 ok(countryEducation.includes('STATIC_UI_LANGS')&&countryEducation.includes('Intl.DisplayNames')&&countryEducation.includes("GROUP_COPY[uiLang()]||GROUP_COPY.en"),'Country/education UI is not compatible with adaptive languages');
 ok(workspaceShell.includes("return SURINAME_GROUP_LABELS[v]?v:'en'"),'Workspace does not use English source copy for adaptive languages');
@@ -151,6 +156,8 @@ ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.
 ok(schoolFinder.includes('id="v50-name"')&&schoolFinder.includes("name:nameQuery")&&schoolFinder.includes('nameMatch(x,nameQuery)'),'Schools Near Me school-name search is incomplete');
 ok(schoolFinder.includes('id="v50-type"')&&schoolFinder.includes('id="v50-verified"')&&schoolFinder.includes('id="v50-compare-btn"')&&schoolFinder.includes('id="v50-saved-btn"'),'Expanded Schools Near Me filters/save/compare controls are missing');
 ok(schoolFinder.includes('match score measures fit with your search criteria')&&schoolFinder.includes('metricMarkup(x)'),'School match score/performance distinction is missing');
+ok(schoolFinder.includes('data-sch-school-name="1"')&&schoolFinder.includes('data-sch-school-name-text="1"'),'Rendered school names are not marked as immutable institution names');
+ok(i18n.includes('[data-sch-school-name="1"]')&&i18n.includes('[data-sch-school-name="1"] *'),'Language engine can still translate official school names');
 ok(i18n.includes("['School name (optional)','Schoolnaam (optioneel)'"),'School-name search field is not localized');
 ok(schoolFinder.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&countryEducation.includes("[gc.basic,['kindergarten','primary']]"),'Kleuteronderwijs is missing from Suriname Schools Near Me');
 ok(schoolFinder.includes("levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs'"),'School result labels do not use Suriname taxonomy');
@@ -164,6 +171,8 @@ ok(learningApi.includes("const depthInstruction=")&&learningApi.includes("depth,
 ok(learningApi.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learningApi.includes('sessionStorage.setItem(STUDY_DRAFT_KEY')&&learningApi.includes('restoreStudyDraft();bindStudyDraft();return live'),'Study Ahead does not preserve typed form data across remounts');
 ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("if(live&&$('#v62-field',live))"),'Study Ahead mount is not idempotent');
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
+ok(foundation.includes("Date.now()-state.lastRepairAt<900")&&foundation.includes("scholark-home-language-adapting"),'Core foundation lacks low-churn fast path or language-transition coordination');
+ok(performance.includes("now-state.lastLayout<240")&&performance.includes("scholark-language-ready"),'Performance foundation does not suppress redundant layout work or retune after locale changes');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']"),'New workspace tools are missing from navigation');
 ok(workspaceShell.includes("card('focus','◷','Focus Sessions'")&&workspaceShell.includes("card('flashcards','▤','Flashcards'")&&workspaceShell.includes("card('assignments','✓','Assignments'"),'New workspace tools are missing from Dashboard cards');
