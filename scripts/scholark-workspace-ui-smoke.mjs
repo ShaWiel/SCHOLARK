@@ -187,6 +187,18 @@ check(await page.locator('#v41-prompt').count()===1,'Studio prompt missing');
 await page.fill('#v41-prompt','Workspace smoke presentation');
 check((await page.inputValue('#v41-prompt'))==='Workspace smoke presentation','Studio prompt is not editable');
 
+await route('ai','#v107-ai');
+check(await page.locator('#v107-q').count()===1,'General SCHOLARK AI prompt missing');
+check(await page.locator('#v107-new').count()===1,'General SCHOLARK AI new-chat action missing');
+check(await page.locator('#v107-deep').count()===1,'General SCHOLARK AI deep-answer control missing');
+await page.fill('#v107-q','What is 2 + 2?');
+await page.click('#v107-send');
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \+ 2 = 4|\b4\b/.test(x.textContent||'')),{timeout:5000});
+check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'General SCHOLARK AI chat did not persist both sides of the conversation');
+check(await page.locator('[data-v107-copy]').count()>=1,'General SCHOLARK AI copy action missing after response');
+await page.click('#v107-new');
+check(await page.locator('.v107-welcome').count()===1,'General SCHOLARK AI new chat did not reset the conversation surface');
+
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
