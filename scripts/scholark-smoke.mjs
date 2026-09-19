@@ -78,6 +78,9 @@ if(schoolHealth){
   check(schoolHealth.officialRoster?.configured===true,'Official Suriname school roster is not configured');
   check(Number(schoolHealth.curatedSupplement?.count)>=60,'Current Suriname school supplement is too small');
   check(schoolHealth.curatedSupplement?.includesPolanen===true,'J.H.N. Polanenschool is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesAAHA===true,'AAHA is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesKangoeroe===true,'Kangoeroe High is missing from the current Suriname supplement');
+  check(schoolHealth.curatedSupplement?.includesAdFontes===true,'Ad Fontes Lyceum is missing from the current Suriname supplement');
 }
 if(vwoHealth){
   check(vwoHealth.vwoEnabled===true,'VWO school discovery is not enabled');
