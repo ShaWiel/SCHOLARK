@@ -3,12 +3,14 @@
   window.__SCHOLARK_V92_FOUNDATION__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const modern=new Set(['dashboard','studio','ai','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
+  const inactive=new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const route=()=>String(location.hash||'').replace(/^#/,'').split(/[\/-]/)[0].toLowerCase();
   let inflight=null,lastReport=null,lastRun=0,runtimeReady=false;
 
   function reconcile(){
     const r=route();if(!modern.has(r))return;
     document.body.classList.add('v51-workspace');
+    if(inactive.has(r)){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');$('#v41-studio-workspace')?.setAttribute('hidden','');$('#v25-book')?.classList.remove('open');setTimeout(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.(r==='book'?'book':'studio'),0);return}
     if(r!=='schools')$('#v50-school')?.classList.remove('open');
     if(r!=='study')$('#v25-study')?.classList.remove('open');
     if(r!=='book')$('#v25-book')?.classList.remove('open');
@@ -44,11 +46,11 @@
       release:(window.__SCHOLARK_RUNTIME__?.version||document.documentElement.dataset.scholarkRelease||'unknown'),route:r||'home',online:navigator.onLine!==false,
       sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
       learningApi:!['ai','tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__||r==='ai',
-      bookApi:r!=='book'||!!window.__SCHOLARK_V65_BOOK__,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
+      bookApi:true,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,
       cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
       performanceFoundation:!!window.__SCHOLARK_PERF__,runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],duplicateIds:duplicateIds()
     };
-    const paths=['/api/health','/api/guard/health','/api/studio/health','/api/learning/health','/api/export/health','/api/schools/health','/api/studio/research/health','/api/studio/image/health'];
+    const paths=['/api/health','/api/guard/health','/api/learning/health','/api/export/health','/api/schools/health'];
     const results=checks.online?await Promise.all(paths.map(endpoint)):paths.map(()=>({ok:false,error:'offline'}));
     checks.endpoints=Object.fromEntries(paths.map((p,i)=>[p,results[i]]));
     checks.i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null;

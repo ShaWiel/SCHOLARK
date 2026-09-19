@@ -7,8 +7,9 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r160';
+  const RELEASE = 'r161';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
+  const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
   let repairing = false;
   let timer = 0;
@@ -17,6 +18,7 @@
     const raw = String(location.hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0].replace(/^\/+|\/+$/g,'');
     const base = raw.split(/[\/-]/)[0] || 'home';
     if (!raw || ['home','pricing','start'].includes(base)) return { raw: raw || 'home', base, kind:'home' };
+    if (INACTIVE.has(base)) return { raw, base, kind:'inactive' };
     if (STUDIO.has(base)) return { raw, base, kind:'studio' };
     return { raw, base, kind:base };
   }
@@ -131,6 +133,7 @@
 
   function surfaceHealthy(info) {
     if (info.kind === 'home') return homeSurfaceHealthy();
+    if (info.kind === 'inactive') return isVisible($('.v51-coming-soon'),180,120) || isVisible($('#v51-main'),180,120);
     if (info.kind === 'studio') {
       return isVisible($('#v41-studio-workspace:not([hidden])'),180,140) ||
         isVisible($('#v58-suite.open'),180,140) || isVisible($('#v57-deck.open'),180,140) || isVisible($('#v57-present.open'),180,140);
@@ -145,7 +148,10 @@
 
   function openExpected(info) {
     const ws = window.__SCHOLARK_WORKSPACE__;
-    if (info.kind === 'studio') {
+    if (info.kind === 'inactive') {
+      ws?.setCollapsed?.(false,true);
+      ws?.openTool?.(info.base==='book'?'book':'studio');
+    } else if (info.kind === 'studio') {
       ws?.setCollapsed?.(false,true);
       window.__SCHOLARK_STUDIO_WORKSPACE__?.open?.(null,{route:false,fast:true});
     } else if (info.base === 'project') {

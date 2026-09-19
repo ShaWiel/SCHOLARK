@@ -3,9 +3,10 @@
   if (path !== '/' && path !== '/index.html') return;
   if (window.__SCHOLARK_RUNTIME_LOADER__) return;
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
-  window.__SCHOLARK_TEST_MODE__ = true;
+  window.__SCHOLARK_TEST_MODE__ = false;
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r161'});
 
-  const VERSION = '20260919-r160';
+  const VERSION = '20260919-r161';
   const ACTIVE = [
     'scholark-v24-ui.js','scholark-v25-enhancements.js','scholark-v27-voice-hotfix.js','scholark-v28-home-experience.js',
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -21,7 +22,7 @@
     'scholark-v81-stability-foundation.js','scholark-v82-tutor-cloud.js','scholark-v83-study-ahead-cloud.js','scholark-v84-profile-cloud.js',
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
-    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js',
+    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js',
     'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
   ];
   const BASE = new Set([
@@ -35,10 +36,10 @@
   const WORKSPACE = [
     'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v53-dashboard-bootstrap.js',
     'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
-    'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js'
+    'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js','scholark-v108-workspace-upgrade.js'
   ];
   const FEATURES = {
-    studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
+    studio:[],
     ai:['scholark-v107-general-ai.js'],
     tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
     education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
@@ -50,18 +51,13 @@
     language:['scholark-v93-language-learner.js'],
     files:['scholark-v69-reference-reader.js','scholark-v86-file-intelligence.js'],
     project:['scholark-v64-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
-    book:['scholark-v65-book-studio.js','scholark-v67-professional-exports.js','scholark-v69-reference-reader.js'],
+    book:[],
     focus:['scholark-v106-workspace-power-tools.js'],
     flashcards:['scholark-v106-workspace-power-tools.js'],
     assignments:['scholark-v106-workspace-power-tools.js']
   };
-  const STUDIO_CORE = [...FEATURES.studio];
-  const STUDIO_HEAVY = [
-    'scholark-v57-presentation-deck.js','scholark-v58-studio-artifact-suite.js','scholark-v60-presentation-ready.js','scholark-v63-presentation-visuals.js',
-    'scholark-v66-presentation-ai-tools.js','scholark-v67-professional-exports.js','scholark-v68-slide-block-editor.js','scholark-v69-reference-reader.js',
-    'scholark-v70-social-graphic-media.js','scholark-v71-research-agent.js','scholark-v73-web-publishing.js','scholark-v74-presenter-pro.js',
-    'scholark-v75-document-pro.js','scholark-v76-graphic-canvas.js','scholark-v77-webpage-pro.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'
-  ];
+  const STUDIO_CORE = [];
+  const STUDIO_HEAVY = [];
 
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);

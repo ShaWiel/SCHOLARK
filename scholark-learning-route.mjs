@@ -382,9 +382,16 @@ function scholarkTestFallback(mode,p){
 
 async function generate(mode,p){
   if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))&&mode!=='translate_ui')return scholarkTestFallback(mode,p);
-  const route=learningModels(mode,p),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
-  const order=route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasOpenAI,openai],[hasGemini,gemini]];
+  const route=learningModels(mode,p),freeOnly=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_FREE_AI_ONLY||'')),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=!freeOnly&&/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
+  const order=route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasGemini,gemini],[hasOpenAI,openai]];
   for(const [ok,fn] of order){if(!ok)continue;try{return await fn(mode,p)}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}}
+  if(mode!=='translate_ui'){
+    const fallback=scholarkTestFallback(mode,p);
+    fallback.provider='scholark-local-fallback';
+    fallback.model='local-resilience-v1';
+    if(mode==='general_ai'&&!/2\s*\+\s*2/.test(clean(p.prompt||'')))fallback.result={title:'ARKI temporarily offline',answer:'ARKI could not reach the configured free AI providers for this request. Your message was not lost; please try again shortly.',suggestedFollowUps:['Try again','Ask a shorter question']};
+    return fallback;
+  }
   const e=new Error(errors.length?errors.map(x=>`${x.provider}: ${x.message}`).join(' | '):'No learning AI provider configured');e.code='AI_ENGINE_UNAVAILABLE';e.details=errors;throw e;
 }
 
