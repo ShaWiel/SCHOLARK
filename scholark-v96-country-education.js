@@ -160,7 +160,11 @@
     'guyana':'Guyana','trinidad and tobago':'Trinidad & Tobago','trinidad & tobago':'Trinidad & Tobago','trinidad':'Trinidad & Tobago',
     'jamaica':'Jamaica','belgium':'Belgium','belgie':'Belgium','belgië':'Belgium'
   };
-  const countryList=Object.keys(SYSTEMS);
+  const WORLD_CODES='AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI CV KH CM CA CF TD CL CN CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FJ FI FR GA GM GE DE GH GR GD GT GN GW GY HT HN HU IS IN ID IR IQ IE IL IT JM JP JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE NG MK NO OM PK PW PA PG PY PE PH PL PT QA RO RU RW KN LC VC WS SM ST SA SN RS SC SL SG SK SI SB SO ZA SS ES LK SD SR SE CH SY TW TJ TZ TH TL TG TO TT TN TR TM TV UG UA AE GB US UY UZ VU VA VE VN YE ZM ZW'.split(/\s+/);
+  const englishRegions=typeof Intl!=='undefined'&&Intl.DisplayNames?new Intl.DisplayNames(['en'],{type:'region'}):null;
+  const WORLD_COUNTRIES=WORLD_CODES.map(code=>({code,name:englishRegions?.of(code)||code})).filter(x=>x.name&&x.name!==x.code);
+  const worldCodeByName=new Map(WORLD_COUNTRIES.map(x=>[x.name,x.code]));
+  const countryList=[...new Set([...Object.keys(SYSTEMS),...WORLD_COUNTRIES.map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'en'));
   const STATIC_UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
   const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.langs?.some?.(([code])=>code===x)?x:(STATIC_UI_LANGS.has(x)?x:'nl')};
   const COUNTRY_NAMES={
@@ -188,7 +192,7 @@
   const countryName=c=>{
     const lang=uiLang(),idx=LANG_INDEX[lang];
     if(idx!=null&&COUNTRY_NAMES[c]?.[idx])return COUNTRY_NAMES[c][idx];
-    const region=COUNTRY_CODES[c];
+    const region=COUNTRY_CODES[c]||worldCodeByName.get(c);
     if(region&&typeof Intl!=='undefined'&&Intl.DisplayNames){
       try{const v=new Intl.DisplayNames([lang],{type:'region'}).of(region);if(v)return v}catch{}
     }
