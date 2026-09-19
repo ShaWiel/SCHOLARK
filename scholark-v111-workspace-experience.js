@@ -162,7 +162,12 @@
   addEventListener('scholark-workspace-core-ready',()=>schedule(true));
   addEventListener('scholark-workspace-change',()=>schedule(true));
   addEventListener('scholark-country-change',()=>schedule(true));
-  const observer=new MutationObserver(()=>schedule(false));observer.observe(document.documentElement,{subtree:true,childList:true});
+  let observerTimer=0;
+  const observer=new MutationObserver(()=>{
+    clearTimeout(observerTimer);
+    observerTimer=setTimeout(()=>refresh(false),140);
+  });
+  observer.observe(document.documentElement,{subtree:true,childList:true});
   schedule(true);
 
   window.__SCHOLARK_V111_EXPERIENCE__={version:'20260919-r169',refresh:()=>refresh(true),generateCards};
