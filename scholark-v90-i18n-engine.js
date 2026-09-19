@@ -756,7 +756,11 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target);
+    const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
+
+    // Always show the same transition state for every interface language.
+    overlay.classList.add('open');overlay.style.removeProperty('opacity');
+    $('#v90-switch-copy').textContent='Adapting SCHOLARK to '+nativeName(target)+'…';
 
     // Keep the current layout/cinematic state intact while copy is replaced.
     if(!home)document.documentElement.classList.add('scholark-language-switching');
@@ -776,8 +780,6 @@
     window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target,previous,home,dynamic}}));
 
     if(target!=='en'&&dynamic&&navigator.onLine!==false){
-      overlay.classList.add('open');overlay.style.removeProperty('opacity');
-      $('#v90-switch-copy').textContent='Adapting SCHOLARK to '+nativeName(target)+'…';
       try{
         const seed=[...new Set([...CORE,...collectDom(520)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
@@ -795,6 +797,9 @@
     else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
 
     window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic}}));
+    const remaining=Math.max(0,260-(performance.now()-overlayStarted));
+    if(remaining)await new Promise(r=>setTimeout(r,remaining));
+    if(epoch!==translationEpoch)return;
     overlay.style.opacity='0';setTimeout(()=>{if(epoch===translationEpoch){overlay.classList.remove('open');overlay.style.removeProperty('opacity')}},120);
     translating=false;
     if(!home)setTimeout(()=>document.documentElement.classList.remove('scholark-language-switching'),20);
