@@ -34,6 +34,21 @@
     {id:'vos',label:'VOS',tone:'green'},
     {id:'higher',label:'Hoger Onderwijs',tone:'dark'}
   ];
+  const UNIVERSAL_GROUPS=[
+    {id:'basic',label:'Primary Education',tone:'green',levels:['young','primary']},
+    {id:'voj',label:'Lower Secondary',tone:'dark',levels:['secondary']},
+    {id:'vos',label:'Upper Secondary',tone:'green',levels:['student']},
+    {id:'higher',label:'Higher Education',tone:'dark',levels:['adult']}
+  ];
+  const UNIVERSAL_GROUP_LABELS={
+    nl:{basic:'Primair Onderwijs',voj:'Lager Secundair',vos:'Hoger Secundair',higher:'Hoger Onderwijs'},
+    en:{basic:'Primary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},
+    es:{basic:'Educación Primaria',voj:'Secundaria Inferior',vos:'Secundaria Superior',higher:'Educación Superior'},
+    fr:{basic:'Enseignement primaire',voj:'Secondaire inférieur',vos:'Secondaire supérieur',higher:'Enseignement supérieur'},
+    de:{basic:'Primarbildung',voj:'Sekundarstufe I',vos:'Sekundarstufe II',higher:'Hochschulbildung'},
+    pt:{basic:'Ensino primário',voj:'Ensino secundário inferior',vos:'Ensino secundário superior',higher:'Ensino superior'},
+    it:{basic:'Istruzione primaria',voj:'Secondaria inferiore',vos:'Secondaria superiore',higher:'Istruzione superiore'}
+  };
   const SURINAME_GROUP_LABELS={
     nl:{basic:'Basisonderwijs',voj:'VOJ',vos:'VOS',higher:'Hoger Onderwijs'},
     en:{basic:'Primary Education',voj:'Lower Secondary (VOJ)',vos:'Upper Secondary (VOS)',higher:'Higher Education'},
@@ -45,6 +60,7 @@
   };
   const workspaceUiLang=()=>{const v=localStorage.getItem('scholark_ui_language')||'nl';return SURINAME_GROUP_LABELS[v]?v:'en'};
   const surinameGroupLabel=group=>SURINAME_GROUP_LABELS[workspaceUiLang()]?.[group.id]||group.label;
+  const universalGroupLabel=group=>UNIVERSAL_GROUP_LABELS[workspaceUiLang()]?.[group.id]||group.label;
 
   const SURINAME_AI_LEVEL=Object.fromEntries(SURINAME_LEVELS.map(([id,,,,,ai])=>[id,ai]));
   const TOOLS=[
@@ -138,7 +154,7 @@
     side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><b>SCHOLARK</b><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${ic}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
     toggle=document.createElement('button');toggle.id='v51-side-toggle';toggle.type='button';toggle.onclick=()=>setCollapsed(!document.body.classList.contains('v51-collapsed'));document.body.appendChild(toggle);
     home=document.createElement('button');home.id='v51-home';home.innerHTML='<b>⌂</b> Return to homepage';home.onclick=goHome;document.body.appendChild(home);
-    main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard"><div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLARK SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLARK WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLARK should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI','AI Tutor','Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Return to saved Studio work, documents, research and ongoing projects.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div></section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
+    main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard"><div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLARK SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLARK WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLARK should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI','AI Tutor','Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Keep learning projects, research, notes and ongoing work connected in one place.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div></section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
     $$('[data-v51-tool]',document).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
     renderLevels();setCollapsed(localStorage.getItem('scholark_v51_collapsed')==='1',false);refreshLogo();
   }
@@ -151,14 +167,14 @@
   function renderLevels(){
     if(!side)return;const host=$('.v51-levels',main);if(!host)return;
     const rows=dashboardLevels(),selected=levelId(),suriname=workspaceCountry()==='suriname';
-    host.classList.toggle('v51-levels-suriname',suriname);
-    host.setAttribute('aria-label',suriname?'Suriname education levels. Scroll horizontally for more levels.':'Education levels');
-    if(suriname){
-      host.innerHTML=SURINAME_GROUPS.map(group=>{
-        const cards=rows.filter(x=>x[4]===group.id).map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
-        return `<section class="v51-level-cluster ${group.tone}" data-v51-group="${group.id}" data-v96-i18n-owned="1" data-sch-i18n-owned="1"><div class="v51-level-group" data-sch-i18n-owned="1">${esc(surinameGroupLabel(group))}</div><div class="v51-level-cluster-cards">${cards}</div></section>`;
-      }).join('');
-    }else host.innerHTML=rows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
+    host.classList.add('v51-levels-suriname');host.dataset.v51CountryPalette='1';
+    host.setAttribute('aria-label',(suriname?'Suriname':'Country-aware')+' education levels. Scroll horizontally for more levels.');
+    const groups=suriname?SURINAME_GROUPS:UNIVERSAL_GROUPS;
+    host.innerHTML=groups.map(group=>{
+      const groupRows=suriname?rows.filter(x=>x[4]===group.id):rows.filter(x=>group.levels.includes(x[0]));
+      const cards=groupRows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
+      return `<section class="v51-level-cluster ${group.tone}" data-v51-group="${group.id}" data-v96-i18n-owned="1" data-sch-i18n-owned="1"><div class="v51-level-group" data-sch-i18n-owned="1">${esc(suriname?surinameGroupLabel(group):universalGroupLabel(group))}</div><div class="v51-level-cluster-cards">${cards}</div></section>`;
+    }).join('');
     $$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
     wireLevelScroll();
   }
