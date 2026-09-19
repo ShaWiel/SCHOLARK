@@ -193,6 +193,36 @@ check(polanenSearch.status===200&&polanenSearch.data?.ok===true,'J.H.N. Polanen 
 const polanenRows=Array.isArray(polanenSearch.data?.schools)?polanenSearch.data.schools:[];
 check(polanenRows.some(x=>/J\.H\.N\.?\s*Polanen/i.test(String(x.name||''))),'J.H.N. Polanenschool is still missing from primary-school search');
 check(polanenRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('primary')),'J.H.N. Polanen name search leaked non-primary results');
+const aahaSearch=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'A.H.A. Atheneum',level:'vwo',radius:50})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(aahaSearch.status===200&&aahaSearch.data?.ok===true,'AAHA alias search failed');
+const aahaRows=Array.isArray(aahaSearch.data?.schools)?aahaSearch.data.schools:[];
+check(aahaRows.length===1,`AAHA alias search should canonicalize to one school, got ${aahaRows.length}`);
+check(aahaRows[0]?.name==='Arthur Alex Hogendoorn Atheneum (AAHA)',`AAHA canonical name mismatch: ${aahaRows[0]?.name}`);
+check(Number(aahaRows[0]?.metrics?.directPassRate)===93.5,'AAHA verified 2026 exam metric missing');
+
+const adFontesSearch=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'Advontis',level:'vwo',radius:50})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(adFontesSearch.status===200&&adFontesSearch.data?.ok===true,'Advontis alias search failed');
+check((adFontesSearch.data?.schools||[]).some(x=>/Ad Fontes Lyceum/i.test(String(x.name||''))),'Advontis alias did not resolve to Ad Fontes Lyceum');
+
+const kangoeroeSearch=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'Kangaroo',level:'all',radius:50})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(kangoeroeSearch.status===200&&kangoeroeSearch.data?.ok===true,'Kangaroo alias search failed');
+const kangoeroeNames=(kangoeroeSearch.data?.schools||[]).map(x=>String(x.name||''));
+check(kangoeroeNames.some(x=>/Kangoeroe Community School/i.test(x)),'Kangoeroe Community School missing from Kangaroo alias search');
+check(kangoeroeNames.some(x=>/Kangoeroe High/i.test(x)),'Kangoeroe High missing from Kangaroo alias search');
+
+check(await page.locator('#v50-type').count()===1,'School-type filter missing');
+check(await page.locator('#v50-verified').count()===1,'Verified-only filter missing');
+check(await page.locator('#v50-compare-btn').count()===1,'School comparison control missing');
+check(await page.locator('#v50-saved-btn').count()===1,'Saved-schools control missing');
 {
   const schoolAll=(await page.locator('#v50-level option[value="all"]').textContent()).trim();
   const schoolState=await page.evaluate(()=>({stored:localStorage.getItem('scholark_ui_language'),html:document.documentElement.lang,country:window.__SCHOLARK_COUNTRY__?.current?.(),apiLang:window.__SCHOLARK_COUNTRY__?.language?.()}));
