@@ -161,8 +161,8 @@
     'jamaica':'Jamaica','belgium':'Belgium','belgie':'Belgium','belgië':'Belgium'
   };
   const countryList=Object.keys(SYSTEMS);
-  const UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
-  const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return UI_LANGS.has(x)?x:'nl'};
+  const STATIC_UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
+  const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.langs?.some?.(([code])=>code===x)?x:(STATIC_UI_LANGS.has(x)?x:'nl')};
   const COUNTRY_NAMES={
     Suriname:['Suriname','Suriname','Surinam','Suriname','Suriname','Suriname','Suriname'],
     Netherlands:['Nederland','Netherlands','Países Bajos','Pays-Bas','Niederlande','Países Baixos','Paesi Bassi'],
@@ -184,7 +184,16 @@
     Belgium:['België','Belgium','Bélgica','Belgique','Belgien','Bélgica','Belgio']
   };
   const LANG_INDEX={nl:0,en:1,es:2,fr:3,de:4,pt:5,it:6};
-  const countryName=c=>COUNTRY_NAMES[c]?.[LANG_INDEX[uiLang()]]||c;
+  const COUNTRY_CODES={Suriname:'SR',Netherlands:'NL','United States':'US','United Kingdom':'GB',Germany:'DE',France:'FR',Spain:'ES',Portugal:'PT',Italy:'IT',Brazil:'BR',Canada:'CA',Australia:'AU',India:'IN','South Africa':'ZA',Guyana:'GY','Trinidad & Tobago':'TT',Jamaica:'JM',Belgium:'BE'};
+  const countryName=c=>{
+    const lang=uiLang(),idx=LANG_INDEX[lang];
+    if(idx!=null&&COUNTRY_NAMES[c]?.[idx])return COUNTRY_NAMES[c][idx];
+    const region=COUNTRY_CODES[c];
+    if(region&&typeof Intl!=='undefined'&&Intl.DisplayNames){
+      try{const v=new Intl.DisplayNames([lang],{type:'region'}).of(region);if(v)return v}catch{}
+    }
+    return c;
+  };
   const LEVEL_COPY={
     nl:{young:['Voorschools onderwijs','Vroege ontwikkeling en voorbereiding op het basisonderwijs.'],primary:['Primair onderwijs','Basisvaardigheden voor taal, rekenen en algemeen leren.'],secondary:['Lager secundair onderwijs','De eerste secundaire fase binnen dit landelijke systeem.'],student:['Hoger secundair / beroepsonderwijs','Voorbereiding op vervolgstudie of werk.'],adult:['Hoger onderwijs','Tertiair, beroepsgericht en universitair onderwijs.'],all:'Alle niveaus',upperFilter:'Hoger secundair onderwijs',vocFilter:'Beroeps- / technisch onderwijs',adultFilter:'Volwassenen / professioneel leren',studyField:'Studie/richting (optioneel)',system:'Onderwijssysteem',country:'Land',note:'landgebonden onderwijsniveaus',choose:'KIES JE ONDERWIJSNIVEAU'},
     en:{young:['Early childhood education','Early development and preparation for primary education.'],primary:['Primary education','Foundational literacy, numeracy and general learning.'],secondary:['Lower secondary education','The first secondary stage in this national system.'],student:['Upper secondary / vocational education','Preparation for further study or work.'],adult:['Higher education','Tertiary, professional and university education.'],all:'All levels',upperFilter:'Upper secondary education',vocFilter:'Vocational / technical education',adultFilter:'Adult / professional learning',studyField:'Study / field (optional)',system:'Education system',country:'Country',note:'country-aware school stages',choose:'CHOOSE YOUR EDUCATION STAGE'},
@@ -203,7 +212,7 @@
     pt:{basic:'Ensino primário',voj:'Ensino secundário inferior (VOJ)',vos:'Ensino secundário superior (VOS)',higher:'Ensino superior'},
     it:{basic:'Istruzione primaria',voj:'Secondaria inferiore (VOJ)',vos:'Secondaria superiore (VOS)',higher:'Istruzione superiore'}
   };
-  const groupCopy=()=>GROUP_COPY[uiLang()]||GROUP_COPY.nl;
+  const groupCopy=()=>GROUP_COPY[uiLang()]||GROUP_COPY.en;
   const OFFICIAL={
     Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
@@ -368,6 +377,8 @@
   function apply(){
     document.documentElement.dataset.scholarkCountry=currentCountry();
     ensureSidebarCountry();ensureDashboardSelector();applyLevels();applyGroupLabels();applySchoolLevels();seedInputs();
+    const lang=uiLang();
+    if(!STATIC_UI_LANGS.has(lang))setTimeout(()=>window.__SCHOLARK_I18N__?.apply?.(document),0);
   }
 
   const style=document.createElement('style');style.id='scholark-v96-country-style';style.textContent=`
@@ -383,9 +394,9 @@
   addEventListener('scholark-runtime-ready',()=>setTimeout(apply,60));
   addEventListener('scholark-language-change',()=>apply());
   addEventListener('scholark-language-applied',()=>apply());
-  addEventListener('scholark-language-ready',()=>{apply();setTimeout(apply,80)});
-  addEventListener('scholark-language-complete',()=>apply());
+  addEventListener('scholark-language-ready',()=>{apply();setTimeout(()=>{apply();if(!STATIC_UI_LANGS.has(uiLang()))window.__SCHOLARK_I18N__?.apply?.(document)},80)});
+  addEventListener('scholark-language-complete',()=>{apply();if(!STATIC_UI_LANGS.has(uiLang()))setTimeout(()=>window.__SCHOLARK_I18N__?.apply?.(document),0)});
   [80,260,700].forEach(ms=>setTimeout(apply,ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS]};
 })();
