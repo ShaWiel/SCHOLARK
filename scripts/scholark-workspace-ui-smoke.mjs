@@ -87,8 +87,12 @@ for(const code of ['ar','zh','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','
 check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===37&&languageCatalog.report?.dynamicCount===30,'37-language i18n self-test failed');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
 await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
+check(await page.evaluate(()=>document.documentElement.classList.contains('scholark-home-language-adapting')),'Homepage did not enter atomic language-adaptation mode');
+check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility==='hidden'),'Homepage content remained visible while adaptive translation was mutating copy');
 check((await page.locator('#v90-switch-copy').innerText()).includes('العربية'),'Adaptive Arabic switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='ar'&&document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',{timeout:4000});
+await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-home-language-adapting')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
+check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Homepage did not reveal after adaptive translation completed');
 check((await page.locator('#v55-language').inputValue())==='ar','Arabic did not become the active homepage interface language');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dir==='ltr',{timeout:4000});
@@ -287,6 +291,27 @@ const aahaRows=Array.isArray(aahaSearch.data?.schools)?aahaSearch.data.schools:[
 check(aahaRows.length===1,`AAHA alias search should canonicalize to one school, got ${aahaRows.length}`);
 check(aahaRows[0]?.name==='Arthur Alex Hogendoorn Atheneum (AAHA)',`AAHA canonical name mismatch: ${aahaRows[0]?.name}`);
 check(Number(aahaRows[0]?.metrics?.directPassRate)===93.5,'AAHA verified 2026 exam metric missing');
+
+await page.fill('#v50-country','Suriname');
+await page.fill('#v50-city','Paramaribo');
+await page.fill('#v50-name','A.H.A. Atheneum');
+await page.selectOption('#v50-level','vwo');
+await page.click('#v50-go');
+await page.waitForFunction(()=>/Arthur Alex Hogendoorn Atheneum \(AAHA\)/.test(document.querySelector('[data-sch-school-name-text="1"]')?.textContent||''),{timeout:5000});
+const immutableSchoolName=(await page.locator('[data-sch-school-name-text="1"]').first().innerText()).trim();
+check(immutableSchoolName==='Arthur Alex Hogendoorn Atheneum (AAHA)',`Rendered AAHA school name mismatch: ${immutableSchoolName}`);
+await page.evaluate(name=>{
+  const key='scholark_v90_i18n_v5-global37_es',m=JSON.parse(localStorage.getItem(key)||'{}');
+  m[name]='NOMBRE TRADUCIDO QUE NO DEBE APARECER';
+  localStorage.setItem(key,JSON.stringify(m));
+},immutableSchoolName);
+await page.selectOption('#v90-language','es');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
+check((await page.locator('[data-sch-school-name-text="1"]').first().innerText()).trim()===immutableSchoolName,'Official school name changed when SCHOLARK language changed');
+await page.selectOption('#v90-language','nl');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
+await page.fill('#v50-name','');
+await page.selectOption('#v50-level','all');
 
 const adFontesSearch=await page.evaluate(async()=>{
   const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'Advontis',level:'vwo',radius:50})});
