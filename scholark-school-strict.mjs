@@ -240,7 +240,7 @@ function schoolNameMatch(row,query){
 
 function canonicalSchoolIdentity(row){
   const hay=key([row?.name,row?.tags?.aliases].filter(Boolean).join(' '));
-  if(/(^| )a h a atheneum( |$)/.test(hay)||/(arthur alex )?hog?endoorn atheneum/.test(hay)||/hoog?edoorn atheneum/.test(hay)){
+  if(/(^| )a h a atheneum( |$)/.test(hay)||/(arthur alex )?(hogendoorn|hoogendoorn|hoogedoorn) atheneum/.test(hay)){
     return {key:'arthur alex hogendoorn atheneum',name:'Arthur Alex Hogendoorn Atheneum (AAHA)'};
   }
   return {key:key(row?.name),name:clean(row?.name)};
