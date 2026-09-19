@@ -498,6 +498,16 @@
   `;document.head.appendChild(css);
 
   const overlay=document.createElement('div');overlay.id='v90-language-overlay';overlay.innerHTML='<div class="v90-switch-card"><small>SCHOLARK LANGUAGE ENGINE</small><h2>Adapting SCHOLARK…</h2><p id="v90-switch-copy">Translating the homepage, workspace and live product demo before reload.</p><div class="v90-progress"><i></i></div></div>';document.body.appendChild(overlay);
+  function freezeHomeSurface(){
+    const home=$('#v29-home-layer');if(!home)return;
+    home.dataset.schI18nFrozen='1';home.setAttribute('aria-busy','true');
+    home.style.setProperty('visibility','hidden','important');home.style.setProperty('opacity','0','important');home.style.setProperty('pointer-events','none','important');
+  }
+  function releaseHomeSurface(){
+    const home=$('#v29-home-layer');if(!home||home.dataset.schI18nFrozen!=='1')return;
+    delete home.dataset.schI18nFrozen;home.removeAttribute('aria-busy');
+    for(const p of ['visibility','opacity','pointer-events'])home.style.removeProperty(p);
+  }
 
   const code=()=>{const v=localStorage.getItem('scholark_ui_language')||'nl';return LANGS.some(x=>x[0]===v)?v:'nl'};
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
@@ -757,7 +767,7 @@
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
-    if(home)document.documentElement.classList.add('scholark-home-language-adapting');
+    if(home){document.documentElement.classList.add('scholark-home-language-adapting');freezeHomeSurface()}
 
     // Always show the same transition state for every interface language.
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
@@ -765,6 +775,7 @@
     const transitionFailsafe=setTimeout(()=>{
       if(epoch!==translationEpoch)return;
       document.documentElement.dataset.scholarkI18nReady=target;
+      releaseHomeSurface();
       document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
       overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;
       console.warn('[SCHOLARK] language transition released by failsafe',target);
@@ -789,7 +800,7 @@
 
     if(target!=='en'&&dynamic&&navigator.onLine!==false){
       try{
-        const seed=[...new Set([...CORE,...collectDom(520)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
+        const seed=[...new Set(home?collectDom(240):[...CORE,...collectDom(360)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
           const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)applyVisible()},'ui');
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
@@ -811,6 +822,7 @@
     document.documentElement.dataset.scholarkI18nReady=target;
     if(home){
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      releaseHomeSurface();
       document.documentElement.classList.remove('scholark-home-language-adapting');
     }
     clearTimeout(transitionFailsafe);
@@ -841,7 +853,7 @@
     if(isHomeRoute()&&!STATIC_CORE_LANGS.has(normalized)&&bootLocalePrime!==normalized){
       bootLocalePrime=normalized;
       document.documentElement.classList.add('scholark-home-language-adapting');
-      changeLanguage(normalized).catch(e=>{console.warn('[SCHOLARK] boot locale prime:',clean(e?.message||e));document.documentElement.classList.remove('scholark-home-language-adapting');document.documentElement.dataset.scholarkI18nReady=normalized});
+      changeLanguage(normalized).catch(e=>{console.warn('[SCHOLARK] boot locale prime:',clean(e?.message||e));releaseHomeSurface();document.documentElement.classList.remove('scholark-home-language-adapting');document.documentElement.dataset.scholarkI18nReady=normalized});
       return;
     }
     upgradeSelectors();applyVisible();document.documentElement.dataset.scholarkI18nReady=normalized;if(normalized!=='en')scheduleUnknown();
