@@ -178,7 +178,7 @@ ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("i
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(foundation.includes("Date.now()-state.lastRepairAt<900")&&foundation.includes("scholark-home-language-adapting"),'Core foundation lacks low-churn fast path or language-transition coordination');
 ok(performance.includes("now-state.lastLayout<240")&&performance.includes("scholark-language-ready"),'Performance foundation does not suppress redundant layout work or retune after locale changes');
-ok(performance.includes("const candidates=$("),'Performance text fitting must iterate a collection safely');
+ok(performance.includes("const candidates=$$("),'Performance text fitting must iterate a collection safely');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(learningRoute.includes("const testMode=/^(1|true|yes|on)$/i")&&learningRoute.includes("if(remaining.length&&!testMode)")&&learningRoute.includes("freeUiTranslate(remaining,languageCode)")&&learningRoute.includes("slice(0,8)"),'Adaptive UI translation is not model-first with bounded public fallback');
 ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']"),'New workspace tools are missing from navigation');
