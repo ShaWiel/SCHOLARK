@@ -494,7 +494,7 @@
     #v90-language-overlay.open{display:grid}.v90-switch-card{width:min(560px,94vw);padding:28px;border-radius:24px;background:#17191f;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 100px rgba(0,0,0,.38)}
     .v90-switch-card small{display:block;font:950 8px Inter;letter-spacing:.14em;color:#c9ff6a}.v90-switch-card h2{font:950 30px/1 Inter;margin:10px 0}.v90-switch-card p{font:650 10px/1.55 Inter;color:#c8c4cf}.v90-progress{height:7px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:16px}.v90-progress i{display:block;height:100%;width:35%;background:#c9ff6a;border-radius:inherit;animation:v90move 1s ease-in-out infinite alternate}@keyframes v90move{to{transform:translateX(180%)}}
     .v90-langbox{margin:12px 8px 4px;padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}.v90-langbox label{display:block;margin-bottom:6px;font:900 6.8px Inter;letter-spacing:.13em;color:#8f8b98}.v90-langbox select{width:100%;border:1px solid rgba(255,255,255,.12);background:#22252e;color:#fff;border-radius:10px;padding:8px;font:800 8px Inter;outline:0}.v90-langbox option{background:#fff;color:#17191f}
-    html[dir="rtl"] #v51-sidebar{left:auto;right:0}html[dir="rtl"] #v51-main{left:0;right:var(--v51-side)}html[dir="rtl"] #v51-side-toggle{left:auto;right:calc(var(--v51-side) - 16px)}html[dir="rtl"] .v51-nav{text-align:right}html[dir="rtl"] #v55-topbar,html[dir="rtl"] #v29-home-layer,html[dir="rtl"] #v51-main{direction:rtl}html[dir="rtl"] #v55-topbar .v55-menu{right:auto;left:0;text-align:right}html[dir="rtl"] #v55-topbar .v55-menu button{text-align:right}html[dir="rtl"] .v90-switch-card{text-align:right}
+    html[dir="rtl"] #v51-sidebar{left:auto;right:0}html[dir="rtl"] #v51-main{left:0;right:var(--v51-side)}html[dir="rtl"] #v51-side-toggle{left:auto;right:calc(var(--v51-side) - 16px)}html[dir="rtl"] .v51-nav{text-align:right}html[dir="rtl"] #v55-topbar,html[dir="rtl"] #v29-home-layer,html[dir="rtl"] #v51-main{direction:rtl}html[dir="rtl"] #v55-topbar .v55-menu{right:auto;left:0;text-align:right}html[dir="rtl"] #v55-topbar .v55-menu button{text-align:right}html[dir="rtl"] .v90-switch-card{text-align:right}html.scholark-home-language-adapting #v29-home-layer{visibility:hidden!important;pointer-events:none!important}html.scholark-home-language-adapting{scroll-behavior:auto!important}
   `;document.head.appendChild(css);
 
   const overlay=document.createElement('div');overlay.id='v90-language-overlay';overlay.innerHTML='<div class="v90-switch-card"><small>SCHOLARK LANGUAGE ENGINE</small><h2>Adapting SCHOLARK…</h2><p id="v90-switch-copy">Translating the homepage, workspace and live product demo before reload.</p><div class="v90-progress"><i></i></div></div>';document.body.appendChild(overlay);
@@ -591,7 +591,7 @@
   }
   function protectedNode(el){
     if(!el)return false;
-    if(el.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-topbar,#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]'))return true;
+    if(el.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-topbar,#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,[data-sch-school-name="1"],[data-sch-school-name="1"] *,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]'))return true;
     if(STATIC_CORE_LANGS.has(code())&&el.closest?.('[data-v96-i18n-owned="1"],[data-v96-i18n-owned="1"] option,[data-sch-i18n-owned="1"],[data-sch-i18n-owned="1"] option,#v96-country,#v96-country option,#v96-side-country select,#v96-side-country option'))return true;
     return false;
   }
@@ -757,6 +757,7 @@
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
+    if(home)document.documentElement.classList.add('scholark-home-language-adapting');
 
     // Always show the same transition state for every interface language.
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
@@ -783,7 +784,7 @@
       try{
         const seed=[...new Set([...CORE,...collectDom(520)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
-          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()},'ui');
+          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)applyVisible()},'ui');
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
         if(epoch===translationEpoch)await window.__SCHOLARK_V55_TOPBAR__?.localize?.(target);
@@ -800,6 +801,11 @@
     const remaining=Math.max(0,260-(performance.now()-overlayStarted));
     if(remaining)await new Promise(r=>setTimeout(r,remaining));
     if(epoch!==translationEpoch)return;
+    document.documentElement.dataset.scholarkI18nReady=target;
+    if(home){
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      document.documentElement.classList.remove('scholark-home-language-adapting');
+    }
     overlay.style.opacity='0';setTimeout(()=>{if(epoch===translationEpoch){overlay.classList.remove('open');overlay.style.removeProperty('opacity')}},120);
     translating=false;
     if(!home)setTimeout(()=>document.documentElement.classList.remove('scholark-language-switching'),20);
@@ -820,10 +826,17 @@
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();changeLanguage(sel.value);
   },true);
 
+  let bootLocalePrime='';
   function boot(){
     const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
-    upgradeSelectors();applyVisible();if(normalized!=='en')scheduleUnknown();
+    if(isHomeRoute()&&!STATIC_CORE_LANGS.has(normalized)&&bootLocalePrime!==normalized){
+      bootLocalePrime=normalized;
+      document.documentElement.classList.add('scholark-home-language-adapting');
+      changeLanguage(normalized).catch(e=>{console.warn('[SCHOLARK] boot locale prime:',clean(e?.message||e));document.documentElement.classList.remove('scholark-home-language-adapting');document.documentElement.dataset.scholarkI18nReady=normalized});
+      return;
+    }
+    upgradeSelectors();applyVisible();document.documentElement.dataset.scholarkI18nReady=normalized;if(normalized!=='en')scheduleUnknown();
   }
   const pendingRoots=new Set();let mutationTimer=null,selectorPending=false;
   const activeRoot=()=>visibleRoots().find(r=>r!==$('#v55-topbar'))||visibleRoots()[0]||document.body;
