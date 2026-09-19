@@ -81,6 +81,16 @@ const competingHeaders=await page.evaluate(()=>{
   }).length;
 });
 check(competingHeaders===0,`Legacy/competing homepage header is visible alongside the SCHOLARK topbar: ${competingHeaders}`);
+const languageCatalog=await page.evaluate(()=>({options:[...document.querySelectorAll('#v55-language option')].map(o=>o.value),report:window.__SCHOLARK_I18N__?.selftest?.()}));
+check(languageCatalog.options.length===37,`Homepage language selector should expose 37 languages, got ${languageCatalog.options.length}`);
+for(const code of ['ar','zh','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','cs','sv','da','no','fi','hu','id','ms','vi','th','tl','sw','he','ur','fa','ta','te','pa'])check(languageCatalog.options.includes(code),`Missing added interface language: ${code}`);
+check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===37&&languageCatalog.report?.dynamicCount===30,'37-language i18n self-test failed');
+await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='ar'&&document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',{timeout:4000});
+check((await page.locator('#v55-language').inputValue())==='ar','Arabic did not become the active homepage interface language');
+await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dir==='ltr',{timeout:4000});
+await page.waitForTimeout(180);
 check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not boot directly in Dutch');
 await page.selectOption('#v55-language','es');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es',{timeout:4000});
@@ -113,6 +123,7 @@ await page.evaluate(()=>{
 await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
 check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level strip did not mount');
+check(await page.locator('#v90-language option').count()===37,`Workspace language selector should expose 37 languages`);
 const bootMs=Date.now()-bootStarted;timings.push(['dashboard-boot',bootMs]);check(bootMs<9000,`Dashboard boot took ${bootMs}ms (>9000ms)`);
 
 const groups=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-v51-group')));
