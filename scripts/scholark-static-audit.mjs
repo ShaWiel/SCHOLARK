@@ -126,6 +126,7 @@ ok(homeTopbar.includes("window.__SCHOLARK_I18N__?.langs")&&homeTopbar.includes('
 ok(i18n.includes("LANGS.length===37")&&i18n.includes("dynamicLocales.length===30")&&i18n.includes("['ar','he','ur','fa']"),'37-language catalog / RTL contract is incomplete');
 ok(i18n.includes("['pa','ਪੰਜਾਬੀ','Punjabi']")&&i18n.includes("['sw','Kiswahili','Swahili']")&&i18n.includes("['zh','中文','Chinese (Simplified)']"),'30 added world languages are incomplete');
 ok(i18n.includes("dynamic=!STATIC_CORE_LANGS.has(target)")&&i18n.includes("const seed=[...new Set([...CORE,...collectDom(520)])]")&&i18n.includes("scheduleLanguageCompletion(target,epoch)"),'Dynamic first-use translation priming is incomplete');
+ok(i18n.includes("overlay.classList.add('open');overlay.style.removeProperty('opacity')")&&i18n.includes("const remaining=Math.max(0,260-(performance.now()-overlayStarted))"),'Adapting SCHOLARK is not shown consistently for every language switch');
 ok(i18n.includes("if(STATIC_CORE_LANGS.has(code())&&el.closest")&&i18n.includes("#v55-topbar"),'Locale-owned UI protection does not distinguish static and adaptive languages');
 ok(countryEducation.includes('STATIC_UI_LANGS')&&countryEducation.includes('Intl.DisplayNames')&&countryEducation.includes("GROUP_COPY[uiLang()]||GROUP_COPY.en"),'Country/education UI is not compatible with adaptive languages');
 ok(workspaceShell.includes("return SURINAME_GROUP_LABELS[v]?v:'en'"),'Workspace does not use English source copy for adaptive languages');
