@@ -86,6 +86,8 @@ check(languageCatalog.options.length===37,`Homepage language selector should exp
 for(const code of ['ar','zh','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','cs','sv','da','no','fi','hu','id','ms','vi','th','tl','sw','he','ur','fa','ta','te','pa'])check(languageCatalog.options.includes(code),`Missing added interface language: ${code}`);
 check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===37&&languageCatalog.report?.dynamicCount===30,'37-language i18n self-test failed');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
+await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
+check((await page.locator('#v90-switch-copy').innerText()).includes('العربية'),'Adaptive Arabic switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='ar'&&document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',{timeout:4000});
 check((await page.locator('#v55-language').inputValue())==='ar','Arabic did not become the active homepage interface language');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
@@ -93,12 +95,16 @@ await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='n
 await page.waitForTimeout(180);
 check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not boot directly in Dutch');
 await page.selectOption('#v55-language','es');
+await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
+check((await page.locator('#v90-switch-copy').innerText()).includes('Spanish'),'Static Spanish switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es',{timeout:4000});
-await page.waitForTimeout(120);
+await page.waitForFunction(()=>!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:4000});
 check((await page.locator('#v55-account').innerText()).includes('Cuenta'),'Homepage Account label did not update cleanly to Spanish');
 await page.selectOption('#v55-language','nl');
+await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
+check((await page.locator('#v90-switch-copy').innerText()).includes('Dutch'),'Dutch switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl',{timeout:4000});
-await page.waitForTimeout(160);
+await page.waitForFunction(()=>!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:4000});
 check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not return cleanly to Dutch');
 const idleTopbarMutations=await page.evaluate(async()=>{
   const bar=document.querySelector('#v55-topbar');if(!bar)return 999;
