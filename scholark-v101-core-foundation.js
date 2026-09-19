@@ -50,6 +50,7 @@
   }
 
   function homeSurfaceHealthy() {
+    if(document.documentElement.classList.contains('scholark-home-language-adapting')&&$('#v90-language-overlay.open'))return true;
     return isVisible($('#v29-home-layer'), 180, 150);
   }
 
@@ -100,8 +101,10 @@
     else document.body.classList.remove('v51-studio','v41-studio-open');
     const lang = localStorage.getItem('scholark_ui_language') || 'nl';
     if (document.documentElement.lang !== lang) document.documentElement.lang = lang;
-    window.__SCHOLARK_COUNTRY__?.apply?.();
-    window.__SCHOLARK_WORKSPACE__?.syncLanguage?.();
+    if(!document.documentElement.classList.contains('scholark-language-switching')){
+      window.__SCHOLARK_COUNTRY__?.apply?.();
+      window.__SCHOLARK_WORKSPACE__?.syncLanguage?.();
+    }
   }
 
   function stabilizeSchools() {
@@ -185,6 +188,9 @@
       const routeChanged = state.lastRoute !== info.raw;
       if (routeChanged) { state.lastRoute = info.raw; state.routeEpoch++; }
       const token = state.routeEpoch;
+      const adaptingHome=info.kind==='home'&&document.documentElement.classList.contains('scholark-home-language-adapting');
+      if(!force&&!routeChanged&&!adaptingHome&&state.lastRepairAt&&Date.now()-state.lastRepairAt<900&&surfaceHealthy(info))return;
+      if(adaptingHome){state.lastRepairAt=Date.now();return}
       closeForeign(info);
       if (info.kind === 'home') {
         if (force || routeChanged || !homeSurfaceHealthy()) restoreHome(info, routeChanged);
@@ -241,7 +247,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) schedule('visible',60,false); });
 
   setInterval(() => {
-    if (document.hidden || document.documentElement.classList.contains('scholark-route-loading')) return;
+    if (document.hidden || document.documentElement.classList.contains('scholark-route-loading') || document.documentElement.classList.contains('scholark-home-language-adapting')) return;
     const info = routeInfo();
     if (info.kind === 'home') {
       if (!homeSurfaceHealthy()) schedule('home-watchdog',0,true);
