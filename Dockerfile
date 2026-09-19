@@ -27,6 +27,8 @@ COPY scholark-v106-workspace-power-tools.js /tmp/scholark-v106-workspace-power-t
 COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js
 COPY scholark-v108-workspace-upgrade.js /tmp/scholark-v108-workspace-upgrade.js
 COPY scholark-v109-home-owner.js /tmp/scholark-v109-home-owner.js
+COPY scholark-v110-workspace-core.js /tmp/scholark-v110-workspace-core.js
+COPY scholark-v111-workspace-experience.js /tmp/scholark-v111-workspace-experience.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
@@ -104,7 +106,7 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260919-r168\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260919-r168\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260919-r168\"></script><script defer src=\"scholark-v102-language-quiz.js?v=20260918-language-choice-v3\"></script><script defer src=\"scholark-v103-language-next-lesson.js?v=20260918-language-next-v2\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20260919-r169\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20260919-r169\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20260919-r169\"></script><script defer src=\"scholark-v102-language-quiz.js?v=20260918-language-choice-v3\"></script><script defer src=\"scholark-v103-language-next-lesson.js?v=20260918-language-next-v2\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
     && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
@@ -113,7 +115,7 @@ RUN npm install --omit=dev --no-audit --no-fund \
     && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r168
+ENV SCHOLARK_RELEASE=r169
 ENV SCHOLARK_TEST_MODE=0
 ENV SCHOLARK_FREE_AI_ONLY=1
 ENV SCHOLARK_AI_LIVE=1
