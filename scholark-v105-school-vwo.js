@@ -6,26 +6,26 @@
   const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
   const key=v=>clean(v).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   const VWO_RX=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/i;
-  const HOGENDOORN_NAME='Arthur Alex Hogendoorn Atheneum';
+  const HOGENDOORN_NAME='Arthur Alex Hogendoorn Atheneum (AAHA)';
   const HOGENDOORN={
     name:HOGENDOORN_NAME,
     school_name:HOGENDOORN_NAME,
     institution_type:'Private VWO / Atheneum',
-    description:'Paramaribo · Particuliere VWO-school · Atheneum',
+    description:'Paramaribo · Particuliere VWO-school · Atheneum · 93,5% direct geslaagd in 2026 (voorlopig)',
     country:'Suriname',country_code:'SR',city:'Paramaribo',district:'Paramaribo',
     lat:null,lon:null,distance:null,website:'',phone:'',email:'',
-    source:'SCHOLARK verified public VWO directory',
+    source:'Nuffic + MinOWC 2026 exam results',
     sourceUrl:'https://sun.sr/nieuws/lokaal/currie-resultaten-vwo-en-havo-examens-beter-dan-vorig-jaar?id=44345',
     level:'vwo',education_level:'vwo',levels:['upper_secondary','vwo'],levelDetail:'upper_secondary,vwo',
-    tags:{name:HOGENDOORN_NAME,district:'Paramaribo',city:'Paramaribo',sheet:'Private VWO','addr:country':'SR'},
-    verifiedPublic:true
+    tags:{name:HOGENDOORN_NAME,district:'Paramaribo',city:'Paramaribo',sheet:'Private VWO',aliases:'A.H.A. Atheneum; A.A. Hoogendoorn Atheneum; A.A. Hoogedoorn Atheneum','addr:country':'SR'},
+    verifiedPublic:true,metrics:{schoolYear:'2025-2026',directPassRate:93.5,directPassed:72,candidates:77,rejected:0,metricLabel:'Voorlopig VWO-eindexamenresultaat 2026'}
   };
   const isVwoRow=row=>VWO_RX.test([
     row?.name,row?.school_name,row?.institution_type,row?.level,row?.education_level,row?.school_level,
     row?.description,row?.programs,row?.study_types,row?.tags?.name,row?.tags?.description,row?.tags?.sheet
   ].filter(Boolean).join(' '));
   const shouldIncludeHogendoorn=(country,city)=>key(country)==='suriname'&&(!key(city)||key(city)==='paramaribo'||key(city).includes('paramaribo'));
-  const hasHogendoorn=rows=>(rows||[]).some(row=>/hogendoorn.*atheneum|arthur.*hogendoorn/i.test(clean(row?.name||row?.school_name)));
+  const hasHogendoorn=rows=>(rows||[]).some(row=>/hog?endoorn.*atheneum|hoog?edoorn.*atheneum|arthur.*hogendoorn|\ba\.?\s*h\.?\s*a\.?\s*atheneum/i.test(clean(row?.name||row?.school_name)));
   const currentCountry=()=>window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'Suriname';
   const isSuriname=()=>['suriname','sr'].includes(key(currentCountry()));
 
