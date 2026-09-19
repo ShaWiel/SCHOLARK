@@ -93,15 +93,33 @@
       out.innerHTML=(d.result?.subjects||[]).map(s=>'<div class="v52-item"><b>'+esc(s.name)+'</b><br>'+esc(s.why||'')+'<div class="v52-meta">'+(s.topics||[]).slice(0,6).map(t=>'<span class="v52-badge">'+esc(t)+'</span>').join('')+'</div></div>').join('')+'<div class="v108-tools"><button class="primary" id="v108-cur-master">Add priority topics to Mastery</button><button id="v108-cur-plan">Add roadmap to Planner</button></div>';
     }catch(err){out.innerHTML='<div class="v52-item">Could not build the map: '+esc(err?.message||err)+'</div>'}finally{btn.disabled=false;btn.textContent='Build subject map with ARKI'}
   }
+  function diagNorm(value){return clean(value).toLowerCase().replace(/^[a-z]\s*[.):-]\s*/i,'').replace(/[“”"'!?.,;:()]/g,'').replace(/\s+/g,' ').trim()}
+  function diagCorrect(given,answer,choices=[]){
+    const a=diagNorm(answer),g=diagNorm(given);if(!a||!g)return false;
+    if(a===g||a.includes(g)||g.includes(a))return true;
+    const aw=new Set(a.split(' ').filter(x=>x.length>2)),gw=new Set(g.split(' ').filter(x=>x.length>2));
+    if(!aw.size||!gw.size)return false;let hit=0;gw.forEach(x=>{if(aw.has(x))hit++});
+    return hit/Math.max(1,Math.min(aw.size,gw.size))>=.6;
+  }
+
   async function buildExam(btn,diagnostic=false){
     const subject=diagnostic?clean($('#v108-diag-subject')?.value):clean($('#v52-exam-name')?.value)||'Practice exam';
     const raw=diagnostic?clean($('#v108-diag-topics')?.value):clean($('#v52-exam-topics')?.value);
     const topics=raw.split(/[\n,]+/).map(clean).filter(Boolean);if(!subject&&!topics.length)return;
     btn.disabled=true;const out=$(diagnostic?'#v108-diag-out':'#v52-exam-out');out.innerHTML='<div class="v52-item">Generating questions…</div>';
     try{
-      const d=await ai('exam',{subject,prompt:(diagnostic?'Diagnostic check: ':'Practice exam: ')+subject,topics,count:diagnostic?8:12,difficulty:'mixed'});
+      const d=await ai('exam',{subject,prompt:(diagnostic?'Diagnostic check: ':'Practice exam: ')+subject,topics,count:diagnostic?8:12,difficulty:'mixed',context:diagnostic?JSON.stringify(window.__SCHOLARK_WORKSPACE_CORE__?.context?.()||{}):''});
       if(diagnostic)state.diagnostic=d.result;else state.exam=d.result;
-      out.innerHTML=(d.result?.questions||[]).map((q,i)=>'<div class="v108-question"><h4>'+(i+1)+'. '+esc(q.prompt)+'</h4>'+((q.choices||[]).length?'<div>'+q.choices.map((x,j)=>'<div style="font:650 8px/1.5 Inter">'+String.fromCharCode(65+j)+'. '+esc(x)+'</div>').join('')+'</div>':'')+'<div class="v108-tools"><button data-v108-reveal>Show answer</button>'+(diagnostic?'<button data-v108-weak="'+esc(q.topic||subject)+'">Needs work</button>':'')+'</div><div class="v108-answer"><b>Answer:</b> '+esc(q.answer)+'<br><b>Why:</b> '+esc(q.explanation||'')+'</div></div>').join('')+'<div class="v108-tools"><button class="primary" data-v108-exam-mastery="'+(diagnostic?'diagnostic':'exam')+'">Add topics to Mastery</button></div>';
+      const qs=d.result?.questions||[];
+      if(diagnostic){
+        out.innerHTML='<div class="v108-smart"><b>DIAGNOSTIC READY</b><p>Answer every question, then grade it. SCHOLARK will update Mastery automatically from the result.</p></div>'+
+          qs.map((q,i)=>'<div class="v108-question" data-v108-diag-q="'+i+'"><h4>'+(i+1)+'. '+esc(q.prompt)+'</h4>'+
+            ((q.choices||[]).length?'<div style="display:grid;gap:6px">'+q.choices.map((x,j)=>'<label style="display:flex;align-items:flex-start;gap:7px;padding:8px 9px;border:1px solid rgba(23,25,31,.09);border-radius:10px;background:#fff;font:700 8px/1.4 Inter;cursor:pointer"><input type="radio" name="v108-diag-'+i+'" value="'+esc(x)+'" style="margin-top:2px">'+String.fromCharCode(65+j)+'. '+esc(x)+'</label>').join('')+'</div>':'<textarea data-v108-diag-answer="'+i+'" placeholder="Write your answer…" style="width:100%;box-sizing:border-box;min-height:78px;margin-top:7px;border:1px solid rgba(23,25,31,.12);border-radius:11px;padding:10px;font:650 9px/1.45 Inter"></textarea>')+
+            '<div class="v108-answer"><b>Answer:</b> '+esc(q.answer)+'<br><b>Why:</b> '+esc(q.explanation||'')+'</div><div data-v108-diag-feedback="'+i+'" style="margin-top:8px"></div></div>').join('')+
+          '<div id="v108-diag-score"></div><div class="v108-tools"><button class="primary" id="v108-diag-grade">Grade diagnostic</button><button id="v108-diag-show">Show all answers</button></div>';
+      }else{
+        out.innerHTML=qs.map((q,i)=>'<div class="v108-question"><h4>'+(i+1)+'. '+esc(q.prompt)+'</h4>'+((q.choices||[]).length?'<div>'+q.choices.map((x,j)=>'<div style="font:650 8px/1.5 Inter">'+String.fromCharCode(65+j)+'. '+esc(x)+'</div>').join('')+'</div>':'')+'<div class="v108-tools"><button data-v108-reveal>Show answer</button></div><div class="v108-answer"><b>Answer:</b> '+esc(q.answer)+'<br><b>Why:</b> '+esc(q.explanation||'')+'</div></div>').join('')+'<div class="v108-tools"><button class="primary" data-v108-exam-mastery="exam">Add topics to Mastery</button></div>';
+      }
     }catch(err){out.innerHTML='<div class="v52-item">Could not generate questions: '+esc(err?.message||err)+'</div>'}finally{btn.disabled=false}
   }
 
@@ -163,6 +181,23 @@
     if(target.id==='v52-cur-build'){e.preventDefault();e.stopImmediatePropagation();buildCurriculum(target);return}
     if(target.id==='v52-exam-build'){e.preventDefault();e.stopImmediatePropagation();buildExam(target,false);return}
     if(target.id==='v108-diag-build'){buildExam(target,true);return}
+    if(target.id==='v108-diag-show'){e.preventDefault();$('#v108-diag-out .v108-answer').forEach(a=>a.classList.add('open'));target.textContent='Answers shown';return}
+    if(target.id==='v108-diag-grade'){
+      e.preventDefault();const r=state.diagnostic,qs=r?.questions||[];if(!qs.length)return;
+      let correct=0,answered=0;const subject=clean($('#v108-diag-subject')?.value)||'Diagnostic';
+      qs.forEach((q,i)=>{
+        const box=$('[data-v108-diag-q="'+i+'"]'),choice=box?.querySelector('input[type="radio"]:checked'),text=box?.querySelector('[data-v108-diag-answer="'+i+'"]'),given=choice?.value||text?.value||'',ok=diagCorrect(given,q.answer,q.choices||[]);
+        if(clean(given))answered++;if(ok)correct++;
+        const topic=clean(q.topic)||subject,feedback=$('[data-v108-diag-feedback="'+i+'"]');
+        if(feedback)feedback.innerHTML='<span class="v52-badge '+(ok?'goal':'high')+'">'+(ok?'✓ Correct':'Needs review')+'</span>';
+        const masteryValue=ok?78:35,status=ok?'Practising':'Learning',next=new Date(Date.now()+(ok?4:2)*86400000).toISOString();
+        if(window.__SCHOLARK_WORKSPACE_CORE__?.actions?.upsertMastery)window.__SCHOLARK_WORKSPACE_CORE__.actions.upsertMastery({subject,topic,mastery:masteryValue,status,nextReviewAt:next});
+        else addMastery(subject,topic,status);
+      });
+      const score=Math.round(correct/Math.max(1,qs.length)*100),scoreBox=$('#v108-diag-score');
+      if(scoreBox)scoreBox.innerHTML='<div class="v108-smart"><b>DIAGNOSTIC SCORE · '+score+'%</b><p>'+correct+' of '+qs.length+' correct · '+answered+' answered. Weak topics were added to Mastery and stronger topics were scheduled for later review.</p></div>';
+      target.textContent='✓ Graded · '+score+'%';target.disabled=true;window.__SCHOLARK_WORKSPACE_CORE__?.record?.('education','diagnostic_graded',{subject,score,correct,total:qs.length});return
+    }
     if(target.matches('[data-v108-reveal]')){const a=target.closest('.v108-question')?.querySelector('.v108-answer');a?.classList.toggle('open');target.textContent=a?.classList.contains('open')?'Hide answer':'Show answer';return}
     if(target.dataset.v108Weak){addMastery(clean($('#v108-diag-subject')?.value)||'Diagnostic',target.dataset.v108Weak,'Learning');target.textContent='✓ Added to Mastery';return}
     if(target.dataset.v108ExamMastery){const r=target.dataset.v108ExamMastery==='diagnostic'?state.diagnostic:state.exam;(r?.questions||[]).forEach(q=>addMastery(clean($('#v108-diag-subject')?.value)||clean($('#v52-exam-name')?.value)||'Exam',q.topic||'Core topic','Learning'));target.textContent='✓ Topics added';return}
