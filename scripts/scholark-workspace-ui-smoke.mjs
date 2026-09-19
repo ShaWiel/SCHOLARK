@@ -293,7 +293,8 @@ const currentSchoolCases=[
   {name:'Christelijk Pedagogisch Instituut',city:'Paramaribo',level:'mbo',expect:/Christelijk Pedagogisch Instituut/i},
   {name:'Surinaams Pedagogisch Instituut',city:'Paramaribo',level:'mbo',expect:/Surinaams Pedagogisch Instituut/i},
   {name:'Vocational College Suriname',city:'Paramaribo',level:'mbo',expect:/Vocational College Suriname/i},
-  {name:'FHR Institute for Higher Education',city:'Paramaribo',level:'wo',expect:/FHR Institute for Higher Education/i}
+  {name:'FHR Institute for Higher Education',city:'Paramaribo',level:'hbo',expect:/FHR Institute for Higher Education/i},
+  {name:'Anton de Kom Universiteit van Suriname',city:'Paramaribo',level:'wo',expect:/Anton de Kom Universiteit/i}
 ];
 for(const item of currentSchoolCases){
   const res=await page.evaluate(async item=>{
