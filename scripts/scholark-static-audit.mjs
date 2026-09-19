@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)$/)||[])[1]||'';
 const ROUTER='20260917-gemini-resilience-v3';
-const SCHOOL_STRICT='20260919-school-suriname-taxonomy-v6';
+const SCHOOL_STRICT='20260919-school-suriname-taxonomy-v7';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
@@ -75,6 +75,12 @@ ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
 ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
 ok(schoolStrict.includes("name:'Prakiki Kleuterschool'")&&schoolStrict.includes("exact:['kindergarten']")&&schoolStrict.includes("phone:'+597 499317'"),'Prakiki Kleuterschool kindergarten record is incomplete');
+ok(schoolStrict.includes("name:'NATIN Nickerie'")&&schoolStrict.includes("name:'NATIN Lelydorp'")&&schoolStrict.includes("name:'NATIN Mottonshoop'")&&schoolStrict.includes("name:'NATIN Leysweg'"),'Current NATIN locations are incomplete');
+ok(schoolStrict.includes("name:'IMEAO 1'")&&schoolStrict.includes("name:'IMEAO 3'")&&schoolStrict.includes("name:'IMEAO 4'")&&schoolStrict.includes("name:'IMEAO Nickerie'"),'Current IMEAO locations are incomplete');
+ok(schoolStrict.includes("name:'Waaldijk College'")&&schoolStrict.includes("name:'LBO Barron'")&&schoolStrict.includes("name:'Surinaamse Technische School 4 (STS-4)'")&&schoolStrict.includes("name:'LBO Stoelmanseiland'"),'Current LBO/TVET coverage is incomplete');
+ok(schoolStrict.includes("name:'Albert Cameron Instituut (ACI)'")&&schoolStrict.includes("name:'Christelijk Pedagogisch Instituut (CPI)'")&&schoolStrict.includes("name:'Pedagogisch Instituut Nickerie (PIN)'")&&schoolStrict.includes("name:'Surinaams Pedagogisch Instituut (SPI)'")&&schoolStrict.includes("name:'Avondopleiding De Nieuwe Leerkracht (ADNL)'"),'Pedagogical institute coverage is incomplete');
+ok(schoolStrict.includes("FHR Institute for Higher Education',exact:['hbo','wo']")&&schoolStrict.includes('FHR Institute for Social Studies'),'FHR HBO/WO accreditation mapping is incomplete');
+ok(schoolStrict.includes('generalAndSecondaryTotal:597')&&schoolStrict.includes('years1to8:373')&&schoolStrict.includes('years9to12:163')&&schoolStrict.includes('years13to16:61')&&schoolStrict.includes('higherInstitutesApprox:30'),'MinOWC 2024 research baseline is missing');
 ok(schoolStrict.includes("name:'Arthur Alex Hogendoorn Atheneum (AAHA)'")&&schoolStrict.includes('directPassRate:93.5')&&schoolStrict.includes('canonicalSchoolIdentity'),'AAHA canonicalization/performance metadata is incomplete');
 ok(schoolStrict.includes("name:'Kangoeroe Community School'")&&schoolStrict.includes("name:'Kangoeroe High'")&&schoolStrict.includes("aliases:'Kangaroo"),'Kangoeroe school coverage/aliases are incomplete');
 ok(schoolStrict.includes("name:'Ad Fontes Lyceum'")&&schoolStrict.includes('Advontis; Advantis'),'Ad Fontes typo aliases are missing');
