@@ -212,7 +212,16 @@
     pt:{basic:'Ensino primário',voj:'Ensino secundário inferior (VOJ)',vos:'Ensino secundário superior (VOS)',higher:'Ensino superior'},
     it:{basic:'Istruzione primaria',voj:'Secondaria inferiore (VOJ)',vos:'Secondaria superiore (VOS)',higher:'Istruzione superiore'}
   };
-  const groupCopy=()=>GROUP_COPY[uiLang()]||GROUP_COPY.en;
+  const UNIVERSAL_GROUP_COPY={
+    nl:{basic:'Primair Onderwijs',voj:'Lager Secundair',vos:'Hoger Secundair',higher:'Hoger Onderwijs'},
+    en:{basic:'Primary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},
+    es:{basic:'Educación Primaria',voj:'Secundaria Inferior',vos:'Secundaria Superior',higher:'Educación Superior'},
+    fr:{basic:'Enseignement primaire',voj:'Secondaire inférieur',vos:'Secondaire supérieur',higher:'Enseignement supérieur'},
+    de:{basic:'Primarbildung',voj:'Sekundarstufe I',vos:'Sekundarstufe II',higher:'Hochschulbildung'},
+    pt:{basic:'Ensino primário',voj:'Ensino secundário inferior',vos:'Ensino secundário superior',higher:'Ensino superior'},
+    it:{basic:'Istruzione primaria',voj:'Secondaria inferiore',vos:'Secondaria superiore',higher:'Istruzione superiore'}
+  };
+  const groupCopy=()=>{const source=currentCountry()==='Suriname'?GROUP_COPY:UNIVERSAL_GROUP_COPY;return source[uiLang()]||source.en};
   const OFFICIAL={
     Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
@@ -278,7 +287,7 @@
     let box=$('#v96-side-country',side);
     if(!box){
       box=document.createElement('div');box.id='v96-side-country';box.dataset.v96I18nOwned='1';box.innerHTML='<small></small><select data-v96-i18n-owned="1"></select><span></span>';
-      const before=$('.v51-quality',side);before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
+      const before=$('.v51-section',side).find(x=>clean(x.textContent).toUpperCase()==='COMING SOON');before?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
       $('select',box).addEventListener('change',e=>setCountry(e.target.value,'sidebar'));
     }
     const selected=currentCountry(),sel=$('select',box),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
@@ -313,13 +322,12 @@
       const st=sys.stages.find(x=>x[0]===id);if(!st)return;
       const lc=localizedStage(id,c);
       if(icon)icon.textContent=st[1];if(title)title.textContent=lc.title;if(desc)desc.textContent=lc.description;
-      btn.dataset.countrySystem=sys.label;
+      btn.dataset.countrySystem=sys.label;btn.dataset.educationGroup=id==='young'||id==='primary'?'basic':id==='secondary'?'voj':id==='student'?'vos':'higher';
     });
     const label=$('#v51-main [data-v51-page="dashboard"] .v51-level-label');
     if(label){label.dataset.v96I18nOwned='1';label.textContent=ui.choose+' · '+countryName(c).toUpperCase()}
   }
   function applyGroupLabels(){
-    if(currentCountry()!=='Suriname')return;
     const copy=groupCopy();
     document.querySelectorAll('.v51-level-cluster[data-v51-group]').forEach(cluster=>{
       const id=cluster.dataset.v51Group,label=$('.v51-level-group',cluster);
