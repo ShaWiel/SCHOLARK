@@ -21,7 +21,7 @@
     'scholark-v81-stability-foundation.js','scholark-v82-tutor-cloud.js','scholark-v83-study-ahead-cloud.js','scholark-v84-profile-cloud.js',
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
-    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v106-workspace-power-tools.js',
+    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js',
     'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js'
   ];
   const BASE = new Set([
@@ -39,6 +39,7 @@
   ];
   const FEATURES = {
     studio:['scholark-v43-studio-workspace.js','scholark-v45-studio-generation-brief.js','scholark-v59-studio-ai-engine.js'],
+    ai:['scholark-v107-general-ai.js'],
     tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
     education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
     planner:['scholark-v52-workspace-qa.js'],
@@ -79,7 +80,7 @@
     const h = String(hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0];
     if (!h || h === 'home' || h === 'pricing' || h === 'start') return 'home';
     if (/^(presentation|webpage|document|report|graphic|social|studio)/.test(h)) return 'studio';
-    for (const key of ['schools','study','book','tutor','education','language','files','project','planner','focus','flashcards','assignments','progress','goal']) if (h.startsWith(key)) return key;
+    for (const key of ['schools','study','book','ai','tutor','education','language','files','project','planner','focus','flashcards','assignments','progress','goal']) if (h.startsWith(key)) return key;
     return 'dashboard';
   }
 
