@@ -26,6 +26,7 @@ const workspaceShell=read('scholark-v51-workspace-shell.js');
 const schoolFinder=read('scholark-v50-school-finder.js');
 const i18n=read('scholark-v90-i18n-engine.js');
 const homeFoundation=read('scholark-v99-home-foundation.js');
+const homeTopbar=read('scholark-v55-home-topbar-workspace-entry.js');
 const countryEducation=read('scholark-v96-country-education.js');
 const schoolClient=read('scholark-v104-school-filter-guard.js');
 const schoolVwo=read('scholark-v105-school-vwo.js');
@@ -116,6 +117,10 @@ ok(homeFoundation.includes('[data-sch-i18n-owned="1"]'),'Foundation repair can s
 ok(accountSettings.includes("window.__SCHOLARK_I18N__?.changeLanguage?.(lang)"),'Account language save does not apply the UI language engine');
 ok(runtime.includes("const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js']"),'Locale/country runtime modules are not prioritized before route UI');
 ok(runtime.includes("const HOME = ['scholark-v28-home-experience.js'")&&runtime.includes("'scholark-v55-home-topbar-workspace-entry.js','scholark-v99-home-foundation.js'"),'Home-only modules are not isolated from workspace boot');
+ok(runtime.includes("const HOME_FIRST=['scholark-v55-home-topbar-workspace-entry.js']")&&runtime.includes("key==='home')?HOME_FIRST"),'Homepage topbar is not prioritized before heavier home modules');
+ok(homeTopbar.includes("document.documentElement.classList.toggle('v55-public-home',home)")&&homeTopbar.includes("window.__SCHOLARK_V55_DOC_CLICK_BOUND__")&&homeTopbar.includes("if(touched){scheduleTopbarRepair(35);break}"),'Homepage topbar stability guards are incomplete');
+ok(homeTopbar.includes("const TOPBAR_COPY=")&&homeTopbar.includes("data-sch-i18n-owned=\"1\"")&&homeTopbar.includes('syncTopbarCopy'),'Homepage topbar language ownership is incomplete');
+ok(prepaint.includes("document.querySelectorAll('#v55-topbar').length===1")&&prepaint.includes("document.documentElement.classList.contains('v55-public-home')"),'Prepaint can reveal before the homepage topbar is stable');
 ok(!workspaceBlock.includes('scholark-v43-studio-workspace.js')&&!workspaceBlock.includes('scholark-v52-workspace-qa.js')&&!workspaceBlock.includes('scholark-v64-projects.js'),'Heavy feature modules still load on every workspace route');
 ok(runtime.includes("studio:['scholark-v43-studio-workspace.js'")&&runtime.includes("planner:['scholark-v52-workspace-qa.js']")&&runtime.includes("project:['scholark-v64-projects.js'"),'Lazy feature routing is incomplete after workspace boot optimization');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
