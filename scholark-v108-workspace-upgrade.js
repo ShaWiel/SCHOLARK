@@ -160,7 +160,7 @@
     if(root.dataset.tool==='assignments'&&!$('#v108-assign-export',root)){const b=document.createElement('button');b.id='v108-assign-export';b.className='v106-btn alt';b.textContent='Export assignments';b.onclick=()=>download('scholark-assignments.json',JSON.stringify(read(ASSIGN,[]),null,2),'application/json');root.appendChild(b)}
   }
   function enhanceContext(){
-    if(window.__SCHOLARK_V114_ORCHESTRATOR__){$('.v108-context').forEach(x=>x.remove());return}
+    if(window.__SCHOLARK_V114_ORCHESTRATOR__){$$('.v108-context').forEach(x=>x.remove());return}
     const h=String(location.hash||'').toLowerCase();
     let root,label,prefix;
     if(h==='#language'){root=$('.v93');label='Ask ARKI about this lesson';prefix='Help me understand or practise this language lesson:'}
@@ -182,7 +182,7 @@
     if(target.matches('[data-edu="diagnostic"]')){e.preventDefault();e.stopImmediatePropagation();renderDiagnostic();return}
     if(target.matches('[data-edu="review"]')){e.preventDefault();e.stopImmediatePropagation();renderReview();return}
     if(target.id==='v108-diag-build'){buildExam(target,true);return}
-    if(target.id==='v108-diag-show'){e.preventDefault();$('#v108-diag-out .v108-answer').forEach(a=>a.classList.add('open'));target.textContent='Answers shown';return}
+    if(target.id==='v108-diag-show'){e.preventDefault();$$('#v108-diag-out .v108-answer').forEach(a=>a.classList.add('open'));target.textContent='Answers shown';return}
     if(target.id==='v108-diag-grade'){
       e.preventDefault();const r=state.diagnostic,qs=r?.questions||[];if(!qs.length)return;
       let correct=0,answered=0;const subject=clean($('#v108-diag-subject')?.value)||'Diagnostic';
