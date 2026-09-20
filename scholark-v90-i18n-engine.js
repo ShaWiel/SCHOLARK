@@ -937,6 +937,7 @@
     const localeCoverage={};
     for(const [lc] of LANGS){
       if(lc==='en'){localeCoverage[lc]=1;continue}
+      if(!STATIC_CORE_LANGS.has(lc)){localeCoverage[lc]=null;continue}
       const m=loadMap(lc),hit=required.filter(x=>clean(m[x])&&clean(m[x])!==x).length;
       localeCoverage[lc]=hit/required.length;
     }
@@ -949,7 +950,7 @@
     const excluded=new Set(['srn']);
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
     const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone};
+    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone};
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
