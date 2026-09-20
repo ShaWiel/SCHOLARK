@@ -32,7 +32,7 @@
   function rootFor(tool){
     if(tool==='dashboard')return $('[data-v51-page="dashboard"].active .v51-shell')||$('[data-v51-page="dashboard"] .v51-shell');
     if(tool==='ai')return $('#v107-ai');
-    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool');
+    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool[data-v52-tool="'+tool+'"]');
     if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]');
     if(tool==='language')return $('.v93');
     if(tool==='files')return $('.v86');
