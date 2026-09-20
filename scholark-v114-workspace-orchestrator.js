@@ -51,6 +51,9 @@
   }
   function hideTransition(){transitionEl.classList.remove('open')}
   function open(tool){tool=clean(tool).toLowerCase();if(tool&&tool!==route())showTransition(tool);core()?.actions?.open?.(tool);setTimeout(()=>{if(!readHandoff())hideTransition()},900)}
+  function syncCloud(kind){
+    window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'r175',preferLocal:true}}));
+  }
   function sourceKey(prefix,text){return 'r174:'+prefix+':'+hash(clean(text).toLowerCase())}
   function safeJson(value){try{return JSON.stringify(value)}catch{return''}}
   function nextPlanner(){
@@ -92,10 +95,10 @@
     return core()?.actions?.addFlashcards?.(d.result?.deck||subject,d.result?.cards||[])||0;
   }
   function addPlan(input,openAfter=true){
-    const row=core()?.actions?.addPlan?.(input);if(!row)return null;showToast('Added to Planner.');if(openAfter)open('planner');return row
+    const row=core()?.actions?.addPlan?.(input);if(!row)return null;syncCloud('planner');showToast('Added to Planner.');if(openAfter)open('planner');return row
   }
   function addGoal(input,openAfter=true){
-    const row=core()?.actions?.addGoal?.(input);if(!row)return null;showToast('Added to Goals.');if(openAfter)open('goal');return row
+    const row=core()?.actions?.addGoal?.(input);if(!row)return null;syncCloud('goal');showToast('Added to Goals.');if(openAfter)open('goal');return row
   }
   function prepareFocus(input){
     const row=core()?.actions?.prepareFocus?.(input);if(!row)return null;showToast('Focus session prepared.');open('focus');return row
@@ -166,7 +169,7 @@
     }
     if(tool==='tutor'){
       const x=tutorData(),text=x.answer||x.user;
-      add('mastery','Save to Mastery',()=>{core()?.actions?.upsertMastery?.({subject:x.subject,topic:x.topic,mastery:55,status:'Learning',nextReviewAt:new Date(Date.now()+2*86400000).toISOString()});showToast('Saved to Mastery.')},{primary:true,disabled:!x.topic});
+      add('mastery','Save to Mastery',()=>{core()?.actions?.upsertMastery?.({subject:x.subject,topic:x.topic,mastery:55,status:'Learning',nextReviewAt:new Date(Date.now()+2*86400000).toISOString()});syncCloud('mastery');showToast('Saved to Mastery.')},{primary:true,disabled:!x.topic});
       add('cards','Create flashcards',async()=>{const n=await generateCards(x.subject,[x.topic],text);showToast(n+' flashcards added.');open('flashcards')},{disabled:!text});
       add('plan','Plan review',()=>addPlan({text:'Review · '+x.topic,type:'study',subject:x.subject,date:today(),duration:25,priority:'medium',sourceKey:sourceKey('tutor-plan',x.topic)}),{disabled:!x.topic});
       add('focus','Focus this',()=>prepareFocus({task:'Practise · '+x.topic,duration:25,autoComplete:false}),{disabled:!x.topic});return actions;
