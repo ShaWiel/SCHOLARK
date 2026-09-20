@@ -70,6 +70,7 @@
       if(!$("#v90-language"))window.__SCHOLARK_I18N__?.upgradeSelectors?.();
       if(!$("#v96-side-country"))window.__SCHOLARK_COUNTRY__?.apply?.();
       if(workspaceRoutes.has(route())&&route()!=="dashboard")window.__SCHOLARK_V112_VISUAL__?.decorate?.();
+      if(workspaceRoutes.has(route()))window.__SCHOLARK_V114_ORCHESTRATOR__?.refresh?.();
     }
   }
   function verify(){
@@ -86,7 +87,7 @@
     const coverage=i18n?.coverage?.(620)||null;
     const result={
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&orchestration&&languageRegistry&&selectorsHealthy,
-      release:"r174",route:r,workspace:work,rootLocked,qualityBadge:quality,
+      release:"r175",route:r,workspace:work,rootLocked,qualityBadge:quality,
       languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,orchestration,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
@@ -114,7 +115,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260920-r174",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260920-r175",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
   window.__SCHOLARK_FOUNDATION_R174__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R173__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R172__=foundationApi;
