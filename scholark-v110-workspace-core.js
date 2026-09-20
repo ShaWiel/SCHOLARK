@@ -24,6 +24,10 @@
   const dayKey=(v=Date.now())=>{const d=new Date(v);return Number.isNaN(d.getTime())?'':d.toISOString().slice(0,10)};
   const priorityRank={high:0,medium:1,low:2};
   const safeDate=value=>{if(!value)return Infinity;const t=new Date(String(value).length===10?value+'T23:59:59':value).getTime();return Number.isFinite(t)?t:Infinity};
+  const cloudTimers=new Map();
+  function cloudRefresh(kind){
+    clearTimeout(cloudTimers.get(kind));cloudTimers.set(kind,setTimeout(()=>{cloudTimers.delete(kind);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'core-r175',preferLocal:true}}))},120));
+  }
 
   if(!window.__SCHOLARK_STORAGE_EVENTS_PATCHED__){
     window.__SCHOLARK_STORAGE_EVENTS_PATCHED__=true;
@@ -165,7 +169,7 @@
     const rows=planner(),sourceKey=clean(input.sourceKey);
     if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
     const row={id:input.id||uid('plan'),text:clean(input.text)||'Study action',type:input.type||'task',subject:clean(input.subject),date:clean(input.date),time:clean(input.time),duration:Math.max(0,Number(input.duration)||0),priority:['high','medium','low'].includes(input.priority)?input.priority:'medium',goalId:clean(input.goalId),sourceKey,status:input.status==='done'?'done':'todo',createdAt:new Date().toISOString()};
-    rows.push(row);write(KEYS.planner,rows);record('planner','added',{id:row.id,text:row.text,sourceKey});return row;
+    rows.push(row);write(KEYS.planner,rows);record('planner','added',{id:row.id,text:row.text,sourceKey});cloudRefresh('planner');return row;
   }
   function updatePlan(id,patch={}){
     const rows=planner(),row=rows.find(x=>x.id===id);if(!row)return null;
@@ -173,21 +177,21 @@
     if(safe.text!==undefined)safe.text=clean(safe.text);if(safe.subject!==undefined)safe.subject=clean(safe.subject);if(safe.date!==undefined)safe.date=clean(safe.date);if(safe.time!==undefined)safe.time=clean(safe.time);if(safe.goalId!==undefined)safe.goalId=clean(safe.goalId);
     if(safe.priority!==undefined&&!['high','medium','low'].includes(safe.priority))safe.priority='medium';
     if(safe.duration!==undefined)safe.duration=Math.max(0,Number(safe.duration)||0);
-    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.planner,rows);record('planner','updated',{id:row.id,status:row.status||'todo'});return row;
+    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.planner,rows);record('planner','updated',{id:row.id,status:row.status||'todo'});cloudRefresh('planner');return row;
   }
   function completePlan(id,done=true){return updatePlan(id,{status:done?'done':'todo',completedAt:done?new Date().toISOString():''})}
-  function removePlan(id){const rows=planner(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.planner,rows.filter(x=>x.id!==id));record('planner','deleted',{id});return true}
+  function removePlan(id){const rows=planner(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.planner,rows.filter(x=>x.id!==id));record('planner','deleted',{id});cloudRefresh('planner');return true}
   function addGoal(input={}){
     const rows=goals(),sourceKey=clean(input.sourceKey);if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
     const row={id:input.id||uid('goal'),text:clean(input.text)||'Learning goal',category:input.category||'learning',date:clean(input.date),measure:clean(input.measure),sourceKey,progress:Math.max(0,Math.min(100,Number(input.progress)||0)),status:input.status==='complete'?'complete':'active',createdAt:new Date().toISOString()};
-    rows.push(row);write(KEYS.goals,rows);record('goal','added',{id:row.id,text:row.text,sourceKey});return row;
+    rows.push(row);write(KEYS.goals,rows);record('goal','added',{id:row.id,text:row.text,sourceKey});cloudRefresh('goal');return row;
   }
   function updateGoal(id,patch={}){
     const rows=goals(),row=rows.find(x=>x.id===id);if(!row)return null;const safe={...patch};delete safe.id;delete safe.createdAt;
     if(safe.text!==undefined)safe.text=clean(safe.text);if(safe.date!==undefined)safe.date=clean(safe.date);if(safe.measure!==undefined)safe.measure=clean(safe.measure);if(safe.progress!==undefined)safe.progress=Math.max(0,Math.min(100,Number(safe.progress)||0));
-    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.goals,rows);record('goal','updated',{id:row.id,status:row.status||'active'});return row;
+    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.goals,rows);record('goal','updated',{id:row.id,status:row.status||'active'});cloudRefresh('goal');return row;
   }
-  function removeGoal(id){const rows=goals(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.goals,rows.filter(x=>x.id!==id));record('goal','deleted',{id});return true}
+  function removeGoal(id){const rows=goals(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.goals,rows.filter(x=>x.id!==id));record('goal','deleted',{id});cloudRefresh('goal');return true}
   function addAssignment(input={}){
     const rows=assignments(),sourceKey=clean(input.sourceKey);if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
     const row={id:input.id||uid('assignment'),title:clean(input.title)||'Assignment',subject:clean(input.subject),type:input.type||'assignment',priority:['high','medium','low'].includes(input.priority)?input.priority:'medium',dueDate:clean(input.dueDate),instructions:clean(input.instructions),sourceKey,progress:Math.max(0,Math.min(100,Number(input.progress)||0)),status:input.status==='complete'||Number(input.progress)>=100?'complete':'active',createdAt:new Date().toISOString()};
@@ -211,7 +215,7 @@
     if(Number.isFinite(Number(input.mastery)))row.mastery=Math.max(0,Math.min(100,Number(input.mastery)));
     if(input.status)row.status=input.status;
     if(input.nextReviewAt!==undefined)row.nextReviewAt=input.nextReviewAt;
-    row.updatedAt=new Date().toISOString();write(KEYS.mastery,rows);record('education','mastery_update',{id:row.id,subject,topic,mastery:row.mastery});return row;
+    row.updatedAt=new Date().toISOString();write(KEYS.mastery,rows);record('education','mastery_update',{id:row.id,subject,topic,mastery:row.mastery});cloudRefresh('mastery');return row;
   }
   function addFlashcards(deck,items=[]){
     const rows=flashcards();let added=0;
@@ -243,7 +247,7 @@
   }
 
   const api={
-    version:'20260920-r174',
+    version:'20260920-r175',
     keys:KEYS,
     read,array,write,
     data:{planner,goals,mastery,assignments,flashcards,focusHistory,activity,learningProjects},

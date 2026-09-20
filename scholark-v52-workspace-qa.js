@@ -47,7 +47,7 @@
   const saveMastery=a=>write(eduKey,a);
   const assignments=()=>read(ASSIGN_KEY).map(x=>({...x,id:x.id||uid('assignment'),title:x.title||'',subject:x.subject||'',type:x.type||'assignment',dueDate:x.dueDate||'',instructions:x.instructions||'',progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'||Number(x.progress)>=100?'complete':'active'}));
   const assignmentDue=x=>{if(!x?.dueDate)return'No due date';const todayAt=new Date(today()+'T00:00:00').getTime(),due=new Date(x.dueDate+'T00:00:00').getTime(),d=Math.ceil((due-todayAt)/86400000);return d<0?Math.abs(d)+' day'+(Math.abs(d)===1?'':'s')+' overdue':d===0?'Due today':d===1?'Due tomorrow':'Due in '+d+' days'};
-  function addPlan(row){const a=plans();a.push(normalizePlan({id:uid('plan'),status:'todo',createdAt:new Date().toISOString(),...row}));savePlans(a);return a[a.length-1]}
+  function addPlan(row){const item=normalizePlan({id:uid('plan'),status:'todo',createdAt:new Date().toISOString(),...row}),api=window.__SCHOLARK_WORKSPACE_CORE__;if(api?.actions?.addPlan)return api.actions.addPlan(item);const a=plans();a.push(item);savePlans(a);return a[a.length-1]}
   function linkedTasks(goalId){return plans().filter(x=>x.goalId===goalId)}
   function goalProgress(g){const linked=linkedTasks(g.id),taskProgress=linked.length?Math.round(linked.filter(x=>x.status==='done').length/linked.length*100):0;return Math.max(Number(g.progress)||0,taskProgress)}
   function tutorPrompt(prompt){window.__SCHOLARK_WORKSPACE__?.openTool?.('tutor');setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},120)}
@@ -232,6 +232,7 @@
     if(id==='dashboard')return openDashboard();if(id==='studio')return openStudio();if(id==='schools')return openSchools();
     closeOtherViews();forceQuality();document.body.classList.add('v51-workspace');activateNav(id);route(id);
     if(id==='tutor')renderTutor();else if(id==='education')renderEducation();else if(id==='planner')renderPlanner();else if(id==='progress')renderProgress();else if(id==='goal')renderGoals();else if(id==='project')renderProjects();
+    const surface=$('.v52-tool');if(surface)surface.dataset.v52Tool=id;
   }
 
   // Sidebar navigation is owned by V51. V52 exposes the fast native views

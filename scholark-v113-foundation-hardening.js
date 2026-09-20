@@ -70,6 +70,7 @@
       if(!$("#v90-language"))window.__SCHOLARK_I18N__?.upgradeSelectors?.();
       if(!$("#v96-side-country"))window.__SCHOLARK_COUNTRY__?.apply?.();
       if(workspaceRoutes.has(route())&&route()!=="dashboard")window.__SCHOLARK_V112_VISUAL__?.decorate?.();
+      if(workspaceRoutes.has(route()))window.__SCHOLARK_V114_ORCHESTRATOR__?.refresh?.();
     }
   }
   function verify(){
@@ -79,15 +80,17 @@
     const quality=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(el.textContent)));
     const visual=!work||r==="dashboard"||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true;
     const orchestration=!work||!!window.__SCHOLARK_V114_ORCHESTRATOR__&&window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok!==false;
+    const owners=window.__SCHOLARK_ACTION_OWNERS__||{},learningOwnerNeeded=['tutor','education','study'].includes(r),eventOwnership=!learningOwnerNeeded||(owners.tutor==='v62'&&owners.curriculum==='v62'&&owners.exam==='v62');
+    const connectedBars=$$('.v114-connect').length,connectedSurfaceHealthy=!window.__SCHOLARK_V114_ORCHESTRATOR__||(connectedBars<=1&&$$('.v108-context').length===0);
     const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
     const selectors=$$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
     const languageRegistry=!!i18n&&i18n.count===74&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
     const selectorsHealthy=selectorCounts.every(n=>n===74);
     const coverage=i18n?.coverage?.(620)||null;
     const result={
-      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&orchestration&&languageRegistry&&selectorsHealthy,
-      release:"r174",route:r,workspace:work,rootLocked,qualityBadge:quality,
-      languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,orchestration,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&languageRegistry&&selectorsHealthy,
+      release:"r175",route:r,workspace:work,rootLocked,qualityBadge:quality,
+      languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     result.ok=result.ok&&result.runtimeFailures.length===0;
@@ -114,7 +117,8 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260920-r174",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260920-r175",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R174__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R173__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R172__=foundationApi;

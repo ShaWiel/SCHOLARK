@@ -67,11 +67,14 @@
   function finishFocus(x){
     const elapsed=Math.max(1,Math.round((x.duration*60000)/60000));
     const h=focusHistory();h.push({id:uid('focus'),task:x.task||'Focus session',minutes:elapsed,startedAt:x.startedAt||Date.now()-x.duration*60000,endedAt:Date.now(),date:today()});write(FOCUS_HISTORY,h.slice(-250));
+    let plannerCompleted=false;
     if(x.autoComplete&&x.linkedPlannerId){
-      const p=plannerObjects(),row=p.find(z=>z.id===x.linkedPlannerId);if(row){row.status='done';row.completedAt=nowIso();savePlanner(p)}
+      const api=window.__SCHOLARK_WORKSPACE_CORE__,updated=api?.actions?.completePlan?.(x.linkedPlannerId,true);
+      if(updated)plannerCompleted=true;
+      else{const p=plannerObjects(),row=p.find(z=>z.id===x.linkedPlannerId);if(row){row.status='done';row.completedAt=nowIso();savePlanner(p);plannerCompleted=true;window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'focus-r175',preferLocal:true}}))}}
     }
     saveFocus({...x,running:false,endAt:0,remaining:0,startedAt:0});
-    window.dispatchEvent(new CustomEvent('scholark:focus-complete',{detail:{task:x.task||'',minutes:elapsed}}));
+    window.dispatchEvent(new CustomEvent('scholark:focus-complete',{detail:{task:x.task||'',minutes:elapsed,linkedPlannerId:x.linkedPlannerId||'',plannerCompleted}}));
   }
   function syncFocusView(){
     const x=focusState(),remaining=focusRemaining(x);
@@ -169,7 +172,7 @@
   function assignments(){return read(ASSIGN_KEY,[]).map(x=>{const progress=Math.max(0,Math.min(100,Number(x.progress)||0));return {...x,id:x.id||uid('assign'),title:x.title||'',subject:x.subject||'',dueDate:x.dueDate||'',type:x.type||'assignment',priority:x.priority||'medium',instructions:x.instructions||'',status:x.status==='complete'||progress>=100?'complete':'active',progress,createdAt:x.createdAt||nowIso()}})}
   function saveAssignments(a){write(ASSIGN_KEY,a)}
   function planAssignment(a){
-    const rows=plannerObjects(),existing=new Set(rows.map(x=>x.id)),due=a.dueDate?new Date(a.dueDate+'T18:00:00').getTime():Date.now()+7*86400000,start=Date.now(),span=Math.max(86400000,due-start);
+    const rows=plannerObjects(),existing=new Set(rows.map(x=>x.id)),due=a.dueDate?new Date(a.dueDate+'T18:00:00').getTime():Date.now()+7*86400000,start=Date.now(),span=Math.max(86400000,due-start),api=window.__SCHOLARK_WORKSPACE_CORE__;
     const steps=[
       ['Understand the brief and define the required outcome',0.03,'high',25],
       ['Research / collect sources and examples',0.18,'high',45],
@@ -178,8 +181,9 @@
       ['Final check and submit',0.94,'high',25]
     ];
     let added=0;
-    steps.forEach((s,i)=>{const id='assignment-'+a.id+'-'+i;if(existing.has(id))return;rows.push({id,text:s[0]+' · '+a.title,type:'task',subject:a.subject||a.title,date:day(Math.min(due,start+span*s[1])),time:'',duration:s[3],priority:s[2],goalId:'',status:'todo',createdAt:nowIso()});added++});
-    savePlanner(rows);return added;
+    steps.forEach((s,i)=>{const id='assignment-'+a.id+'-'+i;if(existing.has(id))return;const row={id,text:s[0]+' · '+a.title,type:'task',subject:a.subject||a.title,date:day(Math.min(due,start+span*s[1])),time:'',duration:s[3],priority:s[2],goalId:'',sourceKey:'assignment:'+a.id+':'+i,status:'todo',createdAt:nowIso()};if(api?.actions?.addPlan)api.actions.addPlan(row);else rows.push(row);existing.add(id);added++});
+    if(!api?.actions?.addPlan&&added){savePlanner(rows);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'assignment-r175',preferLocal:true}}))}
+    return added;
   }
   function assignmentTutor(a){
     openTutor('Tell me exactly what I should do next for this assignment. Use its deadline, progress, subject, type and saved requirements. Explain the task simply, prioritise the work, break it into concrete steps, recommend the best study/work method, and tell me what I should do first today.',a.id);
@@ -215,6 +219,6 @@
     focus:{state:focusState,history:focusHistory},
     flashcards:{all:cards,due:dueCards},
     assignments:{all:assignments,plan:planAssignment},
-    version:'20260920-r174'
+    version:'20260920-r175'
   };
 })();

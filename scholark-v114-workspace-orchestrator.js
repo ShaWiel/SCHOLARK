@@ -10,7 +10,7 @@
   const ROUTES=new Set(['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study']);
   const NAMES={dashboard:'Dashboard',ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',focus:'Focus Sessions',flashcards:'Flashcards',assignments:'Assignments',progress:'Progress',goal:'Goals',language:'Language Learner',files:'Files & Notes',project:'My Projects',schools:'Schools Near Me',study:'Study Ahead'};
   const HANDOFF='scholark_v114_handoff';
-  let activeActions=new Map(),raf=0,mutationTimer=0,cloudTimer=0,consumeTimer=0,lastSignature='';
+  let activeActions=new Map(),raf=0,mutationTimer=0,consumeTimer=0,lastSignature='';
 
   const style=document.createElement('style');style.id='scholark-v114-style';style.textContent=[
     '.v114-connect{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 14px;padding:12px 14px;border-radius:18px;background:linear-gradient(120deg,#17191f,#27213e);color:#fff;box-shadow:0 16px 42px rgba(31,27,63,.12);font-family:Inter,system-ui;position:relative;overflow:hidden}',
@@ -24,6 +24,7 @@
     '@media(prefers-reduced-motion:reduce){.v114-actions button,#v114-toast,#v114-transition{transition:none!important}#v114-transition i{animation:none!important}}'
   ].join('');document.head.appendChild(style);
 
+  $$('.v108-context').forEach(x=>x.remove());
   const toastEl=document.createElement('div');toastEl.id='v114-toast';document.body.appendChild(toastEl);
   const transitionEl=document.createElement('div');transitionEl.id='v114-transition';document.body.appendChild(transitionEl);
 
@@ -32,8 +33,8 @@
   function rootFor(tool){
     if(tool==='dashboard')return $('[data-v51-page="dashboard"].active .v51-shell')||$('[data-v51-page="dashboard"] .v51-shell');
     if(tool==='ai')return $('#v107-ai');
-    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool');
-    if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]')||$('#v106-root');
+    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool[data-v52-tool="'+tool+'"]');
+    if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]');
     if(tool==='language')return $('.v93');
     if(tool==='files')return $('.v86');
     if(tool==='project')return $('.v64-projects')||$('#v51-fallback');
@@ -51,13 +52,7 @@
   function hideTransition(){transitionEl.classList.remove('open')}
   function open(tool){tool=clean(tool).toLowerCase();if(tool&&tool!==route())showTransition(tool);core()?.actions?.open?.(tool);setTimeout(()=>{if(!readHandoff())hideTransition()},900)}
   function syncCloud(kind){
-    clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{
-      const api=window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__;
-      if(kind==='planner')api?.loadPlanner?.(true);
-      else if(kind==='goal')api?.loadGoals?.(true);
-      else if(kind==='mastery')api?.loadMastery?.(true);
-      window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'r174'}}));
-    },420)
+    window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'r175',preferLocal:true}}));
   }
   function sourceKey(prefix,text){return 'r174:'+prefix+':'+hash(clean(text).toLowerCase())}
   function safeJson(value){try{return JSON.stringify(value)}catch{return''}}
@@ -75,7 +70,7 @@
     return {chat,text:clean(msg?.content||$('.v107-msg.assistant:last-of-type')?.innerText||'')};
   }
   function tutorData(){
-    const chat=$('#v52-chat'),user=clean($$('.v52-msg.user',chat).at(-1)?.innerText||''),answer=clean($$('.v52-msg.ai',chat).at(-1)?.innerText||'');
+    const chat=$('#v52-chat'),users=chat?$$('.v52-msg.user',chat):[],answers=chat?$$('.v52-msg.ai',chat):[],user=clean(users.at(-1)?.innerText||''),answer=clean(answers.at(-1)?.innerText||'');
     const weak=weakTopic(),topic=(user||weak?.topic||'Tutor review').slice(0,140);
     return {user,answer:answer.startsWith('I’m ready.')?'':answer,topic,subject:weak?.subject||'AI Tutor'};
   }
@@ -207,9 +202,9 @@
     }
     if(tool==='assignments'){
       const x=nextAssignment();
-      add('plan','Break into Planner',()=>{const n=window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x)||0;showToast(n?n+' Planner steps added.':'Planner steps already exist.');syncCloud('planner');open('planner')},{primary:true,disabled:!x});
+      add('plan','Break into Planner',()=>{const n=window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x)||0;showToast(n?n+' Planner steps added.':'Planner steps already exist.');open('planner')},{primary:true,disabled:!x});
       add('tutor','Ask AI Tutor',()=>promptTutor('Tell me exactly what to do next for this assignment. Use the deadline, progress and requirements. Assignment:\n'+safeJson(x)),{disabled:!x});
-      add('focus','Focus first step',()=>{if(!x)return;window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x);const p=(core()?.data?.planner?.()||[]).find(z=>z.id==='assignment-'+x.id+'-0');prepareFocus({task:p?.text||('Work on · '+x.title),duration:p?.duration||25,linkedPlannerId:p?.id||'',autoComplete:!!p});syncCloud('planner')},{disabled:!x});
+      add('focus','Focus first step',()=>{if(!x)return;window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x);const p=(core()?.data?.planner?.()||[]).find(z=>z.id==='assignment-'+x.id+'-0');prepareFocus({task:p?.text||('Work on · '+x.title),duration:p?.duration||25,linkedPlannerId:p?.id||'',autoComplete:!!p})},{disabled:!x});
       add('progress','Progress',()=>open('progress'));return actions;
     }
     if(tool==='progress'){
@@ -274,7 +269,8 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      $('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
+      $$('.v108-context').forEach(x=>x.remove());
+      $$('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
       const root=rootFor(tool);if(!root)return;
       const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions),existing=$('.v114-connect',root);
       if(!force&&existing&&existing.dataset.v114Signature===sig)return;
@@ -305,12 +301,12 @@
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),bar=rootFor(tool)?.querySelector?.('.v114-connect');
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),duplicates=$$('.v114-connect').filter(x=>x.dataset.v114Route===tool).length;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
-    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r174',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
+    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r175',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
     const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
     return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }
-  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r174',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
+  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r175',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();

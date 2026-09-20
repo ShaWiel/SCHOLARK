@@ -10,7 +10,8 @@
   const uid=p=>p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
   const PLAN='scholark_v51_planner',GOALS='scholark_v51_goals',MASTER='scholark_v52_mastery',ASSIGN='scholark_v106_assignments',FOCUS='scholark_v106_focus',FOCUS_H='scholark_v106_focus_history',CARDS='scholark_v106_flashcards';
   const state={curriculum:null,exam:null,diagnostic:null,busy:false};
-  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r174'});
+  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r175'});
+  window.__SCHOLARK_ACTION_OWNERS__=Object.assign({},window.__SCHOLARK_ACTION_OWNERS__||{},{diagnostic:'v108',review:'v108'});
 
   const css=document.createElement('style');css.id='scholark-v108-style';css.textContent=`
     .v108-tools{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.v108-tools button{border:0;border-radius:10px;background:#eceaf4;color:#4e465c;padding:8px 10px;font:850 7.5px Inter;cursor:pointer}.v108-tools button.primary{background:#17191f;color:#c9ff6a}
@@ -42,16 +43,18 @@
   function saveMastery(a){write(MASTER,a)}
   function addMastery(subject,topic,status='Learning'){
     subject=clean(subject)||'General';topic=clean(topic);if(!topic)return;
+    const days=status==='Mastered'?14:status==='Practising'?4:2,next=new Date(Date.now()+days*86400000).toISOString(),value={New:0,Learning:35,Practising:65,Mastered:100}[status]||35,api=window.__SCHOLARK_WORKSPACE_CORE__;
+    if(api?.actions?.upsertMastery)return api.actions.upsertMastery({subject,topic,status,mastery:value,nextReviewAt:next});
     const a=mastery(),existing=a.find(x=>clean(x.topic).toLowerCase()===topic.toLowerCase()&&clean(x.subject).toLowerCase()===subject.toLowerCase());
-    const days=status==='Mastered'?14:status==='Practising'?4:2,next=new Date(Date.now()+days*86400000).toISOString();
-    if(existing){existing.status=status;existing.mastery={New:0,Learning:35,Practising:65,Mastered:100}[status]||35;existing.nextReviewAt=next;existing.updatedAt=new Date().toISOString()}
-    else a.push({id:uid('mastery'),subject,topic,status,mastery:{New:0,Learning:35,Practising:65,Mastered:100}[status]||35,nextReviewAt:next,updatedAt:new Date().toISOString()});
+    if(existing){existing.status=status;existing.mastery=value;existing.nextReviewAt=next;existing.updatedAt=new Date().toISOString()}
+    else a.push({id:uid('mastery'),subject,topic,status,mastery:value,nextReviewAt:next,updatedAt:new Date().toISOString()});
     saveMastery(a);
   }
   function plans(){return read(PLAN,[]).map((x,i)=>typeof x==='string'?{id:'legacy-'+i,text:x,status:'todo',priority:'medium'}:{...x,id:x.id||'plan-'+i,text:x.text||x.title||'',status:x.status||'todo'})}
   function savePlans(a){write(PLAN,a)}
   function addPlan(text,opt={}){
-    const a=plans();a.push({id:uid('plan'),text:clean(text),type:opt.type||'next_action',subject:opt.subject||'',date:opt.date||'',time:opt.time||'',duration:Number(opt.duration)||45,priority:opt.priority||'medium',goalId:opt.goalId||'',status:'todo',createdAt:new Date().toISOString()});savePlans(a);
+    const row={id:uid('plan'),text:clean(text),type:opt.type||'next_action',subject:opt.subject||'',date:opt.date||'',time:opt.time||'',duration:Number(opt.duration)||45,priority:opt.priority||'medium',goalId:opt.goalId||'',status:'todo',createdAt:new Date().toISOString()},api=window.__SCHOLARK_WORKSPACE_CORE__;
+    if(api?.actions?.addPlan)return api.actions.addPlan(row);const a=plans();a.push(row);savePlans(a);return row;
   }
   function focusFromPlan(id){
     const x=plans().find(z=>z.id===id);if(!x)return;
@@ -159,6 +162,7 @@
     if(root.dataset.tool==='assignments'&&!$('#v108-assign-export',root)){const b=document.createElement('button');b.id='v108-assign-export';b.className='v106-btn alt';b.textContent='Export assignments';b.onclick=()=>download('scholark-assignments.json',JSON.stringify(read(ASSIGN,[]),null,2),'application/json');root.appendChild(b)}
   }
   function enhanceContext(){
+    if(window.__SCHOLARK_V114_ORCHESTRATOR__){$$('.v108-context').forEach(x=>x.remove());return}
     const h=String(location.hash||'').toLowerCase();
     let root,label,prefix;
     if(h==='#language'){root=$('.v93');label='Ask ARKI about this lesson';prefix='Help me understand or practise this language lesson:'}
@@ -177,13 +181,10 @@
 
   document.addEventListener('click',e=>{
     const target=e.target.closest?.('button,[data-edu]');if(!target)return;
-    if(target.id==='v52-tutor-send'){sendTutor(e);return}
     if(target.matches('[data-edu="diagnostic"]')){e.preventDefault();e.stopImmediatePropagation();renderDiagnostic();return}
     if(target.matches('[data-edu="review"]')){e.preventDefault();e.stopImmediatePropagation();renderReview();return}
-    if(target.id==='v52-cur-build'){e.preventDefault();e.stopImmediatePropagation();buildCurriculum(target);return}
-    if(target.id==='v52-exam-build'){e.preventDefault();e.stopImmediatePropagation();buildExam(target,false);return}
     if(target.id==='v108-diag-build'){buildExam(target,true);return}
-    if(target.id==='v108-diag-show'){e.preventDefault();$('#v108-diag-out .v108-answer').forEach(a=>a.classList.add('open'));target.textContent='Answers shown';return}
+    if(target.id==='v108-diag-show'){e.preventDefault();$$('#v108-diag-out .v108-answer').forEach(a=>a.classList.add('open'));target.textContent='Answers shown';return}
     if(target.id==='v108-diag-grade'){
       e.preventDefault();const r=state.diagnostic,qs=r?.questions||[];if(!qs.length)return;
       let correct=0,answered=0;const subject=clean($('#v108-diag-subject')?.value)||'Diagnostic';
@@ -215,5 +216,5 @@
   let raf=0;function enhance(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{applyArkiPending();enhancePlanner();enhanceGoals();enhanceProgress();enhanceProjects();enhanceFiles();enhancePower();enhanceContext()})}
   const mo=new MutationObserver(enhance);mo.observe(document.body,{childList:true,subtree:true});
   addEventListener('hashchange',enhance);addEventListener('popstate',enhance);addEventListener('scholark-runtime-ready',enhance);setTimeout(enhance,120);
-  window.__SCHOLARK_V108_UPGRADE__={version:'20260920-r174',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
+  window.__SCHOLARK_V108_UPGRADE__={version:'20260920-r175',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
 })();

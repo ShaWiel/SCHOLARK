@@ -24,7 +24,7 @@
 
   function rootFor(tool){
     if(tool==='ai')return $('#v107-ai');
-    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool');
+    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool[data-v52-tool="'+tool+'"]');
     if(['focus','flashcards','assignments'].includes(tool))return $('[data-tool="'+tool+'"]')||$('#v51-fallback');
     if(tool==='language')return $('.v93')||$('#v51-fallback');
     if(tool==='files')return $('.v86')||$('#v51-fallback');
@@ -34,7 +34,7 @@
     return null;
   }
   function panel(title,desc,body,pill='CONNECTED'){
-    return '<section class="v111-live" data-v111-owner="r174"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
+    return '<section class="v111-live" data-v111-owner="r175"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
   }
   function kpi(value,label){return '<div class="v111-kpi"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>'}
   function openArki(prompt){
@@ -158,9 +158,9 @@
     $('[data-v111-files-cards]',panelEl)?.addEventListener('click',async e=>{const text=clean($('#v86-output')?.innerText);if(!text)return;e.currentTarget.disabled=true;e.currentTarget.textContent='Generating…';try{const n=await generateCards('Files & Notes',[],text);e.currentTarget.textContent='✓ '+n+' cards added'}catch{e.currentTarget.disabled=false;e.currentTarget.textContent='Try again'}});
     $('[data-v111-files-plan]',panelEl)?.addEventListener('click',e=>{const text=clean($('#v86-output')?.innerText);if(!text)return;core()?.actions.addPlan({text:'Review Files & Notes result',type:'study',subject:text.slice(0,70),date:today(),duration:30,priority:'medium'});e.currentTarget.textContent='✓ Added to Planner'});
     $('[data-v111-project-create]',panelEl)?.addEventListener('click',()=>{const title=clean($('#v111-project-title')?.value),subject=clean($('#v111-project-subject')?.value);if(!title)return $('#v111-project-title')?.focus();core()?.actions.createProject({title,subject});refresh(true)});
-    $('[data-v111-project-plan]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectPlan);if(!p)return;core().actions.addPlan({text:'Work on · '+p.title,type:'study',subject:p.subject||p.title,date:today(),duration:45,priority:'medium'});b.textContent='✓ Planned'});
-    $('[data-v111-project-toggle]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectToggle);if(!p)return;core().actions.updateProject(p.id,{status:p.status==='complete'?'active':'complete'});refresh(true)});
-    $('[data-v111-project-delete]',panelEl).forEach(b=>b.onclick=()=>{core()?.actions.deleteProject(b.dataset.v111ProjectDelete);refresh(true)});
+    $$('[data-v111-project-plan]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectPlan);if(!p)return;core().actions.addPlan({text:'Work on · '+p.title,type:'study',subject:p.subject||p.title,date:today(),duration:45,priority:'medium'});b.textContent='✓ Planned'});
+    $$('[data-v111-project-toggle]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectToggle);if(!p)return;core().actions.updateProject(p.id,{status:p.status==='complete'?'active':'complete'});refresh(true)});
+    $$('[data-v111-project-delete]',panelEl).forEach(b=>b.onclick=()=>{core()?.actions.deleteProject(b.dataset.v111ProjectDelete);refresh(true)});
     $('[data-v111-schools-arki]',panelEl)?.addEventListener('click',()=>{const r=rootFor('schools');openArki('Help me compare the school options currently shown in SCHOLARK. Consider my country, learning level and goals:\n\n'+clean(r?.innerText).slice(0,10000))});
     $('[data-v111-study-plan]',panelEl)?.addEventListener('click',e=>{const r=rootFor('study'),text=clean(r?.innerText).slice(0,140);core()?.actions.addPlan({text:'Continue Study Ahead roadmap',type:'study',subject:text,date:today(),duration:45,priority:'high'});e.currentTarget.textContent='✓ Added to Planner'});
     $('[data-v111-study-arki]',panelEl)?.addEventListener('click',()=>{const r=rootFor('study');openArki('Help me improve and act on this Study Ahead roadmap:\n\n'+clean(r?.innerText).slice(0,10000))});
@@ -192,7 +192,7 @@
       busy=true;try{old?.remove();const html=htmlFor(tool,api.compute());if(html){root.insertAdjacentHTML('afterbegin',html);wire($('.v111-live',root),tool)}augmentTutorMessages()}finally{busy=false}
     })
   }
-  const schedule=(force=false)=>[30,140,420].forEach(ms=>setTimeout(()=>refresh(force),ms));
+  const schedule=(force=false)=>[30,140,420].forEach((ms,i)=>setTimeout(()=>refresh(force&&i===0),ms));
   addEventListener('hashchange',()=>schedule(true));
   addEventListener('scholark-runtime-ready',()=>schedule(false));
   addEventListener('scholark-workspace-core-ready',()=>schedule(true));
@@ -206,5 +206,5 @@
   observer.observe(document.documentElement,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r174',refresh:()=>refresh(true),generateCards};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r175',refresh:()=>refresh(true),generateCards};
 })();
