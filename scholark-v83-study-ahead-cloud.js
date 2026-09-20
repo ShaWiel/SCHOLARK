@@ -70,19 +70,19 @@
         if(!actions.length)throw new Error('This roadmap has no planner actions.');
         const api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.planner?.().length||0,field=clean(last.field)||'Study Ahead';
         actions.slice(0,18).forEach((a,i)=>api?.actions?.addPlan?.({text:a.text,type:'study',subject:field,date:new Date(Date.now()+(1+i*2)*86400000).toISOString().slice(0,10),time:'',duration:45,priority:i<4?'high':'medium',goalId:'',sourceKey:'study:'+field.toLowerCase()+':'+clean(a.phase).toLowerCase()+':'+clean(a.text).toLowerCase()}));
-        const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true);
+        const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true,true);
         if(st)st.textContent=(added||0)+' new Study Ahead action'+(added===1?'':'s')+' connected to Planner'+(x?' · Cloud sync queued':'')+'.';
       }else if(type==='mastery'){
         const topics=[...(last.result?.keySubjects||[]),...(last.result?.skills||[])].map(clean).filter(Boolean).slice(0,24);
         if(!topics.length)throw new Error('This roadmap has no mastery topics.');
         const api=window.__SCHOLARK_WORKSPACE_CORE__,subject=clean(last.field)||'Study Ahead',before=api?.data?.mastery?.().length||0;
         for(const topic of topics){const due=new Date();due.setDate(due.getDate()+1);api?.actions?.upsertMastery?.({subject,topic,status:'New',mastery:0,nextReviewAt:due.toISOString()})}
-        const added=Math.max(0,(api?.data?.mastery?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(true);
+        const added=Math.max(0,(api?.data?.mastery?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(true,true);
         if(st)st.textContent=added+' new key subject'+(added===1?'':'s')+'/skill'+(added===1?'':'s')+' connected to Mastery'+(x?' · Cloud sync queued':'')+'.';
       }else if(type==='goal'){
         const text='Prepare for '+clean(last.field),api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.goals?.().length||0;
         api?.actions?.addGoal?.({text,category:'school',date:'',measure:'Complete the Study Ahead roadmap and reach confident mastery of the key subjects.',sourceKey:'study-goal:'+clean(last.field).toLowerCase()});
-        const added=(api?.data?.goals?.().length||0)>before;if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadGoals?.(true);if(st)st.textContent=added?'Study Ahead goal added to Goals.':'Study Ahead goal is already connected to Goals.';
+        const added=(api?.data?.goals?.().length||0)>before;if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadGoals?.(true,true);if(st)st.textContent=added?'Study Ahead goal added to Goals.':'Study Ahead goal is already connected to Goals.';
       }
     }catch(e){if(st)st.textContent=clean(e?.message||e)}finally{btn.disabled=false}
   }
