@@ -14,7 +14,17 @@
     ['fi','Suomi','Finnish'],['hu','Magyar','Hungarian'],['id','Bahasa Indonesia','Indonesian'],['ms','Bahasa Melayu','Malay'],
     ['vi','Tiếng Việt','Vietnamese'],['th','ไทย','Thai'],['tl','Filipino','Filipino'],['sw','Kiswahili','Swahili'],
     ['he','עברית','Hebrew'],['ur','اردو','Urdu'],['fa','فارسی','Persian'],['ta','தமிழ்','Tamil'],
-    ['te','తెలుగు','Telugu'],['pa','ਪੰਜਾਬੀ','Punjabi']
+    ['te','తెలుగు','Telugu'],['pa','ਪੰਜਾਬੀ','Punjabi'],
+    ['af','Afrikaans','Afrikaans'],['sq','Shqip','Albanian'],['am','አማርኛ','Amharic'],['hy','Հայերեն','Armenian'],
+    ['az','Azərbaycan dili','Azerbaijani'],['eu','Euskara','Basque'],['be','Беларуская','Belarusian'],['bs','Bosanski','Bosnian'],
+    ['bg','Български','Bulgarian'],['ca','Català','Catalan'],['hr','Hrvatski','Croatian'],['et','Eesti','Estonian'],
+    ['ka','ქართული','Georgian'],['gu','ગુજરાતી','Gujarati'],['is','Íslenska','Icelandic'],['ga','Gaeilge','Irish'],
+    ['kk','Қазақша','Kazakh'],['km','ខ្មែរ','Khmer'],['lo','ລາວ','Lao'],['lv','Latviešu','Latvian'],
+    ['lt','Lietuvių','Lithuanian'],['mk','Македонски','Macedonian'],['ml','മലയാളം','Malayalam'],['mr','मराठी','Marathi'],
+    ['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],['sr','Српски','Serbian'],
+    ['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],['si','සිංහල','Sinhala'],
+    ['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],
+    ['ha','Hausa','Hausa']
   ];
   const STATIC_CORE_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
 
@@ -93,7 +103,7 @@
     ['For everyday learning, practice and planning.','Voor dagelijks leren, oefenen en plannen.','Para aprender, practicar y planificar cada día.','Pour apprendre, pratiquer et planifier au quotidien.','Für tägliches Lernen, Üben und Planen.','Para aprender, praticar e planejar todos os dias.','Per imparare, esercitarsi e pianificare ogni giorno.'],
     ['Everything in Free','Alles uit Gratis','Todo lo de Gratis','Tout ce qui est inclus dans Gratuit','Alles aus Kostenlos','Tudo do Grátis','Tutto di Gratis'],
     ['Everything in Plus','Alles uit Plus','Todo lo de Plus','Tout ce qui est inclus dans Plus','Alles aus Plus','Tudo do Plus','Tutto di Plus'],
-    ['37-language interface','Interface in 37 talen','Interfaz en 37 idiomas','Interface en 37 langues','Oberfläche in 37 Sprachen','Interface em 37 idiomas','Interfaccia in 37 lingue'],
+    ['74-language interface','Interface in 74 talen','Interfaz en 74 idiomas','Interface en 74 langues','Oberfläche in 74 Sprachen','Interface em 74 idiomas','Interfaccia in 74 lingue'],
     ['/ month','/ maand','/ mes','/ mois','/ Monat','/ mês','/ mese'],
     ['Ask Tutor','Vraag Tutor','Preguntar al Tutor','Demander au tuteur','Tutor fragen','Perguntar ao Tutor','Chiedi al Tutor'],
     ['Use my files','Gebruik mijn bestanden','Usar mis archivos','Utiliser mes fichiers','Meine Dateien verwenden','Usar meus arquivos','Usa i miei file'],
@@ -419,7 +429,7 @@
     ["Workspace rescue view. SCHOLARK no longer sends you back to Dashboard when a legacy view is unavailable.","Workspace-herstelweergave. SCHOLARK stuurt je niet meer terug naar Dashboard wanneer een oudere weergave niet beschikbaar is.","Vista de recuperación del espacio de trabajo. SCHOLARK ya no te devuelve al panel cuando una vista anterior no está disponible.","Vue de récupération de l’espace de travail. SCHOLARK ne vous renvoie plus au tableau de bord lorsqu’une ancienne vue est indisponible.","Workspace-Rettungsansicht. SCHOLARK schickt dich nicht mehr zum Dashboard zurück, wenn eine ältere Ansicht nicht verfügbar ist.","Visualização de recuperação do espaço de trabalho. O SCHOLARK não envia mais você ao painel quando uma visualização antiga está indisponível.","Vista di recupero dell’area di lavoro. SCHOLARK non ti rimanda più alla Dashboard quando una vista precedente non è disponibile."]
   ].forEach(r=>add(...r));
 
-  const RTL=new Set(['ar','he','ur','fa']);
+  const RTL=new Set(['ar','he','ur','fa','ps']);
   const STATIC_KEYS=new Set(Object.values(STATIC_UI).flatMap(m=>Object.keys(m)));
   const CORE=[
     'Dashboard','Studio AI','AI Tutor','Education & Learning','Planner','Progress','Goals','Files & Notes','My Projects','Schools Near Me','Study Ahead','Book Studio',
@@ -480,7 +490,7 @@
     'Lesson complete','Listen','Practice speaking','Show answer','Hide answer','Vocabulary & phrases','Grammar made clear','Practice dialogue','Exercises','Culture tip','Next lesson','Your language progress','Lessons completed','Current streak','XP',
     'SCHOLARK PLANS','Choose how much advantage you want.','Free','Plus','Pro','SCHOLARK Free','SCHOLARK Plus','SCHOLARK Pro','MOST POPULAR','No payment method required.','Start free','Start Plus free trial','Start Pro free trial',
     'For everyday learning, practice and planning.','For learners and creators who use Studio AI regularly.','Maximum AI quality, large projects and future-study tools.',
-    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','37-language interface','30 included AI credits/month','Credits are spent only on AI-heavy actions',
+    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','74-language interface','30 included AI credits/month','Credits are spent only on AI-heavy actions',
     'Everything in Free','Studio AI: Presentation, Webpage, Document, Social & Graphic','Research + citations and web sources','Cloud projects + version history','Advanced Files & Notes: Ask Files, worksheets and study tools','Natural Rewrite + priority creation','750 included AI credits/month','Higher fair-use limits',
     'Everything in Plus','Highest-quality ARKI','Generous Studio + Natural Rewrite with fair-use guardrails','Presentations up to 100 slides','Documents/reports up to 100 pages','Book Studio beta: architecture + chapter-by-chapter writing','All genres + custom blends','Schools Near Me + Study Ahead','2,500 included AI credits/month','Priority access to stronger models for complex work',
     '/ month','7 days free, then $14.99/month. Cancel anytime.','7 days free, then $19.99/month. Cancel anytime.','Plans & limits',
@@ -513,8 +523,8 @@
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
-  const CACHE_VERSION='v5-global37';
-  const LEGACY_CACHE_VERSIONS=['v4-seven-ui','v3-seven-ui'];
+  const CACHE_VERSION='v6-global74';
+  const LEGACY_CACHE_VERSIONS=['v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
@@ -534,7 +544,10 @@
     }
     return out;
   }
-  function loadMap(c){return {...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}}
+  function loadMap(c){
+    const previous=sanitizeStoredMap(parseStored(legacyKey('v5-global37',c)));
+    return {...previous,...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}
+  }
   const reverseKnown=new Map();
   function indexMap(m){
     for(const [source,translated] of Object.entries(m||{})){
@@ -620,7 +633,7 @@
     const result={};
     const local=await deviceTranslate(target,strings,part=>{Object.assign(result,part);onChunk?.(part)},primed);
     if(!local.missing.length)return result;
-    const chunks=[];for(let i=0;i<local.missing.length;i+=70)chunks.push(local.missing.slice(i,i+70));
+    const chunks=[];for(let i=0;i<local.missing.length;i+=55)chunks.push(local.missing.slice(i,i+55));
     let cursor=0;
     const worker=async()=>{
       while(cursor<chunks.length){
@@ -633,7 +646,7 @@
         }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
       }
     };
-    await Promise.all(Array.from({length:Math.min(2,chunks.length)},()=>worker()));
+    await Promise.all(Array.from({length:Math.min(purpose==='ui'||purpose==='topbar_ui'?3:2,chunks.length)},()=>worker()));
     return result;
   }
   function applyKnown(root=document){
@@ -670,7 +683,7 @@
     try{
       for(let pass=0;pass<2&&epoch===translationEpoch;pass++){
         upgradeSelectors();applyVisible();
-        const strings=[...new Set(collectDom(360))].filter(eligibleText);
+        const strings=[...new Set(collectDom(480))].filter(eligibleText);
         const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
         const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()});
@@ -689,7 +702,7 @@
   async function fillUnknown(){return translateCurrentPage(false)}
   function scheduleUnknown(){
     if(code()==='en')return;
-    clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,isHomeRoute()?950:420);
+    clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,isHomeRoute()?760:300);
   }
 
   function upgradeSelectors(){
@@ -745,7 +758,7 @@
     const run=async()=>{
       if(epoch!==translationEpoch||code()!==target||target==='en')return;
       try{
-        const strings=[...new Set(collectDom(420))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
+        const strings=[...new Set(collectDom(520))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
         if(!missing.length){
           upgradeSelectors();applyVisible();window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
           window.dispatchEvent(new CustomEvent('scholark-language-complete',{detail:{code:target}}));
@@ -805,7 +818,7 @@
 
     if(target!=='en'&&dynamic&&navigator.onLine!==false){
       try{
-        const seed=[...new Set(home?collectDom(240):[...CORE,...collectDom(360)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
+        const seed=[...new Set(home?collectDom(340):[...CORE,...collectDom(480)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
           const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)applyVisible()},'ui');
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
@@ -897,7 +910,7 @@
   setTimeout(boot,80);
 
   function i18nSelftest(){
-    const required=['Dashboard','Your learning & creation workspace.','Learn faster. Create better.','Get ahead.','Know where you are going before you get there.','SCHOLARK PLANS','Choose how much advantage you want.','Go to Workspace','AI QUALITY · MAX'];
+    const required=['Dashboard','Your learning & creation workspace.','Learn faster. Create better.','Get ahead.','Know where you are going before you get there.','SCHOLARK PLANS','Choose how much advantage you want.','Go to Workspace','Education & Learning'];
     const localeCoverage={};
     for(const [lc] of LANGS){
       if(lc==='en'){localeCoverage[lc]=1;continue}
@@ -908,10 +921,12 @@
     const dynamicLocales=LANGS.filter(([lc])=>!STATIC_CORE_LANGS.has(lc));
     const uniqueCodes=new Set(LANGS.map(x=>x[0])).size===LANGS.length;
     const named=LANGS.every(x=>x[0]&&x[1]&&x[2]);
-    const rtlReady=['ar','he','ur','fa'].every(x=>RTL.has(x));
+    const rtlReady=['ar','he','ur','fa','ps'].every(x=>RTL.has(x));
     const canonicalCrossLocale=canonicalSource('Todos los niveles')==='All levels'||!reverseKnown.has('Todos los niveles');
-    const ok=LANGS.length===37&&dynamicLocales.length===30&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale};
+    const excluded=new Set(['srn']);
+    const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
+    const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone;
+    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone};
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
