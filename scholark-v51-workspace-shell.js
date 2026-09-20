@@ -294,7 +294,7 @@
     const host=$('#v51-fallback');if(!host)return;
     const isBook=id==='book',title=isBook?'Book Studio':'Studio AI';
     host.innerHTML=`<div class="v51-coming-soon"><div class="v51-coming-card"><span class="v51-coming-badge">COMING SOON</span><h1>${title}</h1><div class="v51-coming-actions"><button type="button" data-v51-coming="dashboard">Back to Dashboard</button></div></div></div>`;
-    $('[data-v51-coming]',host).forEach(b=>b.onclick=()=>openTool(b.dataset.v51Coming));
+    $$('[data-v51-coming]',host).forEach(b=>b.onclick=()=>openTool(b.dataset.v51Coming));
     syncWorkspaceLanguage(host,true);
   }
 
