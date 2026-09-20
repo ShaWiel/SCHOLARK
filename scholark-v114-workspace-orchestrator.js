@@ -75,7 +75,7 @@
     return {chat,text:clean(msg?.content||$('.v107-msg.assistant:last-of-type')?.innerText||'')};
   }
   function tutorData(){
-    const chat=$('#v52-chat'),users=chat?$('.v52-msg.user',chat):[],answers=chat?$('.v52-msg.ai',chat):[],user=clean(users.at(-1)?.innerText||''),answer=clean(answers.at(-1)?.innerText||'');
+    const chat=$('#v52-chat'),users=chat?$$('.v52-msg.user',chat):[],answers=chat?$$('.v52-msg.ai',chat):[],user=clean(users.at(-1)?.innerText||''),answer=clean(answers.at(-1)?.innerText||'');
     const weak=weakTopic(),topic=(user||weak?.topic||'Tutor review').slice(0,140);
     return {user,answer:answer.startsWith('I’m ready.')?'':answer,topic,subject:weak?.subject||'AI Tutor'};
   }
@@ -274,7 +274,7 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      $('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
+      $$('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
       const root=rootFor(tool);if(!root)return;
       const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions),existing=$('.v114-connect',root);
       if(!force&&existing&&existing.dataset.v114Signature===sig)return;
