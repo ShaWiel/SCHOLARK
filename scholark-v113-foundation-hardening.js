@@ -79,9 +79,9 @@
     const quality=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(el.textContent)));
     const visual=!work||r==="dashboard"||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true;
     const result={
-      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&errors.length===0,
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual,
       release:"r172",route:r,workspace:work,rootLocked,qualityBadge:quality,
-      languageControls:lang,countryControls:country,visual,longTasks,runtimeErrors:errors.slice(0,8),
+      languageControls:lang,countryControls:country,visual,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     result.ok=result.ok&&result.runtimeFailures.length===0;
