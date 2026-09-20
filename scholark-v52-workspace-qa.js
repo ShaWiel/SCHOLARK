@@ -95,7 +95,7 @@
     return h;
   }
 
-  function shell(title,sub,body){return `<div class="v52-tool"><div class="v52-head"><div><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div><span class="v52-pill">AI QUALITY · MAX</span></div>${body}</div>`}
+  function shell(title,sub,body){return `<div class="v52-tool"><div class="v52-head"><div><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div></div>${body}</div>`}
 
   function openDashboard(){
     closeOtherViews();forceQuality();document.body.classList.add('v51-workspace');activateNav('dashboard');route('dashboard');cleanDashboard();
@@ -219,7 +219,7 @@
     $('#v52-progress-export')?.addEventListener('click',()=>{const snapshot={generatedAt:new Date().toISOString(),goals:g.map(x=>({goal:x.text,progress:goalProgress(x),status:x.status})),planner:{completed:doneP.length,open:openP.length,overdue:overdue.length},mastery:m.map(x=>({subject:x.subject,topic:x.topic,status:x.status,mastery:x.mastery})),language:{lessons,streak}};downloadText('scholark-progress.json',JSON.stringify(snapshot,null,2),'application/json')})
   }
 
-  function renderProjects(){const h=host();if(!h)return;let arr=[];try{arr=JSON.parse(localStorage.getItem('scholark_v45_history')||'[]')}catch{}if(!arr.length){try{const x=JSON.parse(localStorage.getItem('scholark_v45_last_project')||'null');if(x)arr=[x]}catch{}}h.innerHTML=shell('My Projects','Return to saved Studio work, documents, research and ongoing creations.',`<div class="v52-list">${arr.length?arr.slice(0,30).map(x=>`<div class="v52-item"><b>${esc(x.project||x.mode||'Untitled project')}</b><br>${esc(x.rawPrompt||x.prompt||'Saved SCHOLARK creation')}</div>`).join(''):'<div class="v52-item">No saved Studio projects yet. Create something in Studio AI and it will appear here.</div>'}</div>`)}
+  function renderProjects(){const h=host();if(!h)return;let arr=[];try{arr=JSON.parse(localStorage.getItem('scholark_v110_learning_projects')||'[]')}catch{}h.innerHTML=shell('My Projects','Keep learning projects, research and ongoing work connected to Goals and Planner.',`<div class="v52-list">${arr.length?arr.slice(0,30).map(x=>`<div class="v52-item"><b>${esc(x.title||'Untitled project')}</b><br>${esc(x.subject||x.notes||'Connected learning project')}</div>`).join(''):'<div class="v52-item">No learning projects yet. Create one in My Projects to organize ongoing work.</div>'}</div>`)}
 
   function openSchools(){
     closeOtherViews();forceQuality();document.body.classList.add('v51-workspace','v51-pro','v51-schools');activateNav('schools');route('schools');

@@ -1,0 +1,112 @@
+(() => {
+  if(window.__SCHOLARK_V113_FOUNDATION__) return;
+  window.__SCHOLARK_V113_FOUNDATION__=true;
+  const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+  const clean=s=>String(s??"").replace(/\s+/g," ").trim();
+  const route=()=>String(location.hash||"#home").replace(/^#/,"").split(/[?&]/)[0].toLowerCase()||"home";
+  const workspaceRoutes=new Set(["dashboard","ai","tutor","education","planner","focus","flashcards","assignments","progress","goal","language","files","project","schools","study"]);
+  const errors=[];let repairTimer=0,longTasks=0,lastRepair=0;
+  const style=document.createElement("style");style.id="scholark-v113-style";style.textContent=[
+    "html.v113-hidden body.v51-workspace *{animation-play-state:paused!important}",
+    "body.v51-workspace .v112-native{min-width:0}",
+    "body.v51-workspace img{max-width:100%;height:auto}",
+    "body.v51-workspace [hidden]{display:none!important}",
+    "body.v51-workspace #v51-main{overscroll-behavior:contain;scrollbar-gutter:stable}",
+    "body.v51-workspace .v111-live{contain:layout style}",
+    "@media(max-width:620px){body.v51-workspace #v51-main{scrollbar-gutter:auto}}"
+  ].join("");document.head.appendChild(style);
+
+  const safeStorage={
+    get(key,fallback=null){try{const raw=localStorage.getItem(key);if(raw==null)return fallback;try{return JSON.parse(raw)}catch{return raw}}catch{return fallback}},
+    set(key,value){try{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));return true}catch{return false}},
+    remove(key){try{localStorage.removeItem(key);return true}catch{return false}}
+  };
+  async function fetchJson(url,options={},timeout=15000){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),Math.max(1000,timeout));
+    try{
+      const res=await fetch(url,{...options,signal:options.signal||ctrl.signal,headers:{Accept:"application/json",...(options.headers||{})}});
+      const data=await res.json().catch(()=>null);
+      if(!res.ok)throw new Error(data?.error||("HTTP "+res.status));
+      return data;
+    }finally{clearTimeout(timer)}
+  }
+  function recordError(kind,event){
+    const msg=clean(event?.reason?.message||event?.message||event?.error?.message||event?.reason||"Unknown runtime error");
+    const source=clean(event?.filename||event?.error?.stack||"").slice(0,600);
+    if(!/scholark|v1\d\d|workspace|runtime/i.test(msg+" "+source))return;
+    const item={kind,message:msg.slice(0,300),source,at:Date.now()};
+    if(errors.some(x=>x.message===item.message&&Date.now()-x.at<5000))return;
+    errors.unshift(item);if(errors.length>30)errors.length=30;
+  }
+  addEventListener("error",e=>recordError("error",e),true);
+  addEventListener("unhandledrejection",e=>recordError("rejection",e));
+
+  function secureLinks(root=document){
+    $$('a[target="_blank"]',root).forEach(a=>{
+      const rel=new Set(clean(a.getAttribute("rel")).split(" ").filter(Boolean));rel.add("noopener");rel.add("noreferrer");a.setAttribute("rel",[...rel].join(" "));
+      const href=clean(a.getAttribute("href"));if(/^javascript:/i.test(href))a.removeAttribute("href");
+    });
+  }
+  function removeDuplicateControls(){
+    const langs=$$("#v51-sidebar .v90-langbox");if(langs.length>1)langs.slice(0,-1).forEach(x=>x.remove());
+    const countries=$$("#v51-sidebar #v96-side-country");if(countries.length>1)countries.slice(0,-1).forEach(x=>x.remove());
+    const live=$$("#v51-main > .v111-live");if(live.length>1)live.slice(0,-1).forEach(x=>x.remove());
+  }
+  function scrubQuality(){
+    $$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").forEach(el=>{
+      const t=clean(el.textContent).toUpperCase().replace(/[·•]/g," ").replace(/\s+/g," ");
+      if(t==="AI QUALITY MAX"||t==="QUALITY MAX"||t==="PRIORITY MAX")el.remove();
+    });
+  }
+  function ensureScroll(){
+    const r=route(),work=workspaceRoutes.has(r)||document.body.classList.contains("v51-workspace");
+    document.documentElement.classList.toggle("v51-workspace-root",work);
+    if(!work)document.documentElement.classList.remove("v112-background","v113-hidden");
+  }
+  function repair(force=false){
+    const now=Date.now();if(!force&&now-lastRepair<90)return;lastRepair=now;
+    ensureScroll();removeDuplicateControls();scrubQuality();secureLinks();
+    if(document.body.classList.contains("v51-workspace")){
+      if(!$("#v90-language"))window.__SCHOLARK_I18N__?.upgradeSelectors?.();
+      if(!$("#v96-side-country"))window.__SCHOLARK_COUNTRY__?.apply?.();
+      if(workspaceRoutes.has(route())&&route()!=="dashboard")window.__SCHOLARK_V112_VISUAL__?.decorate?.();
+    }
+  }
+  function verify(){
+    const r=route(),work=workspaceRoutes.has(r)||document.body.classList.contains("v51-workspace");
+    const lang=$$("#v51-sidebar #v90-language").length,country=$$("#v51-sidebar #v96-side-country").length;
+    const rootLocked=!work||document.documentElement.classList.contains("v51-workspace-root");
+    const quality=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(el.textContent)));
+    const visual=!work||r==="dashboard"||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true;
+    const result={
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual,
+      release:"r172",route:r,workspace:work,rootLocked,qualityBadge:quality,
+      languageControls:lang,countryControls:country,visual,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
+      runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
+    };
+    result.ok=result.ok&&result.runtimeFailures.length===0;
+    return result;
+  }
+  let observer;
+  function startObserver(){
+    if(observer)return;
+    observer=new MutationObserver(muts=>{
+      if(!muts.some(m=>m.addedNodes.length||m.removedNodes.length))return;
+      clearTimeout(repairTimer);repairTimer=setTimeout(()=>repair(false),170);
+    });
+    observer.observe(document.documentElement,{subtree:true,childList:true});
+  }
+  try{
+    if("PerformanceObserver" in window){
+      const po=new PerformanceObserver(list=>{for(const e of list.getEntries())if(e.duration>120)longTasks++});
+      po.observe({entryTypes:["longtask"]});
+    }
+  }catch{}
+  document.addEventListener("visibilitychange",()=>{document.documentElement.classList.toggle("v113-hidden",document.hidden);if(!document.hidden)repair(true)});
+  addEventListener("hashchange",()=>setTimeout(()=>repair(true),55));
+  addEventListener("scholark-runtime-ready",()=>setTimeout(()=>repair(true),50));
+  addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
+  addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
+  startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
+  window.__SCHOLARK_FOUNDATION_R172__={version:"20260919-r172",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+})();
