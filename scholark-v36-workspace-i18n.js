@@ -26,7 +26,8 @@
   `;
   document.head.appendChild(style);
 
-  const langs=window.__SCHOLARK_I18N__?.langs||[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const fallbackLangs=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const langs=()=>window.__SCHOLARK_I18N__?.langs?.length?window.__SCHOLARK_I18N__.langs:fallbackLangs;
 
   const labels={
     nl:{home:'Home',dashboard:'Dashboard',education:'Educatie & Leren',projects:'Mijn projecten',tutor:'AI Tutor',studio:'Studio AI',planner:'Planner',progress:'Voortgang',goals:'Doelen',logout:'Uitloggen',focus:'Focusmodus',reset:'Demo resetten'},
@@ -70,7 +71,7 @@
   }
 
   function findLanguageAnchor(){
-    const names=langs.map(x=>x[1].toLowerCase());
+    const names=langs().map(x=>x[1].toLowerCase());
     return $$('header select,nav select,header button,nav button').find(el=>{
       if(el.closest('#v29-home-layer')||el.id==='v36-language')return false;
       return names.includes(text(el).toLowerCase())||[...el.options||[]].some(o=>names.includes(text(o).toLowerCase()));
@@ -82,7 +83,7 @@
   }
 
   function applyLanguage(code){
-    if(!langs.some(x=>x[0]===code))code='en';
+    if(!langs().some(x=>x[0]===code))code='en';
     const sel=$('#v36-language');if(sel&&sel.value!==code)sel.value=code;
     if(window.__SCHOLARK_I18N__?.changeLanguage){
       window.__SCHOLARK_I18N__.changeLanguage(code);
@@ -102,7 +103,7 @@
     if(!wrap){
       wrap=document.createElement('div');wrap.className='v36-shell-controls';
       const home=document.createElement('button');home.id='v36-shell-home';home.type='button';home.onclick=()=>{location.hash='';setTimeout(()=>{document.body?.classList.remove('v36-workspace');const layer=$('#v29-home-layer');if(layer){layer.hidden=false;layer.style.removeProperty('display');}},20)};
-      sel=document.createElement('select');sel.id='v36-language';sel.setAttribute('aria-label','SCHOLARK language');sel.innerHTML=langs.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');sel.onchange=()=>applyLanguage(sel.value);
+      sel=document.createElement('select');sel.id='v36-language';sel.setAttribute('aria-label','SCHOLARK language');sel.innerHTML=langs().map(([v,n])=>`<option value="${v}">${n}</option>`).join('');sel.onchange=()=>applyLanguage(sel.value);
       wrap.append(home,sel);
       anchor.parentElement?.insertBefore(wrap,anchor);
     }
