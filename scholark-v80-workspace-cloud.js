@@ -63,7 +63,7 @@
     const form=$('#v52-plan')?.closest('.v52-form');if(!form)return;
     $$('.v80-plan-controls',form).forEach(x=>x.remove());
     if(form.dataset.v80planner==='1')return;form.dataset.v80planner='1';
-    const list=$('#v52-plan-list');if(list&&!$('.v80-plan-views',form)){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$$$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
+    const list=$('#v52-plan-list');if(list&&!$('.v80-plan-views',form)){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
   }
   function plannerFiltered(){
     const today=new Date();today.setHours(0,0,0,0);const t=today.getTime();
