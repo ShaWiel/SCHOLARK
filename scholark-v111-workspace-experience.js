@@ -24,7 +24,7 @@
 
   function rootFor(tool){
     if(tool==='ai')return $('#v107-ai');
-    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool');
+    if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool[data-v52-tool="'+tool+'"]');
     if(['focus','flashcards','assignments'].includes(tool))return $('[data-tool="'+tool+'"]')||$('#v51-fallback');
     if(tool==='language')return $('.v93')||$('#v51-fallback');
     if(tool==='files')return $('.v86')||$('#v51-fallback');
