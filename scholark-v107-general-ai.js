@@ -35,5 +35,5 @@
     if(opt.newChat){current=createChat()}else current=current||getCurrent();
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,version:'20260920-r174'};
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,version:'20260920-r175'};
 })();
