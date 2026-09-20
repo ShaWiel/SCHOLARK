@@ -34,14 +34,16 @@
     return null;
   }
   function panel(title,desc,body,pill='CONNECTED'){
-    return '<section class="v111-live" data-v111-owner="r173"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
+    return '<section class="v111-live" data-v111-owner="r174"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
   }
   function kpi(value,label){return '<div class="v111-kpi"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>'}
   function openArki(prompt){
+    if(window.__SCHOLARK_V114_ORCHESTRATOR__?.handoff)return window.__SCHOLARK_V114_ORCHESTRATOR__.handoff('ai',{prompt});
     try{sessionStorage.setItem('scholark_v108_arki_prompt',prompt)}catch{}
     core()?.actions.open('ai');
   }
   function openTutor(prompt){
+    if(window.__SCHOLARK_V114_ORCHESTRATOR__?.handoff)return window.__SCHOLARK_V114_ORCHESTRATOR__.handoff('tutor',{prompt});
     core()?.actions.open('tutor');
     setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},160);
   }
@@ -204,5 +206,5 @@
   observer.observe(document.documentElement,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r173',refresh:()=>refresh(true),generateCards};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r174',refresh:()=>refresh(true),generateCards};
 })();

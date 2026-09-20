@@ -255,6 +255,7 @@
 
   function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
   function close(){root?.classList.remove('open')}
-  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,studyFieldLevels:[...STUDY_FIELD_LEVELS]};
+  function selection(){return {country:$('#v50-country')?.value?.trim()||'',city:$('#v50-city')?.value?.trim()||'',name:$('#v50-name')?.value?.trim()||'',level:$('#v50-level')?.value||'all',study:$('#v50-study')?.value?.trim()||'',results:renderedItems.slice(0,25).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''})),compared:renderedItems.filter(x=>compareIds.has(schoolId(x))).slice(0,4).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''}))}}
+  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260920-r174'};
   build();
 })();

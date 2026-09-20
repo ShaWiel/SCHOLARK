@@ -31,6 +31,21 @@
   }
   async function request(path,opts={}){const x=await ctx();if(!x)throw Object.assign(new Error('Sign in to SCHOLARK Cloud'),{code:'AUTH_REQUIRED'});const r=await x.c.request(path,opts);return {r,...x}}
   function sig(title,date){return clean(title).toLowerCase()+'|'+String(date||'')}
+  function mirrorPlanner(rows=state.planner){
+    const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[sig(x?.text,x?.date),x]));
+    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),subject:clean(z.subject||prev.subject),date,time:prev.time||'',duration:Number(z.duration_minutes)||Number(prev.duration)||0,priority:z.priority||prev.priority||'medium',goalId:prev.goalId||'',sourceKey:prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    localWrite('scholark_v51_planner',next);return next;
+  }
+  function mirrorGoals(rows=state.goals){
+    const old=localRead('scholark_v51_goals'),bySig=new Map(old.map(x=>[sig(typeof x==='string'?x:x?.text,typeof x==='string'?'':x?.date),typeof x==='string'?{text:x}:x]));
+    const next=(rows||[]).map(z=>{const date=z.target_date||'',prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-goal-'+z.id),cloudId:z.id,text:clean(z.title),category:prev.category||'learning',date,measure:prev.measure||'',sourceKey:prev.sourceKey||'',progress:Math.max(Number(z.progress)||0,Number(prev.progress)||0),status:z.status==='complete'?'complete':'active',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    localWrite('scholark_v51_goals',next);return next;
+  }
+  function mirrorMasteryRows(rows=state.mastery){
+    const old=localRead('scholark_v52_mastery'),bySig=new Map(old.map(x=>[sig(x?.topic,x?.subject),x]));
+    const next=(rows||[]).map(z=>{const prev=bySig.get(sig(z.topic,z.subject))||{},m=Math.max(0,Math.min(100,Number(z.mastery)||0));return {...prev,id:prev.id||('cloud-mastery-'+z.id),cloudId:z.id,subject:clean(z.subject)||clean(prev.subject)||'General',topic:clean(z.topic),status:masteryStatus(m),mastery:m,nextReviewAt:z.next_review_at||prev.nextReviewAt||'',updatedAt:z.updated_at||prev.updatedAt||new Date().toISOString(),sourceKey:prev.sourceKey||'',source:prev.source||'cloud'}});
+    localWrite('scholark_v52_mastery',next);return next;
+  }
 
   function ensurePlannerControls(){
     const form=$('#v52-plan')?.closest('.v52-form');if(!form||form.dataset.v80planner)return;form.dataset.v80planner='1';
@@ -68,7 +83,7 @@
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
-      state.planner=rows;localWrite('scholark_v51_planner',rows.map(z=>({text:z.title,date:dateOnly(z.due_at)})));renderPlanner();
+      state.planner=rows;mirrorPlanner();renderPlanner();
     }catch(e){console.warn('[SCHOLARK] Planner cloud sync:',clean(e?.message||e))}finally{state.loading.delete('planner')}
   }
   function renderPlanner(){
@@ -83,7 +98,7 @@
     const date=$('#v52-plan-date')?.value||'',subject=clean($('#v80-plan-subject')?.value),duration=Math.max(15,Math.min(240,Number($('#v80-plan-duration')?.value)||45)),priority=$('#v80-plan-priority')?.value||'medium',x=await ctx();if(!x)return false;
     const r=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),subject:subject.slice(0,160)||null,due_at:dueIso(date),duration_minutes:duration,priority,status:'todo',source:'manual'})});
     const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not add planner item');
-    if(input)input.value='';state.planner.push(...(Array.isArray(d)?d:[d]).filter(Boolean));localWrite('scholark_v51_planner',state.planner.map(z=>({text:z.title,date:dateOnly(z.due_at)})));renderPlanner();return true;
+    if(input)input.value='';state.planner.push(...(Array.isArray(d)?d:[d]).filter(Boolean));mirrorPlanner();renderPlanner();return true;
   }
   async function togglePlanner(id){
     const x=await ctx();if(!x)return;const item=state.planner.find(z=>z.id===id);if(!item)return;const status=item.status==='done'?'todo':'done';
@@ -91,7 +106,7 @@
   }
   async function deletePlanner(id){
     const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)return;
-    state.planner=state.planner.filter(z=>z.id!==id);localWrite('scholark_v51_planner',state.planner.map(z=>({text:z.title,date:dateOnly(z.due_at)})));renderPlanner();
+    state.planner=state.planner.filter(z=>z.id!==id);mirrorPlanner();renderPlanner();
   }
 
   async function loadGoals(migrate=true){
@@ -109,7 +124,7 @@
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
-      state.goals=rows;localWrite('scholark_v51_goals',rows.map(z=>({text:z.title,date:z.target_date||''})));renderGoals();
+      state.goals=rows;mirrorGoals();renderGoals();
     }catch(e){console.warn('[SCHOLARK] Goal cloud sync:',clean(e?.message||e))}finally{state.loading.delete('goals')}
   }
   function renderGoals(){
@@ -122,11 +137,11 @@
     const date=$('#v52-goal-date')?.value||null,x=await ctx();if(!x)return false;
     const r=await x.c.request('/rest/v1/goals?select=id,title,target_date,status,progress,created_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),target_date:date,status:'active',progress:0})});
     const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not add goal');
-    if(input)input.value='';state.goals.push(...(Array.isArray(d)?d:[d]).filter(Boolean));localWrite('scholark_v51_goals',state.goals.map(z=>({text:z.title,date:z.target_date||''})));renderGoals();return true;
+    if(input)input.value='';state.goals.push(...(Array.isArray(d)?d:[d]).filter(Boolean));mirrorGoals();renderGoals();return true;
   }
   async function deleteGoal(id){
     const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/goals?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)return;
-    state.goals=state.goals.filter(z=>z.id!==id);localWrite('scholark_v51_goals',state.goals.map(z=>({text:z.title,date:z.target_date||''})));renderGoals();
+    state.goals=state.goals.filter(z=>z.id!==id);mirrorGoals();renderGoals();
   }
 
   function focusSubject(){try{return clean(JSON.parse(localStorage.getItem('scholark_education_focus')||'{}')?.subject)||'General'}catch{return'General'}}
@@ -148,7 +163,7 @@
       state.mastery=rows;mirrorMastery();renderMastery();
     }catch(e){console.warn('[SCHOLARK] Mastery cloud sync:',clean(e?.message||e))}finally{state.loading.delete('mastery')}
   }
-  function mirrorMastery(){localWrite('scholark_v52_mastery',state.mastery.map(z=>({topic:z.topic,status:masteryStatus(z.mastery),subject:z.subject})))}
+  function mirrorMastery(){mirrorMasteryRows()}
   function renderMastery(){
     const host=$('#v52-m-list');if(!host||!awaitableSigned())return;
     host.innerHTML=state.mastery.length?state.mastery.map(z=>{const m=Math.max(0,Math.min(100,Number(z.mastery)||0)),acc=(Number(z.attempts)||0)>0?Math.round((Number(z.correct)||0)/(Number(z.attempts)||1)*100):null;return '<div class="v52-item"><button class="v80-del" data-v80-mastery-del="'+esc(z.id)+'">×</button><b>'+esc(z.topic)+'</b><span class="v52-status">'+esc(masteryStatus(m))+'</span><span class="v80-cloud-tag">CLOUD</span><span class="v80-mastery-meta">'+esc(z.subject||'General')+' · Mastery '+Math.round(m)+'%'+(acc!=null?' · Accuracy '+acc+'%':' · no quiz data yet')+' · '+esc(z.attempts||0)+' attempts'+(z.streak?' · streak '+esc(z.streak):'')+(z.last_practiced_at?' · practised '+esc(new Date(z.last_practiced_at).toLocaleDateString()):'')+'</span><div class="v80-mastery-bar"><i style="width:'+m+'%"></i></div></div>'}).join(''):'<div class="v52-item">No mastery topics yet.</div>';
@@ -207,5 +222,5 @@
   addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
   addEventListener('scholark:workspace-cloud-refresh',()=>setTimeout(sync,80));
   setTimeout(sync,700);
-  window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress};
+  window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress,mirrorPlanner,mirrorGoals,mirrorMastery:mirrorMasteryRows,version:'20260920-r174'};
 })();

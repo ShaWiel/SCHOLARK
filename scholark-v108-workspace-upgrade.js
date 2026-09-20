@@ -10,7 +10,7 @@
   const uid=p=>p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
   const PLAN='scholark_v51_planner',GOALS='scholark_v51_goals',MASTER='scholark_v52_mastery',ASSIGN='scholark_v106_assignments',FOCUS='scholark_v106_focus',FOCUS_H='scholark_v106_focus_history',CARDS='scholark_v106_flashcards';
   const state={curriculum:null,exam:null,diagnostic:null,busy:false};
-  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r173'});
+  window.__SCHOLARK_FEATURE_FLAGS__=Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r174'});
 
   const css=document.createElement('style');css.id='scholark-v108-style';css.textContent=`
     .v108-tools{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.v108-tools button{border:0;border-radius:10px;background:#eceaf4;color:#4e465c;padding:8px 10px;font:850 7.5px Inter;cursor:pointer}.v108-tools button.primary{background:#17191f;color:#c9ff6a}
@@ -27,6 +27,7 @@
   }
   function openTool(id){window.__SCHOLARK_WORKSPACE__?.openTool?.(id)}
   function openArki(prompt){
+    if(window.__SCHOLARK_V114_ORCHESTRATOR__?.handoff)return window.__SCHOLARK_V114_ORCHESTRATOR__.handoff('ai',{prompt});
     try{sessionStorage.setItem('scholark_v108_arki_prompt',prompt)}catch{}
     openTool('ai');
     const fill=()=>{const q=$('#v107-q');if(!q)return false;q.value=prompt;q.focus();return true};
@@ -214,5 +215,5 @@
   let raf=0;function enhance(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{applyArkiPending();enhancePlanner();enhanceGoals();enhanceProgress();enhanceProjects();enhanceFiles();enhancePower();enhanceContext()})}
   const mo=new MutationObserver(enhance);mo.observe(document.body,{childList:true,subtree:true});
   addEventListener('hashchange',enhance);addEventListener('popstate',enhance);addEventListener('scholark-runtime-ready',enhance);setTimeout(enhance,120);
-  window.__SCHOLARK_V108_UPGRADE__={version:'20260920-r173',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
+  window.__SCHOLARK_V108_UPGRADE__={version:'20260920-r174',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
 })();

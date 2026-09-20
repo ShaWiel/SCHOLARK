@@ -49,23 +49,23 @@
       ...x,id:x.id||uid('plan'),text:clean(x.text),type:x.type||'task',subject:clean(x.subject),
       date:clean(x.date),time:clean(x.time),duration:Math.max(0,Number(x.duration)||0),
       priority:['high','medium','low'].includes(x.priority)?x.priority:'medium',
-      goalId:clean(x.goalId),status:x.status==='done'?'done':'todo'
+      goalId:clean(x.goalId),sourceKey:clean(x.sourceKey),status:x.status==='done'?'done':'todo'
     }));
   }
   function goals(){
-    return array(KEYS.goals).map(x=>({...x,id:x.id||uid('goal'),text:clean(x.text),category:x.category||'learning',date:clean(x.date),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'?'complete':'active'}));
+    return array(KEYS.goals).map(x=>({...x,id:x.id||uid('goal'),text:clean(x.text),category:x.category||'learning',date:clean(x.date),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'?'complete':'active'}));
   }
   function mastery(){
     return array(KEYS.mastery).map(x=>({...x,id:x.id||uid('mastery'),subject:clean(x.subject)||'General',topic:clean(x.topic)||'Topic',status:x.status||'Learning',mastery:Math.max(0,Math.min(100,Number(x.mastery)||0)),nextReviewAt:x.nextReviewAt||'',updatedAt:x.updatedAt||''}));
   }
   function assignments(){
-    return array(KEYS.assignments).map(x=>({...x,id:x.id||uid('assignment'),title:clean(x.title),subject:clean(x.subject),type:x.type||'assignment',priority:x.priority||'medium',dueDate:clean(x.dueDate),instructions:clean(x.instructions),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'||Number(x.progress)>=100?'complete':'active'}));
+    return array(KEYS.assignments).map(x=>({...x,id:x.id||uid('assignment'),title:clean(x.title),subject:clean(x.subject),type:x.type||'assignment',priority:x.priority||'medium',dueDate:clean(x.dueDate),instructions:clean(x.instructions),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'||Number(x.progress)>=100?'complete':'active'}));
   }
   function flashcards(){
     return array(KEYS.flashcards).map(x=>({...x,id:x.id||uid('card'),deck:clean(x.deck)||'General',front:clean(x.front),back:clean(x.back),dueAt:Number(x.dueAt)||0,interval:Number(x.interval)||0,reps:Number(x.reps)||0,lapses:Number(x.lapses)||0,lastReviewedAt:Number(x.lastReviewedAt)||0}));
   }
   function focusHistory(){return array(KEYS.focusHistory)}
-  function learningProjects(){return array(KEYS.learningProjects)}
+  function learningProjects(){return array(KEYS.learningProjects).map(x=>({...x,sourceKey:clean(x.sourceKey)}))}
   function activity(){return array(KEYS.activity)}
 
   function goalProgress(goal,planRows=planner()){
@@ -162,13 +162,47 @@
     write(KEYS.activity,rows.slice(0,500));
   }
   function addPlan(input={}){
-    const rows=planner();
-    const row={id:input.id||uid('plan'),text:clean(input.text)||'Study action',type:input.type||'task',subject:clean(input.subject),date:clean(input.date),time:clean(input.time),duration:Math.max(0,Number(input.duration)||0),priority:['high','medium','low'].includes(input.priority)?input.priority:'medium',goalId:clean(input.goalId),status:input.status==='done'?'done':'todo',createdAt:new Date().toISOString()};
-    rows.push(row);write(KEYS.planner,rows);record('planner','added',{id:row.id,text:row.text});return row;
+    const rows=planner(),sourceKey=clean(input.sourceKey);
+    if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
+    const row={id:input.id||uid('plan'),text:clean(input.text)||'Study action',type:input.type||'task',subject:clean(input.subject),date:clean(input.date),time:clean(input.time),duration:Math.max(0,Number(input.duration)||0),priority:['high','medium','low'].includes(input.priority)?input.priority:'medium',goalId:clean(input.goalId),sourceKey,status:input.status==='done'?'done':'todo',createdAt:new Date().toISOString()};
+    rows.push(row);write(KEYS.planner,rows);record('planner','added',{id:row.id,text:row.text,sourceKey});return row;
   }
+  function updatePlan(id,patch={}){
+    const rows=planner(),row=rows.find(x=>x.id===id);if(!row)return null;
+    const safe={...patch};delete safe.id;delete safe.createdAt;
+    if(safe.text!==undefined)safe.text=clean(safe.text);if(safe.subject!==undefined)safe.subject=clean(safe.subject);if(safe.date!==undefined)safe.date=clean(safe.date);if(safe.time!==undefined)safe.time=clean(safe.time);if(safe.goalId!==undefined)safe.goalId=clean(safe.goalId);
+    if(safe.priority!==undefined&&!['high','medium','low'].includes(safe.priority))safe.priority='medium';
+    if(safe.duration!==undefined)safe.duration=Math.max(0,Number(safe.duration)||0);
+    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.planner,rows);record('planner','updated',{id:row.id,status:row.status||'todo'});return row;
+  }
+  function completePlan(id,done=true){return updatePlan(id,{status:done?'done':'todo',completedAt:done?new Date().toISOString():''})}
+  function removePlan(id){const rows=planner(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.planner,rows.filter(x=>x.id!==id));record('planner','deleted',{id});return true}
   function addGoal(input={}){
-    const rows=goals(),row={id:input.id||uid('goal'),text:clean(input.text)||'Learning goal',category:input.category||'learning',date:clean(input.date),measure:clean(input.measure),progress:Math.max(0,Math.min(100,Number(input.progress)||0)),status:input.status==='complete'?'complete':'active',createdAt:new Date().toISOString()};
-    rows.push(row);write(KEYS.goals,rows);record('goal','added',{id:row.id,text:row.text});return row;
+    const rows=goals(),sourceKey=clean(input.sourceKey);if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
+    const row={id:input.id||uid('goal'),text:clean(input.text)||'Learning goal',category:input.category||'learning',date:clean(input.date),measure:clean(input.measure),sourceKey,progress:Math.max(0,Math.min(100,Number(input.progress)||0)),status:input.status==='complete'?'complete':'active',createdAt:new Date().toISOString()};
+    rows.push(row);write(KEYS.goals,rows);record('goal','added',{id:row.id,text:row.text,sourceKey});return row;
+  }
+  function updateGoal(id,patch={}){
+    const rows=goals(),row=rows.find(x=>x.id===id);if(!row)return null;const safe={...patch};delete safe.id;delete safe.createdAt;
+    if(safe.text!==undefined)safe.text=clean(safe.text);if(safe.date!==undefined)safe.date=clean(safe.date);if(safe.measure!==undefined)safe.measure=clean(safe.measure);if(safe.progress!==undefined)safe.progress=Math.max(0,Math.min(100,Number(safe.progress)||0));
+    Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.goals,rows);record('goal','updated',{id:row.id,status:row.status||'active'});return row;
+  }
+  function removeGoal(id){const rows=goals(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.goals,rows.filter(x=>x.id!==id));record('goal','deleted',{id});return true}
+  function addAssignment(input={}){
+    const rows=assignments(),sourceKey=clean(input.sourceKey);if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
+    const row={id:input.id||uid('assignment'),title:clean(input.title)||'Assignment',subject:clean(input.subject),type:input.type||'assignment',priority:['high','medium','low'].includes(input.priority)?input.priority:'medium',dueDate:clean(input.dueDate),instructions:clean(input.instructions),sourceKey,progress:Math.max(0,Math.min(100,Number(input.progress)||0)),status:input.status==='complete'||Number(input.progress)>=100?'complete':'active',createdAt:new Date().toISOString()};
+    rows.push(row);write(KEYS.assignments,rows);record('assignments','added',{id:row.id,title:row.title,sourceKey});return row;
+  }
+  function updateAssignment(id,patch={}){
+    const rows=assignments(),row=rows.find(x=>x.id===id);if(!row)return null;const safe={...patch};delete safe.id;delete safe.createdAt;
+    if(safe.title!==undefined)safe.title=clean(safe.title);if(safe.subject!==undefined)safe.subject=clean(safe.subject);if(safe.dueDate!==undefined)safe.dueDate=clean(safe.dueDate);if(safe.instructions!==undefined)safe.instructions=clean(safe.instructions);if(safe.progress!==undefined)safe.progress=Math.max(0,Math.min(100,Number(safe.progress)||0));
+    if(safe.priority!==undefined&&!['high','medium','low'].includes(safe.priority))safe.priority='medium';
+    if(Number(safe.progress)>=100)safe.status='complete';Object.assign(row,safe,{updatedAt:new Date().toISOString()});write(KEYS.assignments,rows);record('assignments','updated',{id:row.id,status:row.status||'active'});return row;
+  }
+  function removeAssignment(id){const rows=assignments(),row=rows.find(x=>x.id===id);if(!row)return false;write(KEYS.assignments,rows.filter(x=>x.id!==id));record('assignments','deleted',{id});return true}
+  function prepareFocus(input={}){
+    const state={task:clean(input.task)||'Focus session',duration:Math.max(5,Math.min(240,Number(input.duration)||25)),running:false,endAt:0,remaining:0,linkedPlannerId:clean(input.linkedPlannerId),autoComplete:input.autoComplete!==false,startedAt:0};
+    write(KEYS.focus,state);record('focus','prepared',{task:state.task,linkedPlannerId:state.linkedPlannerId,duration:state.duration});return state;
   }
   function upsertMastery(input={}){
     const subject=clean(input.subject)||'General',topic=clean(input.topic);if(!topic)return null;
@@ -190,8 +224,9 @@
     return added;
   }
   function createProject(input={}){
-    const rows=learningProjects(),row={id:input.id||uid('project'),title:clean(input.title)||'Learning project',subject:clean(input.subject),type:input.type||'learning',goalId:clean(input.goalId),status:input.status||'active',notes:clean(input.notes),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-    rows.unshift(row);write(KEYS.learningProjects,rows.slice(0,100));record('project','created',{id:row.id,title:row.title});return row;
+    const rows=learningProjects(),sourceKey=clean(input.sourceKey);if(sourceKey){const existing=rows.find(x=>x.sourceKey===sourceKey);if(existing)return existing}
+    const row={id:input.id||uid('project'),title:clean(input.title)||'Learning project',subject:clean(input.subject),type:input.type||'learning',goalId:clean(input.goalId),sourceKey,status:input.status||'active',notes:clean(input.notes),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    rows.unshift(row);write(KEYS.learningProjects,rows.slice(0,100));record('project','created',{id:row.id,title:row.title,sourceKey});return row;
   }
   function updateProject(id,patch={}){
     const rows=learningProjects(),row=rows.find(x=>x.id===id);if(!row)return null;
@@ -208,12 +243,12 @@
   }
 
   const api={
-    version:'20260920-r173',
+    version:'20260920-r174',
     keys:KEYS,
     read,array,write,
     data:{planner,goals,mastery,assignments,flashcards,focusHistory,activity,learningProjects},
     compute,context,record,
-    actions:{addPlan,addGoal,upsertMastery,addFlashcards,createProject,updateProject,deleteProject,open}
+    actions:{addPlan,updatePlan,completePlan,removePlan,addGoal,updateGoal,removeGoal,addAssignment,updateAssignment,removeAssignment,prepareFocus,upsertMastery,addFlashcards,createProject,updateProject,deleteProject,open}
   };
   window.__SCHOLARK_WORKSPACE_CORE__=api;
   window.dispatchEvent(new CustomEvent('scholark-workspace-core-ready',{detail:{version:api.version}}));

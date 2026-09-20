@@ -68,39 +68,30 @@
       if(type==='planner'){
         const actions=[];for(const phase of last.result?.roadmap||[])for(const a of phase.actions||[])if(clean(a))actions.push({phase:phase.phase||'Study Ahead',text:clean(a)});
         if(!actions.length)throw new Error('This roadmap has no planner actions.');
-        let local=[];try{local=JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]')||[]}catch{}
-        const now=Date.now();actions.slice(0,18).forEach((a,i)=>local.push({id:'study-plan-'+now.toString(36)+'-'+i,text:a.text,type:'study',subject:clean(last.field),date:new Date(Date.now()+(1+i*2)*86400000).toISOString().slice(0,10),time:'',duration:45,priority:i<4?'high':'medium',goalId:'',status:'todo',source:'study_ahead',notes:'Study Ahead · '+clean(a.phase),createdAt:new Date().toISOString()}));
-        localStorage.setItem('scholark_v51_planner',JSON.stringify(local));
-        let cloudNote='';
-        if(x){
-          const rows=actions.slice(0,18).map((a,i)=>({user_id:x.uid,title:a.text.slice(0,240),subject:clean(last.field).slice(0,160),notes:'Study Ahead · '+clean(a.phase).slice(0,160),due_at:isoDay(1+i*2),duration_minutes:45,priority:i<4?'high':'medium',status:'todo',source:'study_ahead'}));
-          const r=await x.c.request('/rest/v1/planner_tasks',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(rows)});cloudNote=r.ok?' · synced to Cloud':' · saved locally';
-          if(r.ok)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(false);
-        }
-        if(st)st.textContent=actions.slice(0,18).length+' Study Ahead actions added to Planner'+cloudNote+'.';
+        const api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.planner?.().length||0,field=clean(last.field)||'Study Ahead';
+        actions.slice(0,18).forEach((a,i)=>api?.actions?.addPlan?.({text:a.text,type:'study',subject:field,date:new Date(Date.now()+(1+i*2)*86400000).toISOString().slice(0,10),time:'',duration:45,priority:i<4?'high':'medium',goalId:'',sourceKey:'study:'+field.toLowerCase()+':'+clean(a.phase).toLowerCase()+':'+clean(a.text).toLowerCase()}));
+        const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true);
+        if(st)st.textContent=(added||0)+' new Study Ahead action'+(added===1?'':'s')+' connected to Planner'+(x?' · Cloud sync queued':'')+'.';
       }else if(type==='mastery'){
         const topics=[...(last.result?.keySubjects||[]),...(last.result?.skills||[])].map(clean).filter(Boolean).slice(0,24);
         if(!topics.length)throw new Error('This roadmap has no mastery topics.');
-        let local=[];try{local=JSON.parse(localStorage.getItem('scholark_v52_mastery')||'[]')||[]}catch{}
-        const subject=clean(last.field)||'Study Ahead',known=new Set(local.map(x=>(clean(x.subject)+'|'+clean(x.topic)).toLowerCase()));
-        for(const topic of topics){const k=(subject+'|'+topic).toLowerCase();if(known.has(k))continue;known.add(k);const due=new Date();due.setDate(due.getDate()+1);local.push({id:'study-mastery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),subject,topic,status:'New',mastery:0,nextReviewAt:due.toISOString(),updatedAt:new Date().toISOString(),source:'study_ahead'})}
-        localStorage.setItem('scholark_v52_mastery',JSON.stringify(local));
-        let cloudNote='';
-        if(x){
-          const rows=topics.map(topic=>({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:0,attempts:0,correct:0,incorrect:0,streak:0}));
-          const r=await x.c.request('/rest/v1/mastery_topics?on_conflict=user_id,subject,topic',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify(rows)});cloudNote=r.ok?' · synced to Cloud':' · saved locally';
-          if(r.ok)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(false);
-        }
-        if(st)st.textContent=topics.length+' key subjects/skills connected to Mastery'+cloudNote+'.';
+        const api=window.__SCHOLARK_WORKSPACE_CORE__,subject=clean(last.field)||'Study Ahead',before=api?.data?.mastery?.().length||0;
+        for(const topic of topics){const due=new Date();due.setDate(due.getDate()+1);api?.actions?.upsertMastery?.({subject,topic,status:'New',mastery:0,nextReviewAt:due.toISOString()})}
+        const added=Math.max(0,(api?.data?.mastery?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(true);
+        if(st)st.textContent=added+' new key subject'+(added===1?'':'s')+'/skill'+(added===1?'':'s')+' connected to Mastery'+(x?' · Cloud sync queued':'')+'.';
       }else if(type==='goal'){
-        let goals=[];try{goals=JSON.parse(localStorage.getItem('scholark_v51_goals')||'[]')||[]}catch{}
-        const text='Prepare for '+clean(last.field),existing=goals.find(g=>clean(typeof g==='string'?g:g.text).toLowerCase()===text.toLowerCase());
-        if(!existing)goals.push({id:'study-goal-'+Date.now().toString(36),text,category:'school',date:'',measure:'Complete the Study Ahead roadmap and reach confident mastery of the key subjects.',progress:0,status:'active',source:'study_ahead',createdAt:new Date().toISOString()});
-        localStorage.setItem('scholark_v51_goals',JSON.stringify(goals));if(st)st.textContent='Study Ahead goal added to Goals.';
+        const text='Prepare for '+clean(last.field),api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.goals?.().length||0;
+        api?.actions?.addGoal?.({text,category:'school',date:'',measure:'Complete the Study Ahead roadmap and reach confident mastery of the key subjects.',sourceKey:'study-goal:'+clean(last.field).toLowerCase()});
+        const added=(api?.data?.goals?.().length||0)>before;if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadGoals?.(true);if(st)st.textContent=added?'Study Ahead goal added to Goals.':'Study Ahead goal is already connected to Goals.';
       }
     }catch(e){if(st)st.textContent=clean(e?.message||e)}finally{btn.disabled=false}
   }
   addEventListener('scholark:study-ahead-generated',e=>{persist(e.detail||{});setTimeout(sync,80)});
   function sync(){if(location.hash.toLowerCase()==='#study'){ensureSavedHost();loadSaved();try{last=last||JSON.parse(localStorage.getItem('scholark_v83_study_ahead')||'null')}catch{}if(last)decorate()}}
   addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,280)});setTimeout(sync,300);
+  function prefill(data={}){
+    const apply=()=>{if($('#v62-field')&&data.field!==undefined)$('#v62-field').value=clean(data.field);if($('#v62-country')&&data.country!==undefined)$('#v62-country').value=clean(data.country);if($('#v62-school')&&data.targetSchool!==undefined)$('#v62-school').value=clean(data.targetSchool);if($('#v62-context')&&data.context!==undefined)$('#v62-context').value=clean(data.context);$('#v62-field')?.focus()};
+    if(String(location.hash||'').toLowerCase()!=='#study')window.__SCHOLARK_WORKSPACE__?.openTool?.('study');setTimeout(apply,140);return true;
+  }
+  window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,refresh:sync,version:'20260920-r174'};
 })();
