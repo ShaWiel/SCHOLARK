@@ -118,6 +118,7 @@
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
   const foundationApi={version:"20260920-r175",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R174__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R173__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R172__=foundationApi;
