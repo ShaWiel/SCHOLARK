@@ -309,8 +309,8 @@
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
-    const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',arkiReady=typeof window.__SCHOLARK_V107_GENERAL_AI__?.prefill==='function';
-    return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&arkiReady,routes:ROUTES.size,missing,coreReady,arkiReady,readOnly:true};
+    const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
+    return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }
   window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r174',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();
