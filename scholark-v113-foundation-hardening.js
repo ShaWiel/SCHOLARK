@@ -80,7 +80,7 @@
     const visual=!work||r==="dashboard"||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true;
     const orchestration=!work||!!window.__SCHOLARK_V114_ORCHESTRATOR__&&window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok!==false;
     const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
-    const selectors=$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
+    const selectors=$$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
     const languageRegistry=!!i18n&&i18n.count===74&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
     const selectorsHealthy=selectorCounts.every(n=>n===74);
     const coverage=i18n?.coverage?.(620)||null;
