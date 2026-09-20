@@ -34,7 +34,7 @@
     return null;
   }
   function panel(title,desc,body,pill='CONNECTED'){
-    return '<section class="v111-live" data-v111-owner="r174"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
+    return '<section class="v111-live" data-v111-owner="r175"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
   }
   function kpi(value,label){return '<div class="v111-kpi"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>'}
   function openArki(prompt){
@@ -192,7 +192,7 @@
       busy=true;try{old?.remove();const html=htmlFor(tool,api.compute());if(html){root.insertAdjacentHTML('afterbegin',html);wire($('.v111-live',root),tool)}augmentTutorMessages()}finally{busy=false}
     })
   }
-  const schedule=(force=false)=>[30,140,420].forEach(ms=>setTimeout(()=>refresh(force),ms));
+  const schedule=(force=false)=>[30,140,420].forEach((ms,i)=>setTimeout(()=>refresh(force&&i===0),ms));
   addEventListener('hashchange',()=>schedule(true));
   addEventListener('scholark-runtime-ready',()=>schedule(false));
   addEventListener('scholark-workspace-core-ready',()=>schedule(true));
@@ -206,5 +206,5 @@
   observer.observe(document.documentElement,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r174',refresh:()=>refresh(true),generateCards};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r175',refresh:()=>refresh(true),generateCards};
 })();
