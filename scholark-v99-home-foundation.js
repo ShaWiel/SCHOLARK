@@ -142,7 +142,7 @@
       projectMounted:!projectRoute||!!$('#v51-fallback .v64-projects'),projectSidebar:!projectRoute||!!sidebar&&!document.body.classList.contains('v51-collapsed')&&getComputedStyle(sidebar).visibility!=='hidden',studioMounted:!studioRoute||(window.__SCHOLARK_FEATURE_FLAGS__?.studio===false?!!$('.v51-coming-soon'):!!$('#v41-studio-workspace:not([hidden])')),runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     report.ok=report.runtimeErrors.length===0&&report.workspaceLanguage&&report.languageIconClean&&report.projectMounted&&report.projectSidebar&&report.studioMounted&&report.homeOwner&&(!report.home||(report.activeMode===report.previewMode&&report.previewComplete&&report.stageReady&&report.stageModeMatched&&report.statusModeMatched&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.cinematicRunning));
-    try{sessionStorage.setItem('scholark_foundation_r167',JSON.stringify(report))}catch{}
+    try{sessionStorage.setItem('scholark_foundation_r175',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R167 '+(report.ok?'PASS':'WARN'),report);if(!report.ok)schedule(60);return report;
   }
 
@@ -156,5 +156,5 @@
 
   // Repairs are intentionally event-driven. Watching the entire document caused
   // expensive full-surface localization scans during dynamic workspace mounts.
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r167',documentWideObserver:false};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r175',documentWideObserver:false};
 })();
