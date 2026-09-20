@@ -39,7 +39,7 @@
   }
   function status(t){const x=$('#v86-status');if(x)x.textContent=t||''}
   function renderFiles(){const h=$('#v86-list');if(h)h.innerHTML=state.files.length?state.files.map(x=>'<div class="v86-file">'+esc(x.name)+'<small>'+esc(x.detail||x.type||'file')+'</small></div>').join(''):'<div class="v86-file">No files loaded yet.</div>'}
-  function enableActions(){$('#v86-actions button').forEach(b=>{b.disabled=!state.text})}
+  function enableActions(){$$('#v86-actions button').forEach(b=>{b.disabled=!state.text})}
   async function ai(mode,payload){
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);
     try{const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||localStorage.getItem('scholark_ui_language')||'English',...payload}),signal:ctrl.signal});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'AI request failed');return d}finally{clearTimeout(timer)}
