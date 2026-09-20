@@ -95,7 +95,7 @@
     return h;
   }
 
-  function shell(title,sub,body){return `<div class="v52-tool"><div class="v52-head"><div><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div><span class="v52-pill">AI QUALITY · MAX</span></div>${body}</div>`}
+  function shell(title,sub,body){return `<div class="v52-tool"><div class="v52-head"><div><div class="v52-kicker">SCHOLARK WORKSPACE</div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div></div>${body}</div>`}
 
   function openDashboard(){
     closeOtherViews();forceQuality();document.body.classList.add('v51-workspace');activateNav('dashboard');route('dashboard');cleanDashboard();
