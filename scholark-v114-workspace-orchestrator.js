@@ -33,7 +33,7 @@
     if(tool==='dashboard')return $('[data-v51-page="dashboard"].active .v51-shell')||$('[data-v51-page="dashboard"] .v51-shell');
     if(tool==='ai')return $('#v107-ai');
     if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool');
-    if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]')||$('#v106-root');
+    if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]');
     if(tool==='language')return $('.v93');
     if(tool==='files')return $('.v86');
     if(tool==='project')return $('.v64-projects')||$('#v51-fallback');
@@ -75,7 +75,7 @@
     return {chat,text:clean(msg?.content||$('.v107-msg.assistant:last-of-type')?.innerText||'')};
   }
   function tutorData(){
-    const chat=$('#v52-chat'),user=clean($$('.v52-msg.user',chat).at(-1)?.innerText||''),answer=clean($$('.v52-msg.ai',chat).at(-1)?.innerText||'');
+    const chat=$('#v52-chat'),users=chat?$('.v52-msg.user',chat):[],answers=chat?$('.v52-msg.ai',chat):[],user=clean(users.at(-1)?.innerText||''),answer=clean(answers.at(-1)?.innerText||'');
     const weak=weakTopic(),topic=(user||weak?.topic||'Tutor review').slice(0,140);
     return {user,answer:answer.startsWith('I’m ready.')?'':answer,topic,subject:weak?.subject||'AI Tutor'};
   }
@@ -305,12 +305,12 @@
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),bar=rootFor(tool)?.querySelector?.('.v114-connect');
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),duplicates=$$('.v114-connect').filter(x=>x.dataset.v114Route===tool).length;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
-    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r174',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
+    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r175',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
     const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
     return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }
-  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r174',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
+  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r175',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();
