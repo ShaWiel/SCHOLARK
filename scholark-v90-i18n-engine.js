@@ -600,7 +600,7 @@
   };
   const rememberAttrs=el=>{
     let o=attrSource.get(el);
-    if(!o){o={};for(const a of ['placeholder','aria-label','title']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}
+    if(!o){o={};for(const a of ['placeholder','aria-label','title','alt']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}
     else for(const a of Object.keys(o))o[a]=canonicalSource(o[a]);
     return o;
   };
@@ -624,7 +624,7 @@
       if(!base||out.size>=limit)continue;
       const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
       let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
-      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{if(out.size>=limit||protectedNode(el))return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
+      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')).forEach(el=>{if(out.size>=limit||protectedNode(el))return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title','alt']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
     }
     return [...out];
   }
@@ -667,7 +667,7 @@
       }
       Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{
         if(protectedNode(el))return;
-        const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title']){
+        const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title','alt']){
           const src=clean(srcs[a]);if(!src)continue;const tr=c==='en'?src:map[src];if(!tr)continue;
           if(clean(el.getAttribute(a))!==clean(tr))el.setAttribute(a,tr);
         }
@@ -750,36 +750,47 @@
     return roots.length?roots:[document.body];
   }
   function applyVisible(){visibleRoots().forEach(applyKnown)}
+  function visibleCoverage(limit=520){
+    const target=code(),strings=[...new Set(collectDom(limit))].filter(eligibleText);
+    if(target==='en')return {ratio:1,total:strings.length,translated:strings.length,missing:[]};
+    const missing=strings.filter(s=>!clean(map[s])||clean(map[s])===s);
+    const translated=Math.max(0,strings.length-missing.length);
+    return {ratio:strings.length?translated/strings.length:1,total:strings.length,translated,missing};
+  }
 
-  let backgroundLanguageTimer=null,backgroundLanguageFollowup=null;
+  let backgroundLanguageTimer=null,backgroundLanguageFollowup=null,completionRunning=false,completionQueued=false;
   function scheduleLanguageCompletion(target,epoch){
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);
     if(target==='en')return;
     const run=async()=>{
       if(epoch!==translationEpoch||code()!==target||target==='en')return;
+      if(completionRunning){completionQueued=true;return}
+      completionRunning=true;
       try{
-        const strings=[...new Set(collectDom(520))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
-        if(!missing.length){
-          upgradeSelectors();applyVisible();window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
-          window.dispatchEvent(new CustomEvent('scholark-language-complete',{detail:{code:target}}));
-          return;
+        const strings=[...new Set(collectDom(620))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
+        if(missing.length){
+          const primed=primeDeviceTranslator(target);
+          const add=await translateBatch(target,missing,part=>{
+            if(epoch!==translationEpoch)return;
+            map={...map,...part};saveMap(target,map);applyVisible();
+          },'ui',primed);
+          if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
-        const primed=primeDeviceTranslator(target);
-        const add=await translateBatch(target,missing,part=>{
-          if(epoch!==translationEpoch)return;
-          map={...map,...part};saveMap(target,map);applyVisible();
-        },'ui',primed);
-        if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         if(epoch===translationEpoch){
-          upgradeSelectors();
+          upgradeSelectors();applyVisible();
           window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
-          window.dispatchEvent(new CustomEvent('scholark-language-complete',{detail:{code:target}}));
+          const coverage=visibleCoverage(620);
+          window.dispatchEvent(new CustomEvent('scholark-language-complete',{detail:{code:target,coverage}}));
         }
       }catch(e){console.warn('[SCHOLARK] background language completion:',clean(e?.message||e))}
+      finally{
+        completionRunning=false;
+        if(completionQueued&&epoch===translationEpoch){completionQueued=false;setTimeout(run,120)}
+      }
     };
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,100));
-    backgroundLanguageTimer=setTimeout(()=>idle(run,{timeout:500}),45);
-    backgroundLanguageFollowup=setTimeout(()=>idle(run,{timeout:700}),420);
+    backgroundLanguageTimer=setTimeout(()=>idle(run,{timeout:600}),60);
+    backgroundLanguageFollowup=setTimeout(()=>idle(run,{timeout:900}),560);
   }
 
   async function changeLanguage(target){
@@ -828,12 +839,24 @@
     }
 
     if(epoch!==translationEpoch)return;
+    if(target!=='en'&&dynamic&&navigator.onLine!==false){
+      const coverage=visibleCoverage(560);
+      if(coverage.ratio<.92&&coverage.missing.length){
+        try{
+          const focus=coverage.missing.slice(0,140);
+          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()},'ui');
+          if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map)}
+        }catch(e){console.warn('[SCHOLARK] final language coverage pass:',clean(e?.message||e))}
+      }
+    }
+    if(epoch!==translationEpoch)return;
     window.__SCHOLARK_COUNTRY__?.apply?.();
     applyVisible();
     if(home)window.__SCHOLARK_V30_DEMO__?.refreshLanguage?.();
     else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
 
-    window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic}}));
+    const readyCoverage=visibleCoverage(560);
+    window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic,coverage:readyCoverage}}));
     const remaining=Math.max(0,260-(performance.now()-overlayStarted));
     if(remaining)await new Promise(r=>setTimeout(r,remaining));
     if(epoch!==translationEpoch)return;
@@ -930,5 +953,5 @@
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,coverage:visibleCoverage,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource,rtlCodes:[...RTL]};
 })();
