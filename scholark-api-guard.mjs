@@ -9,10 +9,10 @@ const MAX_BUCKETS = 10000;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
 
 const rules = [
-  { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30 },
-  { match:(m,p)=>m==='POST' && p==='/api/studio/image', limit:testMode?100:40 },
-  { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30 },
-  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120 }
+  { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30, maxBytes:3*1024*1024 },
+  { match:(m,p)=>m==='POST' && p==='/api/studio/image', limit:testMode?100:40, maxBytes:25*1024*1024 },
+  { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30, maxBytes:2*1024*1024 },
+  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024 }
 ];
 
 function clientKey(req) {
@@ -33,7 +33,10 @@ function securityHeaders(res) {
     if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
     if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), payment=(), usb=()');
     if (!res.hasHeader('x-permitted-cross-domain-policies')) res.setHeader('x-permitted-cross-domain-policies','none');
-    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'self'");
+    if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
+    if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
+    if (!res.hasHeader('origin-agent-cluster')) res.setHeader('origin-agent-cluster','?1');
+    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'");
     if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains');
   } catch {}
 }
@@ -85,7 +88,7 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,originGuard:true,securityHeaders:true});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,originGuard:true,securityHeaders:true,requestBodyLimits:true});
     return true;
   }
 
@@ -94,6 +97,12 @@ http.Server.prototype.emit = function(type,...args) {
 
   if (!requestOriginAllowed(req)) {
     json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED',error:'Cross-origin request blocked.'});
+    return true;
+  }
+
+  const declaredBytes = Number(req.headers?.['content-length'] || 0);
+  if (Number.isFinite(declaredBytes) && declaredBytes > Number(rule.maxBytes || Infinity)) {
+    json(res,413,{ok:false,code:'REQUEST_TOO_LARGE',error:'Request body is too large for this SCHOLARK endpoint.'});
     return true;
   }
 
