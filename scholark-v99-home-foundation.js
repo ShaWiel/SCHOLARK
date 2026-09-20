@@ -129,9 +129,9 @@
   function schedule(delay=0){clearTimeout(repairTimer);repairTimer=setTimeout(()=>requestAnimationFrame(repair),delay)}
 
   function health(){
-    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar');
+    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar');
     const report={
-      ok:true,release:'r167',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
+      ok:true,release:'r175',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
       previewComplete:!home()||window.__SCHOLARK_V32_PREVIEW__?.healthy?.()===true,
       stageReady:!home()||!!$('#v29-stage-title')?.textContent?.trim()&&!!$('#v29-stage-desc')?.textContent?.trim()&&($('#v29-stage-list')?.children?.length||0)>0&&!!$('#v29-stage-scene .v29-scene'),stageModeMatched:!home()||stageMode===mode,statusModeMatched:!home()||statusModes.length>=3&&statusModes.slice(0,3).every(x=>x===mode),
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
