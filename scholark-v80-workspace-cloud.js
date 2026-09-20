@@ -280,7 +280,7 @@
     syncProgress();
   }
   addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
-  addEventListener('scholark:workspace-cloud-refresh',()=>setTimeout(sync,80));
+  addEventListener('scholark:workspace-cloud-refresh',e=>{const kind=clean(e.detail?.kind);setTimeout(()=>{if(kind==='planner')loadPlanner(true);else if(kind==='goal')loadGoals(true);else if(kind==='mastery')loadMastery(true);else sync()},80)});
   setTimeout(sync,700);
   window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress,mirrorPlanner,mirrorGoals,mirrorMastery:mirrorMasteryRows,version:'20260920-r175'};
 })();
