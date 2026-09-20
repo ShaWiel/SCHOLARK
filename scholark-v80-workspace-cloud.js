@@ -60,9 +60,9 @@
 
   function ensurePlannerControls(){
     const form=$('#v52-plan')?.closest('.v52-form');if(!form)return;
-    $('.v80-plan-controls',form).forEach(x=>x.remove());
+    $$('.v80-plan-controls',form).forEach(x=>x.remove());
     if(form.dataset.v80planner==='1')return;form.dataset.v80planner='1';
-    const list=$('#v52-plan-list');if(list&&!$('.v80-plan-views',form)){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
+    const list=$('#v52-plan-list');if(list&&!$('.v80-plan-views',form)){const views=document.createElement('div');views.className='v80-plan-views';views.innerHTML=['all','today','tomorrow','week','upcoming','overdue','done'].map(v=>'<button type="button" class="v80-plan-view '+(v==='all'?'active':'')+'" data-v80-view="'+v+'">'+v[0].toUpperCase()+v.slice(1)+'</button>').join('');list.insertAdjacentElement('beforebegin',views);$$('[data-v80-view]',views).forEach(b=>b.onclick=()=>{state.plannerView=b.dataset.v80View;$('[data-v80-view]',views).forEach(x=>x.classList.toggle('active',x===b));renderPlanner()})}
   }
   function plannerFiltered(){
     const today=new Date();today.setHours(0,0,0,0);const t=today.getTime();
@@ -142,10 +142,10 @@
     const host=$('#v52-goal-list');if(!host||!awaitableSigned())return;
     const locals=localRead('scholark_v51_goals'),byCloud=new Map(locals.filter(x=>x&&typeof x==='object'&&x.cloudId).map(x=>[String(x.cloudId),x]));
     host.innerHTML=state.goals.length?state.goals.map(z=>{const local=byCloud.get(String(z.id))||{},progress=Math.max(0,Math.min(100,Number(z.progress)||0)),done=z.status==='complete';return '<div class="v52-item"><div><b>◉ '+esc(z.title)+'</b><div class="v52-meta"><span class="v52-badge">'+esc(local.category||'learning')+'</span>'+(z.target_date?'<span class="v52-badge">Target '+esc(z.target_date)+'</span>':'')+'<span class="v52-badge goal">'+progress+'%</span><span class="v80-cloud-tag">CLOUD</span></div>'+(local.measure?'<div style="margin-top:6px">'+esc(local.measure)+'</div>':'')+'</div><div class="v52-inline-actions"><button data-v80-goal-dec="'+esc(z.id)+'">−10%</button><button data-v80-goal-inc="'+esc(z.id)+'">+10%</button><button data-v80-goal-complete="'+esc(z.id)+'">'+(done?'Reopen':'Complete')+'</button><button data-v80-goal-del="'+esc(z.id)+'">Delete</button></div></div>'}).join(''):'<div class="v52-item">No goals yet.</div>';
-    $('[data-v80-goal-dec]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalDec,-10));
-    $('[data-v80-goal-inc]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalInc,10));
-    $('[data-v80-goal-complete]',host).forEach(b=>b.onclick=()=>toggleGoal(b.dataset.v80GoalComplete));
-    $('[data-v80-goal-del]',host).forEach(b=>b.onclick=()=>deleteGoal(b.dataset.v80GoalDel));
+    $$('[data-v80-goal-dec]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalDec,-10));
+    $$('[data-v80-goal-inc]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalInc,10));
+    $$('[data-v80-goal-complete]',host).forEach(b=>b.onclick=()=>toggleGoal(b.dataset.v80GoalComplete));
+    $$('[data-v80-goal-del]',host).forEach(b=>b.onclick=()=>deleteGoal(b.dataset.v80GoalDel));
   }
   async function addGoal(){
     const input=$('#v52-goal'),title=clean(input?.value);if(!title){input?.focus();return}
@@ -191,8 +191,8 @@
   function renderMastery(){
     const host=$('#v52-m-list');if(!host||!awaitableSigned())return;
     host.innerHTML=state.mastery.length?state.mastery.map(z=>{const m=Math.max(0,Math.min(100,Number(z.mastery)||0)),acc=(Number(z.attempts)||0)>0?Math.round((Number(z.correct)||0)/(Number(z.attempts)||1)*100):null;return '<div class="v52-item"><div><b>'+esc(z.topic)+'</b><span class="v52-status">'+esc(masteryStatus(m))+'</span><span class="v80-cloud-tag">CLOUD</span><span class="v80-mastery-meta">'+esc(z.subject||'General')+' · Mastery '+Math.round(m)+'%'+(acc!=null?' · Accuracy '+acc+'%':' · no quiz data yet')+' · '+esc(z.attempts||0)+' attempts'+(z.streak?' · streak '+esc(z.streak):'')+(z.last_practiced_at?' · practised '+esc(new Date(z.last_practiced_at).toLocaleDateString()):'')+'</span><div class="v80-mastery-bar"><i style="width:'+m+'%"></i></div></div><div class="v52-inline-actions"><button class="primary" data-v80-mastery-practice="'+esc(z.id)+'">Practice</button><button data-v80-mastery-del="'+esc(z.id)+'">Delete</button></div></div>'}).join(''):'<div class="v52-item">No mastery topics yet.</div>';
-    $('[data-v80-mastery-practice]',host).forEach(b=>b.onclick=()=>{const z=state.mastery.find(x=>x.id===b.dataset.v80MasteryPractice);if(!z)return;const prompt='Help me practise '+z.topic+' in '+(z.subject||'General')+'. Start with active recall, then give me one application question.';if(window.__SCHOLARK_V114_ORCHESTRATOR__?.handoff)window.__SCHOLARK_V114_ORCHESTRATOR__.handoff('tutor',{prompt});else{window.__SCHOLARK_WORKSPACE__?.openTool?.('tutor');setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},120)}});
-    $('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
+    $$('[data-v80-mastery-practice]',host).forEach(b=>b.onclick=()=>{const z=state.mastery.find(x=>x.id===b.dataset.v80MasteryPractice);if(!z)return;const prompt='Help me practise '+z.topic+' in '+(z.subject||'General')+'. Start with active recall, then give me one application question.';if(window.__SCHOLARK_V114_ORCHESTRATOR__?.handoff)window.__SCHOLARK_V114_ORCHESTRATOR__.handoff('tutor',{prompt});else{window.__SCHOLARK_WORKSPACE__?.openTool?.('tutor');setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},120)}});
+    $$('[data-v80-mastery-del]',host).forEach(b=>b.onclick=()=>deleteMastery(b.dataset.v80MasteryDel));
   }
   async function addMastery(){
     const input=$('#v52-m-topic'),topic=clean(input?.value);if(!topic){input?.focus();return}
