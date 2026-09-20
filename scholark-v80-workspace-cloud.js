@@ -43,14 +43,25 @@
   }
   function localPlanSig(z){const key=clean(z?.sourceKey);return key?'key|'+key.toLowerCase():sig(z?.text,z?.date)}
   function cloudPlanSig(z){const key=clean(readPlanMeta(z?.notes).sourceKey);return key?'key|'+key.toLowerCase():sig(z?.title,dateOnly(z?.due_at))}
+  const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  function cloudGoalId(localId){
+    const id=clean(localId);if(!id)return null;if(UUID_RE.test(id))return id;
+    const row=localRead('scholark_v51_goals').find(g=>g&&typeof g==='object'&&clean(g.id)===id),cloudId=clean(row?.cloudId);
+    return UUID_RE.test(cloudId)?cloudId:null;
+  }
+  function localGoalId(cloudId){
+    const id=clean(cloudId);if(!UUID_RE.test(id))return'';
+    const row=localRead('scholark_v51_goals').find(g=>g&&typeof g==='object'&&clean(g.cloudId)===id);
+    return clean(row?.id)||('cloud-goal-'+id);
+  }
   function mirrorPlanner(rows=state.planner){
     const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[localPlanSig(x),x]));
-    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:z.duration_minutes==null?(Number(prev.duration)||0):Math.max(0,Number(z.duration_minutes)||0),priority:z.priority||prev.priority||'medium',goalId:clean(meta.goalId)||prev.goalId||'',sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:z.duration_minutes==null?(Number(prev.duration)||0):Math.max(0,Number(z.duration_minutes)||0),priority:z.priority||prev.priority||'medium',goalId:z.goal_id?localGoalId(z.goal_id):(clean(meta.goalId)||prev.goalId||''),sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
     localWrite('scholark_v51_planner',next);return next;
   }
   function mirrorGoals(rows=state.goals){
     const old=localRead('scholark_v51_goals'),bySig=new Map(old.map(x=>[sig(typeof x==='string'?x:x?.text,typeof x==='string'?'':x?.date),typeof x==='string'?{text:x}:x]));
-    const next=(rows||[]).map(z=>{const date=z.target_date||'',prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-goal-'+z.id),cloudId:z.id,text:clean(z.title),category:prev.category||'learning',date,measure:prev.measure||'',sourceKey:prev.sourceKey||'',progress:Math.max(0,Math.min(100,Number(z.progress)||0)),status:z.status==='complete'?'complete':'active',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    const next=(rows||[]).map(z=>{const date=z.target_date||'',prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-goal-'+z.id),cloudId:z.id,text:clean(z.title),category:clean(z.subject)||prev.category||'learning',date,measure:clean(z.description)||prev.measure||'',sourceKey:prev.sourceKey||'',progress:Math.max(0,Math.min(100,Number(z.progress)||0)),status:z.status==='completed'?'complete':'active',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
     localWrite('scholark_v51_goals',next);return next;
   }
   function mirrorMasteryRows(rows=state.mastery){
@@ -82,19 +93,19 @@
     try{
       const x=await ctx(),form=$('#v52-plan')?.closest('.v52-form');ensurePlannerControls();note(form,!!x);
       if(!x)return;
-      let r=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at&order=created_at.asc&limit=250',{method:'GET'});
+      let r=await x.c.request('/rest/v1/planner_tasks?select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at&order=created_at.asc&limit=250',{method:'GET'});
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load planner');
       rows=Array.isArray(rows)?rows:[];
       if(migrate){
         const seen=new Set(rows.map(cloudPlanSig));
         const pending=localRead('scholark_v51_planner').slice(0,100).map(z=>typeof z==='string'?{text:z,date:''}:z).filter(z=>clean(z?.text)).filter(z=>!seen.has(localPlanSig(z)));
         if(pending.length){
-          const body=pending.map(z=>({user_id:x.uid,title:clean(z.text).slice(0,240),subject:clean(z.subject).slice(0,160)||null,notes:writePlanMeta({type:z.type,time:z.time,goalId:z.goalId,sourceKey:z.sourceKey}),due_at:dueIso(z.date),duration_minutes:Math.max(0,Math.min(240,Number(z.duration)||0)),priority:['high','medium','low'].includes(z.priority)?z.priority:'medium',status:z.status==='done'?'done':'todo',source:clean(z.source)||'manual'}));
-          const ins=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
+          const body=pending.map(z=>({user_id:x.uid,goal_id:cloudGoalId(z.goalId),title:clean(z.text).slice(0,240),subject:clean(z.subject).slice(0,160)||null,notes:writePlanMeta({type:z.type,time:z.time,goalId:z.goalId,sourceKey:z.sourceKey}),due_at:dueIso(z.date),duration_minutes:Math.max(0,Math.min(240,Number(z.duration)||0)),priority:['high','medium','low'].includes(z.priority)?z.priority:'medium',status:z.status==='done'?'done':'todo',source:clean(z.source)||'manual'}));
+          const ins=await x.c.request('/rest/v1/planner_tasks?select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
-      state.planner=rows;mirrorPlanner();renderPlanner();
+      state.planner=rows;mirrorPlanner();renderPlanner();setTimeout(backfillPlannerGoalLinks,60);
     }catch(e){console.warn('[SCHOLARK] Planner cloud sync:',clean(e?.message||e))}finally{state.loading.delete('planner')}
   }
   function renderPlanner(){
@@ -107,14 +118,14 @@
   async function addPlanner(){
     const input=$('#v52-plan'),title=clean(input?.value);if(!title){input?.focus();return}
     const date=$('#v52-plan-date')?.value||'',subject=clean($('#v52-plan-subject')?.value),type=$('#v52-plan-type')?.value||'task',goalId=$('#v52-plan-goal')?.value||'',time=$('#v52-plan-time')?.value||'',duration=Math.max(0,Math.min(240,Number($('#v52-plan-duration')?.value)||0)),priority=$('#v52-plan-priority')?.value||'medium',sourceKey='',x=await ctx();if(!x)return false;
-    const payload={user_id:x.uid,title:title.slice(0,240),subject:subject.slice(0,160)||null,notes:writePlanMeta({type,time,goalId,sourceKey}),due_at:dueIso(date),duration_minutes:duration,priority,status:'todo',source:'manual'};
-    const r=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)});
+    const payload={user_id:x.uid,goal_id:cloudGoalId(goalId),title:title.slice(0,240),subject:subject.slice(0,160)||null,notes:writePlanMeta({type,time,goalId,sourceKey}),due_at:dueIso(date),duration_minutes:duration,priority,status:'todo',source:'manual'};
+    const r=await x.c.request('/rest/v1/planner_tasks?select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)});
     const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not add planner item');
     if(input)input.value='';state.planner.push(...(Array.isArray(d)?d:[d]).filter(Boolean));mirrorPlanner();renderPlanner();return true;
   }
   async function togglePlanner(id){
     const x=await ctx();if(!x)return;const item=state.planner.find(z=>z.id===id);if(!item)return;const status=item.status==='done'?'todo':'done';
-    const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id)+'&select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status,updated_at:new Date().toISOString()})});const d=await r.json().catch(()=>[]);if(!r.ok)return;const row=Array.isArray(d)?d[0]:d;if(row)state.planner=state.planner.map(z=>z.id===id?row:z);mirrorPlanner();renderPlanner();
+    const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id)+'&select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status,updated_at:new Date().toISOString()})});const d=await r.json().catch(()=>[]);if(!r.ok)return;const row=Array.isArray(d)?d[0]:d;if(row)state.planner=state.planner.map(z=>z.id===id?row:z);mirrorPlanner();renderPlanner();
   }
   async function deletePlanner(id){
     const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)return;
@@ -125,24 +136,24 @@
     if(state.loading.has('goals'))return;state.loading.add('goals');
     try{
       const x=await ctx(),form=$('#v52-goal')?.closest('.v52-form');note(form,!!x);if(!x)return;
-      let r=await x.c.request('/rest/v1/goals?select=id,title,target_date,status,progress,created_at&order=created_at.asc&limit=250',{method:'GET'});
+      let r=await x.c.request('/rest/v1/goals?select=id,title,description,subject,target_date,status,progress,created_at,updated_at&order=created_at.asc&limit=250',{method:'GET'});
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load goals');rows=Array.isArray(rows)?rows:[];
       if(migrate){
         const seen=new Set(rows.map(z=>sig(z.title,z.target_date)));
         const pending=localRead('scholark_v51_goals').slice(0,100).map(z=>typeof z==='string'?{text:z,date:''}:z).filter(z=>clean(z?.text)).filter(z=>!seen.has(sig(z.text,z.date)));
         if(pending.length){
-          const body=pending.map(z=>({user_id:x.uid,title:clean(z.text).slice(0,240),target_date:z.date||null,status:z.status==='complete'?'complete':'active',progress:Math.max(0,Math.min(100,Number(z.progress)||0))}));
-          const ins=await x.c.request('/rest/v1/goals?select=id,title,target_date,status,progress,created_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
+          const body=pending.map(z=>({user_id:x.uid,title:clean(z.text).slice(0,240),description:clean(z.measure).slice(0,2000)||null,subject:clean(z.category).slice(0,160)||null,target_date:z.date||null,status:z.status==='complete'?'completed':'active',progress:Math.max(0,Math.min(100,Number(z.progress)||0))}));
+          const ins=await x.c.request('/rest/v1/goals?select=id,title,description,subject,target_date,status,progress,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
-      state.goals=rows;mirrorGoals();renderGoals();
+      state.goals=rows;mirrorGoals();renderGoals();setTimeout(backfillPlannerGoalLinks,60);
     }catch(e){console.warn('[SCHOLARK] Goal cloud sync:',clean(e?.message||e))}finally{state.loading.delete('goals')}
   }
   function renderGoals(){
     const host=$('#v52-goal-list');if(!host||!awaitableSigned())return;
     const locals=localRead('scholark_v51_goals'),byCloud=new Map(locals.filter(x=>x&&typeof x==='object'&&x.cloudId).map(x=>[String(x.cloudId),x]));
-    host.innerHTML=state.goals.length?state.goals.map(z=>{const local=byCloud.get(String(z.id))||{},progress=Math.max(0,Math.min(100,Number(z.progress)||0)),done=z.status==='complete';return '<div class="v52-item"><div><b>◉ '+esc(z.title)+'</b><div class="v52-meta"><span class="v52-badge">'+esc(local.category||'learning')+'</span>'+(z.target_date?'<span class="v52-badge">Target '+esc(z.target_date)+'</span>':'')+'<span class="v52-badge goal">'+progress+'%</span><span class="v80-cloud-tag">CLOUD</span></div>'+(local.measure?'<div style="margin-top:6px">'+esc(local.measure)+'</div>':'')+'</div><div class="v52-inline-actions"><button data-v80-goal-dec="'+esc(z.id)+'">−10%</button><button data-v80-goal-inc="'+esc(z.id)+'">+10%</button><button data-v80-goal-complete="'+esc(z.id)+'">'+(done?'Reopen':'Complete')+'</button><button data-v80-goal-del="'+esc(z.id)+'">Delete</button></div></div>'}).join(''):'<div class="v52-item">No goals yet.</div>';
+    host.innerHTML=state.goals.length?state.goals.map(z=>{const local=byCloud.get(String(z.id))||{},progress=Math.max(0,Math.min(100,Number(z.progress)||0)),done=z.status==='completed',category=clean(z.subject)||local.category||'learning',measure=clean(z.description)||local.measure||'';return '<div class="v52-item"><div><b>◉ '+esc(z.title)+'</b><div class="v52-meta"><span class="v52-badge">'+esc(category)+'</span>'+(z.target_date?'<span class="v52-badge">Target '+esc(z.target_date)+'</span>':'')+'<span class="v52-badge goal">'+progress+'%</span><span class="v80-cloud-tag">CLOUD</span></div>'+(measure?'<div style="margin-top:6px">'+esc(measure)+'</div>':'')+'</div><div class="v52-inline-actions"><button data-v80-goal-dec="'+esc(z.id)+'">−10%</button><button data-v80-goal-inc="'+esc(z.id)+'">+10%</button><button data-v80-goal-complete="'+esc(z.id)+'">'+(done?'Reopen':'Complete')+'</button><button data-v80-goal-del="'+esc(z.id)+'">Delete</button></div></div>'}).join(''):'<div class="v52-item">No goals yet.</div>';
     $$('[data-v80-goal-dec]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalDec,-10));
     $$('[data-v80-goal-inc]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalInc,10));
     $$('[data-v80-goal-complete]',host).forEach(b=>b.onclick=()=>toggleGoal(b.dataset.v80GoalComplete));
@@ -151,19 +162,32 @@
   async function addGoal(){
     const input=$('#v52-goal'),title=clean(input?.value);if(!title){input?.focus();return}
     const date=$('#v52-goal-date')?.value||null,category=$('#v52-goal-category')?.value||'learning',measure=clean($('#v52-goal-measure')?.value),x=await ctx();if(!x)return false;
-    const r=await x.c.request('/rest/v1/goals?select=id,title,target_date,status,progress,created_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),target_date:date,status:'active',progress:0})});
+    const r=await x.c.request('/rest/v1/goals?select=id,title,description,subject,target_date,status,progress,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,title:title.slice(0,240),description:measure.slice(0,2000)||null,subject:category.slice(0,160)||null,target_date:date,status:'active',progress:0})});
     const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not add goal');
     const added=(Array.isArray(d)?d:[d]).filter(Boolean);if(input)input.value='';if($('#v52-goal-measure'))$('#v52-goal-measure').value='';
-    if(added.length){const local=localRead('scholark_v51_goals'),known=new Set(local.map(z=>sig(typeof z==='string'?z:z?.text,typeof z==='string'?'':z?.date)));for(const row of added){const k=sig(row.title,row.target_date||'');if(!known.has(k)){local.push({id:'cloud-goal-'+row.id,cloudId:row.id,text:clean(row.title),category,date:row.target_date||'',measure,progress:Number(row.progress)||0,status:row.status==='complete'?'complete':'active',createdAt:row.created_at||new Date().toISOString()});known.add(k)}}localWrite('scholark_v51_goals',local)}
+    if(added.length){const local=localRead('scholark_v51_goals'),known=new Set(local.map(z=>sig(typeof z==='string'?z:z?.text,typeof z==='string'?'':z?.date)));for(const row of added){const k=sig(row.title,row.target_date||'');if(!known.has(k)){local.push({id:'cloud-goal-'+row.id,cloudId:row.id,text:clean(row.title),category,date:row.target_date||'',measure,progress:Number(row.progress)||0,status:row.status==='completed'?'complete':'active',createdAt:row.created_at||new Date().toISOString()});known.add(k)}}localWrite('scholark_v51_goals',local)}
     state.goals.push(...added);mirrorGoals();renderGoals();return true;
   }
   async function patchGoal(id,patch){
     const x=await ctx();if(!x)return null;
-    const body={...patch};const r=await x.c.request('/rest/v1/goals?id=eq.'+encodeURIComponent(id)+'&select=id,title,target_date,status,progress,created_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(body)}),d=await r.json().catch(()=>[]);
+    const body={...patch,updated_at:new Date().toISOString()};const r=await x.c.request('/rest/v1/goals?id=eq.'+encodeURIComponent(id)+'&select=id,title,description,subject,target_date,status,progress,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(body)}),d=await r.json().catch(()=>[]);
     if(!r.ok)return null;const row=Array.isArray(d)?d[0]:d;if(row){state.goals=state.goals.map(z=>z.id===id?row:z);mirrorGoals();renderGoals()}return row;
   }
-  async function adjustGoal(id,delta){const row=state.goals.find(z=>z.id===id);if(!row)return;const progress=Math.max(0,Math.min(100,(Number(row.progress)||0)+delta)),status=progress>=100?'complete':row.status==='complete'?'active':row.status;await patchGoal(id,{progress,status})}
-  async function toggleGoal(id){const row=state.goals.find(z=>z.id===id);if(!row)return;const done=row.status!=='complete';await patchGoal(id,{status:done?'complete':'active',progress:done?100:Math.min(90,Number(row.progress)||0)})}
+  async function adjustGoal(id,delta){const row=state.goals.find(z=>z.id===id);if(!row)return;const progress=Math.max(0,Math.min(100,(Number(row.progress)||0)+delta)),status=progress>=100?'completed':row.status==='completed'?'active':row.status;await patchGoal(id,{progress,status})}
+  async function toggleGoal(id){const row=state.goals.find(z=>z.id===id);if(!row)return;const done=row.status!=='completed';await patchGoal(id,{status:done?'completed':'active',progress:done?100:Math.min(90,Number(row.progress)||0)})}
+  async function backfillPlannerGoalLinks(){
+    if(state.loading.has('planner-goal-links')||!state.planner.length)return;state.loading.add('planner-goal-links');
+    try{
+      const x=await ctx();if(!x)return;
+      let changed=false;
+      for(const row of state.planner){
+        if(row.goal_id)continue;const meta=readPlanMeta(row.notes),goalId=cloudGoalId(meta.goalId);if(!goalId)continue;
+        const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(row.id)+'&select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({goal_id:goalId,updated_at:new Date().toISOString()})});
+        const d=await r.json().catch(()=>[]);if(r.ok){const updated=Array.isArray(d)?d[0]:d;if(updated){state.planner=state.planner.map(z=>z.id===row.id?updated:z);changed=true}}
+      }
+      if(changed)mirrorPlanner();
+    }catch(e){console.warn('[SCHOLARK] Planner goal-link sync:',clean(e?.message||e))}finally{state.loading.delete('planner-goal-links')}
+  }
   async function deleteGoal(id){
     const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/goals?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(!r.ok)return;
     state.goals=state.goals.filter(z=>z.id!==id);mirrorGoals();renderGoals();
