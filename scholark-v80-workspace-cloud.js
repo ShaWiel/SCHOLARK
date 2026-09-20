@@ -54,6 +54,39 @@
     const row=localRead('scholark_v51_goals').find(g=>g&&typeof g==='object'&&clean(g.cloudId)===id);
     return clean(row?.id)||('cloud-goal-'+id);
   }
+  function stamp(v){const n=new Date(v||0).getTime();return Number.isFinite(n)?n:0}
+  function plannerPatch(z){
+    return {goal_id:cloudGoalId(z.goalId),title:clean(z.text).slice(0,240),subject:clean(z.subject).slice(0,160)||null,notes:writePlanMeta({type:z.type,time:z.time,goalId:z.goalId,sourceKey:z.sourceKey}),due_at:dueIso(z.date),duration_minutes:Math.max(0,Math.min(240,Number(z.duration)||0)),priority:['high','medium','low'].includes(z.priority)?z.priority:'medium',status:z.status==='done'?'done':'todo',source:clean(z.source)||'manual',updated_at:new Date().toISOString()}
+  }
+  async function reconcilePlanner(x,rows){
+    const locals=localRead('scholark_v51_planner').filter(z=>z&&typeof z==='object'&&clean(z.text)),byId=new Map(rows.map(z=>[String(z.id),z])),bySig=new Map(rows.map(z=>[cloudPlanSig(z),z]));let next=rows.slice();
+    for(const local of locals){
+      const remote=(local.cloudId&&byId.get(String(local.cloudId)))||bySig.get(localPlanSig(local));if(!remote||!stamp(local.updatedAt)||stamp(local.updatedAt)<=stamp(remote.updated_at)+250)continue;
+      const r=await x.c.request('/rest/v1/planner_tasks?id=eq.'+encodeURIComponent(remote.id)+'&select=id,goal_id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(plannerPatch(local))}),d=await r.json().catch(()=>[]);
+      if(r.ok){const row=Array.isArray(d)?d[0]:d;if(row){next=next.map(z=>z.id===remote.id?row:z);byId.set(String(row.id),row);bySig.set(cloudPlanSig(row),row)}}else console.warn('[SCHOLARK] Planner reconcile:',clean(d?.message||'update failed'));
+    }
+    return next;
+  }
+  async function reconcileGoals(x,rows){
+    const locals=localRead('scholark_v51_goals').filter(z=>z&&typeof z==='object'&&clean(z.text)),byId=new Map(rows.map(z=>[String(z.id),z])),bySig=new Map(rows.map(z=>[sig(z.title,z.target_date),z]));let next=rows.slice();
+    for(const local of locals){
+      const remote=(local.cloudId&&byId.get(String(local.cloudId)))||bySig.get(sig(local.text,local.date));if(!remote||!stamp(local.updatedAt)||stamp(local.updatedAt)<=stamp(remote.updated_at)+250)continue;
+      const patch={title:clean(local.text).slice(0,240),description:clean(local.measure).slice(0,2000)||null,subject:clean(local.category).slice(0,160)||null,target_date:clean(local.date)||null,status:local.status==='complete'?'completed':'active',progress:Math.max(0,Math.min(100,Number(local.progress)||0)),updated_at:new Date().toISOString()};
+      const r=await x.c.request('/rest/v1/goals?id=eq.'+encodeURIComponent(remote.id)+'&select=id,title,description,subject,target_date,status,progress,created_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(patch)}),d=await r.json().catch(()=>[]);
+      if(r.ok){const row=Array.isArray(d)?d[0]:d;if(row){next=next.map(z=>z.id===remote.id?row:z);byId.set(String(row.id),row);bySig.set(sig(row.title,row.target_date),row)}}else console.warn('[SCHOLARK] Goal reconcile:',clean(d?.message||'update failed'));
+    }
+    return next;
+  }
+  async function reconcileMastery(x,rows){
+    const locals=localRead('scholark_v52_mastery').filter(z=>z&&typeof z==='object'&&clean(z.topic)),byId=new Map(rows.map(z=>[String(z.id),z])),bySig=new Map(rows.map(z=>[sig(z.topic,z.subject),z]));let next=rows.slice();
+    for(const local of locals){
+      const remote=(local.cloudId&&byId.get(String(local.cloudId)))||bySig.get(sig(local.topic,local.subject));if(!remote||!stamp(local.updatedAt)||stamp(local.updatedAt)<=stamp(remote.updated_at)+250)continue;
+      const patch={mastery:Math.max(0,Math.min(100,Number(local.mastery)||0)),next_review_at:local.nextReviewAt||null,updated_at:new Date().toISOString()};
+      const r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(remote.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(patch)}),d=await r.json().catch(()=>[]);
+      if(r.ok){const row=Array.isArray(d)?d[0]:d;if(row){next=next.map(z=>z.id===remote.id?row:z);byId.set(String(row.id),row);bySig.set(sig(row.topic,row.subject),row)}}else console.warn('[SCHOLARK] Mastery reconcile:',clean(d?.message||'update failed'));
+    }
+    return next;
+  }
   function mirrorPlanner(rows=state.planner){
     const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[localPlanSig(x),x]));
     const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:z.duration_minutes==null?(Number(prev.duration)||0):Math.max(0,Number(z.duration_minutes)||0),priority:z.priority||prev.priority||'medium',goalId:z.goal_id?localGoalId(z.goal_id):(Object.prototype.hasOwnProperty.call(meta,'goalId')?clean(meta.goalId):(prev.goalId||'')),sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
@@ -66,7 +99,7 @@
   }
   function mirrorMasteryRows(rows=state.mastery){
     const old=localRead('scholark_v52_mastery'),bySig=new Map(old.map(x=>[sig(x?.topic,x?.subject),x]));
-    const next=(rows||[]).map(z=>{const prev=bySig.get(sig(z.topic,z.subject))||{},m=Math.max(0,Math.min(100,Number(z.mastery)||0));return {...prev,id:prev.id||('cloud-mastery-'+z.id),cloudId:z.id,subject:clean(z.subject)||clean(prev.subject)||'General',topic:clean(z.topic),status:masteryStatus(m),mastery:m,nextReviewAt:z.next_review_at||prev.nextReviewAt||'',updatedAt:z.updated_at||prev.updatedAt||new Date().toISOString(),sourceKey:prev.sourceKey||'',source:prev.source||'cloud'}});
+    const next=(rows||[]).map(z=>{const prev=bySig.get(sig(z.topic,z.subject))||{},m=Math.max(0,Math.min(100,Number(z.mastery)||0));return {...prev,id:prev.id||('cloud-mastery-'+z.id),cloudId:z.id,subject:clean(z.subject)||clean(prev.subject)||'General',topic:clean(z.topic),status:masteryStatus(m),mastery:m,attempts:Number(z.attempts)||0,correct:Number(z.correct)||0,incorrect:Number(z.incorrect)||0,streak:Number(z.streak)||0,lastPracticedAt:z.last_practiced_at||prev.lastPracticedAt||'',nextReviewAt:z.next_review_at||prev.nextReviewAt||'',updatedAt:z.updated_at||prev.updatedAt||new Date().toISOString(),sourceKey:prev.sourceKey||'',source:prev.source||'cloud'}});
     localWrite('scholark_v52_mastery',next);return next;
   }
 
@@ -88,7 +121,7 @@
       return true;
     });
   }
-  async function loadPlanner(migrate=true){
+  async function loadPlanner(migrate=true,preferLocal=false){
     if(state.loading.has('planner'))return;state.loading.add('planner');
     try{
       const x=await ctx(),form=$('#v52-plan')?.closest('.v52-form');ensurePlannerControls();note(form,!!x);
@@ -105,13 +138,14 @@
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
+      if(preferLocal)rows=await reconcilePlanner(x,rows);
       state.planner=rows;mirrorPlanner();renderPlanner();setTimeout(backfillPlannerGoalLinks,60);
     }catch(e){console.warn('[SCHOLARK] Planner cloud sync:',clean(e?.message||e))}finally{state.loading.delete('planner')}
   }
   function renderPlanner(){
     const host=$('#v52-plan-list');if(!host||!awaitableSigned())return;ensurePlannerControls();const rows=plannerFiltered(),locals=localRead('scholark_v51_planner'),byCloud=new Map(locals.filter(x=>x&&typeof x==='object'&&x.cloudId).map(x=>[String(x.cloudId),x]));
     host.innerHTML=rows.length?rows.map(z=>{const meta=readPlanMeta(z.notes),local=byCloud.get(String(z.id))||{};return '<div class="v52-item v80-plan-item '+(z.status==='done'?'done':'')+'"><button class="v80-plan-check '+(z.status==='done'?'done':'')+'" data-v80-plan-toggle="'+esc(z.id)+'">'+(z.status==='done'?'✓':'')+'</button><div><b class="v80-plan-title">'+esc(z.title)+'</b><span class="v80-plan-meta">'+esc(z.subject||'General')+(z.due_at?' · '+esc(dateOnly(z.due_at)):' · no deadline')+(meta.time?' · '+esc(meta.time):'')+' · '+esc(meta.type||'task')+' · '+esc(z.priority||'medium')+(z.duration_minutes!=null&&Number(z.duration_minutes)>0?' · '+esc(z.duration_minutes)+' min':'')+'</span><div class="v52-inline-actions" style="margin-top:6px"><button class="primary" data-v80-plan-focus="'+esc(z.id)+'">Start focus</button></div></div><button class="v80-del" data-v80-plan-del="'+esc(z.id)+'">×</button></div>'}).join(''):'<div class="v52-item">No '+esc(state.plannerView)+' planner items.</div>';
-    $('[data-v80-plan-focus]',host).forEach(b=>b.onclick=()=>{const row=state.planner.find(z=>z.id===b.dataset.v80PlanFocus),local=byCloud.get(String(b.dataset.v80PlanFocus))||{};if(!row)return;window.__SCHOLARK_WORKSPACE_CORE__?.actions?.prepareFocus?.({task:clean(row.title),duration:Number(row.duration_minutes)||Number(local.duration)||25,linkedPlannerId:clean(local.id),autoComplete:true});window.__SCHOLARK_WORKSPACE__?.openTool?.('focus')});
+    $$('[data-v80-plan-focus]',host).forEach(b=>b.onclick=()=>{const row=state.planner.find(z=>z.id===b.dataset.v80PlanFocus),local=byCloud.get(String(b.dataset.v80PlanFocus))||{};if(!row)return;window.__SCHOLARK_WORKSPACE_CORE__?.actions?.prepareFocus?.({task:clean(row.title),duration:Number(row.duration_minutes)||Number(local.duration)||25,linkedPlannerId:clean(local.id),autoComplete:true});window.__SCHOLARK_WORKSPACE__?.openTool?.('focus')});
     $('[data-v80-plan-del]',host).forEach(b=>b.onclick=()=>deletePlanner(b.dataset.v80PlanDel));
     $('[data-v80-plan-toggle]',host).forEach(b=>b.onclick=()=>togglePlanner(b.dataset.v80PlanToggle));
   }
@@ -133,7 +167,7 @@
     state.planner=state.planner.filter(z=>z.id!==id);mirrorPlanner();renderPlanner();
   }
 
-  async function loadGoals(migrate=true){
+  async function loadGoals(migrate=true,preferLocal=false){
     if(state.loading.has('goals'))return;state.loading.add('goals');
     try{
       const x=await ctx(),form=$('#v52-goal')?.closest('.v52-form');note(form,!!x);if(!x)return;
@@ -148,6 +182,7 @@
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
+      if(preferLocal)rows=await reconcileGoals(x,rows);
       state.goals=rows;mirrorGoals();renderGoals();setTimeout(backfillPlannerGoalLinks,60);
     }catch(e){console.warn('[SCHOLARK] Goal cloud sync:',clean(e?.message||e))}finally{state.loading.delete('goals')}
   }
@@ -155,8 +190,8 @@
     const host=$('#v52-goal-list');if(!host||!awaitableSigned())return;
     const locals=localRead('scholark_v51_goals'),byCloud=new Map(locals.filter(x=>x&&typeof x==='object'&&x.cloudId).map(x=>[String(x.cloudId),x]));
     host.innerHTML=state.goals.length?state.goals.map(z=>{const local=byCloud.get(String(z.id))||{},progress=Math.max(0,Math.min(100,Number(z.progress)||0)),done=z.status==='completed',category=clean(z.subject)||local.category||'learning',measure=clean(z.description)||local.measure||'';return '<div class="v52-item"><div><b>◉ '+esc(z.title)+'</b><div class="v52-meta"><span class="v52-badge">'+esc(category)+'</span>'+(z.target_date?'<span class="v52-badge">Target '+esc(z.target_date)+'</span>':'')+'<span class="v52-badge goal">'+progress+'%</span><span class="v80-cloud-tag">CLOUD</span></div>'+(measure?'<div style="margin-top:6px">'+esc(measure)+'</div>':'')+'</div><div class="v52-inline-actions"><button class="primary" data-goal-next="'+esc(local.id||('cloud-goal-'+z.id))+'">Add next action</button><button data-v80-goal-dec="'+esc(z.id)+'">−10%</button><button data-v80-goal-inc="'+esc(z.id)+'">+10%</button><button data-v80-goal-complete="'+esc(z.id)+'">'+(done?'Reopen':'Complete')+'</button><button data-v80-goal-del="'+esc(z.id)+'">Delete</button></div></div>'}).join(''):'<div class="v52-item">No goals yet.</div>';
-    $('[data-goal-next]',host).forEach(b=>b.onclick=()=>{const goals=localRead('scholark_v51_goals'),g=goals.find(x=>x&&typeof x==='object'&&clean(x.id)===b.dataset.goalNext);if(!g)return;window.__SCHOLARK_WORKSPACE_CORE__?.actions?.addPlan?.({text:'Next action · '+clean(g.text),type:'next_action',subject:clean(g.category),goalId:clean(g.id),date:new Date().toISOString().slice(0,10),duration:25,priority:'high',sourceKey:'goal-next:'+clean(g.cloudId||g.id)+':'+new Date().toISOString().slice(0,10)});b.textContent='✓ Added to Planner';b.disabled=true;setTimeout(()=>loadPlanner(true),80)});
-    $('[data-v80-goal-dec]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalDec,-10));
+    $$('[data-goal-next]',host).forEach(b=>b.onclick=()=>{const goals=localRead('scholark_v51_goals'),g=goals.find(x=>x&&typeof x==='object'&&clean(x.id)===b.dataset.goalNext);if(!g)return;window.__SCHOLARK_WORKSPACE_CORE__?.actions?.addPlan?.({text:'Next action · '+clean(g.text),type:'next_action',subject:clean(g.category),goalId:clean(g.id),date:new Date().toISOString().slice(0,10),duration:25,priority:'high',sourceKey:'goal-next:'+clean(g.cloudId||g.id)+':'+new Date().toISOString().slice(0,10)});b.textContent='✓ Added to Planner';b.disabled=true});
+    $$('[data-v80-goal-dec]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalDec,-10));
     $$('[data-v80-goal-inc]',host).forEach(b=>b.onclick=()=>adjustGoal(b.dataset.v80GoalInc,10));
     $$('[data-v80-goal-complete]',host).forEach(b=>b.onclick=()=>toggleGoal(b.dataset.v80GoalComplete));
     $$('[data-v80-goal-del]',host).forEach(b=>b.onclick=()=>deleteGoal(b.dataset.v80GoalDel));
@@ -204,7 +239,7 @@
   }
 
   function focusSubject(){try{return clean(JSON.parse(localStorage.getItem('scholark_education_focus')||'{}')?.subject)||'General'}catch{return'General'}}
-  async function loadMastery(migrate=true){
+  async function loadMastery(migrate=true,preferLocal=false){
     if(state.loading.has('mastery'))return;state.loading.add('mastery');
     try{
       const x=await ctx(),form=$('#v52-m-topic')?.closest('.v52-form');note(form,!!x);if(!x)return;
@@ -219,6 +254,7 @@
           if(ins.ok){const added=await ins.json().catch(()=>[]);rows=rows.concat(Array.isArray(added)?added:[])}
         }
       }
+      if(preferLocal)rows=await reconcileMastery(x,rows);
       state.mastery=rows;mirrorMastery();renderMastery();
     }catch(e){console.warn('[SCHOLARK] Mastery cloud sync:',clean(e?.message||e))}finally{state.loading.delete('mastery')}
   }
@@ -238,7 +274,7 @@
       r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(existing.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({mastery:masteryValue(status),next_review_at:masteryNext(status),updated_at:new Date().toISOString()})});
       d=await r.json().catch(()=>[]);if(r.ok){const row=Array.isArray(d)?d[0]:d;state.mastery=state.mastery.map(z=>z.id===existing.id&&row?row:z)}
     }else{
-      r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:masteryValue(status),attempts:0,correct:0,incorrect:0,streak:0,next_review_at:masteryNext(status)})});
+      r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:masteryValue(status),attempts:0,correct:0,incorrect:0,streak:0,next_review_at:masteryNext(status)})});
       d=await r.json().catch(()=>[]);if(r.ok)state.mastery.unshift(...(Array.isArray(d)?d:[d]).filter(Boolean));
     }
     if(!r.ok)throw new Error(d?.message||'Could not save mastery topic');if(input)input.value='';mirrorMastery();renderMastery();return true;
@@ -280,7 +316,7 @@
     syncProgress();
   }
   addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
-  addEventListener('scholark:workspace-cloud-refresh',e=>{const kind=clean(e.detail?.kind);setTimeout(()=>{if(kind==='planner')loadPlanner(true);else if(kind==='goal')loadGoals(true);else if(kind==='mastery')loadMastery(true);else sync()},80)});
+  addEventListener('scholark:workspace-cloud-refresh',e=>{const kind=clean(e.detail?.kind),preferLocal=e.detail?.preferLocal===true;setTimeout(()=>{if(kind==='planner')loadPlanner(true,preferLocal);else if(kind==='goal')loadGoals(true,preferLocal);else if(kind==='mastery')loadMastery(true,preferLocal);else sync()},80)});
   setTimeout(sync,700);
   window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress,mirrorPlanner,mirrorGoals,mirrorMastery:mirrorMasteryRows,version:'20260920-r175'};
 })();
