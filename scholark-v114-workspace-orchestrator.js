@@ -299,7 +299,7 @@
   addEventListener('scholark-runtime-ready',()=>setTimeout(()=>{refresh(true);scheduleConsume(60)},70));
   addEventListener('scholark-language-ready',()=>setTimeout(()=>refresh(true),40));
   addEventListener('scholark:focus-complete',()=>setTimeout(()=>{refresh(true);open('progress')},220));
-  setTimeout(()=>refresh(true),220);
+  setTimeout(()=>refresh(true),40);setTimeout(()=>refresh(true),220);
 
   function verify(){
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),bar=rootFor(tool)?.querySelector?.('.v114-connect');
@@ -308,8 +308,9 @@
     return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r174',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
-    const rows=[...ROUTES].map(tool=>({tool,count:actionsFor(tool).length}));
-    return {ok:rows.every(x=>x.count>=1&&x.count<=4)&&typeof core()?.actions?.prepareFocus==='function'&&typeof window.__SCHOLARK_V107_GENERAL_AI__?.prefill==='function',routes:rows.length,rows};
+    const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
+    const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',arkiReady=typeof window.__SCHOLARK_V107_GENERAL_AI__?.prefill==='function';
+    return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&arkiReady,routes:ROUTES.size,missing,coreReady,arkiReady,readOnly:true};
   }
   window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260920-r174',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();
