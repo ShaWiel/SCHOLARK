@@ -40,9 +40,11 @@
     const safe={type:clean(meta.type)||'task',time:clean(meta.time),goalId:clean(meta.goalId),sourceKey:clean(meta.sourceKey)};
     return PLAN_META+JSON.stringify(safe);
   }
+  function localPlanSig(z){const key=clean(z?.sourceKey);return key?'key|'+key.toLowerCase():sig(z?.text,z?.date)}
+  function cloudPlanSig(z){const key=clean(readPlanMeta(z?.notes).sourceKey);return key?'key|'+key.toLowerCase():sig(z?.title,dateOnly(z?.due_at))}
   function mirrorPlanner(rows=state.planner){
-    const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[sig(x?.text,x?.date),x]));
-    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(sig(z.title,date))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:Number(z.duration_minutes)||Number(prev.duration)||0,priority:z.priority||prev.priority||'medium',goalId:clean(meta.goalId)||prev.goalId||'',sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[localPlanSig(x),x]));
+    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:Number(z.duration_minutes)||Number(prev.duration)||0,priority:z.priority||prev.priority||'medium',goalId:clean(meta.goalId)||prev.goalId||'',sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
     localWrite('scholark_v51_planner',next);return next;
   }
   function mirrorGoals(rows=state.goals){
@@ -83,8 +85,8 @@
       let rows=await r.json().catch(()=>[]);if(!r.ok)throw new Error(rows?.message||'Could not load planner');
       rows=Array.isArray(rows)?rows:[];
       if(migrate){
-        const seen=new Set(rows.map(z=>sig(z.title,dateOnly(z.due_at))));
-        const pending=localRead('scholark_v51_planner').slice(0,100).map(z=>typeof z==='string'?{text:z,date:''}:z).filter(z=>clean(z?.text)).filter(z=>!seen.has(sig(z.text,z.date)));
+        const seen=new Set(rows.map(cloudPlanSig));
+        const pending=localRead('scholark_v51_planner').slice(0,100).map(z=>typeof z==='string'?{text:z,date:''}:z).filter(z=>clean(z?.text)).filter(z=>!seen.has(localPlanSig(z)));
         if(pending.length){
           const body=pending.map(z=>({user_id:x.uid,title:clean(z.text).slice(0,240),subject:clean(z.subject).slice(0,160)||null,notes:writePlanMeta({type:z.type,time:z.time,goalId:z.goalId,sourceKey:z.sourceKey}),due_at:dueIso(z.date),duration_minutes:Math.max(0,Math.min(240,Number(z.duration)||0)),priority:['high','medium','low'].includes(z.priority)?z.priority:'medium',status:z.status==='done'?'done':'todo',source:clean(z.source)||'manual'}));
           const ins=await x.c.request('/rest/v1/planner_tasks?select=id,title,subject,notes,due_at,duration_minutes,status,priority,source,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
