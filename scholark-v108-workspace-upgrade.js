@@ -43,16 +43,18 @@
   function saveMastery(a){write(MASTER,a)}
   function addMastery(subject,topic,status='Learning'){
     subject=clean(subject)||'General';topic=clean(topic);if(!topic)return;
+    const days=status==='Mastered'?14:status==='Practising'?4:2,next=new Date(Date.now()+days*86400000).toISOString(),value={New:0,Learning:35,Practising:65,Mastered:100}[status]||35,api=window.__SCHOLARK_WORKSPACE_CORE__;
+    if(api?.actions?.upsertMastery)return api.actions.upsertMastery({subject,topic,status,mastery:value,nextReviewAt:next});
     const a=mastery(),existing=a.find(x=>clean(x.topic).toLowerCase()===topic.toLowerCase()&&clean(x.subject).toLowerCase()===subject.toLowerCase());
-    const days=status==='Mastered'?14:status==='Practising'?4:2,next=new Date(Date.now()+days*86400000).toISOString();
-    if(existing){existing.status=status;existing.mastery={New:0,Learning:35,Practising:65,Mastered:100}[status]||35;existing.nextReviewAt=next;existing.updatedAt=new Date().toISOString()}
-    else a.push({id:uid('mastery'),subject,topic,status,mastery:{New:0,Learning:35,Practising:65,Mastered:100}[status]||35,nextReviewAt:next,updatedAt:new Date().toISOString()});
+    if(existing){existing.status=status;existing.mastery=value;existing.nextReviewAt=next;existing.updatedAt=new Date().toISOString()}
+    else a.push({id:uid('mastery'),subject,topic,status,mastery:value,nextReviewAt:next,updatedAt:new Date().toISOString()});
     saveMastery(a);
   }
   function plans(){return read(PLAN,[]).map((x,i)=>typeof x==='string'?{id:'legacy-'+i,text:x,status:'todo',priority:'medium'}:{...x,id:x.id||'plan-'+i,text:x.text||x.title||'',status:x.status||'todo'})}
   function savePlans(a){write(PLAN,a)}
   function addPlan(text,opt={}){
-    const a=plans();a.push({id:uid('plan'),text:clean(text),type:opt.type||'next_action',subject:opt.subject||'',date:opt.date||'',time:opt.time||'',duration:Number(opt.duration)||45,priority:opt.priority||'medium',goalId:opt.goalId||'',status:'todo',createdAt:new Date().toISOString()});savePlans(a);
+    const row={id:uid('plan'),text:clean(text),type:opt.type||'next_action',subject:opt.subject||'',date:opt.date||'',time:opt.time||'',duration:Number(opt.duration)||45,priority:opt.priority||'medium',goalId:opt.goalId||'',status:'todo',createdAt:new Date().toISOString()},api=window.__SCHOLARK_WORKSPACE_CORE__;
+    if(api?.actions?.addPlan)return api.actions.addPlan(row);const a=plans();a.push(row);savePlans(a);return row;
   }
   function focusFromPlan(id){
     const x=plans().find(z=>z.id===id);if(!x)return;
