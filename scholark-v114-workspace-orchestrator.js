@@ -10,7 +10,7 @@
   const ROUTES=new Set(['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study']);
   const NAMES={dashboard:'Dashboard',ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',focus:'Focus Sessions',flashcards:'Flashcards',assignments:'Assignments',progress:'Progress',goal:'Goals',language:'Language Learner',files:'Files & Notes',project:'My Projects',schools:'Schools Near Me',study:'Study Ahead'};
   const HANDOFF='scholark_v114_handoff';
-  let activeActions=new Map(),raf=0,mutationTimer=0,cloudTimer=0,consumeTimer=0,lastSignature='';
+  let activeActions=new Map(),raf=0,mutationTimer=0,consumeTimer=0,lastSignature='';
 
   const style=document.createElement('style');style.id='scholark-v114-style';style.textContent=[
     '.v114-connect{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 14px;padding:12px 14px;border-radius:18px;background:linear-gradient(120deg,#17191f,#27213e);color:#fff;box-shadow:0 16px 42px rgba(31,27,63,.12);font-family:Inter,system-ui;position:relative;overflow:hidden}',
@@ -51,15 +51,6 @@
   }
   function hideTransition(){transitionEl.classList.remove('open')}
   function open(tool){tool=clean(tool).toLowerCase();if(tool&&tool!==route())showTransition(tool);core()?.actions?.open?.(tool);setTimeout(()=>{if(!readHandoff())hideTransition()},900)}
-  function syncCloud(kind){
-    clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{
-      const api=window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__;
-      if(kind==='planner')api?.loadPlanner?.(true);
-      else if(kind==='goal')api?.loadGoals?.(true);
-      else if(kind==='mastery')api?.loadMastery?.(true);
-      window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'r174'}}));
-    },420)
-  }
   function sourceKey(prefix,text){return 'r174:'+prefix+':'+hash(clean(text).toLowerCase())}
   function safeJson(value){try{return JSON.stringify(value)}catch{return''}}
   function nextPlanner(){
@@ -101,10 +92,10 @@
     return core()?.actions?.addFlashcards?.(d.result?.deck||subject,d.result?.cards||[])||0;
   }
   function addPlan(input,openAfter=true){
-    const row=core()?.actions?.addPlan?.(input);if(!row)return null;syncCloud('planner');showToast('Added to Planner.');if(openAfter)open('planner');return row
+    const row=core()?.actions?.addPlan?.(input);if(!row)return null;showToast('Added to Planner.');if(openAfter)open('planner');return row
   }
   function addGoal(input,openAfter=true){
-    const row=core()?.actions?.addGoal?.(input);if(!row)return null;syncCloud('goal');showToast('Added to Goals.');if(openAfter)open('goal');return row
+    const row=core()?.actions?.addGoal?.(input);if(!row)return null;showToast('Added to Goals.');if(openAfter)open('goal');return row
   }
   function prepareFocus(input){
     const row=core()?.actions?.prepareFocus?.(input);if(!row)return null;showToast('Focus session prepared.');open('focus');return row
@@ -175,7 +166,7 @@
     }
     if(tool==='tutor'){
       const x=tutorData(),text=x.answer||x.user;
-      add('mastery','Save to Mastery',()=>{core()?.actions?.upsertMastery?.({subject:x.subject,topic:x.topic,mastery:55,status:'Learning',nextReviewAt:new Date(Date.now()+2*86400000).toISOString()});syncCloud('mastery');showToast('Saved to Mastery.')},{primary:true,disabled:!x.topic});
+      add('mastery','Save to Mastery',()=>{core()?.actions?.upsertMastery?.({subject:x.subject,topic:x.topic,mastery:55,status:'Learning',nextReviewAt:new Date(Date.now()+2*86400000).toISOString()});showToast('Saved to Mastery.')},{primary:true,disabled:!x.topic});
       add('cards','Create flashcards',async()=>{const n=await generateCards(x.subject,[x.topic],text);showToast(n+' flashcards added.');open('flashcards')},{disabled:!text});
       add('plan','Plan review',()=>addPlan({text:'Review · '+x.topic,type:'study',subject:x.subject,date:today(),duration:25,priority:'medium',sourceKey:sourceKey('tutor-plan',x.topic)}),{disabled:!x.topic});
       add('focus','Focus this',()=>prepareFocus({task:'Practise · '+x.topic,duration:25,autoComplete:false}),{disabled:!x.topic});return actions;
@@ -208,9 +199,9 @@
     }
     if(tool==='assignments'){
       const x=nextAssignment();
-      add('plan','Break into Planner',()=>{const n=window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x)||0;showToast(n?n+' Planner steps added.':'Planner steps already exist.');syncCloud('planner');open('planner')},{primary:true,disabled:!x});
+      add('plan','Break into Planner',()=>{const n=window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x)||0;showToast(n?n+' Planner steps added.':'Planner steps already exist.');open('planner')},{primary:true,disabled:!x});
       add('tutor','Ask AI Tutor',()=>promptTutor('Tell me exactly what to do next for this assignment. Use the deadline, progress and requirements. Assignment:\n'+safeJson(x)),{disabled:!x});
-      add('focus','Focus first step',()=>{if(!x)return;window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x);const p=(core()?.data?.planner?.()||[]).find(z=>z.id==='assignment-'+x.id+'-0');prepareFocus({task:p?.text||('Work on · '+x.title),duration:p?.duration||25,linkedPlannerId:p?.id||'',autoComplete:!!p});syncCloud('planner')},{disabled:!x});
+      add('focus','Focus first step',()=>{if(!x)return;window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x);const p=(core()?.data?.planner?.()||[]).find(z=>z.id==='assignment-'+x.id+'-0');prepareFocus({task:p?.text||('Work on · '+x.title),duration:p?.duration||25,linkedPlannerId:p?.id||'',autoComplete:!!p})},{disabled:!x});
       add('progress','Progress',()=>open('progress'));return actions;
     }
     if(tool==='progress'){
