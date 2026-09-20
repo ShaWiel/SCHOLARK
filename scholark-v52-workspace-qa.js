@@ -232,6 +232,7 @@
     if(id==='dashboard')return openDashboard();if(id==='studio')return openStudio();if(id==='schools')return openSchools();
     closeOtherViews();forceQuality();document.body.classList.add('v51-workspace');activateNav(id);route(id);
     if(id==='tutor')renderTutor();else if(id==='education')renderEducation();else if(id==='planner')renderPlanner();else if(id==='progress')renderProgress();else if(id==='goal')renderGoals();else if(id==='project')renderProjects();
+    const surface=$('.v52-tool');if(surface)surface.dataset.v52Tool=id;
   }
 
   // Sidebar navigation is owned by V51. V52 exposes the fast native views
