@@ -17,6 +17,7 @@
   function dueIso(v){if(!v)return null;const d=new Date(v+'T12:00:00');return Number.isNaN(d.getTime())?null:d.toISOString()}
   function masteryStatus(v){const n=Number(v)||0;return n>=90?'Mastered':n>=50?'Practising':n>=15?'Learning':'New'}
   function masteryValue(s){return s==='Mastered'?100:s==='Practising'?70:s==='Learning'?35:0}
+  function masteryNext(s){const days=s==='Mastered'?14:s==='Practising'?4:s==='Learning'?2:1;return new Date(Date.now()+days*86400000).toISOString()}
   async function ctx(){
     const c=cloud();if(!c)return null;
     const s=await c.session?.();if(!s?.user?.id)return null;
@@ -44,12 +45,12 @@
   function cloudPlanSig(z){const key=clean(readPlanMeta(z?.notes).sourceKey);return key?'key|'+key.toLowerCase():sig(z?.title,dateOnly(z?.due_at))}
   function mirrorPlanner(rows=state.planner){
     const old=localRead('scholark_v51_planner'),bySig=new Map(old.map(x=>[localPlanSig(x),x]));
-    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:Number(z.duration_minutes)||Number(prev.duration)||0,priority:z.priority||prev.priority||'medium',goalId:clean(meta.goalId)||prev.goalId||'',sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    const next=(rows||[]).map(z=>{const date=dateOnly(z.due_at),prev=bySig.get(cloudPlanSig(z))||{},meta=readPlanMeta(z.notes);return {...prev,id:prev.id||('cloud-plan-'+z.id),cloudId:z.id,text:clean(z.title),type:clean(meta.type)||prev.type||'task',subject:clean(z.subject||prev.subject),date,time:clean(meta.time)||prev.time||'',duration:z.duration_minutes==null?(Number(prev.duration)||0):Math.max(0,Number(z.duration_minutes)||0),priority:z.priority||prev.priority||'medium',goalId:clean(meta.goalId)||prev.goalId||'',sourceKey:clean(meta.sourceKey)||prev.sourceKey||'',status:z.status==='done'?'done':'todo',source:z.source||prev.source||'cloud',completedAt:z.status==='done'?(prev.completedAt||z.updated_at||new Date().toISOString()):'',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
     localWrite('scholark_v51_planner',next);return next;
   }
   function mirrorGoals(rows=state.goals){
     const old=localRead('scholark_v51_goals'),bySig=new Map(old.map(x=>[sig(typeof x==='string'?x:x?.text,typeof x==='string'?'':x?.date),typeof x==='string'?{text:x}:x]));
-    const next=(rows||[]).map(z=>{const date=z.target_date||'',prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-goal-'+z.id),cloudId:z.id,text:clean(z.title),category:prev.category||'learning',date,measure:prev.measure||'',sourceKey:prev.sourceKey||'',progress:Math.max(Number(z.progress)||0,Number(prev.progress)||0),status:z.status==='complete'?'complete':'active',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
+    const next=(rows||[]).map(z=>{const date=z.target_date||'',prev=bySig.get(sig(z.title,date))||{};return {...prev,id:prev.id||('cloud-goal-'+z.id),cloudId:z.id,text:clean(z.title),category:prev.category||'learning',date,measure:prev.measure||'',sourceKey:prev.sourceKey||'',progress:Math.max(0,Math.min(100,Number(z.progress)||0)),status:z.status==='complete'?'complete':'active',createdAt:prev.createdAt||z.created_at||new Date().toISOString(),updatedAt:z.updated_at||prev.updatedAt||''}});
     localWrite('scholark_v51_goals',next);return next;
   }
   function mirrorMasteryRows(rows=state.mastery){
@@ -200,10 +201,10 @@
     const existing=state.mastery.find(z=>clean(z.topic).toLowerCase()===topic.toLowerCase()&&clean(z.subject).toLowerCase()===subject.toLowerCase());
     let r,d;
     if(existing){
-      r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(existing.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({mastery:masteryValue(status),updated_at:new Date().toISOString()})});
+      r=await x.c.request('/rest/v1/mastery_topics?id=eq.'+encodeURIComponent(existing.id)+'&select=id,subject,topic,mastery,attempts,correct,incorrect,streak,last_practiced_at,next_review_at,updated_at',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({mastery:masteryValue(status),next_review_at:masteryNext(status),updated_at:new Date().toISOString()})});
       d=await r.json().catch(()=>[]);if(r.ok){const row=Array.isArray(d)?d[0]:d;state.mastery=state.mastery.map(z=>z.id===existing.id&&row?row:z)}
     }else{
-      r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:masteryValue(status),attempts:0,correct:0,incorrect:0,streak:0})});
+      r=await x.c.request('/rest/v1/mastery_topics?select=id,subject,topic,mastery,attempts,correct,incorrect,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:x.uid,subject:subject.slice(0,160),topic:topic.slice(0,240),mastery:masteryValue(status),attempts:0,correct:0,incorrect:0,streak:0,next_review_at:masteryNext(status)})});
       d=await r.json().catch(()=>[]);if(r.ok)state.mastery.unshift(...(Array.isArray(d)?d:[d]).filter(Boolean));
     }
     if(!r.ok)throw new Error(d?.message||'Could not save mastery topic');if(input)input.value='';mirrorMastery();renderMastery();return true;
