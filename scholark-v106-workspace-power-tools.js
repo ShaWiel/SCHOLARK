@@ -71,7 +71,7 @@
     if(x.autoComplete&&x.linkedPlannerId){
       const api=window.__SCHOLARK_WORKSPACE_CORE__,updated=api?.actions?.completePlan?.(x.linkedPlannerId,true);
       if(updated)plannerCompleted=true;
-      else{const p=plannerObjects(),row=p.find(z=>z.id===x.linkedPlannerId);if(row){row.status='done';row.completedAt=nowIso();savePlanner(p);plannerCompleted=true;window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'focus-r175'}}))}}
+      else{const p=plannerObjects(),row=p.find(z=>z.id===x.linkedPlannerId);if(row){row.status='done';row.completedAt=nowIso();savePlanner(p);plannerCompleted=true;window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'focus-r175',preferLocal:true}}))}}
     }
     saveFocus({...x,running:false,endAt:0,remaining:0,startedAt:0});
     window.dispatchEvent(new CustomEvent('scholark:focus-complete',{detail:{task:x.task||'',minutes:elapsed,linkedPlannerId:x.linkedPlannerId||'',plannerCompleted}}));
@@ -182,7 +182,7 @@
     ];
     let added=0;
     steps.forEach((s,i)=>{const id='assignment-'+a.id+'-'+i;if(existing.has(id))return;const row={id,text:s[0]+' · '+a.title,type:'task',subject:a.subject||a.title,date:day(Math.min(due,start+span*s[1])),time:'',duration:s[3],priority:s[2],goalId:'',sourceKey:'assignment:'+a.id+':'+i,status:'todo',createdAt:nowIso()};if(api?.actions?.addPlan)api.actions.addPlan(row);else rows.push(row);existing.add(id);added++});
-    if(!api?.actions?.addPlan&&added){savePlanner(rows);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'assignment-r175'}}))}
+    if(!api?.actions?.addPlan&&added){savePlanner(rows);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind:'planner',source:'assignment-r175',preferLocal:true}}))}
     return added;
   }
   function assignmentTutor(a){
