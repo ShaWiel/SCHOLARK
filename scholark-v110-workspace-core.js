@@ -26,7 +26,7 @@
   const safeDate=value=>{if(!value)return Infinity;const t=new Date(String(value).length===10?value+'T23:59:59':value).getTime();return Number.isFinite(t)?t:Infinity};
   const cloudTimers=new Map();
   function cloudRefresh(kind){
-    clearTimeout(cloudTimers.get(kind));cloudTimers.set(kind,setTimeout(()=>{cloudTimers.delete(kind);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'core-r175'}}))},120));
+    clearTimeout(cloudTimers.get(kind));cloudTimers.set(kind,setTimeout(()=>{cloudTimers.delete(kind);window.dispatchEvent(new CustomEvent('scholark:workspace-cloud-refresh',{detail:{kind,source:'core-r175',preferLocal:true}}))},120));
   }
 
   if(!window.__SCHOLARK_STORAGE_EVENTS_PATCHED__){
