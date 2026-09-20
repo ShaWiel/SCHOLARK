@@ -76,5 +76,5 @@
   // File Intelligence surface itself.
   function sync(){if(location.hash.toLowerCase()==='#files')render()}
   addEventListener('hashchange',()=>setTimeout(sync,30));setTimeout(sync,180);
-  window.__SCHOLARK_V86_FILES__={open:render,refresh:render,getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20260920-r174'};
+  window.__SCHOLARK_V86_FILES__={open:render,refresh:render,getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20260920-r175'};
 })();
