@@ -24,6 +24,7 @@
     '@media(prefers-reduced-motion:reduce){.v114-actions button,#v114-toast,#v114-transition{transition:none!important}#v114-transition i{animation:none!important}}'
   ].join('');document.head.appendChild(style);
 
+  $$('.v108-context').forEach(x=>x.remove());
   const toastEl=document.createElement('div');toastEl.id='v114-toast';document.body.appendChild(toastEl);
   const transitionEl=document.createElement('div');transitionEl.id='v114-transition';document.body.appendChild(transitionEl);
 
@@ -274,6 +275,7 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
+      $$('.v108-context').forEach(x=>x.remove());
       $$('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
       const root=rootFor(tool);if(!root)return;
       const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions),existing=$('.v114-connect',root);
