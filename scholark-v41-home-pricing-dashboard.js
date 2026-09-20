@@ -86,7 +86,7 @@
     const ov=$('#sv24-overlay');if(!ov)return;
     const modes=$('.sv24-modes',ov);if(!modes)return;
     $('#v41-book-mode')?.remove();
-    if(!$('#v41-studio-note',ov)){const n=document.createElement('div');n.id='v41-studio-note';n.innerHTML='<span class="v41-lime">PRO:</span> Presentaties tot 100 dia’s • documenten/verslagen tot 100 pagina’s • maximale AI-kwaliteit en research.';$('.sv24-controls',ov)?.insertAdjacentElement('afterend',n);}
+    if(!$('#v41-studio-note',ov)){const n=document.createElement('div');n.id='v41-studio-note';n.innerHTML='<span class="v41-lime">PRO:</span> Presentaties tot 100 dia’s • documenten/verslagen tot 100 pagina’s • hogere gebruikslimieten en research.';$('.sv24-controls',ov)?.insertAdjacentElement('afterend',n);}
     $$('.sv24-mode',modes).forEach(b=>{if(b.dataset.v41)return;b.dataset.v41='1';b.addEventListener('click',()=>{const m=b.dataset.mode;if(m==='presentation'||m==='document')replaceCount(m);if(examples[m])replaceExamples(m);},true);});
     const a=$('.sv24-mode.active',modes)?.dataset.mode;if(a){if(counts[a])replaceCount(a);if(examples[a])replaceExamples(a);}
   }
