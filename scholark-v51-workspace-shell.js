@@ -200,7 +200,7 @@
     [...new Set(roots)].forEach(applyLanguageRoot);
     document.documentElement.dataset.scholarkWorkspaceLang=lang;
     // #v41-language is the artifact OUTPUT language, not the SCHOLARK UI language.
-    // Keep artifact output-language support independent from the 37-language SCHOLARK interface selector.
+    // Keep artifact output-language support independent from the 74-language SCHOLARK interface selector.
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,90));
     if(lang!=='en'){
       idle(()=>{if(workspaceRoute())i18n?.translateCurrentPage?.(false)},{timeout:320});

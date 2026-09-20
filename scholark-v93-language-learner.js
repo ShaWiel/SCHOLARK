@@ -122,7 +122,7 @@
     try{
       const prior=loadProgress()[targetCode]||{},attempts=Number(prior.attempts)||0,accuracy=attempts?Math.round((Number(prior.correct)||0)/attempts*100):null;
       const adaptive=accuracy==null?'This is the learner’s first measured practice.':accuracy<65?'Recent exercise accuracy is '+accuracy+'%. Add more scaffolding, shorter examples and extra guided practice on the same skills.':accuracy>=85?'Recent exercise accuracy is '+accuracy+'%. Increase challenge slightly and use more independent production.':'Recent exercise accuracy is '+accuracy+'%. Keep the current difficulty but reinforce weak points.';
-      const data=await call({targetLanguage:langName(targetCode),nativeLanguage:langName(supportCode),language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises. '+adaptive,level:localStorage.getItem('scholark_learning_level')||'student'});
+      const data=await call({targetLanguage:langName(targetCode),targetLanguageCode:targetCode,nativeLanguage:langName(supportCode),supportLanguageCode:supportCode,language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises. '+adaptive,level:localStorage.getItem('scholark_learning_level')||'student'});
       current={id:'lang-'+Date.now().toString(36),targetCode,supportCode,level,goal,topic,result:data.result,provider:data.provider||'',model:data.model||'',at:Date.now()};
       saveHistory(current);renderLesson(current);renderHistory();localStorage.setItem('scholark_v93_target',targetCode);const p=loadProgress();p[targetCode]={...(p[targetCode]||{}),level,lastTopic:topic};saveProgress(p);renderStats(targetCode);pushCloudProgress(targetCode);st.textContent='Lesson ready. Listen, speak, practice and mark it complete when you finish.';return current;
     }catch(e){st.textContent=clean(e?.message||e);return null}finally{busy=false;btn.disabled=false}
@@ -173,5 +173,9 @@
   });
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(open,40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open()},260);
-  window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson,nextLesson,completeLesson:complete,getCurrent:()=>current};
+  function selftest(){
+    const rows=langs(),codes=rows.map(x=>x[0]),ok=rows.length===74&&new Set(codes).size===74&&!codes.includes('srn');
+    return {ok,count:rows.length,unique:new Set(codes).size,noSranan:!codes.includes('srn')};
+  }
+  window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson,nextLesson,completeLesson:complete,getCurrent:()=>current,selftest,supportedCount:()=>langs().length};
 })();

@@ -9,7 +9,8 @@
   const publicHome=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
   const workspace=()=>!publicHome();
 
-  const LANGS=window.__SCHOLARK_I18N__?.langs||[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const FALLBACK_LANGS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const languageRows=()=>window.__SCHOLARK_I18N__?.langs?.length?window.__SCHOLARK_I18N__.langs:FALLBACK_LANGS;
   const TOPBAR_COPY={
     nl:{account:'Account',signin:'Inloggen',signout:'Uitloggen',signedIn:'Ingelogd',signedOut:'Niet ingelogd',manage:'Account beheren',plans:'Abonnementen en facturering'},
     en:{account:'Account',signin:'Sign in',signout:'Sign out',signedIn:'Signed in',signedOut:'Not signed in',manage:'Manage account',plans:'Plans & billing'},
@@ -65,11 +66,11 @@
   }
 
   function applyLanguage(code){
-    if(!LANGS.some(x=>x[0]===code))code='nl';
+    if(!languageRows().some(x=>x[0]===code))code='nl';
     localStorage.setItem('scholark_ui_language',code);
     document.documentElement.lang=code;
     document.documentElement.dir=['ar','ur','fa','he','ps'].includes(code)?'rtl':'ltr';
-    const name=LANGS.find(x=>x[0]===code)?.[1];
+    const name=languageRows().find(x=>x[0]===code)?.[1];
     const nativeSelect=$$('select').find(s=>s.id!=='v55-language'&&!s.closest('#v29-home-layer')&&[...s.options].some(o=>String(o.value||o.textContent).toLowerCase()===String(code).toLowerCase()||String(o.textContent).trim()===name));
     if(nativeSelect){const opt=[...nativeSelect.options].find(o=>String(o.value).toLowerCase()===code||String(o.textContent).trim()===name);if(opt){nativeSelect.value=opt.value;nativeSelect.dispatchEvent(new Event('change',{bubbles:true}))}}
     window.dispatchEvent(new CustomEvent('scholark-language-change',{detail:{code}}));
@@ -84,11 +85,11 @@
     if(topbar?.isConnected)return;
     topbar=$('#v55-topbar');
     if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);authButton=$('#v55-auth',topbar);return}
-    topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholark-logo.png" alt="SCHOLARK logo"><div>SCHOLARK<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${LANGS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><div class="v55-account-wrap"><button class="v55-btn" id="v55-account" data-sch-i18n-owned="1"><span class="v55-account-label"></span> ▾</button><div class="v55-menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
+    topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholark-logo.png" alt="SCHOLARK logo"><div>SCHOLARK<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><div class="v55-account-wrap"><button class="v55-btn" id="v55-account" data-sch-i18n-owned="1"><span class="v55-account-label"></span> ▾</button><div class="v55-menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
     document.body.appendChild(topbar);
-    const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=LANGS.some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
+    const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=languageRows().some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
     accountWrap=$('.v55-account-wrap',topbar);$('#v55-account',topbar).onclick=e=>{e.stopPropagation();accountWrap.classList.toggle('open');$('.v55-menu',topbar).innerHTML=accountMenu()};
-    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){const t=topbarCopy(),langName=LANGS.find(x=>x[0]===topbarCode())?.[1]||topbarCode();$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>${t.settings||TOPBAR_SOURCE.settings}</b><span>${t.plan||TOPBAR_SOURCE.plan}: ${(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase()} · ${t.language||TOPBAR_SOURCE.language}: ${langName}</span></div><button data-v55-account="plans">${t.plans}</button>${signedIn()?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
+    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){const t=topbarCopy(),langName=languageRows().find(x=>x[0]===topbarCode())?.[1]||topbarCode();$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>${t.settings||TOPBAR_SOURCE.settings}</b><span>${t.plan||TOPBAR_SOURCE.plan}: ${(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase()} · ${t.language||TOPBAR_SOURCE.language}: ${langName}</span></div><button data-v55-account="plans">${t.plans}</button>${signedIn()?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
     authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(signedIn())clickNative(/^(uitloggen|log out|sign out|logout)$/i);else clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i);setTimeout(syncAuth,250)};
     if(!window.__SCHOLARK_V55_DOC_CLICK_BOUND__){
       window.__SCHOLARK_V55_DOC_CLICK_BOUND__=true;
@@ -100,9 +101,9 @@
   function wireLanguageSelector(sel){
     if(!sel)return null;
     const saved=localStorage.getItem('scholark_ui_language')||'nl';
-    const html=LANGS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
-    if(sel.options.length!==LANGS.length||!LANGS.every(([v])=>[...sel.options].some(o=>o.value===v)))sel.innerHTML=html;
-    sel.value=LANGS.some(([v])=>v===saved)?saved:'nl';
+    const html=languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
+    if(sel.options.length!==languageRows().length||!languageRows().every(([v])=>[...sel.options].some(o=>o.value===v)))sel.innerHTML=html;
+    sel.value=languageRows().some(([v])=>v===saved)?saved:'nl';
     sel.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(sel.value)||applyLanguage(sel.value);
     if(sel.hasAttribute('hidden'))sel.removeAttribute('hidden');
     if(sel.getAttribute('aria-label')!=='Language')sel.setAttribute('aria-label','Language');

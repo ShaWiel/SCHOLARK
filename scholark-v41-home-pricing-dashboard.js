@@ -51,7 +51,7 @@
   }
 
   function findTopbar(){const terms=['uitloggen','log out','focusmodus','focus mode','demo resetten','reset demo'];return $$('header,nav,section,div').map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>o.r.top<130&&o.r.height>=36&&o.r.height<=140&&o.r.width>innerWidth*.45&&terms.some(x=>o.t.includes(x))).sort((a,b)=>a.r.height-b.r.height)[0]?.el||null;}
-  function findLanguage(top){return top&&$$('button,a,span,div,select',top).map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>!/v41-workspace-home|v36-language/.test(o.el.id)&&o.r.width>25&&o.r.height>15&&/(nederlands|english|español|français|deutsch|português|italiano|sranan tongo|العربية|हिन्दी|中文|日本語|한국어|bahasa indonesia|türkçe|polski|kiswahili)/.test(o.t)).sort((a,b)=>a.r.width*a.r.height-b.r.width*b.r.height)[0]?.el;}
+  function findLanguage(top){return top&&$$('button,a,span,div,select',top).map(el=>({el,r:el.getBoundingClientRect(),t:lower(el)})).filter(o=>!/v41-workspace-home|v36-language/.test(o.el.id)&&o.r.width>25&&o.r.height>15&&/(nederlands|english|español|français|deutsch|português|italiano|العربية|हिन्दी|中文|日本語|한국어|bahasa indonesia|türkçe|polski|kiswahili)/.test(o.t)).sort((a,b)=>a.r.width*a.r.height-b.r.width*b.r.height)[0]?.el;}
   function ensureWorkspaceHome(){
     if(!workspace())return;
     $('#sv24-home')?.remove();$('#v36-shell-home')?.remove();$('#v40-workspace-home')?.remove();

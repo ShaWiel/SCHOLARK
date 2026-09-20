@@ -19,8 +19,20 @@ const readJson = req => new Promise((resolve,reject)=>{
 
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
 const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
+const UI_LANGUAGE_CODES=new Set(["nl","en","es","fr","de","pt","it","ar","zh","hi","bn","ru","ja","ko","tr","pl","uk","ro","el","cs","sv","da","no","fi","hu","id","ms","vi","th","tl","sw","he","ur","fa","ta","te","pa","af","sq","am","hy","az","eu","be","bs","bg","ca","hr","et","ka","gu","is","ga","kk","km","lo","lv","lt","mk","ml","mr","mn","ne","ps","sr","sk","sl","so","si","uz","cy","yo","zu","ha"]);
+if(UI_LANGUAGE_CODES.size!==74||UI_LANGUAGE_CODES.has('srn'))throw new Error('SCHOLARK language registry integrity failure');
+console.log('[SCHOLARK] Global language registry ready · 74 interface + Language Learner languages · Sranan Tongo excluded');
 const translationMemory=new Map();
+const TRANSLATION_MEMORY_MAX=24000;
 const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
+function rememberTranslation(key,value){
+  if(!key||!value)return;
+  if(!translationMemory.has(key)&&translationMemory.size>=TRANSLATION_MEMORY_MAX){
+    let drop=Math.max(1,Math.floor(TRANSLATION_MEMORY_MAX*.08));
+    for(const k of translationMemory.keys()){translationMemory.delete(k);if(--drop<=0)break}
+  }
+  rememberTranslation(key,value);
+}
 const LINGVA_INSTANCES=['https://translate.dr460nf1r3.org','https://lingva.garudalinux.org','https://translate.jae.fi'];
 const LIBRE_INSTANCES=['https://libretranslate.de','https://translate.argosopentech.com','https://translate.api.skitzen.com'];
 const LINGVA_CODE={fil:'tl',zh:'zh-CN'};
@@ -77,7 +89,7 @@ async function freeUiTranslate(strings,targetCode){
   await Promise.all(src.map(async s=>{
     const k=translationKey(targetCode,s),hit=translationMemory.get(k);
     if(hit){out[s]=hit;return}
-    try{const tr=await myMemoryOne(s,targetCode);if(tr){out[s]=tr;translationMemory.set(k,tr)}}catch{}
+    try{const tr=await myMemoryOne(s,targetCode);if(tr){out[s]=tr;rememberTranslation(k,tr)}}catch{}
   }));
   return out;
 }
@@ -431,8 +443,11 @@ http.Server.prototype.emit = function(event,...args){
       if((mode==='tutor'||mode==='general_ai')&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
       if(mode==='translate_ui'&&(!Array.isArray(p.strings)||!p.strings.length)) return json(res,400,{ok:false,error:'Strings required'});
       if(mode==='language_learning'&&!clean(p.targetLanguage)) return json(res,400,{ok:false,error:'Target language required'});
+      if(mode==='language_learning'&&clean(p.targetLanguageCode)&&!UI_LANGUAGE_CODES.has(clean(p.targetLanguageCode).toLowerCase())) return json(res,400,{ok:false,code:'UNSUPPORTED_TARGET_LANGUAGE',error:'This Language Learner target is not supported yet.'});
+      if(mode==='language_learning'&&clean(p.supportLanguageCode)&&!UI_LANGUAGE_CODES.has(clean(p.supportLanguageCode).toLowerCase())) return json(res,400,{ok:false,code:'UNSUPPORTED_SUPPORT_LANGUAGE',error:'This Language Learner support language is not supported yet.'});
       if(mode==='translate_ui'){
-        const language=clean(p.language)||'English',languageCode=clean(p.languageCode)||'',purpose=clean(p.purpose||'ui').toLowerCase();
+        const language=clean(p.language)||'English',languageCode=clean(p.languageCode).toLowerCase(),purpose=clean(p.purpose||'ui').toLowerCase();
+        if(languageCode&&!UI_LANGUAGE_CODES.has(languageCode)) return json(res,400,{ok:false,code:'UNSUPPORTED_UI_LANGUAGE',error:'Unsupported SCHOLARK interface language.'});
         const strings=[...new Set((p.strings||[]).map(x=>String(x??'').slice(0,600)).filter(Boolean))].slice(0,900);
         const cached={},missing=[];
         for(const source of strings){
@@ -447,7 +462,7 @@ http.Server.prototype.emit = function(event,...args){
             provider=out.provider||provider;model=out.model||model;
             for(const row of out.result?.translations||[]){
               const source=String(row?.source||''),translated=clean(row?.translated);
-              if(source&&translated){translationMemory.set(translationKey(languageCode||language,source),translated);cached[source]=translated}
+              if(source&&translated){rememberTranslation(translationKey(languageCode||language,source),translated);cached[source]=translated}
             }
             remaining=remaining.filter(s=>!cached[s]);
           }catch(e){
@@ -456,7 +471,7 @@ http.Server.prototype.emit = function(event,...args){
         }
         if(remaining.length&&purpose==='ui'&&languageCode&&!testMode){
           const free=await freeUiTranslate(remaining,languageCode);
-          for(const [source,translated] of Object.entries(free)){if(clean(translated)){cached[source]=translated;translationMemory.set(translationKey(languageCode||language,source),translated)}}
+          for(const [source,translated] of Object.entries(free)){if(clean(translated)){cached[source]=translated;rememberTranslation(translationKey(languageCode||language,source),translated)}}
           remaining=remaining.filter(s=>!cached[s]);
           if(Object.keys(free).length){provider=provider==='memory'?'public-fallback':provider;model=provider==='public-fallback'?'mymemory-ui-fallback':model}
         }

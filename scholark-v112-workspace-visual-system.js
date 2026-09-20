@@ -109,7 +109,7 @@
     if(first&&!$(".v112-mark",first))first.insertAdjacentHTML("afterbegin",'<span class="v112-mark" aria-hidden="true">'+esc(m[0])+"</span>");
     let show=$(".v112-showcase",live);if(!show){show=document.createElement("div");show.className="v112-showcase";top?.insertAdjacentElement("afterend",show)}
     show.innerHTML=hero(tool,s)+canvas(tool,s);scrub(live);
-    window.dispatchEvent(new CustomEvent("scholark-visual-ready",{detail:{release:"r172",tool}}));
+    window.dispatchEvent(new CustomEvent("scholark-visual-ready",{detail:{release:"r173",tool}}));
   }
   let raf=0,timer=0;
   const schedule=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(decorate)};
@@ -118,5 +118,5 @@
   addEventListener("hashchange",()=>setTimeout(schedule,45));addEventListener("scholark-workspace-change",()=>setTimeout(schedule,35));addEventListener("scholark-runtime-ready",()=>setTimeout(schedule,40));addEventListener("scholark-country-change",()=>setTimeout(schedule,40));
   document.addEventListener("visibilitychange",()=>document.documentElement.classList.toggle("v112-background",document.hidden));
   setTimeout(schedule,30);setTimeout(schedule,220);
-  window.__SCHOLARK_V112_VISUAL__={version:"20260919-r172",decorate,verify(){const tool=route(),w=workspaceRoutes.has(tool),live=$(".v111-live"),bad=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(x=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(x.textContent)));return{ok:!w||!!(live?.classList.contains("v112-live")&&$(".v112-showcase",live)&&!bad),tool,workspace:w,showcase:!!$(".v112-showcase",live),qualityBadge:bad}}};
+  window.__SCHOLARK_V112_VISUAL__={version:"20260920-r173",decorate,verify(){const tool=route(),w=workspaceRoutes.has(tool),live=$(".v111-live"),bad=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(x=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(x.textContent)));return{ok:!w||!!(live?.classList.contains("v112-live")&&$(".v112-showcase",live)&&!bad),tool,workspace:w,showcase:!!$(".v112-showcase",live),qualityBadge:bad}}};
 })();
