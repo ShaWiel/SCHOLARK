@@ -78,10 +78,15 @@
     const rootLocked=!work||document.documentElement.classList.contains("v51-workspace-root");
     const quality=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(el.textContent)));
     const visual=!work||r==="dashboard"||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true;
+    const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
+    const selectors=$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
+    const languageRegistry=!!i18n&&i18n.count===74&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
+    const selectorsHealthy=selectorCounts.every(n=>n===74);
+    const coverage=i18n?.coverage?.(620)||null;
     const result={
-      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual,
-      release:"r172",route:r,workspace:work,rootLocked,qualityBadge:quality,
-      languageControls:lang,countryControls:country,visual,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&languageRegistry&&selectorsHealthy,
+      release:"r173",route:r,workspace:work,rootLocked,qualityBadge:quality,
+      languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,longTasks,errorFree:errors.length===0,runtimeErrors:errors.slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     result.ok=result.ok&&result.runtimeFailures.length===0;
@@ -108,5 +113,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  window.__SCHOLARK_FOUNDATION_R172__={version:"20260919-r172",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260920-r173",repair:()=>repair(true),verify,errors:()=>errors.slice(),safeStorage,fetchJson};
+  window.__SCHOLARK_FOUNDATION_R173__=foundationApi;
+  window.__SCHOLARK_FOUNDATION_R172__=foundationApi;
 })();
