@@ -208,7 +208,7 @@
   }
 
   const api={
-    version:'20260919-r172',
+    version:'20260920-r173',
     keys:KEYS,
     read,array,write,
     data:{planner,goals,mastery,assignments,flashcards,focusHistory,activity,learningProjects},
