@@ -55,7 +55,7 @@
     const byParent=new Map();$ ("#v51-main .v111-live").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
   }
   function scrubQuality(root=document){
-    $(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max",root).forEach(el=>{
+    $$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max",root).forEach(el=>{
       const t=clean(el.textContent).toUpperCase().replace(/[·•]/g," ").replace(/\s+/g," ");
       if(t==="AI QUALITY MAX"||t==="QUALITY MAX"||t==="PRIORITY MAX")el.remove();
     });
