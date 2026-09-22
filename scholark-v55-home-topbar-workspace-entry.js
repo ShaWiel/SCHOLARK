@@ -6,7 +6,7 @@
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const text=e=>(e?.textContent||'').replace(/\s+/g,' ').trim();
   const lower=e=>text(e).toLowerCase();
-  const publicHome=()=>{const h=String(location.hash||'').toLowerCase();return (location.pathname==='/'||location.pathname==='')&&(h===''||h==='#home'||h==='#pricing')};
+  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
   const workspace=()=>!publicHome();
 
   const FALLBACK_LANGS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
@@ -195,6 +195,7 @@
 
   addEventListener('hashchange',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
   addEventListener('popstate',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
+  addEventListener('pageshow',()=>{setTimeout(sync,20);scheduleTopbarRepair(80)});
   addEventListener('scholark-language-applied',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncTopbarCopy();localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(20)});
   addEventListener('scholark-language-ready',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(120)});
   addEventListener('scholark-return-home',()=>{sync();ensureLanguageSelector();[60,220,700,1500].forEach(ms=>setTimeout(()=>{sync();ensureLanguageSelector()},ms))});
