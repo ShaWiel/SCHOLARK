@@ -52,8 +52,8 @@
     document.documentElement.classList.add('v55-public-home');
     window.__SCHOLARK_V29_HOME__?.sync?.();
     window.__SCHOLARK_V30_DEMO__?.sync?.();
-    retiredSelectors.forEach(sel=>$$(sel).forEach(el=>{if(el.closest('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;el.remove()}));
     quarantineLegacy(document.body||document);
+    retiredSelectors.forEach(sel=>$(sel).forEach(el=>{if(el.closest('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;el.remove()}));
     const homes=$$('#v29-home-layer');
     homes.slice(1).forEach(el=>el.remove());
     const home=homes[0]||$('#v29-home-layer');
