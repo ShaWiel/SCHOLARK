@@ -89,10 +89,7 @@
     </div>`;
   }
 
-  function currentHome(){
-    const h=String(location.hash||'').toLowerCase();
-    return (location.pathname==='/'||location.pathname==='') && (h===''||h==='#home'||h==='#pricing');
-  }
+  function currentHome(){return window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})()}
 
   function sidebarWidth(){
     const side=$$('aside,nav,div').filter(el=>{const t=(el.textContent||'');const r=el.getBoundingClientRect();return r.height>350&&r.width>150&&r.width<420&&t.includes('Dashboard')&&t.includes('ARKI');}).sort((a,b)=>a.getBoundingClientRect().width-b.getBoundingClientRect().width)[0];
@@ -142,6 +139,7 @@
 
   window.addEventListener('hashchange',()=>setTimeout(sync,40));
   window.addEventListener('popstate',()=>setTimeout(sync,40));
+  window.addEventListener('pageshow',()=>setTimeout(sync,20));
   window.addEventListener('resize',()=>setTimeout(sync,80),{passive:true});
   window.addEventListener('scholark-language-ready',()=>window.__SCHOLARK_I18N__?.apply?.(layer));
   setTimeout(sync,80);
