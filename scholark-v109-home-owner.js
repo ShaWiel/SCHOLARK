@@ -20,7 +20,7 @@
     body.v55-public-home [data-v30-legacy-home="1"],
     html.v55-public-home [data-v30-legacy-home="1"],
     body.v31-public-home [data-v30-legacy-home="1"],
-    ${retiredSelectors.map(s=>'body.v55-public-home '+s+',html.v55-public-home '+s+',body.v31-public-home '+s).join(',')}
+    ${retiredSelectors.map(s=>'body.v55-public-home '+s+',html.v55-public-home '+s+',body.v31-public-home '+s).join(',')},
     body.v55-public-home [data-v109-quarantined="1"],html.v55-public-home [data-v109-quarantined="1"]
     {display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
   `;
