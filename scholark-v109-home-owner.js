@@ -67,7 +67,7 @@
 
   function verify(){
     if(!publicHome())return {ok:true,home:false};
-    const current=$('#v29-home-layer'),canonicalCount=$('#v29-home-layer').length;
+    const current=$('#v29-home-layer'),canonicalCount=$$('#v29-home-layer').length;
     const retiredVisible=retiredSelectors.some(sel=>$$(sel).some(el=>{
       const cs=getComputedStyle(el),r=el.getBoundingClientRect();
       return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2;
@@ -76,7 +76,7 @@
       const cs=getComputedStyle(el),r=el.getBoundingClientRect();
       return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2;
     });
-    const quarantinedVisible=$('[data-v109-quarantined="1"]').some(el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2});
+    const quarantinedVisible=$$('[data-v109-quarantined="1"]').some(el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2});
     return {ok:canonicalCount===1&&!!current&&!current.hidden&&!retiredVisible&&!legacyVisible&&!quarantinedVisible,home:true,current:!!current,canonicalCount,retiredVisible,legacyVisible,quarantinedVisible,owner:window.__SCHOLARK_HOME_OWNER_LOCK__};
   }
 
