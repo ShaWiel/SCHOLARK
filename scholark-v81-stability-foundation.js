@@ -73,8 +73,7 @@
   }
 
   function forceNewHome(){
-    const h=hash();
-    const home=!h||h==='#home'||h==='#start';
+    const home=window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=hash().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
     document.body.classList.toggle('v81-home',home);
     if(!home) return;
     closeLegacyOverlays();
@@ -168,5 +167,6 @@
   }
   addEventListener('hashchange',()=>{setTimeout(sync,40);setTimeout(sync,220)});
   addEventListener('popstate',()=>{setTimeout(sync,40);setTimeout(sync,220)});
+  addEventListener('pageshow',()=>{setTimeout(sync,25);setTimeout(sync,180)});
   [120,600].forEach(ms=>setTimeout(sync,ms));
 })();
