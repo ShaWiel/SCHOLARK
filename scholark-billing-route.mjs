@@ -50,7 +50,7 @@ async function billingSelftest(){
     const [plus,pro,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),verifyWebhookDestination()]);
     catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!webhook.ok,environment:ENV,plus,pro,webhook,checkedAt:new Date().toISOString()};
     const level=catalogHealth.ok?'log':'warn';
-    console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+(plus.ok?'OK':'CHECK')+' · Pro '+(pro.ok?'OK':'CHECK')+' · webhook '+(webhook.ok?'OK':'CHECK'));
+    const webhookDiag=webhook.ok?'OK':(webhook.reason||(!webhook.secretMatches?'secret_mismatch':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+(plus.ok?'OK':'CHECK')+' · Pro '+(pro.ok?'OK':'CHECK')+' · webhook '+webhookDiag);
   }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLARK] Paddle catalog self-test WARN · '+catalogHealth.reason)}
   return catalogHealth;
 }
