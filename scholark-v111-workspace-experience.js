@@ -19,7 +19,8 @@
     .v111-chart{height:92px;display:flex;align-items:end;gap:5px;margin-top:8px}.v111-chart i{flex:1;min-height:5px;border-radius:5px 5px 2px 2px;background:#dcd7ff;transition:height .2s ease}.v111-deadline{display:grid;gap:6px}.v111-deadline-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px;border-radius:9px;background:#f5f3f8;font:750 6.5px/1.35 Inter}.v111-deadline-row b{font-weight:900}.v111-deadline-row.overdue{background:#ffe9e5;color:#8b3830}
     .v111-project-form{display:grid;grid-template-columns:1.3fr 1fr auto;gap:6px;margin-top:8px}.v111-project-form input{min-width:0;border:1px solid rgba(23,25,31,.12);border-radius:9px;padding:8px;font:750 7px Inter}.v111-project-form button{border:0;border-radius:9px;background:#17191f;color:#c9ff6a;padding:8px 10px;font:900 6.5px Inter;cursor:pointer}.v111-projects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.v111-project{border-radius:12px;background:#fff;border:1px solid rgba(23,25,31,.06);padding:10px}.v111-project b{display:block;font:900 8px Inter}.v111-project span{display:block;font:650 6px/1.35 Inter;color:#777;margin-top:4px}
     .v111-tutor-tools{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.v111-tutor-tools button{border:0;border-radius:999px;background:#fff;color:#514867;padding:5px 7px;font:850 6px Inter;cursor:pointer;box-shadow:0 0 0 1px rgba(23,25,31,.08)}.v111-tutor-tools button.good{background:#c9ff6a;color:#17191f}
-    @media(max-width:850px){.v111-kpis{grid-template-columns:1fr 1fr}.v111-grid{grid-template-columns:1fr}.v111-week{grid-template-columns:1fr 1fr}.v111-projects{grid-template-columns:1fr 1fr}.v111-project-form{grid-template-columns:1fr}.v111-top{display:block}.v111-pill{display:inline-block;margin-top:8px}}@media(max-width:540px){.v111-projects{grid-template-columns:1fr}.v111-week{grid-template-columns:1fr}}
+    .v111-insights{margin-top:10px;border-top:1px solid rgba(23,25,31,.07);padding-top:8px}.v111-insights>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;border-radius:11px;padding:8px 10px;background:rgba(23,25,31,.035);font:900 7px Inter;color:#514a5d}.v111-insights>summary::-webkit-details-marker{display:none}.v111-insights>summary:after{content:'+';font:950 12px Inter;color:#6d5dfc}.v111-insights[open]>summary:after{content:'−'}.v111-insights>summary small{font:750 6px Inter;color:#8a8490}.v111-insights-body{padding-top:2px}
+    @media(max-width:850px){.v111-kpis{grid-template-columns:1fr 1fr}.v111-grid{grid-template-columns:1fr}.v111-week{grid-template-columns:1fr 1fr}.v111-projects{grid-template-columns:1fr 1fr}.v111-project-form{grid-template-columns:1fr}.v111-top{display:block}.v111-pill{display:inline-block;margin-top:8px}.v111-insights>summary small{display:none}}@media(max-width:540px){.v111-projects{grid-template-columns:1fr}.v111-week{grid-template-columns:1fr}}
   `;document.head.appendChild(style);
 
   function rootFor(tool){
@@ -34,7 +35,7 @@
     return null;
   }
   function panel(title,desc,body,pill='CONNECTED'){
-    return '<section class="v111-live" data-v111-owner="r175"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div>'+body+'</section>';
+    return '<section class="v111-live" data-v111-owner="r176"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div><details class="v111-insights"><summary><span>Connected insights</span><small>Open only when you need the wider workspace context</small></summary><div class="v111-insights-body">'+body+'</div></details></section>';
   }
   function kpi(value,label){return '<div class="v111-kpi"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>'}
   function openArki(prompt){
@@ -203,8 +204,8 @@
     clearTimeout(observerTimer);
     observerTimer=setTimeout(()=>refresh(false),140);
   });
-  observer.observe(document.documentElement,{subtree:true,childList:true});
+  const observerRoot=$('#v51-main')||document.body;observer.observe(observerRoot,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260920-r175',refresh:()=>refresh(true),generateCards};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260921-r176',refresh:()=>refresh(true),generateCards};
 })();
