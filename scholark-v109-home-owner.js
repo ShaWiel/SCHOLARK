@@ -58,5 +58,5 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
   schedule();
 
-  window.__SCHOLARK_V109_HOME__={prune,verify,owner:'v29-active-learning',legacyHomeLocked:true,release:'r175'};
+  window.__SCHOLARK_V109_HOME__={prune,verify,owner:'v29-active-learning',legacyHomeLocked:true,release:'r176'};
 })();
