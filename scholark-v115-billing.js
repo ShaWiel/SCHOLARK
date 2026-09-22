@@ -16,5 +16,5 @@
   addEventListener('pageshow',()=>refresh());
   addEventListener('focus',()=>setTimeout(refresh,80));
   wire();setTimeout(()=>{refresh();getConfig().catch(()=>{})},500);
-  window.__SCHOLARK_BILLING__={choose,refresh,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),release:'r178'};
+  window.__SCHOLARK_BILLING__={choose,refresh,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),release:'r179'};
 })();
