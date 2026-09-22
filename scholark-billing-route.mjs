@@ -11,6 +11,8 @@ const CLIENT_TOKEN=String(process.env.PADDLE_CLIENT_TOKEN||'').trim();
 const API_KEY=String(process.env.PADDLE_API_KEY||'').trim();
 const WEBHOOK_SECRET=String(process.env.PADDLE_WEBHOOK_SECRET||'').trim();
 const PRICES={plus:String(process.env.PADDLE_PLUS_PRICE_ID||'').trim(),pro:String(process.env.PADDLE_PRO_PRICE_ID||'').trim()};
+const WEBHOOK_URL=String(process.env.PADDLE_WEBHOOK_URL||'https://scholark-app-shawiel.onrender.com/api/billing/webhook').trim();
+let catalogHealth={checked:false,ok:false,environment:ENV};
 const configured=()=>!!(SB&&PUB&&SERVICE&&CLIENT_TOKEN&&API_KEY&&WEBHOOK_SECRET&&/^pri_[a-z\d]{26}$/.test(PRICES.plus)&&/^pri_[a-z\d]{26}$/.test(PRICES.pro));
 console.log('[SCHOLARK] Paddle billing route ready · '+ENV+' · '+(configured()?'configured':'awaiting credentials'));
 
@@ -23,6 +25,35 @@ async function currentUser(req){const token=bearer(req);if(!token||!SB||!PUB)ret
 function serviceHeaders(extra={}){return {apikey:SERVICE,authorization:'Bearer '+SERVICE,'content-type':'application/json',accept:'application/json',...extra}}
 async function sb(path,opts={}){return fetch(SB+path,{...opts,headers:{...serviceHeaders(),...(opts.headers||{})}})}
 async function paddle(path,opts={}){return fetch(API_BASE+path,{...opts,headers:{authorization:'Bearer '+API_KEY,'content-type':'application/json',accept:'application/json',...(opts.headers||{})}})}
+async function verifyCatalogPrice(plan,id,expectedAmount){
+  const r=await paddle('/prices/'+encodeURIComponent(id),{method:'GET'}),d=await r.json().catch(()=>({})),p=d?.data||{};
+  if(!r.ok)return {ok:false,http:r.status,reason:d?.error?.code||d?.error?.type||'price_read_failed'};
+  const monthly=p?.billing_cycle?.interval==='month'&&Number(p?.billing_cycle?.frequency)===1;
+  const trial7=p?.trial_period?.interval==='day'&&Number(p?.trial_period?.frequency)===7;
+  const amount=String(p?.unit_price?.amount||''),currency=String(p?.unit_price?.currency_code||'');
+  const active=p?.status==='active';
+  return {ok:active&&monthly&&trial7&&amount===String(expectedAmount)&&currency==='USD',plan,id:p?.id||id,amount,currency,monthly,trial7,active,requiresPaymentMethod:p?.trial_period?.requires_payment_method!==false};
+}
+async function verifyWebhookDestination(){
+  const required=new Set(['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled']);
+  const r=await paddle('/notification-settings?active=true&per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
+  if(!r.ok)return {ok:false,verified:false,http:r.status,reason:d?.error?.code||d?.error?.type||'notification_settings_read_failed'};
+  const row=(Array.isArray(d?.data)?d.data:[]).find(x=>String(x?.destination||'').replace(/\/+$/,'')===WEBHOOK_URL.replace(/\/+$/,''));
+  if(!row)return {ok:false,verified:true,reason:'webhook_destination_missing'};
+  const events=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),missing=[...required].filter(x=>!events.has(x));
+  const secretMatches=String(row.endpoint_secret_key||'')===WEBHOOK_SECRET;
+  return {ok:!!row.active&&secretMatches&&!missing.length,verified:true,active:!!row.active,secretMatches,missingEvents:missing,destination:WEBHOOK_URL};
+}
+async function billingSelftest(){
+  if(!configured()){catalogHealth={checked:true,ok:false,environment:ENV,reason:'credentials_or_prices_missing'};console.warn('[SCHOLARK] Paddle catalog self-test SKIP · billing credentials incomplete');return catalogHealth}
+  try{
+    const [plus,pro,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),verifyWebhookDestination()]);
+    catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!webhook.ok,environment:ENV,plus,pro,webhook,checkedAt:new Date().toISOString()};
+    const level=catalogHealth.ok?'log':'warn';
+    console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+(plus.ok?'OK':'CHECK')+' · Pro '+(pro.ok?'OK':'CHECK')+' · webhook '+(webhook.ok?'OK':'CHECK'));
+  }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLARK] Paddle catalog self-test WARN · '+catalogHealth.reason)}
+  return catalogHealth;
+}
 function allowance(plan){return plan==='pro'?2500:plan==='plus'?750:30}
 function planFromPrice(price){if(price&&price===PRICES.pro)return'pro';if(price&&price===PRICES.plus)return'plus';return''}
 function parseSig(v){const out={ts:'',h1:[]};for(const part of String(v||'').split(';')){const [k,...rest]=part.split('=');const val=rest.join('=');if(k==='ts')out.ts=val;else if(k==='h1'&&val)out.h1.push(val)}return out}
@@ -35,9 +66,11 @@ async function billingStatus(user){const r=await sb('/rest/v1/billing_subscripti
 
 http.Server.prototype.emit=function(type,...args){if(type!=='request')return previousEmit.call(this,type,...args);const [req,res]=args;let url;try{url=new URL(req.url||'/','http://localhost')}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&url.pathname==='/api/billing/config'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:configured(),clientToken:configured()?CLIENT_TOKEN:'',plans:{plus:14.99,pro:19.99},currency:'USD'});return true}
-  if(req.method==='GET'&&url.pathname==='/api/billing/health'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:configured(),prices:{plus:!!PRICES.plus,pro:!!PRICES.pro},webhookSecret:!!WEBHOOK_SECRET,apiKey:!!API_KEY,clientToken:!!CLIENT_TOKEN});return true}
+  if(req.method==='GET'&&url.pathname==='/api/billing/health'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:configured(),prices:{plus:!!PRICES.plus,pro:!!PRICES.pro},webhookSecret:!!WEBHOOK_SECRET,apiKey:!!API_KEY,clientToken:!!CLIENT_TOKEN,catalog:catalogHealth});return true}
   if(req.method==='GET'&&url.pathname==='/api/billing/status'){currentUser(req).then(async user=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});json(res,200,await billingStatus(user))}).catch(e=>json(res,500,{ok:false,code:'BILLING_STATUS_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/checkout'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});if(!configured())return json(res,503,{ok:false,code:'BILLING_NOT_CONFIGURED',error:'Payments are not configured yet.'});const plan=String(body?.plan||'').toLowerCase();if(!['plus','pro'].includes(plan))return json(res,400,{ok:false,code:'INVALID_PLAN'});const price=PRICES[plan];const pr=await paddle('/transactions',{method:'POST',body:JSON.stringify({items:[{price_id:price,quantity:1}],collection_mode:'automatic',custom_data:{scholark_user_id:user.id,scholark_plan:plan}})}),pd=await pr.json().catch(()=>({}));if(!pr.ok||!pd?.data?.id)return json(res,502,{ok:false,code:'PADDLE_TRANSACTION_FAILED',error:pd?.error?.detail||pd?.error?.type||'Could not create checkout.'});json(res,200,{ok:true,transactionId:pd.data.id,environment:ENV})}).catch(e=>json(res,400,{ok:false,code:'CHECKOUT_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/webhook'){readRaw(req,1024*1024).then(async raw=>{if(!verifyWebhook(raw,req.headers?.['paddle-signature']))return json(res,401,{ok:false,code:'INVALID_SIGNATURE'});const event=JSON.parse(raw);if(/^subscription\.(created|trialing|activated|updated|paused|resumed|canceled|past_due)$/.test(String(event.event_type||'')))await handleSubscriptionEvent(event);else await recordEvent(event,null,event?.data?.subscription_id||null);json(res,200,{ok:true})}).catch(e=>json(res,400,{ok:false,code:'WEBHOOK_FAILED',error:String(e.message||e)}));return true}
   return previousEmit.call(this,type,...args)
 };
+
+setTimeout(()=>billingSelftest().catch(()=>{}),1200).unref?.();
