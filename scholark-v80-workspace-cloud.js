@@ -318,5 +318,5 @@
   addEventListener('hashchange',()=>{setTimeout(sync,120);setTimeout(sync,360)});
   addEventListener('scholark:workspace-cloud-refresh',e=>{const kind=clean(e.detail?.kind),preferLocal=e.detail?.preferLocal===true;setTimeout(()=>{if(kind==='planner')loadPlanner(true,preferLocal);else if(kind==='goal')loadGoals(true,preferLocal);else if(kind==='mastery')loadMastery(true,preferLocal);else sync()},80)});
   setTimeout(sync,700);
-  window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress,mirrorPlanner,mirrorGoals,mirrorMastery:mirrorMasteryRows,version:'20260920-r175'};
+  window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__={loadPlanner,loadGoals,loadMastery,syncProgress,mirrorPlanner,mirrorGoals,mirrorMastery:mirrorMasteryRows,version:'20260921-r176'};
 })();
