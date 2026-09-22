@@ -77,7 +77,7 @@
   }
 
   function accountMenu(){
-    const plan=(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase(),t=topbarCopy(),on=signedIn();
+    const plan=(window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase(),t=topbarCopy(),on=signedIn();
     return `<div class="v55-menu-head"><b>SCHOLARK Account</b><span>${on?t.signedIn:t.signedOut} · ${plan} plan</span></div><button data-v55-account="manage">${t.manage}</button><button data-v55-account="plans">${t.plans}</button>${on?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`;
   }
 
@@ -89,7 +89,7 @@
     document.body.appendChild(topbar);
     const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=languageRows().some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
     accountWrap=$('.v55-account-wrap',topbar);$('#v55-account',topbar).onclick=e=>{e.stopPropagation();accountWrap.classList.toggle('open');$('.v55-menu',topbar).innerHTML=accountMenu()};
-    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){const t=topbarCopy(),langName=languageRows().find(x=>x[0]===topbarCode())?.[1]||topbarCode();$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>${t.settings||TOPBAR_SOURCE.settings}</b><span>${t.plan||TOPBAR_SOURCE.plan}: ${(localStorage.getItem('scholark_selected_plan')||'free').toUpperCase()} · ${t.language||TOPBAR_SOURCE.language}: ${langName}</span></div><button data-v55-account="plans">${t.plans}</button>${signedIn()?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
+    $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){const t=topbarCopy(),langName=languageRows().find(x=>x[0]===topbarCode())?.[1]||topbarCode();$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>${t.settings||TOPBAR_SOURCE.settings}</b><span>${t.plan||TOPBAR_SOURCE.plan}: ${(window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase()} · ${t.language||TOPBAR_SOURCE.language}: ${langName}</span></div><button data-v55-account="plans">${t.plans}</button>${signedIn()?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}else if(a==='signout'){accountWrap.classList.remove('open');clickNative(/^(uitloggen|log out|sign out|logout)$/i);setTimeout(syncAuth,250)}});
     authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(signedIn())clickNative(/^(uitloggen|log out|sign out|logout)$/i);else clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i);setTimeout(syncAuth,250)};
     if(!window.__SCHOLARK_V55_DOC_CLICK_BOUND__){
       window.__SCHOLARK_V55_DOC_CLICK_BOUND__=true;
@@ -196,6 +196,7 @@
   addEventListener('hashchange',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
   addEventListener('popstate',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
   addEventListener('pageshow',()=>{setTimeout(sync,20);scheduleTopbarRepair(80)});
+  addEventListener('scholark:billing-changed',()=>{syncTopbarCopy();if(accountWrap?.classList.contains('open'))$('.v55-menu',topbar).innerHTML=accountMenu()});
   addEventListener('scholark-language-applied',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncTopbarCopy();localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(20)});
   addEventListener('scholark-language-ready',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(120)});
   addEventListener('scholark-return-home',()=>{sync();ensureLanguageSelector();[60,220,700,1500].forEach(ms=>setTimeout(()=>{sync();ensureLanguageSelector()},ms))});
