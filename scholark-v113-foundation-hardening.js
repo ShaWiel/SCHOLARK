@@ -52,7 +52,7 @@
   function removeDuplicateControls(){
     const langs=$("#v51-sidebar .v90-langbox");if(langs.length>1)langs.slice(0,-1).forEach(x=>x.remove());
     const countries=$("#v51-sidebar #v96-side-country");if(countries.length>1)countries.slice(0,-1).forEach(x=>x.remove());
-    const byParent=new Map();$("#v51-main .v111-live").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
+    const byParent=new Map();$ ("#v51-main .v111-live").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
   }
   function scrubQuality(root=document){
     $(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max",root).forEach(el=>{
