@@ -53,7 +53,7 @@
     window.__SCHOLARK_V29_HOME__?.sync?.();
     window.__SCHOLARK_V30_DEMO__?.sync?.();
     quarantineLegacy(document.body||document);
-    retiredSelectors.forEach(sel=>$(sel).forEach(el=>{if(el.closest('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;el.remove()}));
+    retiredSelectors.forEach(sel=>$$(sel).forEach(el=>{if(el.closest('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;el.remove()}));
     const homes=$$('#v29-home-layer');
     homes.slice(1).forEach(el=>el.remove());
     const home=homes[0]||$('#v29-home-layer');
