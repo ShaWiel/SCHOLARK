@@ -93,5 +93,5 @@
     const apply=()=>{if($('#v62-field')&&data.field!==undefined)$('#v62-field').value=clean(data.field);if($('#v62-country')&&data.country!==undefined)$('#v62-country').value=clean(data.country);if($('#v62-school')&&data.targetSchool!==undefined)$('#v62-school').value=clean(data.targetSchool);if($('#v62-context')&&data.context!==undefined)$('#v62-context').value=clean(data.context);$('#v62-field')?.focus()};
     if(String(location.hash||'').toLowerCase()!=='#study')window.__SCHOLARK_WORKSPACE__?.openTool?.('study');setTimeout(apply,140);return true;
   }
-  window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,refresh:sync,version:'20260920-r175'};
+  window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,refresh:sync,version:'20260921-r176'};
 })();
