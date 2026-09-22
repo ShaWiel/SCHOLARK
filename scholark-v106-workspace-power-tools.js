@@ -219,6 +219,6 @@
     focus:{state:focusState,history:focusHistory},
     flashcards:{all:cards,due:dueCards},
     assignments:{all:assignments,plan:planAssignment},
-    version:'20260920-r175'
+    version:'20260921-r176'
   };
 })();
