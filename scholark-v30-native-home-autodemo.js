@@ -37,10 +37,7 @@
   `;
   document.head.appendChild(css);
 
-  function isHome(){
-    const h=String(location.hash||'').toLowerCase();
-    return (location.pathname==='/'||location.pathname==='') && (h===''||h==='#home'||h==='#pricing');
-  }
+  function isHome(){return window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})()}
 
   function findSidebar(){
     const tokens=['Dashboard','Education & Learning','ARKI','Planner','Progress'];
@@ -72,7 +69,7 @@
   let legacyMain=null, nativeParent=null, nativeNext=null;
   function mountNative(){
     const layer=$('#v29-home-layer');if(!layer||!isHome())return;
-    if(layer.classList.contains('v30-native-home')) return;
+    if(layer.classList.contains('v30-native-home')){if(!legacyMain?.isConnected)legacyMain=findLegacyMain(layer);if(legacyMain){legacyMain.dataset.v30LegacyHome='1';legacyMain.setAttribute('aria-hidden','true')}return;}
     legacyMain=findLegacyMain(layer);
     if(legacyMain){
       nativeParent=legacyMain.parentNode;nativeNext=legacyMain.nextSibling;
@@ -389,6 +386,7 @@
   addEventListener('hashchange',()=>setTimeout(sync,50));
   addEventListener('scholark-home-mode-change',e=>{const mode=e.detail?.mode,source=e.detail?.source||'manual';if(!mode||source==='auto')return;requestAnimationFrame(()=>syncModeFrame(mode))});
   addEventListener('popstate',()=>setTimeout(sync,50));
+  addEventListener('pageshow',()=>setTimeout(sync,20));
   addEventListener('scholark-language-ready',()=>{if(isHome())requestAnimationFrame(refreshLanguage)});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
