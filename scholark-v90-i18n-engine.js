@@ -85,6 +85,16 @@
     ['Build my head start','Bouw mijn voorsprong','Crear mi ventaja inicial','Construire mon avance','Meinen Vorsprung aufbauen','Criar minha vantagem inicial','Costruisci il mio vantaggio'],
     ['Account','Account','Cuenta','Compte','Konto','Conta','Account'],
     ['Sign in','Inloggen','Iniciar sesión','Se connecter','Anmelden','Entrar','Accedi'],
+    ['Create account','Account aanmaken','Crear cuenta','Créer un compte','Konto erstellen','Criar conta','Crea account'],
+    ['Email address','E-mailadres','Dirección de correo electrónico','Adresse e-mail','E-Mail-Adresse','Endereço de e-mail','Indirizzo e-mail'],
+    ['Password','Wachtwoord','Contraseña','Mot de passe','Passwort','Senha','Password'],
+    ['Confirm password','Bevestig wachtwoord','Confirmar contraseña','Confirmer le mot de passe','Passwort bestätigen','Confirmar senha','Conferma password'],
+    ['Forgot your password?','Wachtwoord vergeten?','¿Olvidaste tu contraseña?','Mot de passe oublié ?','Passwort vergessen?','Esqueceu sua senha?','Password dimenticata?'],
+    ['Who manages this account?','Wie beheert dit account?','¿Quién gestiona esta cuenta?','Qui gère ce compte ?','Wer verwaltet dieses Konto?','Quem gerencia esta conta?','Chi gestisce questo account?'],
+    ['Choose an option','Kies een optie','Elige una opción','Choisissez une option','Option auswählen','Escolha uma opção','Scegli un’opzione'],
+    ['I accept the Terms and Privacy Policy.','Ik accepteer de Voorwaarden en Privacyverklaring.','Acepto los Términos y la Política de privacidad.','J’accepte les Conditions et la Politique de confidentialité.','Ich akzeptiere die Bedingungen und die Datenschutzrichtlinie.','Aceito os Termos e a Política de Privacidade.','Accetto i Termini e l’Informativa sulla privacy.'],
+    ['For young users','Voor jonge gebruikers','Para usuarios jóvenes','Pour les jeunes utilisateurs','Für junge Nutzer','Para usuários jovens','Per utenti giovani'],
+    ['Sign in to keep your progress across devices.','Log in om je voortgang op verschillende apparaten te bewaren.','Inicia sesión para conservar tu progreso en distintos dispositivos.','Connectez-vous pour conserver votre progression sur plusieurs appareils.','Melde dich an, um deinen Fortschritt auf verschiedenen Geräten zu speichern.','Entre para manter seu progresso em diferentes dispositivos.','Accedi per mantenere i tuoi progressi su più dispositivi.'],
     ['Sign out','Uitloggen','Cerrar sesión','Se déconnecter','Abmelden','Sair','Esci'],
     ['Plans & billing','Abonnementen & facturering','Planes y facturación','Offres et facturation','Tarife & Abrechnung','Planos e cobrança','Piani e fatturazione'],
     ['Go to Workspace','Ga naar Werkruimte','Ir al espacio de trabajo','Aller à l’espace de travail','Zum Arbeitsbereich','Ir para o espaço de trabalho','Vai all’area di lavoro'],
@@ -459,7 +469,7 @@
     'Find what you know, what is weak and what should enter your Mastery Map next.','Review weak topics at the right time instead of rereading everything.',
     'Run diagnostic','Mixed difficulty','Foundation','Intermediate','Challenge','Refresh queue','You are caught up.','Review now',
     'Active Recall','Feynman Technique','Blurting','Interleaving','Dual Coding','Spaced Repetition','Pomodoro','Cornell Notes','SQ3R','Leitner System',
-    'AI LEARNING + CREATION OS','Account','Sign in','Sign out','Plans & billing','Open Workspace',
+    'AI LEARNING + CREATION OS','Account','Sign in','Create account','Email address','Password','Confirm password','Forgot your password?','Who manages this account?','Choose an option','I accept the Terms and Privacy Policy.','For young users','Sign in to keep your progress across devices.','Sign out','Plans & billing','Open Workspace',
     'YOUR AI LEARNING + CREATION OS','Learn faster. Create better.','Get ahead.','Learn faster. Create better. Get ahead.','Describe what you want to learn or create…','Create with ARKI',
     'One studio. Every format.','Start with intent, not a blank page. SCHOLARK plans the structure, creates the first version and lets you refine only what matters.',
     'A learning system that adapts to you.','Diagnostics, mastery, spaced repetition and AI tutoring work together instead of living in separate tools.',
@@ -728,10 +738,32 @@
     }
   }
 
+  function authDialogRoots(){
+    const out=[];
+    const visible=el=>{if(!el||!el.isConnected)return false;const cs=getComputedStyle(el);return cs.display!=='none'&&cs.visibility!=='hidden'&&!el.hidden};
+    for(const email of $('input[type="email"],input[autocomplete="email"]')){
+      const scope=email.closest('form')||email.parentElement;if(!scope)continue;
+      const pass=scope.querySelector('input[type="password"]')||email.closest('[role="dialog"],dialog,[class*="modal"],[class*="auth"]')?.querySelector('input[type="password"]');
+      if(!pass)continue;
+      let root=email.closest('[role="dialog"],dialog,#v72-modal,#v89-account,[class*="auth-modal"],[class*="login-modal"],[class*="signup-modal"],[class*="modal-card"]')||scope;
+      if(root===scope){
+        for(let i=0;i<3&&root?.parentElement;i++){
+          const p=root.parentElement;
+          if(p===document.body||p===document.documentElement)break;
+          const inputs=p.querySelectorAll('input').length,buttons=p.querySelectorAll('button').length;
+          if(inputs>=2&&buttons>=1)root=p;else break;
+        }
+      }
+      if(visible(root)&&!out.includes(root))out.push(root);
+    }
+    return out;
+  }
+
   function visibleRoots(){
     const h=String(location.hash||'').toLowerCase(),publicRoute=h===''||h==='#home'||h==='#pricing',roots=[];
     const push=el=>{if(el&&el.isConnected&&!roots.includes(el))roots.push(el)};
     push($('#v55-topbar'));
+    authDialogRoots().forEach(push);
     if(publicRoute&&!document.body.classList.contains('v51-workspace')){
       push($('#v29-home-layer:not([hidden])'));
     }else{
@@ -904,9 +936,15 @@
   function flushMutations(){
     mutationTimer=null;
     const roots=[...pendingRoots];pendingRoots.clear();
+    const authRoots=authDialogRoots();
     if(code()!=='en'){
       if(roots.length>18)applyKnown(activeRoot());
       else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
+      authRoots.forEach(r=>applyKnown(r));
+    }else{
+      // English must actively restore canonical copy in auth dialogs after
+      // switching away from another language; previously these dialogs were skipped.
+      authRoots.forEach(r=>applyKnown(r));
     }
     if(selectorPending){selectorPending=false;upgradeSelectors()}
     if(code()!=='en')scheduleUnknown();
@@ -920,8 +958,9 @@
       }
     }
     if(code()==='en'){
+      const hasAuth=authDialogRoots().length>0;
       pendingRoots.clear();
-      if(selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,90)}
+      if(selectorPending||hasAuth){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,70)}
       return;
     }
     if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
