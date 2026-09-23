@@ -8,7 +8,7 @@
   const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const publicHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,homeKeys:Object.freeze(['home','pricing','start'])});
-  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r180'});
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r181'});
 
   const VERSION = '20260922-r180';
   const ACTIVE = [
@@ -30,7 +30,7 @@
   ];
   const BASE = new Set([
     'scholark-v32-mode-preview.js','scholark-v33-preview-compat.js','scholark-v42-route-guard.js',
-    'scholark-v81-stability-foundation.js','scholark-v90-i18n-engine.js',
+    'scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v113-foundation-hardening.js',
     'scholark-v98-brand-migration.js','scholark-v115-billing.js'
   ]);
