@@ -7,16 +7,18 @@ const PUB=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
 const SERVICE=String(process.env.SUPABASE_SERVICE_ROLE_KEY||'').trim();
 const ENV=String(process.env.PADDLE_ENV||'sandbox').toLowerCase()==='production'?'production':'sandbox';
 const API_BASE=ENV==='sandbox'?'https://sandbox-api.paddle.com':'https://api.paddle.com';
-const CLIENT_TOKEN=String(process.env.PADDLE_CLIENT_TOKEN||'').trim();
-const API_KEY=String(process.env.PADDLE_API_KEY||'').trim();
-const WEBHOOK_SECRET=String(process.env.PADDLE_WEBHOOK_SECRET||'').trim();
+function cleanSecret(value,key=''){let v=String(value||'').trim();if(key&&v.startsWith(key+'='))v=v.slice(key.length+1).trim();if((v.startsWith('"')&&v.endsWith('"'))||(v.startsWith("'")&&v.endsWith("'")))v=v.slice(1,-1).trim();return v}
+const CLIENT_TOKEN=cleanSecret(process.env.PADDLE_CLIENT_TOKEN,'PADDLE_CLIENT_TOKEN');
+const API_KEY=cleanSecret(process.env.PADDLE_API_KEY,'PADDLE_API_KEY');
+const WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_WEBHOOK_SECRET,'PADDLE_WEBHOOK_SECRET');
 const PRICES={plus:String(process.env.PADDLE_PLUS_PRICE_ID||'').trim(),pro:String(process.env.PADDLE_PRO_PRICE_ID||'').trim()};
 const WEBHOOK_URL=String(process.env.PADDLE_WEBHOOK_URL||'https://scholark-app-shawiel.onrender.com/api/billing/webhook').trim();
 let catalogHealth={checked:false,ok:false,environment:ENV};
 const configured=()=>!!(SB&&PUB&&SERVICE&&CLIENT_TOKEN&&API_KEY&&WEBHOOK_SECRET&&/^pri_[a-z\d]{26}$/.test(PRICES.plus)&&/^pri_[a-z\d]{26}$/.test(PRICES.pro));
 const keyKind=/^pdl_sdbx_apikey_/.test(API_KEY)?'sandbox':/^pdl_live_apikey_/.test(API_KEY)?'live':'unknown';
 const tokenKind=/^test_/.test(CLIENT_TOKEN)?'sandbox':/^live_/.test(CLIENT_TOKEN)?'live':'unknown';
-console.log('[SCHOLARK] Paddle billing route ready · '+ENV+' · '+(configured()?'configured':'awaiting credentials')+' · key '+keyKind+' · token '+tokenKind);
+const keyShape={knownPrefix:keyKind!=='unknown',masked:/\*{2,}/.test(API_KEY),length:API_KEY.length};
+console.log('[SCHOLARK] Paddle billing route ready · '+ENV+' · '+(configured()?'configured':'awaiting credentials')+' · key '+keyKind+' · token '+tokenKind+' · key-shape '+(keyShape.masked?'masked':keyShape.knownPrefix?'valid-prefix':'unknown-prefix'));
 
 function json(res,status,obj){if(res.headersSent)return;res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(obj))}
 function sameOrigin(req){const origin=String(req.headers?.origin||'').trim();if(!origin)return true;try{const a=new URL(origin).host.toLowerCase(),b=String(req.headers?.['x-forwarded-host']||req.headers?.host||'').split(',')[0].trim().toLowerCase();return !!b&&a===b}catch{return false}}
