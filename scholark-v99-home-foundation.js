@@ -126,7 +126,7 @@
   function schedule(delay=0){clearTimeout(repairTimer);repairTimer=setTimeout(()=>requestAnimationFrame(repair),delay)}
 
   function health(){
-    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar'),performanceSafe=document.documentElement.classList.contains('scholark-performance-safe');
+    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar'),performanceSafe=document.documentElement.classList.contains('scholark-performance-safe');
     const report={
       ok:true,release:'r184',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
       previewComplete:!home()||window.__SCHOLARK_V32_PREVIEW__?.healthy?.()===true,
@@ -134,7 +134,7 @@
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
       topbarLanguage:!home()||languageSelectorExact($('#v55-language'))&&getComputedStyle($('#v55-language')).display!=='none',workspaceLanguage:home()||!$('#v90-language')||languageSelectorExact($('#v90-language'))&&$('#v90-language').value===code(),
       languageIconClean:!$('#v51-sidebar [data-v51-tool="language"] i')||$('#v51-sidebar [data-v51-tool="language"] i').classList.contains('v129-aa'),
-      homeOwner:!home()||window.__SCHOLARK_V109_HOME__?.verify?.().ok===true,presentersRemoved:!$('#v29-presenter-language')&&!$('#v29-speak')&&!$('.v29-hosts'),futureSchoolLive:!home()||!!$('.v30-school-live .v30-radar')&&$('.v30-school-live .v30-pin')!==null,futureStudyLive:!home()||!!$('.v30-ahead-live .v30-ahead-line i')&&$('.v30-ahead-dots span').length===4,
+      homeOwner:!home()||window.__SCHOLARK_V109_HOME__?.verify?.().ok===true,presentersRemoved:!$('#v29-presenter-language')&&!$('#v29-speak')&&!$('.v29-hosts'),futureSchoolLive:!home()||!!$('.v30-school-live .v30-radar')&&$('.v30-school-live .v30-pin')!==null,futureStudyLive:!home()||!!$('.v30-ahead-live .v30-ahead-line i')&&$$('.v30-ahead-dots span').length===4,
       masteryBars:bars.length,masteryAnimated:!home()||performanceSafe||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),languageSwitchSettled:!document.documentElement.classList.contains('scholark-language-switching'),cinematicRunning:!home()||performanceSafe||window.__SCHOLARK_V30_DEMO__?.isRunning?.()===true,
       projectMounted:!projectRoute||!!$('#v51-fallback .v64-projects'),projectSidebar:!projectRoute||!!sidebar&&!document.body.classList.contains('v51-collapsed')&&getComputedStyle(sidebar).visibility!=='hidden',studioMounted:!studioRoute||(window.__SCHOLARK_FEATURE_FLAGS__?.studio===false?!!$('.v51-coming-soon'):!!$('#v41-studio-workspace:not([hidden])')),runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
