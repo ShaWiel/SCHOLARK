@@ -958,9 +958,8 @@
       }
     }
     if(code()==='en'){
-      const hasAuth=authDialogRoots().length>0;
       pendingRoots.clear();
-      if(selectorPending||hasAuth){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,70)}
+      if(selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,70)}
       return;
     }
     if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
