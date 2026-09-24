@@ -18,7 +18,7 @@
   const modal=document.createElement('div');modal.id='v72-modal';document.body.appendChild(modal);
 
   function loadSession(){try{const s=JSON.parse(localStorage.getItem(SESSION)||'null');state.session=s&&s.access_token?s:null}catch{state.session=null}return state.session}
-  function saveSession(s){state.session=s&&s.access_token?s:null;try{if(state.session)localStorage.setItem(SESSION,JSON.stringify(state.session));else localStorage.removeItem(SESSION)}catch{}}
+  function saveSession(s){const before=state.session?.access_token||'';state.session=s&&s.access_token?s:null;try{if(state.session)localStorage.setItem(SESSION,JSON.stringify(state.session));else localStorage.removeItem(SESSION)}catch{}const after=state.session?.access_token||'';if(before!==after)queueMicrotask(()=>window.dispatchEvent(new CustomEvent('scholark:auth-changed',{detail:{signedIn:!!after,user:state.session?.user||null}})))}
   function authHeaders(token=state.session?.access_token){return {'apikey':KEY,'authorization':'Bearer '+token,'content-type':'application/json','accept':'application/json'}}
   async function refresh(){const s=loadSession();if(!s?.refresh_token)return null;try{const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});const d=await r.json();if(!r.ok||!d?.access_token)throw 0;d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);return d}catch{saveSession(null);return null}}
   async function session(){let s=loadSession();if(!s)return null;const exp=Number(s.expires_at||0);if(exp&&exp<Math.floor(Date.now()/1000)+60)s=await refresh();return s}
@@ -119,5 +119,5 @@
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v51-tool="project"]'))setTimeout(()=>enhance(),140)},true);
   modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
   loadSession();setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true)},350);
-  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session};
+  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,signOut,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r182'};
 })();
