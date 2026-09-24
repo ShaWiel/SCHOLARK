@@ -100,10 +100,7 @@
     window.__SCHOLARK_V55_TOPBAR__?.sync?.();normalizeSelector(window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.()||$('#v55-language'));
     const api=window.__SCHOLARK_V29_HOME__;api?.sync?.();const mode=activeMode();
     const stageTitle=$('#v29-stage-title'),stageDesc=$('#v29-stage-desc'),stageList=$('#v29-stage-list');if(!stageTitle?.textContent?.trim()||!stageDesc?.textContent?.trim()||!stageList?.children?.length)api?.setMode?.(mode);
-    const preview=$('#v29-home-layer .v32-preview-shell'),previewHealthy=window.__SCHOLARK_V32_PREVIEW__?.healthy?.();if(!preview||preview.dataset.v32Mode!==mode||previewHealthy===false)window.__SCHOLARK_V32_PREVIEW__?.render?.();
-    if(!$('.v30-school-live')||!$('.v30-ahead-live'))window.__SCHOLARK_V30_DEMO__?.sync?.();
-    if(!$('#v29-prompt')?.value?.trim())window.__SCHOLARK_V30_DEMO__?.sync?.();
-    if(window.__SCHOLARK_V30_DEMO__?.isRunning?.()===false)window.__SCHOLARK_V30_DEMO__?.start?.();
+    window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
     repairLocalization();
   }
   function repairProject(){
@@ -129,31 +126,31 @@
   function schedule(delay=0){clearTimeout(repairTimer);repairTimer=setTimeout(()=>requestAnimationFrame(repair),delay)}
 
   function health(){
-    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar');
+    const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar'),performanceSafe=document.documentElement.classList.contains('scholark-performance-safe');
     const report={
-      ok:true,release:'r177',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
+      ok:true,release:'r184',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
       previewComplete:!home()||window.__SCHOLARK_V32_PREVIEW__?.healthy?.()===true,
       stageReady:!home()||!!$('#v29-stage-title')?.textContent?.trim()&&!!$('#v29-stage-desc')?.textContent?.trim()&&($('#v29-stage-list')?.children?.length||0)>0&&!!$('#v29-stage-scene .v29-scene'),stageModeMatched:!home()||stageMode===mode,statusModeMatched:!home()||statusModes.length>=3&&statusModes.slice(0,3).every(x=>x===mode),
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
       topbarLanguage:!home()||languageSelectorExact($('#v55-language'))&&getComputedStyle($('#v55-language')).display!=='none',workspaceLanguage:home()||!$('#v90-language')||languageSelectorExact($('#v90-language'))&&$('#v90-language').value===code(),
       languageIconClean:!$('#v51-sidebar [data-v51-tool="language"] i')||$('#v51-sidebar [data-v51-tool="language"] i').classList.contains('v129-aa'),
       homeOwner:!home()||window.__SCHOLARK_V109_HOME__?.verify?.().ok===true,presentersRemoved:!$('#v29-presenter-language')&&!$('#v29-speak')&&!$('.v29-hosts'),futureSchoolLive:!home()||!!$('.v30-school-live .v30-radar')&&$('.v30-school-live .v30-pin')!==null,futureStudyLive:!home()||!!$('.v30-ahead-live .v30-ahead-line i')&&$('.v30-ahead-dots span').length===4,
-      masteryBars:bars.length,masteryAnimated:!home()||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),languageSwitchSettled:!document.documentElement.classList.contains('scholark-language-switching'),cinematicRunning:!home()||window.__SCHOLARK_V30_DEMO__?.isRunning?.()===true,
+      masteryBars:bars.length,masteryAnimated:!home()||performanceSafe||bars.length===3&&bars.every(b=>getComputedStyle(b).animationName!=='none'),languageSwitchSettled:!document.documentElement.classList.contains('scholark-language-switching'),cinematicRunning:!home()||performanceSafe||window.__SCHOLARK_V30_DEMO__?.isRunning?.()===true,
       projectMounted:!projectRoute||!!$('#v51-fallback .v64-projects'),projectSidebar:!projectRoute||!!sidebar&&!document.body.classList.contains('v51-collapsed')&&getComputedStyle(sidebar).visibility!=='hidden',studioMounted:!studioRoute||(window.__SCHOLARK_FEATURE_FLAGS__?.studio===false?!!$('.v51-coming-soon'):!!$('#v41-studio-workspace:not([hidden])')),runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     report.ok=report.runtimeErrors.length===0&&report.workspaceLanguage&&report.languageIconClean&&report.projectMounted&&report.projectSidebar&&report.studioMounted&&report.homeOwner&&(!report.home||(report.activeMode===report.previewMode&&report.previewComplete&&report.stageReady&&report.stageModeMatched&&report.statusModeMatched&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.cinematicRunning));
-    try{sessionStorage.setItem('scholark_foundation_r177',JSON.stringify(report))}catch{}
+    try{sessionStorage.setItem('scholark_foundation_r184',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R177 '+(report.ok?'PASS':'WARN'),report);if(!report.ok)schedule(60);return report;
   }
 
   document.addEventListener('click',e=>{const tool=e.target.closest?.('[data-v51-tool]')?.dataset?.v51Tool;if(tool==='project'){setTimeout(repairProject,0);setTimeout(repairProject,70);setTimeout(repairProject,200)}if(tool==='studio'&&window.__SCHOLARK_FEATURE_FLAGS__?.studio!==false){prewarmStudio();setTimeout(repairStudio,0);setTimeout(repairStudio,60)}},false);
   document.addEventListener('pointerover',e=>{if(window.__SCHOLARK_FEATURE_FLAGS__?.studio!==false&&e.target.closest?.('[data-v51-tool="studio"],.v51-card[data-v51-tool="studio"]'))prewarmStudio()},{passive:true});
   addEventListener('pageshow',()=>schedule(20));
-  addEventListener('scholark-home-mode-change',()=>schedule(0));addEventListener('scholark-language-applied',()=>schedule(10));addEventListener('scholark-language-ready',()=>{schedule(20);setTimeout(repairLocalization,100)});addEventListener('scholark-language-complete',()=>{schedule(10);setTimeout(repairLocalization,80)});
+  addEventListener('scholark-home-mode-change',()=>setTimeout(repairLocalization,30));addEventListener('scholark-language-applied',()=>setTimeout(repairLocalization,30));addEventListener('scholark-language-ready',()=>setTimeout(repairLocalization,100));
   addEventListener('scholark-runtime-ready',()=>{reloadPatchedLanguageMap();prewarmStudio();schedule(60);setTimeout(health,900)});addEventListener('scholark-return-home',()=>{schedule(0);setTimeout(repairHome,60);setTimeout(repairLocalization,220)});addEventListener('hashchange',()=>{schedule(25);setTimeout(()=>{repairProject();repairStudio();repairLocalization()},110);setTimeout(health,650)});addEventListener('popstate',()=>schedule(30));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(50)});
   addEventListener('scholark-route-painted',()=>schedule(40));
-  [80,300,900,1700].forEach(ms=>setTimeout(()=>schedule(0),ms));setTimeout(health,2400);
+  [100,600].forEach(ms=>setTimeout(()=>schedule(0),ms));setTimeout(health,2400);
 
   // Repairs are intentionally event-driven. Watching the entire document caused
   // expensive full-surface localization scans during dynamic workspace mounts.
