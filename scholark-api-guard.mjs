@@ -31,7 +31,7 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','SAMEORIGIN');
     if (!res.hasHeader('cross-origin-opener-policy')) res.setHeader('cross-origin-opener-policy','same-origin-allow-popups');
     if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
-    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), payment=(), usb=()');
+    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), usb=()');
     if (!res.hasHeader('x-permitted-cross-domain-policies')) res.setHeader('x-permitted-cross-domain-policies','none');
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
