@@ -162,6 +162,7 @@
       const email=userEmail(s);if(email)opts.customer={email};
       P.Checkout.open(opts);
       setTimeout(()=>{if(active.plan===plan&&!active.loaded)message(plan,'Opening Paddle secure checkout…')},900);
+      setTimeout(async()=>{if(active.plan!==plan||active.loaded||active.fallbackTried||active.method!=='direct')return;active.fallbackTried=true;message(plan,'Checkout is taking longer than expected. Retrying securely…');try{await serverFallback(plan,P,s)}catch(err){setBusy(plan,false);message(plan,String(err?.message||err),true);resetActive(true)}},5000);
     }catch(err){
       try{
         const P=active.P||await initPaddle();
