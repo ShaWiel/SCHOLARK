@@ -45,6 +45,19 @@ async function verifyCatalogPrice(plan,id,expectedAmount){
   const legacyBrand=/student\s*os|studentos/i.test([priceName,productName,productDescription].join(' '));
   return {ok:active&&monthly&&trial7&&amount===String(expectedAmount)&&currency==='USD'&&!legacyBrand,plan,id:p?.id||id,productId:product?.id||p?.product_id||'',priceName,productName,productDescription,legacyBrand,brandAudit,amount,currency,monthly,trial7,active,requiresPaymentMethod:p?.trial_period?.requires_payment_method!==false};
 }
+async function auditCatalogBrandPreview(){
+  const r=await paddle('/pricing-preview',{method:'POST',body:JSON.stringify({items:[{price_id:PRICES.plus,quantity:1},{price_id:PRICES.pro,quantity:1}],address:{country_code:'SR'}})}),d=await r.json().catch(()=>({}));
+  if(!r.ok)return {ok:false,http:r.status,reason:d?.error?.code||d?.error?.type||'pricing_preview_failed'};
+  const lines=Array.isArray(d?.data?.details?.line_items)?d.data.details.line_items:[];
+  const plans={};
+  for(const line of lines){
+    const priceId=String(line?.price?.id||''),plan=priceId===PRICES.plus?'plus':priceId===PRICES.pro?'pro':'';
+    if(!plan)continue;
+    const productName=String(line?.product?.name||''),productDescription=String(line?.product?.description||''),priceName=String(line?.price?.name||'');
+    plans[plan]={productName,productDescription,priceName,legacyBrand:/student\s*os|studentos/i.test([productName,productDescription,priceName].join(' '))};
+  }
+  return {ok:!!plans.plus&&!!plans.pro&&!plans.plus.legacyBrand&&!plans.pro.legacyBrand,plans};
+}
 async function verifyWebhookDestination(){
   const required=new Set(['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled']);
   const r=await paddle('/notification-settings?active=true&per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
@@ -58,10 +71,10 @@ async function verifyWebhookDestination(){
 async function billingSelftest(){
   if(!configured()){catalogHealth={checked:true,ok:false,environment:ENV,reason:'credentials_or_prices_missing'};console.warn('[SCHOLARK] Paddle catalog self-test SKIP · billing credentials incomplete');return catalogHealth}
   try{
-    const [plus,pro,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),verifyWebhookDestination()]);
-    catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!webhook.ok,environment:ENV,plus,pro,webhook,checkedAt:new Date().toISOString()};
+    const [plus,pro,brandPreview,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),auditCatalogBrandPreview(),verifyWebhookDestination()]);
+    catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!brandPreview.ok&&!!webhook.ok,environment:ENV,plus,pro,brandPreview,webhook,checkedAt:new Date().toISOString()};
     const level=catalogHealth.ok?'log':'warn';
-    const plusDiag=plus.legacyBrand?'LEGACY_BRAND:'+plus.productName+'/'+plus.priceName:(plus.ok?(plus.brandAudit==='product_read_forbidden'?'OK(product-audit-needs-product.read)':'OK'):(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=pro.legacyBrand?'LEGACY_BRAND:'+pro.productName+'/'+pro.priceName:(pro.ok?(pro.brandAudit==='product_read_forbidden'?'OK(product-audit-needs-product.read)':'OK'):(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?'OK':(webhook.reason||(!webhook.secretMatches?'secret_mismatch':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · webhook '+webhookDiag);
+    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?'OK':(webhook.reason||(!webhook.secretMatches?'secret_mismatch':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
   }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLARK] Paddle catalog self-test WARN · '+catalogHealth.reason)}
   return catalogHealth;
 }
