@@ -8,9 +8,9 @@
   const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const publicHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,homeKeys:Object.freeze(['home','pricing','start'])});
-  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r181'});
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r182'});
 
-  const VERSION = '20260922-r180';
+  const VERSION = '20260923-r182';
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
@@ -30,7 +30,7 @@
   ];
   const BASE = new Set([
     'scholark-v32-mode-preview.js','scholark-v33-preview-compat.js','scholark-v42-route-guard.js',
-    'scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
+    'scholark-v72-cloud-projects.js','scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v113-foundation-hardening.js',
     'scholark-v98-brand-migration.js','scholark-v115-billing.js'
   ]);
@@ -83,7 +83,7 @@
   }
 
   const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js'];
-  const HOME_FIRST=['scholark-v109-home-owner.js','scholark-v55-home-topbar-workspace-entry.js'];
+  const HOME_FIRST=['scholark-v109-home-owner.js','scholark-v72-cloud-projects.js','scholark-v55-home-topbar-workspace-entry.js'];
   function required(key) {
     const set = new Set(BASE);
     if (key === 'home') HOME.forEach(x => set.add(x));
