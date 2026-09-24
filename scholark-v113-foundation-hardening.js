@@ -52,7 +52,7 @@
   function removeDuplicateControls(){
     const langs=$("#v51-sidebar .v90-langbox");if(langs.length>1)langs.slice(0,-1).forEach(x=>x.remove());
     const countries=$("#v51-sidebar #v96-side-country");if(countries.length>1)countries.slice(0,-1).forEach(x=>x.remove());
-    const byParent=new Map();$ ("#v51-main .v111-live").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
+    const byParent=new Map();$("#v51-main .v111-live").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
   }
   function scrubQuality(root=document){
     $$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max",root).forEach(el=>{
@@ -92,7 +92,7 @@
     const coverage=i18n?.coverage?.(620)||null;
     const result={
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&languageRegistry&&selectorsHealthy,
-      release:"r176",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
+      release:"r183",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
       languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
@@ -120,7 +120,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260921-r176",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260924-r183",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R174__=foundationApi;
