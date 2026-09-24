@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r183';
+  const RELEASE = 'r184';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -87,12 +87,7 @@
     window.__SCHOLARK_V55_TOPBAR__?.sync?.();
     window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.();
     window.__SCHOLARK_V29_HOME__?.sync?.();
-    if (!previewHealthy()) {
-      window.__SCHOLARK_V32_PREVIEW__?.render?.(true);
-      window.__SCHOLARK_V32_PREVIEW__?.ensure?.();
-      window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
-    }
-    if (window.__SCHOLARK_V30_DEMO__?.isRunning?.() === false) window.__SCHOLARK_V30_DEMO__?.start?.();
+    if (!previewHealthy()) window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
     if (routeChanged && info.base === 'pricing') scrollPricing();
   }
 
