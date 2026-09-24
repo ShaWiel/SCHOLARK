@@ -741,7 +741,7 @@
   function authDialogRoots(){
     const out=[];
     const visible=el=>{if(!el||!el.isConnected)return false;const cs=getComputedStyle(el);return cs.display!=='none'&&cs.visibility!=='hidden'&&!el.hidden};
-    for(const email of $('input[type="email"],input[autocomplete="email"]')){
+    for(const email of $$('input[type="email"],input[autocomplete="email"]')){
       const scope=email.closest('form')||email.parentElement;if(!scope)continue;
       const pass=scope.querySelector('input[type="password"]')||email.closest('[role="dialog"],dialog,[class*="modal"],[class*="auth"]')?.querySelector('input[type="password"]');
       if(!pass)continue;
