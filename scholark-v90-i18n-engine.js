@@ -533,6 +533,11 @@
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
+  const TITLE_SOURCE='YOUR AI LEARNING + CREATION OS';
+  function syncDocumentTitle(target=code()){
+    const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
+    document.title='SCHOLARK | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
+  }
   const CACHE_VERSION='v6-global74';
   const LEGACY_CACHE_VERSIONS=['v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
@@ -850,6 +855,7 @@
     map=loadMap(target);mapCode=target;
     document.documentElement.lang=target;
     document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
+    syncDocumentTitle(target);
 
     upgradeSelectors();
     applyVisible();
@@ -887,6 +893,7 @@
     if(home)window.__SCHOLARK_V30_DEMO__?.refreshLanguage?.();
     else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
 
+    syncDocumentTitle(target);
     const readyCoverage=visibleCoverage(560);
     window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic,coverage:readyCoverage}}));
     const remaining=Math.max(0,260-(performance.now()-overlayStarted));
@@ -922,7 +929,7 @@
   let bootLocalePrime='';
   function boot(){
     const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
-    document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';
+    document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';syncDocumentTitle(normalized);
     if(isHomeRoute()&&!STATIC_CORE_LANGS.has(normalized)&&bootLocalePrime!==normalized){
       bootLocalePrime=normalized;
       document.documentElement.classList.add('scholark-home-language-adapting');
