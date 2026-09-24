@@ -33,8 +33,7 @@
   function cleanPublicHome(){const onHome=document.body?.classList.contains('v31-public-home')||!!document.querySelector('#v29-home-layer.v30-native-home:not([hidden])');if(!onHome)return;const home=document.getElementById('sv24-home');if(home)home.style.setProperty('display','none','important');['sv24-launch','v29-create','v29-open-studio','v29-final-open'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.setProperty('display','none','important');el.setAttribute('aria-hidden','true');el.tabIndex=-1}});const prompt=$('#v29-prompt');if(prompt){prompt.readOnly=true;prompt.setAttribute('aria-label','Automatic SCHOLARK capability demo')}}
   function sync(){cleanPublicHome();ensurePreview()}
   function rerender(){lastMode='';requestAnimationFrame(()=>render(true))}
-  const observer=new MutationObserver(()=>{if(document.body?.classList.contains('v55-public-home')||document.body?.classList.contains('v31-public-home'))ensurePreview()});
-  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden']});
   addEventListener('hashchange',()=>setTimeout(sync,40));addEventListener('pageshow',()=>setTimeout(sync,20));addEventListener('focus',()=>setTimeout(sync,20));addEventListener('scholark-language-applied',()=>setTimeout(rerender,20));addEventListener('scholark-language-ready',()=>setTimeout(rerender,40));addEventListener('scholark-language-complete',()=>setTimeout(rerender,20));addEventListener('scholark-home-mode-change',rerender);[0,50,150,400,900,1800].forEach(ms=>setTimeout(sync,ms));
-  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync,healthy,ensure:ensurePreview,release:'r167'};
+  window.__SCHOLARK_HOME_PREVIEW_OWNER__='v32';
+  window.__SCHOLARK_V32_PREVIEW__={render:rerender,sync,healthy,ensure:ensurePreview,owner:'v32',release:'r184'};
 })();
