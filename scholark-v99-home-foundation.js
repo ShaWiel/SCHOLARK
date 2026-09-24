@@ -128,7 +128,7 @@
   function health(){
     const mode=activeMode(),previewMode=$('#v29-home-layer .v32-preview-shell')?.dataset.v32Mode||'',stageMode=$('#v29-home-layer .v29-stage')?.dataset.mode||'',statusModes=$$('#v29-home-layer .v29-float').map(x=>x.dataset.v30Mode||''),bars=$$('.v29-master .v29-line i'),projectRoute=route()==='#project',studioRoute=route()==='#studio',sidebar=$('#v51-sidebar'),performanceSafe=document.documentElement.classList.contains('scholark-performance-safe');
     const report={
-      ok:true,release:'r185',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
+      ok:true,release:'r186',home:home(),route:route(),activeMode:mode,previewMode,stageMode,statusModes,
       previewComplete:!home()||window.__SCHOLARK_V32_PREVIEW__?.healthy?.()===true,
       stageReady:!home()||!!$('#v29-stage-title')?.textContent?.trim()&&!!$('#v29-stage-desc')?.textContent?.trim()&&($('#v29-stage-list')?.children?.length||0)>0&&!!$('#v29-stage-scene .v29-scene'),stageModeMatched:!home()||stageMode===mode,statusModeMatched:!home()||statusModes.length>=3&&statusModes.slice(0,3).every(x=>x===mode),
       promptReady:!home()||!!$('#v29-prompt')?.value?.trim(),promptMultiline:!home()||$('#v29-prompt')?.tagName==='TEXTAREA'&&($('#v29-prompt')?.getAttribute('wrap')||'').toLowerCase()==='soft',
@@ -139,7 +139,7 @@
       projectMounted:!projectRoute||!!$('#v51-fallback .v64-projects'),projectSidebar:!projectRoute||!!sidebar&&!document.body.classList.contains('v51-collapsed')&&getComputedStyle(sidebar).visibility!=='hidden',studioMounted:!studioRoute||(window.__SCHOLARK_FEATURE_FLAGS__?.studio===false?!!$('.v51-coming-soon'):!!$('#v41-studio-workspace:not([hidden])')),runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     report.ok=report.runtimeErrors.length===0&&report.workspaceLanguage&&report.languageIconClean&&report.projectMounted&&report.projectSidebar&&report.studioMounted&&report.homeOwner&&(!report.home||(report.activeMode===report.previewMode&&report.previewComplete&&report.stageReady&&report.stageModeMatched&&report.statusModeMatched&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.cinematicRunning));
-    try{sessionStorage.setItem('scholark_foundation_r185',JSON.stringify(report))}catch{}
+    try{sessionStorage.setItem('scholark_foundation_r186',JSON.stringify(report))}catch{}
     console[report.ok?'log':'warn']('[SCHOLARK] Foundation R177 '+(report.ok?'PASS':'WARN'),report);if(!report.ok)schedule(60);return report;
   }
 
@@ -154,5 +154,5 @@
 
   // Repairs are intentionally event-driven. Watching the entire document caused
   // expensive full-surface localization scans during dynamic workspace mounts.
-  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r185',documentWideObserver:false};
+  window.__SCHOLARK_HOME_FOUNDATION__={repair:schedule,health,repairLocalization,repairProject,repairStudio,prewarmStudio,release:'r186',documentWideObserver:false};
 })();
