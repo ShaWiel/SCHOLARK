@@ -74,12 +74,12 @@
     const actions=$('#v55-topbar .v55-actions');if(!actions)return;
     let chip=$('.v85-topbar-credit',actions);
     if(!chip){
-      chip=document.createElement('button');chip.type='button';chip.className='v85-topbar-credit';chip.dataset.schI18nOwned='1';chip.onclick=pricing;
+      chip=document.createElement('button');chip.type='button';chip.className='v85-topbar-credit';chip.dataset.schI18nOwned='1';chip.onclick=()=>{if(signed())pricing();else window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin')};
       const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);if(account)actions.insertBefore(chip,account);else actions.appendChild(chip);
     }
     const on=signed();
-    if(!on&&!window.__SCHOLARK_TEST_MODE__){chip.hidden=true;return}
     chip.hidden=false;
+    if(!on&&!window.__SCHOLARK_TEST_MODE__){chip.innerHTML='<span class="v85-star" aria-hidden="true">✦</span><b>—</b><em>FREE</em>';chip.title='Sign in to see your SCHOLARK credit balance';chip.setAttribute('aria-label',chip.title);return}
     if(window.__SCHOLARK_TEST_MODE__){chip.innerHTML='<span class="v85-star">✦</span><b>∞</b><em>TEST</em>';chip.title='SCHOLARK test credits';return}
     const bal=wallet?Math.max(0,Number(wallet.balance)||0):null,plan=clean(wallet?.plan||window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase();
     chip.innerHTML='<span class="v85-star" aria-hidden="true">✦</span><b>'+(bal==null?'…':bal.toLocaleString())+'</b><em>'+plan+'</em>';
