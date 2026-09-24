@@ -122,7 +122,7 @@
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession()});
-  setInterval(()=>{if(!document.hidden)checkSession()},2000);
+  setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
   window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r181'};
