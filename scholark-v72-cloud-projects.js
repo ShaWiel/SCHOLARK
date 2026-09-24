@@ -42,7 +42,7 @@
     window.__SCHOLARK_I18N__?.apply?.(modal);
     setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
     $('.v72-x',modal).onclick=closeModal;
-    $('[data-tab]',modal).forEach(b=>b.onclick=()=>openAuth(b.dataset.tab));
+    $$('[data-tab]',modal).forEach(b=>b.onclick=()=>openAuth(b.dataset.tab));
     const form=$('.v72-form',modal),emailInput=$('input[type="email"]',form),st=$('.v72-modal-status',modal);
     $('.v72-forgot',modal)?.addEventListener('click',async()=>{
       const email=clean(emailInput?.value);
