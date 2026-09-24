@@ -168,7 +168,7 @@
       authButton.title=expectedAuth+' · SCHOLARK';
     }
     if(accountWrap?.classList.contains('open')){
-      const menu=$('.v55-menu',topbar);if(menu)menu.innerHTML=accountMenu();
+      const menu=$('.v55-menu',topbar),html=accountMenu();if(menu&&menu.innerHTML!==html)menu.innerHTML=html;
     }
   }
   function syncAuth(){syncTopbarCopy()}
@@ -199,7 +199,7 @@
   addEventListener('popstate',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
   addEventListener('pageshow',()=>{setTimeout(sync,20);scheduleTopbarRepair(80)});
   addEventListener('scholark:auth-changed',()=>{setTimeout(syncAuth,20);window.__SCHOLARK_CREDITS__?.load?.()});
-  addEventListener('scholark:billing-changed',()=>{syncTopbarCopy();if(accountWrap?.classList.contains('open'))$('.v55-menu',topbar).innerHTML=accountMenu()});
+  addEventListener('scholark:billing-changed',()=>syncTopbarCopy());
   addEventListener('scholark-language-applied',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncTopbarCopy();localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(20)});
   addEventListener('scholark-language-ready',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(120)});
   addEventListener('scholark-return-home',()=>{sync();ensureLanguageSelector();[60,220,700,1500].forEach(ms=>setTimeout(()=>{sync();ensureLanguageSelector()},ms))});
@@ -212,9 +212,12 @@
     }
   });
   topbarObserver.observe(document.body||document.documentElement,{subtree:true,childList:true});
+  let topbarCopyQueued=false;
   const topbarCopyObserver=new MutationObserver(muts=>{
-    if(!publicHome()||!topbar?.isConnected)return;
-    if(muts.some(m=>m.target?.nodeType===3?m.target.parentElement?.closest?.('#v55-account,#v55-auth,.v55-menu'):m.target?.closest?.('#v55-account,#v55-auth,.v55-menu')))queueMicrotask(syncTopbarCopy);
+    if(!publicHome()||!topbar?.isConnected||topbarCopyQueued)return;
+    const relevant=muts.some(m=>m.target?.nodeType===3?m.target.parentElement?.closest?.('#v55-account,#v55-auth'):m.target?.closest?.('#v55-account,#v55-auth'));
+    if(!relevant)return;
+    topbarCopyQueued=true;queueMicrotask(()=>{topbarCopyQueued=false;syncTopbarCopy()});
   });
   const bindCopyObserver=()=>{if(topbar?.isConnected){topbarCopyObserver.disconnect();topbarCopyObserver.observe(topbar,{subtree:true,childList:true,characterData:true})}};
   if(document.body){sync();bindCopyObserver()}else addEventListener('DOMContentLoaded',()=>{sync();bindCopyObserver()},{once:true});
