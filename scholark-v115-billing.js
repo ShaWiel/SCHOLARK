@@ -137,7 +137,7 @@
     active.method='transaction';
     const r=await fetch('/api/billing/checkout',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+s.access_token},body:JSON.stringify({plan})}),d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.transactionId)throw new Error(d?.error||'Could not create secure checkout transaction');
-    P.Checkout.open({transactionId:d.transactionId,settings:{displayMode:'overlay',theme:'light',locale:paddleLocale(),variant:'one-page'}});
+    P.Checkout.open({transactionId:d.transactionId,settings:{displayMode:'overlay',theme:'light',locale:paddleLocale(),variant:'multi-page',showAddTaxId:false,showAddDiscounts:false}});
   }
   async function choose(plan){
     plan=String(plan||'').toLowerCase();
@@ -158,7 +158,7 @@
       if(!/^pri_[a-z\d]{26}$/.test(priceId))throw new Error('This plan is not connected to a valid Paddle price.');
       const uid=userId(s);if(!uid)throw new Error('Could not verify your SCHOLARK account.');
       active={plan,button:button(plan),label:button(plan)?.dataset.v115Label||'',loaded:false,fallbackTried:false,method:'direct',session:s,P};
-      const opts={items:[{priceId,quantity:1}],customData:{scholark_user_id:uid,scholark_plan:plan},settings:{displayMode:'overlay',theme:'light',locale:paddleLocale(),variant:'one-page'}};
+      const opts={items:[{priceId,quantity:1}],customData:{scholark_user_id:uid,scholark_plan:plan},settings:{displayMode:'overlay',theme:'light',locale:paddleLocale(),variant:'multi-page',showAddTaxId:false,showAddDiscounts:false}};
       const email=userEmail(s);if(email)opts.customer={email};
       P.Checkout.open(opts);
       setTimeout(()=>{if(active.plan===plan&&!active.loaded)message(plan,'Opening Paddle secure checkout…')},900);
@@ -187,5 +187,5 @@
   addEventListener('scholark:auth-changed',()=>{refresh().then(resumePending)});
   addEventListener('pageshow',()=>refresh());
   wire();setTimeout(()=>{refresh();getConfig().catch(()=>{})},450);
-  window.__SCHOLARK_BILLING__={choose,refresh,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),prewarm:()=>initPaddle(),release:'r186'};
+  window.__SCHOLARK_BILLING__={choose,refresh,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),prewarm:()=>initPaddle(),release:'r187'};
 })();
