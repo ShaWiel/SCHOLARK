@@ -13,7 +13,7 @@
     .v94-route-fade #v51-main,.v94-route-fade #v29-home-layer,.v94-route-fade #v41-studio-workspace{opacity:.985;transition:opacity .12s ease}
     .v94-compact-text{font-size:.92em!important;letter-spacing:-.01em!important}
     @media(max-width:760px){#v29-home-layer section,#v41-home-pricing{contain-intrinsic-size:1px 520px}.v51-nav{min-height:46px}}
-    html.scholark-performance-safe .v29-glow,html.scholark-performance-safe .v29-device,html.scholark-performance-safe .v29-float,html.scholark-performance-safe .v30-radar,html.scholark-performance-safe .v30-live-badge i,html.scholark-performance-safe .v32-chart i,html.scholark-performance-safe .v100-bars i,html.scholark-performance-safe .v41-most{animation:none!important}
+    html.scholark-performance-safe .v29-glow{animation:none!important;opacity:.12!important}html.scholark-performance-safe .v29-device{animation-duration:12s!important}html.scholark-performance-safe .v29-float{animation-duration:9s!important}html.scholark-performance-safe .v30-radar{animation-duration:4.4s!important}html.scholark-performance-safe .v30-live-badge i{animation-duration:2.8s!important}html.scholark-performance-safe .v29-master .v29-line i,html.scholark-performance-safe .v32-bars i,html.scholark-performance-safe .v32-tutor-progress i,html.scholark-performance-safe .v32-chart i,html.scholark-performance-safe .v32-webart:after,html.scholark-performance-safe .v100-bars i{animation-duration:6s!important}html.scholark-performance-safe .v41-most{animation:none!important}
     html.scholark-performance-safe #v55-topbar,html.scholark-performance-safe .v29-future-card{backdrop-filter:none!important}
     html.scholark-performance-safe{scroll-behavior:auto}
     /* Do not pause homepage cinematics during a language switch. Pausing CSS
@@ -65,8 +65,7 @@
     if(state.safeMode)return;
     state.safeMode=true;
     document.documentElement.classList.add('scholark-performance-safe');
-    try{window.__SCHOLARK_HOME_CINEMATICS__?.stop?.()}catch{}
-    try{window.__SCHOLARK_V30_DEMO__?.stop?.()}catch{}
+    try{window.__SCHOLARK_HOME_CINEMATICS__?.repair?.()}catch{}
     window.dispatchEvent(new CustomEvent('scholark-performance-safe',{detail:{reason}}));
   }
 
@@ -93,5 +92,5 @@
   idle(()=>{tuneImages();fitText(activeRoot(),true)});
   setTimeout(routeTransition,350);
 
-  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r184'};
+  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r185'};
 })();
