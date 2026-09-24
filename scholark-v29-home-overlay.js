@@ -109,8 +109,8 @@
     active=mode;const d=capabilityData[mode]||capabilityData.arki;
     $$('.v29-type',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
     $$('.v29-tab',layer).forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-    const stageKicker=$('#v29-stage-kicker',layer),stageTitle=$('#v29-stage-title',layer),stageDesc=$('#v29-stage-desc',layer),stageList=$('#v29-stage-list',layer),outputTitle=$('#v29-output-title',layer),outputDesc=$('#v29-output-desc',layer),stageScene=$('#v29-stage-scene',layer),previewTitle=$('#v29-preview-title',layer);
-    if(stageKicker)stageKicker.textContent=d.kicker;if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(stageScene)stageScene.innerHTML=d.scene;if(previewTitle)previewTitle.textContent=d.name;
+    const stageKicker=$('#v29-stage-kicker',layer),stageTitle=$('#v29-stage-title',layer),stageDesc=$('#v29-stage-desc',layer),stageList=$('#v29-stage-list',layer),outputTitle=$('#v29-output-title',layer),outputDesc=$('#v29-output-desc',layer),stageScene=$('#v29-stage-scene',layer);
+    if(stageKicker)stageKicker.textContent=d.kicker;if(stageTitle)stageTitle.textContent=d.title;if(stageDesc)stageDesc.textContent=d.desc;if(stageList)stageList.innerHTML=d.bullets.map(x=>`<li>${esc(x)}</li>`).join('');if(outputTitle)outputTitle.textContent=d.name;if(outputDesc)outputDesc.textContent=d.preview;if(stageScene)stageScene.innerHTML=d.scene;
     const stage=$('.v29-stage',layer);if(stage)stage.dataset.mode=mode;const visual=$('.v29-visual',layer);if(visual)visual.dataset.mode=mode;
     const i18n=window.__SCHOLARK_I18N__;if(i18n?.apply){
       const stage=$('.v29-stage',layer),visual=$('.v29-visual',layer);
