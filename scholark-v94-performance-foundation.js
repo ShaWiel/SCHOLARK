@@ -13,7 +13,7 @@
     .v94-route-fade #v51-main,.v94-route-fade #v29-home-layer,.v94-route-fade #v41-studio-workspace{opacity:.985;transition:opacity .12s ease}
     .v94-compact-text{font-size:.92em!important;letter-spacing:-.01em!important}
     @media(max-width:760px){#v29-home-layer section,#v41-home-pricing{contain-intrinsic-size:1px 520px}.v51-nav{min-height:46px}}
-    html.scholark-performance-safe .v29-glow,html.scholark-performance-safe .v29-device,html.scholark-performance-safe .v29-float,html.scholark-performance-safe .v41-most{animation:none!important}
+    html.scholark-performance-safe .v29-glow,html.scholark-performance-safe .v29-device,html.scholark-performance-safe .v29-float,html.scholark-performance-safe .v30-radar,html.scholark-performance-safe .v30-live-badge i,html.scholark-performance-safe .v32-chart i,html.scholark-performance-safe .v100-bars i,html.scholark-performance-safe .v41-most{animation:none!important}
     html.scholark-performance-safe #v55-topbar,html.scholark-performance-safe .v29-future-card{backdrop-filter:none!important}
     html.scholark-performance-safe{scroll-behavior:auto}
     /* Do not pause homepage cinematics during a language switch. Pausing CSS
@@ -61,8 +61,17 @@
   addEventListener('scholark-language-ready',()=>requestAnimationFrame(()=>{fitText(activeRoot(),true);tuneImages()}));
   addEventListener('scholark-language-complete',()=>scheduleLayout());
 
+  function enableSafeMode(reason='runtime'){
+    if(state.safeMode)return;
+    state.safeMode=true;
+    document.documentElement.classList.add('scholark-performance-safe');
+    try{window.__SCHOLARK_HOME_CINEMATICS__?.stop?.()}catch{}
+    try{window.__SCHOLARK_V30_DEMO__?.stop?.()}catch{}
+    window.dispatchEvent(new CustomEvent('scholark-performance-safe',{detail:{reason}}));
+  }
+
   const lowPower=(Number(navigator.hardwareConcurrency)||8)<=4||(Number(navigator.deviceMemory)||8)<=4;
-  if(lowPower){state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');setTimeout(()=>window.__SCHOLARK_V30_DEMO__?.sync?.(),0)}
+  if(lowPower){enableSafeMode('low-power-device')}
 
   if('PerformanceObserver'in window){
     try{
@@ -72,8 +81,7 @@
         for(const e of list.getEntries())if(e.duration>100){state.longTasks++;recent.push(now)}
         while(recent.length&&now-recent[0]>12000)recent.shift();
         if(recent.length>=3&&!state.safeMode){
-          state.safeMode=true;document.documentElement.classList.add('scholark-performance-safe');
-          setTimeout(()=>window.__SCHOLARK_V30_DEMO__?.sync?.(),0);
+          enableSafeMode('repeated-long-tasks');
           console.warn('[SCHOLARK] Performance safe mode enabled after repeated long tasks.');
         }
       });
@@ -85,5 +93,5 @@
   idle(()=>{tuneImages();fitText(activeRoot(),true)});
   setTimeout(routeTransition,350);
 
-  window.__SCHOLARK_PERF__={state,fitText,routeTransition};
+  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r183'};
 })();
