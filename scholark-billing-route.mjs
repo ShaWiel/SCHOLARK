@@ -27,8 +27,9 @@ async function readJson(req){const raw=await readRaw(req,128*1024);try{return ra
 function bearer(req){const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''}
 async function currentUser(req){const token=bearer(req);if(!token||!SB||!PUB)return null;const r=await fetch(SB+'/auth/v1/user',{headers:{apikey:PUB,authorization:'Bearer '+token}});if(!r.ok)return null;const d=await r.json().catch(()=>null);return d?.id?d:null}
 function serviceHeaders(extra={}){return {apikey:SERVICE,authorization:'Bearer '+SERVICE,'content-type':'application/json',accept:'application/json',...extra}}
-async function sb(path,opts={}){return fetch(SB+path,{...opts,headers:{...serviceHeaders(),...(opts.headers||{})}})}
-async function paddle(path,opts={}){return fetch(API_BASE+path,{...opts,headers:{authorization:'Bearer '+API_KEY,'content-type':'application/json',accept:'application/json',...(opts.headers||{})}})}
+function timeoutSignal(ms=10000){try{return AbortSignal.timeout(ms)}catch{return undefined}}
+async function sb(path,opts={}){return fetch(SB+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{...serviceHeaders(),...(opts.headers||{})}})}
+async function paddle(path,opts={}){return fetch(API_BASE+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{authorization:'Bearer '+API_KEY,'content-type':'application/json',accept:'application/json',...(opts.headers||{})}})}
 async function verifyCatalogPrice(plan,id,expectedAmount){
   const r=await paddle('/prices/'+encodeURIComponent(id),{method:'GET'}),d=await r.json().catch(()=>({})),p=d?.data||{};
   if(!r.ok)return {ok:false,http:r.status,reason:d?.error?.code||d?.error?.type||'price_read_failed'};
