@@ -331,12 +331,12 @@
     return demoModes.includes(apiMode)?apiMode:(demoModes[modeIndex]||'arki');
   }
   function startTimers(){
-    const lite=document.documentElement.classList.contains('scholark-performance-safe');
-    if(!rotateTimer)rotateTimer=setInterval(cycleCapabilities,lite?12000:9000);
+    if(document.documentElement.classList.contains('scholark-performance-safe')){stopDemo();return}
+    if(!rotateTimer)rotateTimer=setInterval(cycleCapabilities,9000);
     if(!statusTimer)statusTimer=setInterval(()=>{
       if(document.hidden||!isHome())return;
       animateLearning();animateFuture();animateQualitySteps();
-    },lite?6500:4800);
+    },4800);
   }
   function ensureDemo(){
     if(!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
@@ -388,6 +388,7 @@
   addEventListener('popstate',()=>setTimeout(sync,50));
   addEventListener('pageshow',()=>setTimeout(sync,20));
   addEventListener('scholark-language-ready',()=>{if(isHome())requestAnimationFrame(refreshLanguage)});
+  addEventListener('scholark-performance-safe',()=>stopDemo());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDemo();else sync()});
   setTimeout(sync,120);
   window.__SCHOLARK_V30_DEMO__={stop:stopDemo,start:ensureDemo,sync,refreshLanguage,resizePrompt,isRunning:()=>!!rotateTimer&&!!statusTimer,state:()=>({mode:currentDemoMode(),modeIndex,futureStep,learnStep,typing:!!typingTimer,rotating:!!rotateTimer,status:!!statusTimer})};
