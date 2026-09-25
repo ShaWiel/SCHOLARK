@@ -182,7 +182,7 @@
     if(levelRenderHost===host&&levelRenderKey===key&&host.children.length){wireLevelScroll();return}
     const left=host.scrollLeft;
     host.innerHTML=html;levelRenderHost=host;levelRenderKey=key;
-    $('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
+    $$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
     wireLevelScroll();
     requestAnimationFrame(()=>{if(host.isConnected)host.scrollLeft=Math.min(left,Math.max(0,host.scrollWidth-host.clientWidth))});
   }
