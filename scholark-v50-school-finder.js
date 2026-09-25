@@ -3,7 +3,7 @@
   window.__SCHOLARK_V50_SCHOOL_FINDER__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let root=null,currentPos=null,renderedItems=[],renderOpts=null,visibleLimit=0,compareOpen=false,searchEpoch=0,searchController=null;
+  let root=null,currentPos=null,renderedItems=[],renderOpts=null,visibleLimit=0,compareOpen=false,searchEpoch=0,searchController=null,schoolI18nTimer=0;
   const PAGE_SIZE=80;
   const SAVED_KEY='scholark_saved_schools_v1';
   const savedIds=new Set((()=>{try{return JSON.parse(localStorage.getItem(SAVED_KEY)||'[]')}catch{return[]}})());
@@ -45,7 +45,16 @@
     }catch(e){console.warn('[SCHOLARK] server location resolver fallback:',String(e?.message||e))}
     const u=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${pos.lat}&lon=${pos.lon}`;return json(u,9000)
   }
-  async function geocode(country,city){const q=[city,country].filter(Boolean).join(', '),u='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q='+encodeURIComponent(q);const d=await json(u,9000);if(!d?.[0])throw new Error('Place not found');return{lat:+d[0].lat,lon:+d[0].lon,country:d[0].address?.country||country,countryCode:(d[0].address?.country_code||'').toUpperCase(),display:d[0].display_name||q}}
+  async function geocode(country,city){
+    const q=[city,country].filter(Boolean).join(', ');
+    try{
+      const u='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q='+encodeURIComponent(q),d=await json(u,9000);
+      if(d?.[0])return{lat:+d[0].lat,lon:+d[0].lon,country:d[0].address?.country||country,countryCode:(d[0].address?.country_code||'').toUpperCase(),display:d[0].display_name||q};
+    }catch{}
+    const p=await json('https://photon.komoot.io/api/?limit=1&q='+encodeURIComponent(q),9000),f=p?.features?.[0],props=f?.properties||{},coords=f?.geometry?.coordinates||[];
+    if(!f||!Number.isFinite(Number(coords[1]))||!Number.isFinite(Number(coords[0])))throw new Error('Place not found');
+    return{lat:Number(coords[1]),lon:Number(coords[0]),country:props.country||country,countryCode:String(props.countrycode||props.countryCode||'').toUpperCase(),display:[props.name||props.city,props.state,props.country].filter(Boolean).join(', ')||q};
+  }
   async function dbSchools(country,city,level,study,pos){
     const req=cloud()?.publicRequest;if(!req)return[];
     try{
@@ -61,21 +70,22 @@
   }
 
   function levelOf(t){
-    const a=(t.amenity||'').toLowerCase(),n=(t.name||'').toLowerCase(),i=String(t['isced:level']||t.isced||'').toLowerCase();
-    if(a==='kindergarten'||/preschool|pre-school|nursery|kleuterschool|kleuteronderwijs|peuterschool/.test(n))return'kindergarten';
-    if(/\badekus\b|anton de kom|university|universiteit|faculty|faculty of/.test(n))return'wo';
+    const a=String(t.amenity||'').toLowerCase(),i=String(t['isced:level']||t.isced||'').toLowerCase();
+    const n=[t.name,t['name:en'],t.operator,t.education,t.description,t['school:level'],t.grades,t.education_level].filter(Boolean).join(' ').toLowerCase();
+    if(a==='kindergarten'||/[0]/.test(i)||/preschool|pre-school|nursery|kindergarten|kleuterschool|kleuteronderwijs|maternelle|infantil|przedszkole|anaokulu|детск(ий|ого) сад|幼儿园|幼稚園|保育園|유치원|روضة|बालवाड़ी|mầm non|taman kanak|อนุบาล/.test(n))return'kindergarten';
+    if(/[1]/.test(i)||/primary|elementary|basisschool|lagere school|\bglo\b|grundschule|école primaire|primaria|szkoła podstawowa|ilkokul|начальн(ая|ої) школ|小学|小学校|초등학교|ابتدائ|प्राथमिक|tiểu học|sekolah dasar|\bsd\b|ประถม/.test(n))return'primary';
+    if(/\badekus\b|anton de kom|university|universiteit|université|universität|universidad|università|uniwersytet|üniversite|университет|університет|大学|대학교|جامعة|विश्वविद्यालय|đại học|universitas|มหาวิทยาลัย/.test(n)||a==='university')return'wo';
     if(/\bhbo\b|hogeschool|university of applied sciences/.test(n))return'hbo';
     if(/\bnatin\b|\bimeao\b|kweekschool|\bmbo\b/.test(n))return'mbo';
     if(/\bvwo\b|atheneum|gymnasium/.test(n))return'vwo';
     if(/\bhavo\b/.test(n))return'havo';
     if(/\bmulo\b/.test(n))return'mulo';
     if(/\blbo\b/.test(n))return'lbo';
-    if(a==='university')return'wo';
-    if(a==='college'||/college|polytechnic/.test(n))return /technical|vocational|trade|beroeps|technisch/.test(n)?'mbo':'hbo';
-    if(a==='language_school'||/adult education|continuing education|training centre|training center/.test(n))return'adult';
-    if(/technical|vocational|trade school|beroeps|technisch/.test(n))return'vocational';
-    if(/secondary|high school|lyceum|middelbare|voj|vos/.test(n)||/[23]/.test(i))return'secondary';
-    if(/primary|elementary|basisschool|lagere school|glo/.test(n)||/1/.test(i))return'primary';
+    if(a==='college'||/college|polytechnic|cao đẳng|전문대/.test(n))return /technical|vocational|trade|beroeps|technisch|technikum|meslek|职业|専門学校|مهني|तकनीकी|\bsmk\b/.test(n)?'vocational':'higher';
+    if(a==='language_school'||/adult education|continuing education|training centre|training center|volwassenenonderwijs/.test(n))return'adult';
+    if(/technical|vocational|trade school|beroeps|technisch|formación profesional|formation professionnelle|technikum|meslek|техникум|职业|専門学校|مهني|तकनीकी|\bsmk\b|อาชีว/.test(n))return'vocational';
+    if(/[34]/.test(i)||/upper secondary|senior secondary|high school|sixth form|lycée|bachiller|liceum|lise\b|高中|高等学校|高校|고등학교|ثانو|उच्च माध्यमिक|trung học phổ thông|\bsma\b|มัธยมปลาย/.test(n))return'upper_secondary';
+    if(/[2]/.test(i)||/secondary|middle school|junior high|collège|ortaokul|gimnazjum|初中|中学校|중학교|إعداد|متوسط|माध्यमिक|trung học cơ sở|\bsmp\b|มัธยมต้น/.test(n))return'secondary';
     if(a==='school')return'school';return'other';
   }
   const levelLabel={all:'All levels',kindergarten:'Kleuterschool / Kleuteronderwijs',primary:'Lagere school / Basisschool',mulo:'MULO',lbo:'LBO',havo:'HAVO',vwo:'VWO',mbo:'MBO',hbo:'HBO',wo:'WO / Universiteit',secondary:'Secondary school',upper_secondary:'Upper secondary',vocational:'Vocational / technical',higher:'College / university',adult:'Adult / professional',school:'School',other:'Education'};
@@ -106,15 +116,18 @@
     const q=`[out:json][timeout:28];(node["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});way["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});relation["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon}););out center tags 1200;`;
     return overpassQuery(q,22000);
   }
-  async function overpassCountry(countryCode='SR',countryName='Suriname'){
-    const iso=String(countryCode||'SR').toUpperCase().replace(/[^A-Z]/g,'').slice(0,2)||'SR',name=String(countryName||'Suriname').replace(/["\\]/g,'');
+  async function overpassCountry(countryCode='',countryName=''){
+    const iso=String(countryCode||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),name=String(countryName||'').replace(/["\\]/g,'');
     if(iso==='SR'){
       const box='1.75,-58.25,6.25,-53.75';
       const q=`[out:json][timeout:35];(node["amenity"~"school|college|university|language_school"](${box});way["amenity"~"school|college|university|language_school"](${box});relation["amenity"~"school|college|university|language_school"](${box});node["building"="school"](${box});way["building"="school"](${box});relation["building"="school"](${box});node["office"="educational_institution"](${box});way["office"="educational_institution"](${box});relation["office"="educational_institution"](${box}););out center tags 1800;`;
       const rows=await overpassQuery(q,22000);if(rows.length)return rows;
     }
-    const q=`[out:json][timeout:35];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"school|college|university|language_school"](area.country);way["amenity"~"school|college|university|language_school"](area.country);relation["amenity"~"school|college|university|language_school"](area.country);node["building"="school"](area.country);way["building"="school"](area.country);relation["building"="school"](area.country););out center tags 1800;`;
-    const rows=await overpassQuery(q,22000);if(rows.length)return rows;
+    if(iso){
+      const q=`[out:json][timeout:35];area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;(node["amenity"~"school|college|university|language_school"](area.country);way["amenity"~"school|college|university|language_school"](area.country);relation["amenity"~"school|college|university|language_school"](area.country);node["building"="school"](area.country);way["building"="school"](area.country);relation["building"="school"](area.country););out center tags 1800;`;
+      const rows=await overpassQuery(q,22000);if(rows.length)return rows;
+    }
+    if(!name)return[];
     const byName=`[out:json][timeout:30];area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;(node["amenity"~"school|college|university|language_school"](area.country);way["amenity"~"school|college|university|language_school"](area.country);relation["amenity"~"school|college|university|language_school"](area.country););out center tags 1800;`;
     return overpassQuery(byName,18000);
   }
@@ -132,6 +145,26 @@
     return Math.max(0,Math.min(100,Math.round(levelScore+locationScore+evidenceScore+studyScore)));
   }
   function grade(s){const t=ui();return s>=88?t.excellent:s>=76?t.veryGood:s>=62?t.good:s>=48?t.fair:t.low}
+  function syncCountryContext(value,source='schools'){
+    const country=String(value||'').trim();if(!country)return;
+    try{window.__SCHOLARK_COUNTRY__?.set?.(country,source)}catch{}
+    setTimeout(syncStudyField,0);
+  }
+  function scheduleSchoolLocalization(deep=false){
+    const i18n=window.__SCHOLARK_I18N__;if(!root||!i18n)return;
+    try{i18n.apply?.(root)}catch{}
+    if(!deep)return;
+    clearTimeout(schoolI18nTimer);
+    schoolI18nTimer=setTimeout(()=>{if(root?.classList.contains('open')&&(localStorage.getItem('scholark_ui_language')||'nl')!=='en')i18n.translateCurrentPage?.(false)},180);
+  }
+  function markLocationBinding(country,city){
+    if(!root)return;root.dataset.locationCountry=String(country||'').trim();root.dataset.locationCity=String(city||'').trim();
+  }
+  function invalidateLocationIfEdited(){
+    if(!currentPos||!root)return;
+    const country=$('#v50-country')?.value?.trim()||'',city=$('#v50-city')?.value?.trim()||'';
+    if(country!==String(root.dataset.locationCountry||'')||city!==String(root.dataset.locationCity||'')){currentPos=null;delete root.dataset.locationCountry;delete root.dataset.locationCity}
+  }
   function verify(x,study){return'https://www.google.com/search?q='+encodeURIComponent(`${x.name} ${study||''} official school reviews programmes`)}
   function map(x){return Number.isFinite(x.lat)&&Number.isFinite(x.lon)?`https://www.openstreetmap.org/?mlat=${x.lat}&mlon=${x.lon}#map=15/${x.lat}/${x.lon}`:''}
 
@@ -166,7 +199,7 @@
     h.innerHTML=shown.map((x,i)=>{const d=x.distance!=null?`${x.distance.toFixed(x.distance<10?1:0)} km away`:'',id=schoolId(x),t=ui(),saved=savedIds.has(id),compared=compareIds.has(id);return`<article class="v50-row"><div><h3 data-sch-school-name="1"><span data-sch-rank="1">${i+1}. </span><span data-sch-school-name-text="1">${esc(x.name)}</span></h3><p>${esc(x.description||'Education institution')}</p><div class="v50-rank"><span class="v50-score">Match ${x.score}%</span><span class="v50-grade">${grade(x.score)}</span><span class="v50-grade">${esc(levelLabel[x.level]||'Education')}</span>${isVerified(x)?`<span class="v50-tag v50-verified">${esc(t.verified)}</span>`:''}${saved?`<span class="v50-tag v50-saved">${esc(t.saved)}</span>`:''}</div>${metricMarkup(x)}<div class="v50-tags">${d?`<span class="v50-tag near">${esc(d)}</span>`:''}<span class="v50-tag">${esc(x.source)}</span>${opts.countryWide?'<span class="v50-tag">'+esc(opts.country||'Country')+' · country-wide</span>':''}${opts.study?`<span class="v50-tag">study interest optional</span>`:''}</div></div><div class="v50-links">${x.website&&/^https?:/i.test(x.website)?`<a href="${esc(x.website)}" target="_blank" rel="noopener">Official site ↗</a>`:''}${sourceLink(x)}<button class="alt" data-v50-save="${i}">${esc(saved?t.saved:t.save)}</button><button class="alt" data-v50-compare="${i}">${esc(compared?t.remove:t.compare)}</button><button class="alt" data-v50-review="${i}">View reviews</button><a class="alt" href="${esc(verify(x,opts.study))}" target="_blank" rel="noopener">Research school ↗</a>${map(x)?`<a class="alt" href="${esc(map(x))}" target="_blank" rel="noopener">Map ↗</a>`:''}${x.wiki?`<a class="alt" href="${esc(x.wiki)}" target="_blank" rel="noopener">About ↗</a>`:''}</div>${reviewMarkup(x)}</article>`}).join('');
     if(visibleLimit<items.length)h.insertAdjacentHTML('beforeend',`<button class="v50-more" id="v50-more">Show ${Math.min(PAGE_SIZE,items.length-visibleLimit)} more schools · ${items.length-visibleLimit} remaining</button>`);
     const cb=$('#v50-compare-btn');if(cb){cb.textContent=(ui().compare+' ('+compareIds.size+')');cb.classList.toggle('active',compareOpen)}
-    comparePanel();
+    comparePanel();scheduleSchoolLocalization(true);
   }
   function render(items,opts){
     const h=$('#v50-results');
@@ -205,7 +238,10 @@
     <div class="v50-controls2"><select id="v50-radius"><option value="10">Within 10 km</option><option value="25">Within 25 km</option><option value="50" selected>Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option><option value="400">Within 400 km</option><option value="550">Within 550 km</option><option value="700">Within 700 km</option></select><select id="v50-type"><option value="all">All school types</option><option value="public">Public</option><option value="private">Private</option><option value="special">Special / religious</option><option value="international">International</option></select><select id="v50-sort"><option value="best" selected>Best match first</option><option value="distance">Nearest first</option><option value="name">Name A–Z</option></select><label class="secondary" style="display:flex;align-items:center;justify-content:center;gap:7px"><input type="checkbox" id="v50-verified"> Verified only</label><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
     <div class="v50-location" id="v50-location">Enter the country you are in or travelling to. Add a city/area for much better nearby results, or use your real location.</div>
     <div class="v50-info">The SCHOLARK <b>match score measures fit with your search criteria — it is not a school-quality grade or academic ranking</b>. Exact level, location, verified source coverage and optional study relevance influence the score. Country-only searches use a country-wide discovery pass; city/area or current-location searches prioritize nearby results. Where reliable performance data exists, SCHOLARK shows that separately as a factual metric.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong><div class="v50-toolbar-actions"><button id="v50-compare-btn">Compare (0)</button><button id="v50-saved-btn">Saved schools</button></div></div><div class="v50-compare-panel" id="v50-compare-panel"></div><div class="v50-results" id="v50-results"></div></div>`;
-    document.body.appendChild(root);$('#v50-go').onclick=search;$('#v50-location-btn').onclick=useLocation;$('.v50-x',root).onclick=close;$('#v50-level').addEventListener('change',syncStudyField);syncStudyField();
+    document.body.appendChild(root);$('#v50-go').onclick=search;$('#v50-location-btn').onclick=useLocation;$('.v50-x',root).onclick=close;$('#v50-level').addEventListener('change',syncStudyField);
+    $('#v50-country').addEventListener('change',e=>{invalidateLocationIfEdited();syncCountryContext(e.target.value,'schools-country')});
+    $('#v50-country').addEventListener('input',invalidateLocationIfEdited,{passive:true});$('#v50-city').addEventListener('input',invalidateLocationIfEdited,{passive:true});
+    syncStudyField();scheduleSchoolLocalization(false);
     $('#v50-compare-btn').onclick=()=>{compareOpen=!compareOpen;comparePanel();paintResults()};
     $('#v50-saved-btn').onclick=()=>{if(!renderedItems.length)return;const only=renderedItems.filter(x=>savedIds.has(schoolId(x)));if(only.length)render(only,{...renderOpts,type:'all',verifiedOnly:false,sort:'name'})};
     $('#v50-results').addEventListener('click',e=>{
@@ -218,7 +254,7 @@
 
   async function useLocation(){
     const loc=$('#v50-location'),btn=$('#v50-location-btn');btn.disabled=true;loc.textContent='Requesting your current location…';
-    try{currentPos=await geo();const r=await reverse(currentPos);const a=r.address||{};currentPos.countryCode=String(a.country_code||'').toUpperCase();currentPos.country=a.country||'';$('#v50-country').value=a.country||'';$('#v50-city').value=a.city||a.town||a.village||a.suburb||'';loc.textContent=`Current location ready · accuracy about ${Math.round(currentPos.accuracy||0)} m · ${r.display_name||''}`}
+    try{currentPos=await geo();const r=await reverse(currentPos);const a=r.address||{},country=a.country||'',city=a.city||a.town||a.village||a.suburb||'';currentPos.countryCode=String(a.country_code||'').toUpperCase();currentPos.country=country;$('#v50-country').value=country;$('#v50-city').value=city;markLocationBinding(country,city);syncCountryContext(country,'schools-location');loc.textContent=`Current location ready · accuracy about ${Math.round(currentPos.accuracy||0)} m · ${r.display_name||''}`;scheduleSchoolLocalization(false)}
     catch{currentPos=null;loc.textContent='Your location could not be read. Enter country + city/area manually.'}finally{btn.disabled=false}
   }
 
@@ -233,15 +269,16 @@
       const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),signal:searchController.signal});
       const live=await response.json().catch(()=>({}));if(epoch!==searchEpoch)return;
       if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
+      const resolvedCountry=String(live.resolvedCountry||country).trim();if(resolvedCountry)syncCountryContext(resolvedCountry,'schools-search');
       const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)},countryWide=!!live.countryWide;
       const db=await dbSchools(country,countryWide?'':city,level,study,pos).catch(()=>[]);if(epoch!==searchEpoch)return;
       const items=merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
       render(items,{country,city,nameQuery,level,study,radius:countryWide?700:radius,type,verifiedOnly,sort,countryWide,national:!!live.national});
       const sourceCount=(live.sourceStatus||[]).filter(x=>x.ok).reduce((n,x)=>n+(Number(x.count)||0),0);
       loc.textContent=countryWide
-        ? 'Country-wide '+country+' search complete · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
+        ? 'Country-wide '+(live.resolvedCountry||country)+' search complete · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
         : 'School search complete around '+(live.center?.display||city||country)+' · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · within '+radius+' km.';
-      if(db.length)loc.textContent+=' · '+db.length+' curated SCHOLARK database matches merged.';
+      if(live.degraded)loc.textContent+=' · resilient fallback providers were used.';if(db.length)loc.textContent+=' · '+db.length+' curated SCHOLARK database matches merged.';
     }catch(serverError){
       if(serverError?.name==='AbortError'||epoch!==searchEpoch)return;
       console.warn('[SCHOLARK] server school search failed, trying browser fallback:',serverError);
@@ -264,9 +301,9 @@
     }
   }
 
-  function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
+  function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();scheduleSchoolLocalization(true);history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
   function close(){root?.classList.remove('open')}
   function selection(){return {country:$('#v50-country')?.value?.trim()||'',city:$('#v50-city')?.value?.trim()||'',name:$('#v50-name')?.value?.trim()||'',level:$('#v50-level')?.value||'all',study:$('#v50-study')?.value?.trim()||'',results:renderedItems.slice(0,25).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''})),compared:renderedItems.filter(x=>compareIds.has(schoolId(x))).slice(0,4).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''}))}}
-  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r193'};
+  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r194',global:true};
   build();
 })();
