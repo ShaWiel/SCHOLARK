@@ -61,11 +61,16 @@ async function auditCatalogBrandPreview(){
 async function verifyWebhookDestination(){
   const required=['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled'];
   const normalize=v=>String(v||'').trim().replace(/\/+$/,'');
-  const r=await paddle('/notification-settings?per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
-  if(!r.ok)return {ok:false,verified:false,http:r.status,reason:d?.error?.code||d?.error?.type||'notification_settings_read_failed'};
-  const rows=Array.isArray(d?.data)?d.data:[],wanted=normalize(WEBHOOK_URL);
+  const readList=async active=>{
+    const r=await paddle('/notification-settings?active='+(active?'true':'false')+'&per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
+    return r.ok?{ok:true,rows:Array.isArray(d?.data)?d.data:[]}:{ok:false,http:r.status,reason:d?.error?.code||d?.error?.type||'notification_settings_read_failed',rows:[]};
+  };
+  const activeList=await readList(true);
+  if(!activeList.ok)return {ok:false,verified:false,http:activeList.http,reason:activeList.reason,phase:'active_read'};
+  const inactiveList=await readList(false);
+  const rows=[...activeList.rows,...(inactiveList.ok?inactiveList.rows:[])],wanted=normalize(WEBHOOK_URL);
   let row=rows.find(x=>normalize(x?.destination)===wanted);
-  let repaired=false,reusedLegacy=false;
+  let repaired=false,reusedLegacy=false,created=false;
   if(!row){
     const candidates=rows.filter(x=>{
       const dest=normalize(x?.destination),description=String(x?.description||'');
@@ -74,16 +79,22 @@ async function verifyWebhookDestination(){
     row=candidates.find(x=>/\/api\/billing\/webhook$/i.test(normalize(x?.destination)))||candidates[0]||null;
     reusedLegacy=!!row;
   }
-  if(!row)return {ok:false,verified:true,reason:'webhook_destination_missing_no_reusable_candidate',destination:WEBHOOK_URL,candidateCount:0,secretConfigured:!!WEBHOOK_SECRET};
+  if(!row){
+    const create=await paddle('/notification-settings',{method:'POST',body:JSON.stringify({description:'SCHOLARK billing webhook',type:'url',destination:WEBHOOK_URL,active:true,traffic_source:'all',subscribed_events:required})}),cd=await create.json().catch(()=>({}));
+    if(!create.ok)return {ok:false,verified:true,http:create.status,reason:cd?.error?.code||cd?.error?.type||'webhook_destination_create_failed',destination:WEBHOOK_URL,inactiveRead:inactiveList.ok?'ok':inactiveList.reason,secretConfigured:!!WEBHOOK_SECRET};
+    row=cd?.data||null;created=!!row;
+    if(!row)return {ok:false,verified:true,reason:'webhook_destination_create_empty',destination:WEBHOOK_URL,secretConfigured:!!WEBHOOK_SECRET};
+  }
+  if(row?.endpoint_secret_key)WEBHOOK_SECRET=cleanSecret(row.endpoint_secret_key);
   const currentEvents=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),missing=required.filter(x=>!currentEvents.has(x));
-  const needsRepair=normalize(row.destination)!==wanted||!row.active||missing.length>0||String(row.traffic_source||'')!=='all';
+  const needsRepair=!created&&(normalize(row.destination)!==wanted||!row.active||missing.length>0||String(row.traffic_source||'')!=='all';
   if(needsRepair){
     const patch=await paddle('/notification-settings/'+encodeURIComponent(String(row.id||'')),{method:'PATCH',body:JSON.stringify({description:'SCHOLARK billing webhook',destination:WEBHOOK_URL,active:true,traffic_source:'all',subscribed_events:required})}),pd=await patch.json().catch(()=>({}));
     if(!patch.ok)return {ok:false,verified:true,http:patch.status,reason:pd?.error?.code||pd?.error?.type||'webhook_destination_repair_failed',destination:WEBHOOK_URL,reusedLegacy,secretConfigured:!!WEBHOOK_SECRET};
-    row=pd?.data||row;repaired=true;
+    row=pd?.data||row;repaired=true;if(row?.endpoint_secret_key)WEBHOOK_SECRET=cleanSecret(row.endpoint_secret_key);
   }
   const events=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),remaining=required.filter(x=>!events.has(x));
-  return {ok:!!row.active&&!!WEBHOOK_SECRET&&!remaining.length&&normalize(row.destination)===wanted,verified:true,active:!!row.active,secretConfigured:!!WEBHOOK_SECRET,missingEvents:remaining,destination:WEBHOOK_URL,repaired,reusedLegacy,notificationSettingId:String(row.id||'')};
+  return {ok:!!row.active&&!!WEBHOOK_SECRET&&!remaining.length&&normalize(row.destination)===wanted,verified:true,active:!!row.active,secretConfigured:!!WEBHOOK_SECRET,missingEvents:remaining,destination:WEBHOOK_URL,repaired,reusedLegacy,created,inactiveRead:inactiveList.ok?'ok':inactiveList.reason,notificationSettingId:String(row.id||'')};
 }
 async function billingSelftest(){
   if(!configured()){catalogHealth={checked:true,ok:false,environment:ENV,reason:'credentials_or_prices_missing'};console.warn('[SCHOLARK] Paddle catalog self-test SKIP · billing credentials incomplete');return catalogHealth}
@@ -91,7 +102,7 @@ async function billingSelftest(){
     const [plus,pro,brandPreview,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),auditCatalogBrandPreview(),verifyWebhookDestination()]);
     catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!brandPreview.ok&&!!webhook.ok,environment:ENV,plus,pro,brandPreview,webhook,checkedAt:new Date().toISOString()};
     const level=catalogHealth.ok?'log':'warn';
-    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?(webhook.repaired?(webhook.reusedLegacy?'REPAIRED_LEGACY':'REPAIRED'):'OK'):(webhook.reason||(!webhook.secretConfigured?'secret_missing':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
+    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?(webhook.created?'CREATED':webhook.repaired?(webhook.reusedLegacy?'REPAIRED_LEGACY':'REPAIRED'):'OK'):(webhook.reason||(!webhook.secretConfigured?'secret_missing':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
   }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLARK] Paddle catalog self-test WARN · '+catalogHealth.reason)}
   return catalogHealth;
 }
