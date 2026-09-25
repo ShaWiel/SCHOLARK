@@ -59,7 +59,7 @@
     checks.languageReady=document.documentElement.dataset.scholarkI18nReady===langCode;
     checks.languageCoverage=coverage;
     checks.languageCoverageHealthy=langCode==='en'||!coverage||coverage.total<8||coverage.ratio>=0.78;
-    checks.selectorLocks=$('select[data-sch-select-interacting="1"]').length;
+    checks.selectorLocks=$$('select[data-sch-select-interacting="1"]').length;
     checks.selectorLocksHealthy=checks.selectorLocks===0||document.activeElement?.matches?.('select[data-sch-select-interacting="1"]');
     checks.i18nReport=i18n?.selftest?.()||null;
     const endpointOk=!checks.online||results.every(x=>x.ok);
