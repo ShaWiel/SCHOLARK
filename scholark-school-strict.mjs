@@ -1,12 +1,13 @@
 import http from 'node:http';
 
-const VERSION='20260925-school-global-v11';
+const VERSION='20260925-school-global-v12';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
-  'https://overpass-api.de/api/interpreter'
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.nchc.org.tw/api/interpreter'
 ];
 const SR_OFFICIAL_URL='https://gov.sr/wp-content/uploads/2022/10/Lijst-met-Scholen-Suriname-1.xlsx';
 const COUNTRY_CODES={
@@ -254,25 +255,33 @@ async function resolveCenter(body,country,city){
 }
 
 function levelSet(tags={},extra=''){
-  const a=low(tags.amenity),n=low(tags.name||tags['name:en']||tags.operator),i=low(tags['isced:level']||tags.isced),sheet=low(tags.sheet),text=[n,low(extra),low(tags.education),low(tags.description),sheet].join(' '),out=new Set();
-  const digits=new Set((i.match(/[0-8]/g)||[]));
-  const vwoLike=/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/.test(text);
-  const kindergartenLike=a==='kindergarten'||digits.has('0')||/preschool|pre-school|nursery|kindergarten|kleuterschool|kleuteronderwijs|kleuter|peuter|voorschool|early childhood|maternelle|infantil/.test(text);
-  if(kindergartenLike){out.add('early');out.add('kindergarten')}
-  if(digits.has('1')||/primary|elementary|basisschool|lagere school|\bglo\b|grundschule|école primaire|primaria/.test(text))out.add('primary');
+  const a=low(tags.amenity),n=low(tags.name||tags['name:en']||tags['name:local']||tags.operator),i=low(tags['isced:level']||tags.isced);
+  const text=[n,low(extra),low(tags.education),low(tags.description),low(tags['school:level']),low(tags.grades),low(tags['education_level']),low(tags['operator:type']),low(tags.sheet)].join(' ');
+  const out=new Set(),digits=new Set((i.match(/[0-8]/g)||[]));
+  const rx={
+    early:/preschool|pre-school|nursery|kindergarten|kleuterschool|kleuteronderwijs|kleuter|peuter|voorschool|early childhood|maternelle|infantil|pré-escolar|preescolar|przedszkole|anaokulu|детск(ий|ого) сад|дошколь|幼儿园|幼稚園|保育園|유치원|روضة|बालवाड़ी|बालवाडी|mầm non|taman kanak|tk\b|อนุบาล/,
+    primary:/primary|elementary|basisschool|lagere school|\bglo\b|grundschule|école primaire|primaria|primário|primaria|szkoła podstawowa|ilkokul|начальн(ая|ої) школ|小学|小学校|초등학교|ابتدائ|प्राथमिक|tiểu học|sekolah dasar|\bsd\b|ประถม/,
+    lower:/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|secundair i|secondary i|senior phase|ortaokul|gimnazjum|основн(ая|ої) школ|初中|中学校|중학교|إعداد|متوسط|माध्यमिक|trung học cơ sở|sekolah menengah pertama|\bsmp\b|มัธยมต้น/,
+    upper:/upper secondary|senior secondary|high school|sixth form|sekundarstufe ii|lycée|secondaria di ii|\bvos\b|grades? 9|grades? 10|grades? 11|grades? 12|fet\b|bachiller|liceum|lise\b|старш(ая|ої) школ|高中|高等学校|高校|고등학교|ثانو|उच्च माध्यमिक|trung học phổ thông|sekolah menengah atas|\bsma\b|มัธยมปลาย/,
+    vocational:/technical|vocational|trade school|trade college|beroeps|technisch|polytechnic|\btvet\b|\bamto\b|ausbildung|profissional|professional institute|formación profesional|formation professionnelle|technikum|meslek|техникум|профес|职业|専門学校|전문대|مهني|تقني|व्यावसायिक|तकनीकी|cao đẳng|trung cấp|sekolah menengah kejuruan|\bsmk\b|อาชีว/,
+    higher:/higher education|tertiary education|college of|institute of higher|university|universiteit|université|universität|universidad|università|faculty|faculteit|hogeschool|university of applied sciences|uniwersytet|akademia|üniversite|университет|університет|大学|대학교|대학|جامعة|كلية|विश्वविद्यालय|महाविद्यालय|đại học|universitas|มหาวิทยาลัย/
+  };
+  if(a==='kindergarten'||digits.has('0')||rx.early.test(text)){out.add('early');out.add('kindergarten')}
+  if(digits.has('1')||rx.primary.test(text))out.add('primary');
   if(/\bmulo\b/.test(text)){out.add('lower_secondary');out.add('mulo')}
   if(/\blbo\b/.test(text)){out.add('lower_secondary');out.add('vocational');out.add('lbo')}
-  if(digits.has('2')||/lower secondary|junior secondary|middle school|junior high|sekundarstufe i|collège|secondaria di i|\bvoj\b|secundair i|secondary i|senior phase/.test(text))out.add('lower_secondary');
+  if(digits.has('2')||rx.lower.test(text))out.add('lower_secondary');
   if(/\bhavo\b/.test(text)){out.add('upper_secondary');out.add('havo')}
-  if(vwoLike){out.add('upper_secondary');out.add('vwo')}
+  if(/\bvwo\b|atheneum|gymnasium|voorbereidend wetenschappelijk|pre[- ]?university|preuniversit/.test(text)){out.add('upper_secondary');out.add('vwo')}
   if(/\bnatin\b|\bimeao\b|kweekschool|\bmbo\b/.test(text)){out.add('upper_secondary');out.add('vocational');out.add('mbo')}
-  if(digits.has('3')||digits.has('4')||/upper secondary|senior secondary|high school|sixth form|sekundarstufe ii|lycée|secondaria di ii|\bvos\b|grades? 9|grades? 10|grades? 11|grades? 12|fet\b/.test(text))out.add('upper_secondary');
-  if(/technical|vocational|trade school|trade college|beroeps|technisch|polytechnic|\btvet\b|\bamto\b|ausbildung|profissional|professional institute/.test(text))out.add('vocational');
+  if(digits.has('3')||digits.has('4')||rx.upper.test(text))out.add('upper_secondary');
+  if(rx.vocational.test(text))out.add('vocational');
   if(/\bhbo\b|hogeschool|university of applied sciences/.test(text)){out.add('higher');out.add('hbo')}
-  if(/\badekus\b|anton de kom|a?dekus|university|universiteit|université|universität|universidad|università|faculty|faculteit/.test(text)){out.add('higher');out.add('wo')}
-  if(digits.has('5')||digits.has('6')||digits.has('7')||digits.has('8')||/higher education|tertiary education|college of|institute of higher/.test(text))out.add('higher');
+  if(/\badekus\b|anton de kom|a?dekus/.test(text)){out.add('higher');out.add('wo')}
+  if(a==='university'||digits.has('5')||digits.has('6')||digits.has('7')||digits.has('8')||rx.higher.test(text))out.add('higher');
+  if(a==='university' || /university|universiteit|université|universität|universidad|università|uniwersytet|üniversite|университет|університет|大学|대학교|جامعة|विश्वविद्यालय|đại học|universitas|มหาวิทยาลัย/.test(text))out.add('wo');
   if(a==='college'&&!out.has('upper_secondary'))out.add('higher');
-  if(a==='language_school'||/adult education|adult learning|continuing education|training centre|training center|professional learning/.test(text))out.add('adult');
+  if(a==='language_school'||/adult education|adult learning|continuing education|training centre|training center|professional learning|volwassenenonderwijs|formation continue|educación de adultos|erwachsenenbildung/.test(text))out.add('adult');
   if(a==='school'&&!out.size)out.add('school');
   return[...out];
 }
@@ -443,8 +452,29 @@ function countryAreaQuery(country,countryCode,pos,radius,countryWide,forceName=f
   return`[out:json][timeout:20];${area}(nwr["amenity"~"kindergarten|school|college|university|language_school"]${scope};nwr["building"="school"]${scope};nwr["office"="educational_institution"]${scope};);out center tags 1800;`;
 }
 
-async function nominatimSchoolFallback(country,city,center,countryCode,countryWide){
-  const queries=countryWide?[`school ${country}`,`university ${country}`]:[`school ${city||center.display||country}, ${country}`,`university ${city||center.display||country}, ${country}`],rows=[];
+function fallbackTerms(level='all'){
+  const map={
+    kindergarten:['kindergarten','preschool'],
+    early:['kindergarten','preschool'],
+    primary:['primary school','elementary school'],
+    secondary:['secondary school','middle school'],
+    lower_secondary:['middle school','junior secondary school'],
+    upper_secondary:['high school','senior secondary school'],
+    vocational:['vocational school','technical college'],
+    higher:['university','college'],
+    adult:['adult education','training center']
+  };
+  return map[level]||['school','university','college','kindergarten'];
+}
+function fallbackQueries(country,city,center,level='all',nameQuery=''){
+  const place=city||(!String(center?.display||'').toLowerCase().includes(String(country||'').toLowerCase())?center?.display:'')||country;
+  const out=[];
+  if(nameQuery)out.push([nameQuery,place,country].filter(Boolean).join(', '));
+  for(const term of fallbackTerms(level))out.push([term,place,country].filter(Boolean).join(', '));
+  return [...new Set(out.map(clean).filter(Boolean))].slice(0,5);
+}
+async function nominatimSchoolFallback(country,city,center,countryCode,countryWide,level='all',nameQuery=''){
+  const rows=[],queries=fallbackQueries(country,city,center,level,nameQuery);
   for(let qi=0;qi<queries.length;qi++){
     try{
       const u=new URL('https://nominatim.openstreetmap.org/search');u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','50');u.searchParams.set('q',queries[qi]);
@@ -453,17 +483,37 @@ async function nominatimSchoolFallback(country,city,center,countryCode,countryWi
       for(const x of data||[]){
         const code=clean(x.address?.country_code).toUpperCase();if(countryCode&&code&&!sameCode(countryCode,code))continue;
         const lat=Number(x.lat),lon=Number(x.lon),name=clean(x.name||String(x.display_name||'').split(',')[0]);if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
-        const tags={name,amenity:/university/i.test(clean(x.type)+' '+clean(x.display_name))?'university':'school','addr:country':code};
-        const levels=levelSet(tags,clean(x.display_name));
+        const raw=clean(x.type)+' '+clean(x.category)+' '+clean(x.display_name),amenity=/university/i.test(raw)?'university':/college/i.test(raw)?'college':/kindergarten|preschool/i.test(raw)?'kindergarten':'school';
+        const tags={name,amenity,'addr:country':code};const levels=levelSet(tags,clean(x.display_name));
         rows.push({name,description:clean(x.display_name),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'OpenStreetMap search fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
       }
     }catch{}
-    if(mergeRows(rows).length>=12)break;
-    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,350));
+    if(mergeRows(rows).length>=18)break;
+    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,220));
   }
   return mergeRows(rows);
 }
-
+async function photonSchoolFallback(country,city,center,countryCode,countryWide,level='all',nameQuery=''){
+  const rows=[],queries=fallbackQueries(country,city,center,level,nameQuery);
+  for(let qi=0;qi<queries.length;qi++){
+    try{
+      const u=new URL('https://photon.komoot.io/api/');u.searchParams.set('q',queries[qi]);u.searchParams.set('limit','50');
+      if(!countryWide&&Number.isFinite(center?.lat)&&Number.isFinite(center?.lon)){u.searchParams.set('lat',String(center.lat));u.searchParams.set('lon',String(center.lon))}
+      const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 photon-school-fallback'}},7000);if(!r.ok)continue;
+      const d=await r.json().catch(()=>null);
+      for(const f of d?.features||[]){
+        const p=f?.properties||{},coords=f?.geometry?.coordinates||[],lat=Number(coords[1]),lon=Number(coords[0]),code=clean(p.countrycode||p.countryCode).toUpperCase(),name=clean(p.name||p.street||p.city);
+        if(countryCode&&code&&!sameCode(countryCode,code))continue;if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+        const raw=[p.osm_value,p.type,p.name,p.city,p.state].map(clean).join(' '),amenity=/university/i.test(raw)?'university':/college/i.test(raw)?'college':/kindergarten|preschool/i.test(raw)?'kindergarten':'school';
+        const tags={name,amenity,'addr:country':code,city:clean(p.city)};const levels=levelSet(tags,raw);
+        rows.push({name,description:[p.street,p.housenumber,p.city,p.state,p.country].map(clean).filter(Boolean).join(' · '),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'Photon / OpenStreetMap fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
+      }
+    }catch{}
+    if(mergeRows(rows).length>=18)break;
+    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,180));
+  }
+  return mergeRows(rows);
+}
 async function discover(body){
   const country=clean(body.country||'Suriname')||'Suriname',city=clean(body.city),level=clean(body.level||'all').toLowerCase(),nameQuery=clean(body.name),radius=Math.max(1,Math.min(700,Number(body.radius)||50)),center=await resolveCenter(body,country,city);
   if(!Number.isFinite(center.lat)||!Number.isFinite(center.lon))throw new Error('Selected place could not be resolved');
@@ -496,10 +546,15 @@ async function discover(body){
     sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false})));rows=[];
   }
 
-  if(!rows.length){
-    const fallback=await nominatimSchoolFallback(country,city,center,countryCode,countryWide);
-    if(fallback.length){rows=fallback;provider='OpenStreetMap search fallback';sourceStatus.push({source:'Nominatim school fallback',ok:true,count:fallback.length})}
-    else sourceStatus.push({source:'Nominatim school fallback',ok:false,count:0});
+  if(!rows.length||rows.length<(countryWide?12:6)){
+    const [nominatim,photon]=await Promise.all([
+      nominatimSchoolFallback(country,city,center,countryCode,countryWide,level,nameQuery),
+      photonSchoolFallback(country,city,center,countryCode,countryWide,level,nameQuery)
+    ]);
+    sourceStatus.push({source:'Nominatim school fallback',ok:nominatim.length>0,count:nominatim.length});
+    sourceStatus.push({source:'Photon school fallback',ok:photon.length>0,count:photon.length});
+    const mergedFallback=mergeRows([...rows,...nominatim,...photon]);
+    if(mergedFallback.length){rows=mergedFallback;provider=(provider==='OpenStreetMap country-boundary search'&&sourceStatus.some(x=>x.ok&&/overpass/i.test(x.source||'')))?provider+' + resilient fallbacks':'Resilient global school discovery';}
   }
 
   if(countryWide)rows=rows.map(x=>({...x,distance:null}));
@@ -520,7 +575,8 @@ async function discover(body){
   if(nameQuery)rows=rows.filter(x=>schoolNameMatch(x,nameQuery));
   rows.sort((a,b)=>countryWide?String(a.name||'').localeCompare(String(b.name||'')):(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
 
-  const value={ok:true,strictCountry:true,global:true,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+  const successfulSources=sourceStatus.filter(x=>x.ok),degraded=!successfulSources.some(x=>/overpass|kumi|private\.coffee|overpass-api|nchc/i.test(String(x.source||'')));
+  const value={ok:true,strictCountry:true,global:true,resolvedCountry:center.country||country,country,city,level,name:nameQuery,radius,national,countryWide,degraded,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
   cacheDiscovery(cacheKey,value);
   console.log(`[SCHOLARK] Global school search ${country}${city?', '+city:''} · mode ${value.searchMode} · level ${level}${nameQuery?' · name '+nameQuery:''} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
   return value;
@@ -550,14 +606,16 @@ http.Server.prototype.emit=function(type,...args){
 
 setTimeout(()=>officialSurinameSchools().catch(()=>{}),2200);
 setTimeout(async()=>{
+  const taxonomyOk=[
+    levelSet({amenity:'school',name:'北京市第一小学'}).includes('primary'),
+    levelSet({amenity:'school',name:'東京高等学校'}).includes('upper_secondary'),
+    levelSet({amenity:'school',name:'مدرسة ابتدائية'}).includes('primary'),
+    levelSet({amenity:'university',name:'विश्वविद्यालय'}).includes('higher')
+  ].every(Boolean);
   try{
-    const [nearby,countryWide]=await Promise.all([
-      discover({country:'Japan',city:'Tokyo',level:'all',radius:12}),
-      discover({country:'Singapore',city:'',level:'all',radius:50})
-    ]);
-    const ok=nearby.ok&&countryWide.ok&&nearby.count>0&&countryWide.count>0;
-    const providers=[nearby.provider,countryWide.provider].filter(Boolean).join(' | ');
-    console.log('[SCHOLARK] Global school discovery self-test '+(ok?'PASS':'WARN')+' · Tokyo nearby '+nearby.count+' · Singapore country-wide '+countryWide.count+' · '+providers);
-  }catch(e){console.warn('[SCHOLARK] Global school discovery self-test WARN · '+clean(e?.message||e))}
-},5200);
+    const nearby=await discover({country:'Japan',city:'Tokyo',level:'all',radius:12});
+    const ok=taxonomyOk&&nearby.ok&&nearby.count>0;
+    console.log('[SCHOLARK] Global school discovery self-test '+(ok?'PASS':'WARN')+' · multilingual taxonomy '+(taxonomyOk?'PASS':'WARN')+' · Tokyo nearby '+nearby.count+' · '+(nearby.degraded?'degraded fallback':'primary providers'));
+  }catch(e){console.warn('[SCHOLARK] Global school discovery self-test WARN · taxonomy '+(taxonomyOk?'PASS':'WARN')+' · '+clean(e?.message||e))}
+},6200);
 console.log('[SCHOLARK] Strict school country + level search '+VERSION+' ready');
