@@ -47,14 +47,14 @@
       sidebar:!workspaceNeeded||!!$('#v51-sidebar'),workspaceMain:!workspaceNeeded||!!$('#v51-main'),
       learningApi:!['ai','tutor','education','study'].includes(r)||!!window.__SCHOLARK_V62_LEARNING_API__||r==='ai',
       bookApi:true,languageApi:r!=='language'||!!window.__SCHOLARK_V93_LANGUAGE__,language74:window.__SCHOLARK_I18N__?.count===74&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
-      cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,connectedCore:!workspaceNeeded||!!window.__SCHOLARK_WORKSPACE_CORE__,connectedExperience:!workspaceNeeded||!!window.__SCHOLARK_V111_EXPERIENCE__,visualSystem:!workspaceNeeded||r==='dashboard'||!!window.__SCHOLARK_V112_VISUAL__,orchestrator:!workspaceNeeded||!!window.__SCHOLARK_V114_ORCHESTRATOR__,hardening:!!(window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__),i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
+      cloudApi:!workspaceNeeded||!!window.__SCHOLARK_V72_CLOUD__,connectedCore:!workspaceNeeded||!!window.__SCHOLARK_WORKSPACE_CORE__,connectedExperience:!workspaceNeeded||!!window.__SCHOLARK_V111_EXPERIENCE__,visualSystem:!workspaceNeeded||r==='dashboard'||!!window.__SCHOLARK_V112_VISUAL__,orchestrator:!workspaceNeeded||!!window.__SCHOLARK_V114_ORCHESTRATOR__,hardening:!!(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__),i18n:!!window.__SCHOLARK_I18N__,countryFoundation:!!window.__SCHOLARK_COUNTRY__,
       performanceFoundation:!!window.__SCHOLARK_PERF__,homeOwner:!window.__SCHOLARK_ROUTES__?.isHome?.()||window.__SCHOLARK_V109_HOME__?.verify?.().ok===true,runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[],duplicateIds:duplicateIds(),qualityMaxGone:!Array.from(document.querySelectorAll('.v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max')).some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(el.textContent)))
     };
-    const paths=['/api/health','/api/guard/health','/api/learning/health','/api/export/health','/api/schools/health'];
+    const paths=['/api/health','/api/guard/health','/api/learning/health','/api/export/health','/api/schools/health','/api/schools/resilience'];
     const results=checks.online?await Promise.all(paths.map(endpoint)):paths.map(()=>({ok:false,error:'offline'}));
     checks.endpoints=Object.fromEntries(paths.map((p,i)=>[p,results[i]]));
     const schoolHealth=checks.endpoints['/api/schools/health']?.data||{};
-    checks.globalSchools=schoolHealth.global===true&&schoolHealth.countryWideWithoutCity===true&&schoolHealth.nearbyWithCoordinates===true&&schoolHealth.citySearch===true&&schoolHealth.dynamicCountryCodes===true;
+    checks.globalSchools=schoolHealth.global===true&&schoolHealth.countryWideWithoutCity===true&&schoolHealth.nearbyWithCoordinates===true&&schoolHealth.citySearch===true&&schoolHealth.dynamicCountryCodes===true&&schoolHealth.currentLocationResolve===true&&schoolHealth.coordinateCountryValidation===true;
     const i18n=window.__SCHOLARK_I18N__,langCode=i18n?.code?.()||document.documentElement.lang||'en',coverage=i18n?.coverage?.(620)||null;
     checks.languageReady=document.documentElement.dataset.scholarkI18nReady===langCode;
     checks.languageCoverage=coverage;
@@ -65,7 +65,7 @@
     const endpointOk=!checks.online||results.every(x=>x.ok);
     checks.orchestratorReport=window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.()||null;
     checks.orchestratorSelftest=window.__SCHOLARK_V114_ORCHESTRATOR__?.selftest?.()||null;
-    checks.hardeningReport=(window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.()||null;
+    checks.hardeningReport=(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.()||null;
     const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.language74&&checks.globalSchools&&checks.languageReady&&checks.languageCoverageHealthy&&checks.selectorLocksHealthy&&checks.cloudApi&&checks.connectedCore&&checks.connectedExperience&&checks.visualSystem&&checks.orchestrator&&checks.hardening&&checks.homeOwner&&checks.qualityMaxGone&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&(checks.orchestratorReport?.ok!==false)&&(checks.orchestratorSelftest?.ok!==false)&&(checks.hardeningReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
     const report={ok,at:new Date().toISOString(),route:r||'home',checks};
     lastReport=report;lastRun=Date.now();
