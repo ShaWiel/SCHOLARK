@@ -88,12 +88,15 @@
     const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
     const selectors=$$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
     const languageRegistry=!!i18n&&i18n.count===74&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
+    const languageResilience=i18nReport?.abortable===true&&i18nReport?.retryReady===true;
     const selectorsHealthy=selectorCounts.every(n=>n===74);
+    const countryApi=window.__SCHOLARK_COUNTRY__,globalCountryRegistry=countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195;
+    const globalSchools=r!=="schools"||(window.__SCHOLARK_V50_SCHOOLS__?.global===true&&globalCountryRegistry);
     const coverage=i18n?.coverage?.(620)||null;
     const result={
-      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&languageRegistry&&selectorsHealthy,
-      release:"r193",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
-      languageControls:lang,countryControls:country,languageRegistry,selectorCounts,selectorsHealthy,coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools,
+      release:"r194",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
+      languageControls:lang,countryControls:country,languageRegistry,languageResilience,selectorCounts,selectorsHealthy,globalCountryRegistry,globalSchools,countryCount:Number(countryApi?.countryCount||0),coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
     result.ok=result.ok&&result.runtimeFailures.length===0;
@@ -120,7 +123,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260925-r193",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260925-r194",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_HARDENING__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
