@@ -489,7 +489,7 @@ async function nominatimSchoolFallback(country,city,center,countryCode,countryWi
       }
     }catch{}
     if(mergeRows(rows).length>=18)break;
-    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,220));
+    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,1050));
   }
   return mergeRows(rows);
 }
