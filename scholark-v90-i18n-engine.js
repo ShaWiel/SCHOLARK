@@ -538,8 +538,8 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLARK | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v6-global74';
-  const LEGACY_CACHE_VERSIONS=['v5-global37','v4-seven-ui','v3-seven-ui'];
+  const CACHE_VERSION='v7-global74-stable';
+  const LEGACY_CACHE_VERSIONS=['v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
@@ -550,18 +550,30 @@
       STATIC_VARIANTS.set(src,src);if(tr&&!STATIC_VARIANTS.has(tr))STATIC_VARIANTS.set(tr,src);
     }
   }
+  const BRAND_TOKENS=['SCHOLARK','ARKI','VOJ','VOS','MULO','LBO','HAVO','VWO','MBO','HBO','WO','NATIN','IMEAO'];
+  function safeTranslation(source,translated){
+    const src=clean(source),tr=clean(translated);if(!src||!tr)return false;
+    if(src.length>8&&tr.length>Math.max(900,src.length*6))return false;
+    const placeholders=src.match(/\{\{[^{}]+\}\}|\{[^{}]+\}|\$\{[^}]+\}|%[a-z]/gi)||[];
+    if(placeholders.some(token=>!tr.includes(token)))return false;
+    const srcTokens=' '+src.toUpperCase().replace(/[^A-Z0-9]+/g,' ')+' ',trTokens=' '+tr.toUpperCase().replace(/[^A-Z0-9]+/g,' ')+' ';
+    for(const token of BRAND_TOKENS)if(srcTokens.includes(' '+token+' ')&&!trTokens.includes(' '+token+' '))return false;
+    return true;
+  }
   function sanitizeStoredMap(raw){
     const out={};
     for(const [source,translated] of Object.entries(raw||{})){
-      const src=clean(source),canonical=STATIC_VARIANTS.get(src);
+      const src=clean(source),tr=clean(translated),canonical=STATIC_VARIANTS.get(src);
       if(canonical&&canonical!==src)continue;
-      out[source]=translated;
+      if(!safeTranslation(src,tr))continue;
+      out[src]=tr;
     }
     return out;
   }
   function loadMap(c){
-    const previous=sanitizeStoredMap(parseStored(legacyKey('v5-global37',c)));
-    return {...previous,...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}
+    const migrated={};
+    for(const version of [...LEGACY_CACHE_VERSIONS].reverse())Object.assign(migrated,sanitizeStoredMap(parseStored(legacyKey(version,c))));
+    return {...migrated,...sanitizeStoredMap(parseStored(key(c))),...(STATIC_UI[c]||{})}
   }
   const reverseKnown=new Map();
   function indexMap(m){
