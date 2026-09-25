@@ -1,10 +1,11 @@
 import http from 'node:http';
 
-const VERSION='20260917-school-resilience-v1';
+const VERSION='20260925-school-resilience-v2';
 const nativeFetch=globalThis.fetch.bind(globalThis);
 const previousEmit=http.Server.prototype.emit;
 const geocodeCache=new Map();
-const TTL_MS=24*60*60*1000;
+const TTL_MS=24*60*60*1000,GEOCODE_CACHE_MAX=500;
+function cachePlace(key,place){geocodeCache.set(key,{at:Date.now(),place});while(geocodeCache.size>GEOCODE_CACHE_MAX)geocodeCache.delete(geocodeCache.keys().next().value)}
 const retryable=new Set([408,425,429,500,502,503,504]);
 
 const STATIC_PLACES=new Map([
@@ -58,7 +59,7 @@ globalThis.fetch=async function scholarkSchoolFetch(input,init){
   if(cached&&now-cached.at<TTL_MS){stats.cacheHits++;return synthetic(cached.place,'cache')}
 
   const known=staticPlace(request.q);
-  if(known){geocodeCache.set(request.key,{at:now,place:known});stats.staticHits++;return synthetic(known,'static')}
+  if(known){cachePlace(request.key,known);stats.staticHits++;return synthetic(known,'static')}
 
   let primary=null,lastError=null;
   try{
@@ -67,7 +68,7 @@ globalThis.fetch=async function scholarkSchoolFetch(input,init){
       const data=await primary.clone().json().catch(()=>null),row=data?.[0];
       const lat=Number(row?.lat),lon=Number(row?.lon);
       if(Number.isFinite(lat)&&Number.isFinite(lon)){
-        geocodeCache.set(request.key,{at:now,place:{lat,lon,name:clean(row?.name||request.q),country:clean(row?.address?.country||''),countryCode:clean(row?.address?.country_code||'').toUpperCase(),display:clean(row?.display_name||request.q)}});
+        cachePlace(request.key,{lat,lon,name:clean(row?.name||request.q),country:clean(row?.address?.country||''),countryCode:clean(row?.address?.country_code||'').toUpperCase(),display:clean(row?.display_name||request.q)});
       }
       stats.primarySuccesses++;
       return primary;
@@ -80,7 +81,7 @@ globalThis.fetch=async function scholarkSchoolFetch(input,init){
 
   try{
     const place=await photon(request.q);
-    geocodeCache.set(request.key,{at:Date.now(),place});stats.photonRecoveries++;stats.lastRecovery=request.q;
+    cachePlace(request.key,place);stats.photonRecoveries++;stats.lastRecovery=request.q;
     console.warn('[SCHOLARK] School geocoder recovered with Photon for '+request.q);
     return synthetic(place,'photon');
   }catch(error){
