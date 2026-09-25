@@ -82,9 +82,9 @@ const competingHeaders=await page.evaluate(()=>{
 });
 check(competingHeaders===0,`Legacy/competing homepage header is visible alongside the SCHOLARK topbar: ${competingHeaders}`);
 const languageCatalog=await page.evaluate(()=>({options:[...document.querySelectorAll('#v55-language option')].map(o=>o.value),report:window.__SCHOLARK_I18N__?.selftest?.()}));
-check(languageCatalog.options.length===37,`Homepage language selector should expose 37 languages, got ${languageCatalog.options.length}`);
+check(languageCatalog.options.length===74,`Homepage language selector should expose 74 languages, got ${languageCatalog.options.length}`);
 for(const code of ['ar','zh','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','cs','sv','da','no','fi','hu','id','ms','vi','th','tl','sw','he','ur','fa','ta','te','pa'])check(languageCatalog.options.includes(code),`Missing added interface language: ${code}`);
-check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===37&&languageCatalog.report?.dynamicCount===30,'37-language i18n self-test failed');
+check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===74&&languageCatalog.report?.dynamicCount===67,'74-language i18n self-test failed');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
 await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
 check(await page.evaluate(()=>document.documentElement.classList.contains('scholark-home-language-adapting')),'Homepage did not enter atomic language-adaptation mode');
@@ -138,7 +138,7 @@ await page.evaluate(()=>{
 await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
 check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level strip did not mount');
-check(await page.locator('#v90-language option').count()===37,`Workspace language selector should expose 37 languages`);
+check(await page.locator('#v90-language option').count()===74,`Workspace language selector should expose 74 languages`);
 const bootMs=Date.now()-bootStarted;timings.push(['dashboard-boot',bootMs]);check(bootMs<9000,`Dashboard boot took ${bootMs}ms (>9000ms)`);
 
 const groups=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-v51-group')));
@@ -188,16 +188,16 @@ await page.fill('#v41-prompt','Workspace smoke presentation');
 check((await page.inputValue('#v41-prompt'))==='Workspace smoke presentation','Studio prompt is not editable');
 
 await route('ai','#v107-ai');
-check(await page.locator('#v107-q').count()===1,'General SCHOLARK AI prompt missing');
-check(await page.locator('#v107-new').count()===1,'General SCHOLARK AI new-chat action missing');
-check(await page.locator('#v107-deep').count()===1,'General SCHOLARK AI deep-answer control missing');
+check(await page.locator('#v107-q').count()===1,'ARKI prompt missing');
+check(await page.locator('#v107-new').count()===1,'ARKI new-chat action missing');
+check(await page.locator('#v107-deep').count()===1,'ARKI deep-answer control missing');
 await page.fill('#v107-q','What is 2 + 2?');
 await page.click('#v107-send');
 await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \+ 2 = 4|\b4\b/.test(x.textContent||'')),{timeout:5000});
-check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'General SCHOLARK AI chat did not persist both sides of the conversation');
-check(await page.locator('[data-v107-copy]').count()>=1,'General SCHOLARK AI copy action missing after response');
+check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
+check(await page.locator('[data-v107-copy]').count()>=1,'ARKI copy action missing after response');
 await page.click('#v107-new');
-check(await page.locator('.v107-welcome').count()===1,'General SCHOLARK AI new chat did not reset the conversation surface');
+check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
