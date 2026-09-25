@@ -25,7 +25,7 @@ function sameOrigin(req){const origin=String(req.headers?.origin||'').trim();if(
 function readRaw(req,limit=1024*1024){return new Promise((resolve,reject)=>{const parts=[];let size=0;req.on('data',c=>{size+=c.length;if(size>limit){reject(new Error('request_too_large'));req.destroy();return}parts.push(c)});req.on('end',()=>resolve(Buffer.concat(parts).toString('utf8')));req.on('error',reject)})}
 async function readJson(req){const raw=await readRaw(req,128*1024);try{return raw?JSON.parse(raw):{}}catch{throw new Error('invalid_json')}}
 function bearer(req){const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''}
-async function currentUser(req){const token=bearer(req);if(!token||!SB||!PUB)return null;const r=await fetch(SB+'/auth/v1/user',{headers:{apikey:PUB,authorization:'Bearer '+token}});if(!r.ok)return null;const d=await r.json().catch(()=>null);return d?.id?d:null}
+async function currentUser(req){const token=bearer(req);if(!token||!SB||!PUB)return null;const r=await fetch(SB+'/auth/v1/user',{headers:{apikey:PUB,authorization:'Bearer '+token},signal:timeoutSignal(8000)});if(!r.ok)return null;const d=await r.json().catch(()=>null);return d?.id?d:null}
 function serviceHeaders(extra={}){return {apikey:SERVICE,authorization:'Bearer '+SERVICE,'content-type':'application/json',accept:'application/json',...extra}}
 function timeoutSignal(ms=10000){try{return AbortSignal.timeout(ms)}catch{return undefined}}
 async function sb(path,opts={}){return fetch(SB+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{...serviceHeaders(),...(opts.headers||{})}})}
