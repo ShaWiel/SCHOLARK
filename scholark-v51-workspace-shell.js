@@ -189,7 +189,7 @@
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
   function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
-  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearInterval(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
+  function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearTimeout(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
   function applyLanguageRoot(el){
     const i18n=window.__SCHOLARK_I18N__;if(!el||!i18n?.apply)return;
     // #v51-main and #v51-fallback are reused between tools. Caching by root
@@ -235,7 +235,16 @@
   function rescue(el){if(!el)return;delete el.dataset.v30LegacyHome;el.hidden=false;el.removeAttribute('aria-hidden');['display','visibility','opacity','pointer-events','transform','width','height','max-width','max-height','margin','margin-left'].forEach(p=>el.style.removeProperty(p));let p=el.parentElement,n=0;while(p&&p!==document.body&&n<3){p.hidden=false;p.removeAttribute('aria-hidden');['display','visibility','opacity','pointer-events'].forEach(x=>p.style.removeProperty(x));p=p.parentElement;n++}}
   function openNative(id){
     clearModes();forceQuality();const legacySide=findLegacySidebar();const item=legacySide&&legacyItem(legacySide,id);if(!legacySide||!item){showFallback(id);return}
-    const before=legacyContent(legacySide);try{item.click()}catch{}setRoute(id);document.body.classList.add('v51-native');state.active=id;syncNav();let tries=0;nativeTimer=setInterval(()=>{tries++;const content=legacyContent(legacySide)||before;rescue(content);if(content){if(nativeHost&&nativeHost!==content)nativeHost.classList.remove('v51-native-host');nativeHost=content;content.classList.add('v51-native-host')}if(content&&tries>=8){clearInterval(nativeTimer);nativeTimer=null}else if(tries>=24){clearInterval(nativeTimer);nativeTimer=null;if(!nativeHost)showFallback(id)}},80)
+    const before=legacyContent(legacySide);try{item.click()}catch{}setRoute(id);document.body.classList.add('v51-native');state.active=id;syncNav();let tries=0;
+    const settleNative=()=>{
+      tries++;
+      const content=legacyContent(legacySide)||before;rescue(content);
+      if(content){if(nativeHost&&nativeHost!==content)nativeHost.classList.remove('v51-native-host');nativeHost=content;content.classList.add('v51-native-host')}
+      if(content&&tries>=6){nativeTimer=null;return}
+      if(tries>=16){nativeTimer=null;if(!nativeHost)showFallback(id);return}
+      nativeTimer=setTimeout(settleNative,tries<5?100:150);
+    };
+    nativeTimer=setTimeout(settleNative,80)
   }
 
   function showFallback(id){clearModes();setRoute(id);state.active=id;syncNav();showPage('fallback');const host=$('#v51-fallback');const title={ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',progress:'Progress',goal:'Goals',project:'My Projects'}[id]||id;let body='';
