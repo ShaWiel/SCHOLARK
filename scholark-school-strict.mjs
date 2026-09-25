@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260919-school-suriname-taxonomy-v7';
+const VERSION='20260925-school-global-v8';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -18,6 +18,8 @@ const COUNTRY_CODES={
 };
 let officialCache=null;
 let officialPromise=null;
+const discoveryCache=new Map();
+const DISCOVERY_TTL=10*60*1000;
 const SRC_POLANEN='https://gov.sr/priority-social-projects-program-renovation-of-schools-phase-1/';
 const SRC_TVET='https://gov.sr/beroepsonderwijs/scholen/';
 const SRC_NUFFIC='https://www.nuffic.nl/onderwijssystemen/suriname/onderwijsinstellingen-en-opleidingen';
@@ -204,10 +206,21 @@ async function geocode(country,city=''){
   return{lat:Number(row.lat),lon:Number(row.lon),country:clean(row.address?.country||country),countryCode:code||expected,display:clean(row.display_name||q)};
 }
 async function resolveCenter(body,country,city){
-  if(city)return geocode(country,city);
-  const lat=Number(body.lat),lon=Number(body.lon),provided=clean(body.countryCode).toUpperCase(),expected=expectedCode(country);
-  if(Number.isFinite(lat)&&Number.isFinite(lon)&&provided&&(!expected||sameCode(provided,expected))){return{lat,lon,country,countryCode:provided,display:country}}
-  return geocode(country,'');
+  const lat=Number(body.lat),lon=Number(body.lon),provided=clean(body.countryCode).toUpperCase();
+  let expected=expectedCode(country),countryRoot=null;
+  if(!expected){
+    try{countryRoot=await geocode(country,'');expected=clean(countryRoot.countryCode).toUpperCase()}catch{}
+  }
+  if(city){
+    const hit=await geocode(country,city),code=clean(hit.countryCode).toUpperCase();
+    if(expected&&code&&!sameCode(expected,code))throw new Error('The selected city/area is not in '+country);
+    return{...hit,countryCode:code||expected,mode:'city'};
+  }
+  if(Number.isFinite(lat)&&Number.isFinite(lon)&&provided&&(!expected||sameCode(provided,expected))){
+    return{lat,lon,country,countryCode:provided,display:country,mode:'coordinates'};
+  }
+  const root=countryRoot||await geocode(country,'');
+  return{...root,countryCode:clean(root.countryCode||expected).toUpperCase(),mode:'country'};
 }
 
 function levelSet(tags={},extra=''){
@@ -376,47 +389,99 @@ async function overpass(query){
   }
   const e=new Error('Strict country school sources unavailable');e.failures=failures;throw e;
 }
-function countryAreaQuery(country,countryCode,pos,radius,national){
-  const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),scope=national?'(area.country)':`(area.country)(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`;
-  const area=iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
-  return`[out:json][timeout:18];${area}(nwr["amenity"~"kindergarten|school|college|university|language_school"]${scope};nwr["building"="school"]${scope};nwr["office"="educational_institution"]${scope};);out center tags 1800;`;
+function countryAreaQuery(country,countryCode,pos,radius,countryWide,forceName=false){
+  const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),scope=countryWide?'(area.country)':`(area.country)(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`;
+  const area=!forceName&&iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
+  return`[out:json][timeout:20];${area}(nwr["amenity"~"kindergarten|school|college|university|language_school"]${scope};nwr["building"="school"]${scope};nwr["office"="educational_institution"]${scope};);out center tags 1800;`;
+}
+
+async function nominatimSchoolFallback(country,city,center,countryCode,countryWide){
+  const queries=countryWide?[`school ${country}`,`university ${country}`]:[`school ${city||center.display||country}, ${country}`,`university ${city||center.display||country}, ${country}`],rows=[];
+  for(let qi=0;qi<queries.length;qi++){
+    try{
+      const u=new URL('https://nominatim.openstreetmap.org/search');u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','50');u.searchParams.set('q',queries[qi]);
+      const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 global-school-fallback'}},9000);if(!r.ok)continue;
+      const data=await r.json().catch(()=>[]);
+      for(const x of data||[]){
+        const code=clean(x.address?.country_code).toUpperCase();if(countryCode&&code&&!sameCode(countryCode,code))continue;
+        const lat=Number(x.lat),lon=Number(x.lon),name=clean(x.name||String(x.display_name||'').split(',')[0]);if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+        const tags={name,amenity:/university/i.test(clean(x.type)+' '+clean(x.display_name))?'university':'school','addr:country':code};
+        const levels=levelSet(tags,clean(x.display_name));
+        rows.push({name,description:clean(x.display_name),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'OpenStreetMap search fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
+      }
+    }catch{}
+    if(qi+1<queries.length)await new Promise(r=>setTimeout(r,900));
+  }
+  return mergeRows(rows);
 }
 
 async function discover(body){
   const country=clean(body.country||'Suriname')||'Suriname',city=clean(body.city),level=clean(body.level||'all').toLowerCase(),nameQuery=clean(body.name),radius=Math.max(1,Math.min(700,Number(body.radius)||50)),center=await resolveCenter(body,country,city);
   if(!Number.isFinite(center.lat)||!Number.isFinite(center.lon))throw new Error('Selected place could not be resolved');
-  const countryCode=center.countryCode||expectedCode(country),national=/^suriname$/i.test(country)&&!city,query=countryAreaQuery(country,countryCode,center,radius,national),sourceStatus=[];
-  if(/^suriname$/i.test(country)&&nameQuery){
-    const curatedFast=curatedSurinameSchools()
-      .filter(x=>officialLocationMatch(x,city)&&matchesLevel(x.levels,level)&&schoolNameMatch(x,nameQuery));
+  const countryCode=clean(center.countryCode||expectedCode(country)).toUpperCase(),countryWide=center.mode==='country',isSuriname=/^suriname$/i.test(country)||countryCode==='SR',national=isSuriname&&countryWide;
+  const cacheKey=[key(country),key(city),level,key(nameQuery),radius,countryCode,center.mode,Math.round(center.lat*100),Math.round(center.lon*100)].join('|'),cached=discoveryCache.get(cacheKey);
+  if(cached&&Date.now()-cached.at<DISCOVERY_TTL)return{...cached.value,cached:true};
+
+  const sourceStatus=[];
+  if(isSuriname&&nameQuery){
+    const curatedFast=curatedSurinameSchools().filter(x=>officialLocationMatch(x,city)&&matchesLevel(x.levels,level)&&schoolNameMatch(x,nameQuery));
     if(curatedFast.length){
       curatedFast.sort((a,b)=>a.name.localeCompare(b.name));
-      return{ok:true,strictCountry:true,country,city,level,name:nameQuery,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider:'SCHOLARK verified current Suriname supplement',sourceStatus:[{source:'SCHOLARK verified current Suriname supplement',ok:true,count:curatedFast.length}],count:curatedFast.length,schools:curatedFast.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+      const value={ok:true,strictCountry:true,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider:'SCHOLARK verified current Suriname supplement',sourceStatus:[{source:'SCHOLARK verified current Suriname supplement',ok:true,count:curatedFast.length}],count:curatedFast.length,schools:curatedFast.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+      discoveryCache.set(cacheKey,{at:Date.now(),value});return value;
     }
   }
-  const officialPromiseForRequest=/^suriname$/i.test(country)?officialSurinameSchools():Promise.resolve([]);
-  let rows=[],provider='OpenStreetMap country-boundary search';
-  try{const o=await overpass(query);sourceStatus.push({source:o.endpoint,ok:true,count:o.elements.length});rows=o.elements.map(e=>normalized(e,center)).filter(Boolean)}catch(e){sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false})));rows=[]}
-  if(!national)rows=rows.filter(x=>x.distance<=radius+1);
+
+  const officialPromiseForRequest=isSuriname?officialSurinameSchools():Promise.resolve([]);
+  let rows=[],provider='OpenStreetMap country-boundary search',query=countryAreaQuery(country,countryCode,center,radius,countryWide,false);
+  try{
+    let o=await overpass(query);
+    sourceStatus.push({source:o.endpoint,ok:true,count:o.elements.length,mode:countryWide?'country-wide':'nearby'});
+    rows=o.elements.map(e=>normalized(e,center)).filter(Boolean);
+    if(!rows.length&&countryCode){
+      const byName=await overpass(countryAreaQuery(country,countryCode,center,radius,countryWide,true));
+      sourceStatus.push({source:byName.endpoint+' name-boundary',ok:true,count:byName.elements.length,mode:countryWide?'country-wide':'nearby'});
+      rows=byName.elements.map(e=>normalized(e,center)).filter(Boolean);
+    }
+  }catch(e){
+    sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false})));rows=[];
+  }
+
+  if(!rows.length){
+    const fallback=await nominatimSchoolFallback(country,city,center,countryCode,countryWide);
+    if(fallback.length){rows=fallback;provider='OpenStreetMap search fallback';sourceStatus.push({source:'Nominatim school fallback',ok:true,count:fallback.length})}
+    else sourceStatus.push({source:'Nominatim school fallback',ok:false,count:0});
+  }
+
+  if(countryWide)rows=rows.map(x=>({...x,distance:null}));
+  else rows=rows.filter(x=>x.distance==null||x.distance<=radius+1);
+
   const officialAll=await officialPromiseForRequest,official=officialAll.filter(x=>officialLocationMatch(x,city));
-  if(official.length){rows=mergeRows([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}else rows=mergeRows(rows);
-  if(/^suriname$/i.test(country)){
+  if(official.length){rows=mergeRows([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}
+  else rows=mergeRows(rows);
+
+  if(isSuriname){
     const curated=curatedSurinameSchools().filter(x=>officialLocationMatch(x,city));
     rows=mergeRows([...curated,...rows]);
     if(curated.length)sourceStatus.unshift({source:'SCHOLARK verified current Suriname supplement',ok:true,count:curated.length});
   }
-  rows=rows.filter(x=>matchesLevel(x.levels,level));
+
+  const genericAllowed=!isSuriname&&['kindergarten','primary','secondary','lower_secondary','upper_secondary','vocational'].includes(level);
+  rows=rows.filter(x=>matchesLevel(x.levels,level)||(genericAllowed&&x.level==='school'));
   if(nameQuery)rows=rows.filter(x=>schoolNameMatch(x,nameQuery));
-  rows.sort((a,b)=>(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
-  console.log(`[SCHOLARK] Strict school search ${country}${city?', '+city:''} · level ${level}${nameQuery?' · name '+nameQuery:''} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
-  return{ok:true,strictCountry:true,country,city,level,name:nameQuery,radius,national,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+  rows.sort((a,b)=>countryWide?String(a.name||'').localeCompare(String(b.name||'')):(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
+
+  const value={ok:true,strictCountry:true,global:true,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+  discoveryCache.set(cacheKey,{at:Date.now(),value});
+  console.log(`[SCHOLARK] Global school search ${country}${city?', '+city:''} · mode ${value.searchMode} · level ${level}${nameQuery?' · name '+nameQuery:''} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
+  return value;
 }
 
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,version:VERSION,providers:['OpenStreetMap country-boundary search','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesPrakiki:SURINAME_CURATED_RAW.some(x=>/Prakiki Kleuterschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name)),includesNatinNickerie:SURINAME_CURATED_RAW.some(x=>/NATIN Nickerie/i.test(x.name)),includesWaaldijkCollege:SURINAME_CURATED_RAW.some(x=>/Waaldijk College/i.test(x.name)),includesCPI:SURINAME_CURATED_RAW.some(x=>/Christelijk Pedagogisch Instituut/i.test(x.name)),includesSPI:SURINAME_CURATED_RAW.some(x=>/Surinaams Pedagogisch Instituut/i.test(x.name)),includesVCS:SURINAME_CURATED_RAW.some(x=>/Vocational College Suriname/i.test(x.name))},researchBaseline:{source:SRC_POLICY_2024,year:2024,generalAndSecondaryTotal:597,gradeBands:{years1to8:373,years9to12:163,years13to16:61},higherInstitutesApprox:30,note:'MinOWC count is by education type, not school buildings.'}});return true;
+    json(res,200,{ok:true,strictCountry:true,global:true,countryWideWithoutCity:true,nearbyWithCoordinates:true,citySearch:true,dynamicCountryCodes:true,searchCacheEntries:discoveryCache.size,version:VERSION,providers:['OpenStreetMap country-boundary search','OpenStreetMap Nominatim school fallback','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesPrakiki:SURINAME_CURATED_RAW.some(x=>/Prakiki Kleuterschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name)),includesNatinNickerie:SURINAME_CURATED_RAW.some(x=>/NATIN Nickerie/i.test(x.name)),includesWaaldijkCollege:SURINAME_CURATED_RAW.some(x=>/Waaldijk College/i.test(x.name)),includesCPI:SURINAME_CURATED_RAW.some(x=>/Christelijk Pedagogisch Instituut/i.test(x.name)),includesSPI:SURINAME_CURATED_RAW.some(x=>/Surinaams Pedagogisch Instituut/i.test(x.name)),includesVCS:SURINAME_CURATED_RAW.some(x=>/Vocational College Suriname/i.test(x.name))},researchBaseline:{source:SRC_POLICY_2024,year:2024,generalAndSecondaryTotal:597,gradeBands:{years1to8:373,years9to12:163,years13to16:61},higherInstitutesApprox:30,note:'MinOWC count is by education type, not school buildings.'}});return true;
   }
   if(req.method==='GET'&&pathname==='/api/schools/vwo-health'){
     officialSurinameSchools().then(rows=>{
@@ -432,4 +497,10 @@ http.Server.prototype.emit=function(type,...args){
 };
 
 setTimeout(()=>officialSurinameSchools().catch(()=>{}),2200);
+setTimeout(async()=>{
+  try{
+    const center=await resolveCenter({},'Japan','Tokyo'),o=await overpass(countryAreaQuery('Japan',center.countryCode,center,12,false,false));
+    console.log('[SCHOLARK] Global school discovery self-test '+(o.elements.length?'PASS':'WARN')+' · Tokyo, Japan · '+o.elements.length+' source records');
+  }catch(e){console.warn('[SCHOLARK] Global school discovery self-test WARN · '+clean(e?.message||e))}
+},5200);
 console.log('[SCHOLARK] Strict school country + level search '+VERSION+' ready');
