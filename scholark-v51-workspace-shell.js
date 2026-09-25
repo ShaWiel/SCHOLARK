@@ -166,19 +166,25 @@
     host.dataset.v51ScrollWired='1';host.tabIndex=0;
     host.addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();host.scrollBy({left:(e.key==='ArrowRight'?1:-1)*300,behavior:'smooth'})});
   }
+  let levelRenderHost=null,levelRenderKey='';
   function renderLevels(){
     if(!side)return;const host=$('.v51-levels',main);if(!host)return;
-    const rows=dashboardLevels(),selected=levelId(),suriname=workspaceCountry()==='suriname';
-    host.classList.add('v51-levels-suriname');host.dataset.v51CountryPalette='1';
+    const rows=dashboardLevels(),selected=levelId(),country=workspaceCountry(),suriname=country==='suriname',lang=localStorage.getItem('scholark_ui_language')||'en';
+    host.classList.toggle('v51-levels-suriname',suriname);host.dataset.v51CountryPalette='1';
     host.setAttribute('aria-label',(suriname?'Suriname':'Country-aware')+' education levels. Scroll horizontally for more levels.');
     const groups=suriname?SURINAME_GROUPS:UNIVERSAL_GROUPS;
-    host.innerHTML=groups.map(group=>{
+    const html=groups.map(group=>{
       const groupRows=suriname?rows.filter(x=>x[4]===group.id):rows.filter(x=>group.levels.includes(x[0]));
       const cards=groupRows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
       return `<section class="v51-level-cluster ${group.tone}" data-v51-group="${group.id}" data-v96-i18n-owned="1" data-sch-i18n-owned="1"><div class="v51-level-group" data-sch-i18n-owned="1">${esc(suriname?surinameGroupLabel(group):universalGroupLabel(group))}</div><div class="v51-level-cluster-cards">${cards}</div></section>`;
     }).join('');
-    $$('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
+    const key=country+'|'+lang+'|'+selected+'|'+rows.map(x=>x.slice(0,5).join('~')).join('^');
+    if(levelRenderHost===host&&levelRenderKey===key&&host.children.length){wireLevelScroll();return}
+    const left=host.scrollLeft;
+    host.innerHTML=html;levelRenderHost=host;levelRenderKey=key;
+    $('[data-level]',host).forEach(b=>b.onclick=()=>setLevel(b.dataset.level));
     wireLevelScroll();
+    requestAnimationFrame(()=>{if(host.isConnected)host.scrollLeft=Math.min(left,Math.max(0,host.scrollWidth-host.clientWidth))});
   }
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
@@ -381,9 +387,11 @@
   addEventListener('hashchange',()=>{setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
-  addEventListener('scholark-language-applied',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},0)});
-  addEventListener('scholark-language-ready',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},20)});
-  addEventListener('scholark-language-complete',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},10)});
+  let workspaceLanguageTimer=0;
+  const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);workspaceLanguageTimer=setTimeout(()=>{if(!workspaceRoute())return;renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},delay)};
+  addEventListener('scholark-language-applied',()=>scheduleWorkspaceLanguageRefresh(90));
+  addEventListener('scholark-language-ready',()=>scheduleWorkspaceLanguageRefresh(120));
+  addEventListener('scholark-language-complete',()=>scheduleWorkspaceLanguageRefresh(150));
   addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
