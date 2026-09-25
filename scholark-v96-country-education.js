@@ -206,6 +206,8 @@
   const englishRegions=typeof Intl!=='undefined'&&Intl.DisplayNames?new Intl.DisplayNames(['en'],{type:'region'}):null;
   const WORLD_COUNTRIES=WORLD_CODES.map(code=>({code,name:englishRegions?.of(code)||code})).filter(x=>x.name&&x.name!==x.code);
   const worldCodeByName=new Map(WORLD_COUNTRIES.map(x=>[x.name,x.code]));
+  const worldNameByCode=new Map(WORLD_COUNTRIES.map(x=>[x.code,x.name]));
+  const countryFromCode=code=>worldNameByCode.get(clean(code).toUpperCase())||'';
   const countryList=[...new Set([...Object.keys(SYSTEMS),...WORLD_COUNTRIES.map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'en'));
   const STATIC_UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
   const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.langs?.some?.(([code])=>code===x)?x:(STATIC_UI_LANGS.has(x)?x:'nl')};
@@ -303,6 +305,7 @@
 
   function normalizeCountry(value){
     const x=clean(value);if(!x)return '';
+    const byCode=/^[a-z]{2}$/i.test(x)?countryFromCode(x):'';if(byCode)return byCode;
     const low=x.toLowerCase();
     const localized=Object.entries(COUNTRY_NAMES).find(([,names])=>names.some(n=>clean(n).toLowerCase()===low))?.[0];
     let worldLocalized='';
@@ -470,5 +473,5 @@
   addEventListener('scholark-language-complete',()=>scheduleApply(160));
   [100,500].forEach(ms=>setTimeout(()=>scheduleApply(0),ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,global:true};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,fromCode:countryFromCode,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,global:true};
 })();
