@@ -20,7 +20,9 @@ jobs:
         with:
           node-version: '22'
       - name: Validate runtime, resilience and syntax
-        run: node scripts/scholark-static-audit.mjs
+        run: |
+          node --check scholark-billing-route.mjs
+          node scripts/scholark-static-audit.mjs
 
   docker-build-and-smoke:
     runs-on: ubuntu-latest

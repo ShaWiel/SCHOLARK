@@ -87,7 +87,7 @@ async function verifyWebhookDestination(){
   }
   if(row?.endpoint_secret_key)WEBHOOK_SECRET=cleanSecret(row.endpoint_secret_key);
   const currentEvents=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),missing=required.filter(x=>!currentEvents.has(x));
-  const needsRepair=!created&&(normalize(row.destination)!==wanted||!row.active||missing.length>0||String(row.traffic_source||'')!=='all';
+  const needsRepair=!created&&(normalize(row.destination)!==wanted||!row.active||missing.length>0||String(row.traffic_source||'')!=='all');
   if(needsRepair){
     const patch=await paddle('/notification-settings/'+encodeURIComponent(String(row.id||'')),{method:'PATCH',body:JSON.stringify({description:'SCHOLARK billing webhook',destination:WEBHOOK_URL,active:true,traffic_source:'all',subscribed_events:required})}),pd=await patch.json().catch(()=>({}));
     if(!patch.ok)return {ok:false,verified:true,http:patch.status,reason:pd?.error?.code||pd?.error?.type||'webhook_destination_repair_failed',destination:WEBHOOK_URL,reusedLegacy,secretConfigured:!!WEBHOOK_SECRET};
