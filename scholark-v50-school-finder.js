@@ -3,7 +3,7 @@
   window.__SCHOLARK_V50_SCHOOL_FINDER__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let root=null,currentPos=null,renderedItems=[],renderOpts=null,visibleLimit=0,compareOpen=false;
+  let root=null,currentPos=null,renderedItems=[],renderOpts=null,visibleLimit=0,compareOpen=false,searchEpoch=0,searchController=null;
   const PAGE_SIZE=80;
   const SAVED_KEY='scholark_saved_schools_v1';
   const savedIds=new Set((()=>{try{return JSON.parse(localStorage.getItem(SAVED_KEY)||'[]')}catch{return[]}})());
@@ -156,7 +156,7 @@
   function paintResults(){
     const h=$('#v50-results'),items=renderedItems,opts=renderOpts;if(!h||!opts)return;
     const shown=items.slice(0,visibleLimit);
-    h.innerHTML=shown.map((x,i)=>{const d=x.distance!=null?`${x.distance.toFixed(x.distance<10?1:0)} km away`:'',id=schoolId(x),t=ui(),saved=savedIds.has(id),compared=compareIds.has(id);return`<article class="v50-row"><div><h3 data-sch-school-name="1"><span data-sch-rank="1">${i+1}. </span><span data-sch-school-name-text="1">${esc(x.name)}</span></h3><p>${esc(x.description||'Education institution')}</p><div class="v50-rank"><span class="v50-score">Match ${x.score}%</span><span class="v50-grade">${grade(x.score)}</span><span class="v50-grade">${esc(levelLabel[x.level]||'Education')}</span>${isVerified(x)?`<span class="v50-tag v50-verified">${esc(t.verified)}</span>`:''}${saved?`<span class="v50-tag v50-saved">${esc(t.saved)}</span>`:''}</div>${metricMarkup(x)}<div class="v50-tags">${d?`<span class="v50-tag near">${esc(d)}</span>`:''}<span class="v50-tag">${esc(x.source)}</span>${opts.national?'<span class="v50-tag">Suriname nationwide</span>':''}${opts.study?`<span class="v50-tag">study interest optional</span>`:''}</div></div><div class="v50-links">${x.website&&/^https?:/i.test(x.website)?`<a href="${esc(x.website)}" target="_blank" rel="noopener">Official site ↗</a>`:''}${sourceLink(x)}<button class="alt" data-v50-save="${i}">${esc(saved?t.saved:t.save)}</button><button class="alt" data-v50-compare="${i}">${esc(compared?t.remove:t.compare)}</button><button class="alt" data-v50-review="${i}">View reviews</button><a class="alt" href="${esc(verify(x,opts.study))}" target="_blank" rel="noopener">Research school ↗</a>${map(x)?`<a class="alt" href="${esc(map(x))}" target="_blank" rel="noopener">Map ↗</a>`:''}${x.wiki?`<a class="alt" href="${esc(x.wiki)}" target="_blank" rel="noopener">About ↗</a>`:''}</div>${reviewMarkup(x)}</article>`}).join('');
+    h.innerHTML=shown.map((x,i)=>{const d=x.distance!=null?`${x.distance.toFixed(x.distance<10?1:0)} km away`:'',id=schoolId(x),t=ui(),saved=savedIds.has(id),compared=compareIds.has(id);return`<article class="v50-row"><div><h3 data-sch-school-name="1"><span data-sch-rank="1">${i+1}. </span><span data-sch-school-name-text="1">${esc(x.name)}</span></h3><p>${esc(x.description||'Education institution')}</p><div class="v50-rank"><span class="v50-score">Match ${x.score}%</span><span class="v50-grade">${grade(x.score)}</span><span class="v50-grade">${esc(levelLabel[x.level]||'Education')}</span>${isVerified(x)?`<span class="v50-tag v50-verified">${esc(t.verified)}</span>`:''}${saved?`<span class="v50-tag v50-saved">${esc(t.saved)}</span>`:''}</div>${metricMarkup(x)}<div class="v50-tags">${d?`<span class="v50-tag near">${esc(d)}</span>`:''}<span class="v50-tag">${esc(x.source)}</span>${opts.countryWide?'<span class="v50-tag">'+esc(opts.country||'Country')+' · country-wide</span>':''}${opts.study?`<span class="v50-tag">study interest optional</span>`:''}</div></div><div class="v50-links">${x.website&&/^https?:/i.test(x.website)?`<a href="${esc(x.website)}" target="_blank" rel="noopener">Official site ↗</a>`:''}${sourceLink(x)}<button class="alt" data-v50-save="${i}">${esc(saved?t.saved:t.save)}</button><button class="alt" data-v50-compare="${i}">${esc(compared?t.remove:t.compare)}</button><button class="alt" data-v50-review="${i}">View reviews</button><a class="alt" href="${esc(verify(x,opts.study))}" target="_blank" rel="noopener">Research school ↗</a>${map(x)?`<a class="alt" href="${esc(map(x))}" target="_blank" rel="noopener">Map ↗</a>`:''}${x.wiki?`<a class="alt" href="${esc(x.wiki)}" target="_blank" rel="noopener">About ↗</a>`:''}</div>${reviewMarkup(x)}</article>`}).join('');
     if(visibleLimit<items.length)h.insertAdjacentHTML('beforeend',`<button class="v50-more" id="v50-more">Show ${Math.min(PAGE_SIZE,items.length-visibleLimit)} more schools · ${items.length-visibleLimit} remaining</button>`);
     const cb=$('#v50-compare-btn');if(cb){cb.textContent=(ui().compare+' ('+compareIds.size+')');cb.classList.toggle('active',compareOpen)}
     comparePanel();
@@ -171,7 +171,7 @@
     else items.sort((a,b)=>b.score-a.score||String(a.name||'').localeCompare(String(b.name||'')));
     renderedItems=items;renderOpts=opts;visibleLimit=Math.min(PAGE_SIZE,items.length);
     const sortLabel=opts.sort==='distance'?'nearest first':opts.sort==='name'?'A–Z':'best match first';
-    $('#v50-count').textContent=`${items.length} schools · ${opts.national?'nationwide Suriname coverage · ':''}${sortLabel}`;
+    $('#v50-count').textContent=`${items.length} schools · ${opts.countryWide?'country-wide '+(opts.country||'')+' · ':''}${sortLabel}`;
     paintResults();
   }
   async function loadReviews(index){
@@ -193,11 +193,11 @@
   }
 
   function build(){
-    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Search education from kleuter- and basisonderwijs through VOJ, VOS, MBO, HBO and university. Country is required; study/field is optional.</p></div><button class="v50-x">×</button></div>
+    if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Find education worldwide, from early childhood and primary school through secondary, vocational, college and university. Country is required; city/area or your location gives the strongest nearby results.</p></div><button class="v50-x">×</button></div>
     <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><input id="v50-name" placeholder="School name (optional)"><select id="v50-level"><option value="all">Alle niveaus</option><optgroup label="Basisonderwijs"><option value="kindergarten">Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar</option><option value="primary">Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Junioren (VOJ)"><option value="mulo">MULO · 12–16 jaar</option><option value="lbo">LBO · 12–16 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Senioren (VOS)"><option value="havo">HAVO · 16–18 jaar</option><option value="vwo">VWO · 16–19 jaar</option><option value="mbo">MBO · NATIN, IMEAO, Kweekschool · 16–20+ jaar</option></optgroup><optgroup label="Hoger Onderwijs"><option value="hbo">HBO · 18/19+ jaar</option><option value="wo">WO / Universiteit · AdeKUS · 19+ jaar</option></optgroup></select><input id="v50-study" placeholder="Study / field (optional)"></div>
     <div class="v50-controls2"><select id="v50-radius"><option value="10">Within 10 km</option><option value="25">Within 25 km</option><option value="50" selected>Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option><option value="400">Within 400 km</option><option value="550">Within 550 km</option><option value="700">Within 700 km</option></select><select id="v50-type"><option value="all">All school types</option><option value="public">Public</option><option value="private">Private</option><option value="special">Special / religious</option><option value="international">International</option></select><select id="v50-sort"><option value="best" selected>Best match first</option><option value="distance">Nearest first</option><option value="name">Name A–Z</option></select><label class="secondary" style="display:flex;align-items:center;justify-content:center;gap:7px"><input type="checkbox" id="v50-verified"> Verified only</label><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
     <div class="v50-location" id="v50-location">Enter the country you are in or travelling to. Add a city/area for much better nearby results, or use your real location.</div>
-    <div class="v50-info">The SCHOLARK <b>match score measures fit with your search criteria — it is not a school-quality grade or academic ranking</b>. Exact level, location, verified source coverage and optional study relevance influence the score. Where reliable performance data exists, SCHOLARK shows that separately as a factual metric. <b>All levels + Suriname searches nationwide</b>, not just around Paramaribo.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong><div class="v50-toolbar-actions"><button id="v50-compare-btn">Compare (0)</button><button id="v50-saved-btn">Saved schools</button></div></div><div class="v50-compare-panel" id="v50-compare-panel"></div><div class="v50-results" id="v50-results"></div></div>`;
+    <div class="v50-info">The SCHOLARK <b>match score measures fit with your search criteria — it is not a school-quality grade or academic ranking</b>. Exact level, location, verified source coverage and optional study relevance influence the score. Country-only searches use a country-wide discovery pass; city/area or current-location searches prioritize nearby results. Where reliable performance data exists, SCHOLARK shows that separately as a factual metric.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong><div class="v50-toolbar-actions"><button id="v50-compare-btn">Compare (0)</button><button id="v50-saved-btn">Saved schools</button></div></div><div class="v50-compare-panel" id="v50-compare-panel"></div><div class="v50-results" id="v50-results"></div></div>`;
     document.body.appendChild(root);$('#v50-go').onclick=search;$('#v50-location-btn').onclick=useLocation;$('.v50-x',root).onclick=close;$('#v50-level').addEventListener('change',syncStudyField);syncStudyField();
     $('#v50-compare-btn').onclick=()=>{compareOpen=!compareOpen;comparePanel();paintResults()};
     $('#v50-saved-btn').onclick=()=>{if(!renderedItems.length)return;const only=renderedItems.filter(x=>savedIds.has(schoolId(x)));if(only.length)render(only,{...renderOpts,type:'all',verifiedOnly:false,sort:'name'})};
@@ -218,34 +218,38 @@
   async function search(){
     const country=$('#v50-country').value.trim(),city=$('#v50-city').value.trim(),nameQuery=$('#v50-name')?.value.trim()||'',level=$('#v50-level').value,study=STUDY_FIELD_LEVELS.has($('#v50-level').value)?$('#v50-study').value.trim():'',radius=Math.min(700,Math.max(1,+$('#v50-radius').value||50)),type=$('#v50-type')?.value||'all',verifiedOnly=!!$('#v50-verified')?.checked,sort=$('#v50-sort').value||'best',h=$('#v50-results'),loc=$('#v50-location');
     if(!country){h.innerHTML='<div class="v50-state err">Tell SCHOLARK which country you are in or going to first.</div>';return $('#v50-country').focus()}
+    const epoch=++searchEpoch;try{searchController?.abort()}catch{}searchController=new AbortController();
     window.__SCHOLARK_COUNTRY__?.set?.(country,'schools');
     h.innerHTML='<div class="v50-state">Finding schools through SCHOLARK server-side public sources…</div>';
     try{
       const payload={country,city,name:nameQuery,level,radius,lat:currentPos?.lat,lon:currentPos?.lon,countryCode:currentPos?.countryCode||''};
-      const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
-      const live=await response.json().catch(()=>({}));
+      const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),signal:searchController.signal});
+      const live=await response.json().catch(()=>({}));if(epoch!==searchEpoch)return;
       if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
-      const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)};
-      const db=await dbSchools(country,live.national?'':city,level,study,pos).catch(()=>[]);
+      const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)},countryWide=!!live.countryWide;
+      const db=await dbSchools(country,countryWide?'':city,level,study,pos).catch(()=>[]);if(epoch!==searchEpoch)return;
       const items=merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
-      const national=!!live.national;
-      render(items,{country,city,nameQuery,level,study,radius:national?700:radius,type,verifiedOnly,sort,national});
+      render(items,{country,city,nameQuery,level,study,radius:countryWide?700:radius,type,verifiedOnly,sort,countryWide,national:!!live.national});
       const sourceCount=(live.sourceStatus||[]).filter(x=>x.ok).reduce((n,x)=>n+(Number(x.count)||0),0);
-      loc.textContent=national
-        ? 'Nationwide Suriname search complete · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
+      loc.textContent=countryWide
+        ? 'Country-wide '+country+' search complete · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
         : 'School search complete around '+(live.center?.display||city||country)+' · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · within '+radius+' km.';
       if(db.length)loc.textContent+=' · '+db.length+' curated SCHOLARK database matches merged.';
     }catch(serverError){
+      if(serverError?.name==='AbortError'||epoch!==searchEpoch)return;
       console.warn('[SCHOLARK] server school search failed, trying browser fallback:',serverError);
       let pos=currentPos,countryCode=String(currentPos?.countryCode||'').toUpperCase(),geoResult=null;
       try{
         if(!pos||city){geoResult=await geocode(country,city);pos={lat:geoResult.lat,lon:geoResult.lon,countryCode:geoResult.countryCode};countryCode=geoResult.countryCode}
-        const suriname=/^suriname$/i.test(country)||countryCode==='SR',national=suriname&&level==='all';
-        const [db,raw,wiki]=await Promise.all([dbSchools(country,national?'':city,level,study,pos),national?overpassCountry(countryCode||'SR','Suriname'):overpass(pos,radius),national?Promise.resolve([]):wikiGeo(pos,radius)]);
-        const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
-        render(items,{country,city,nameQuery,level,study,radius:national?700:radius,type,verifiedOnly,sort,national});
-        loc.textContent='Browser fallback used · '+items.length+' named education institutions found.';
+        if(epoch!==searchEpoch)return;
+        const countryWide=!city&&!currentPos;
+        const [db,raw,wiki]=await Promise.all([dbSchools(country,countryWide?'':city,level,study,pos),countryWide?overpassCountry(countryCode||'',country):overpass(pos,radius),countryWide?Promise.resolve([]):wikiGeo(pos,radius)]);
+        if(epoch!==searchEpoch)return;
+        const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean).map(x=>countryWide?{...x,distance:null}:x),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
+        render(items,{country,city,nameQuery,level,study,radius:countryWide?700:radius,type,verifiedOnly,sort,countryWide,national:/^suriname$/i.test(country)&&countryWide});
+        loc.textContent=(countryWide?'Country-wide browser fallback':'Nearby browser fallback')+' used · '+items.length+' named education institutions found.';
       }catch(e){
+        if(epoch!==searchEpoch)return;
         h.innerHTML='<div class="v50-state err">SCHOLARK could not reach the school data sources right now. The app itself is still responsive; retry this search in a moment.</div>';
         $('#v50-count').textContent='School source unavailable';
         loc.textContent='Server route and browser fallback both failed.';
@@ -256,6 +260,6 @@
   function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
   function close(){root?.classList.remove('open')}
   function selection(){return {country:$('#v50-country')?.value?.trim()||'',city:$('#v50-city')?.value?.trim()||'',name:$('#v50-name')?.value?.trim()||'',level:$('#v50-level')?.value||'all',study:$('#v50-study')?.value?.trim()||'',results:renderedItems.slice(0,25).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''})),compared:renderedItems.filter(x=>compareIds.has(schoolId(x))).slice(0,4).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''}))}}
-  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260920-r174'};
+  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r191'};
   build();
 })();
