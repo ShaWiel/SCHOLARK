@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r192';
+  const RELEASE = 'r193';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -247,8 +247,8 @@
       orchestrator:info.kind==='home'||!!window.__SCHOLARK_V114_ORCHESTRATOR__,
       orchestratorHealthy:info.kind==='home'||window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok===true,
       orchestratorSelftest:info.kind==='home'||window.__SCHOLARK_V114_ORCHESTRATOR__?.selftest?.().ok===true,
-      hardening:!!(window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__),
-      hardeningHealthy:(window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.().ok!==false,
+      hardening:!!(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__),
+      hardeningHealthy:(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.().ok!==false,
       qualityMaxGone:!Array.from(document.querySelectorAll('.v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max')).some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(String(el.textContent||''))),
       previewHealthy:info.kind !== 'home' || previewHealthy(),
       schoolsScrollable:info.base !== 'schools' || !$('#v50-school') || getComputedStyle($('#v50-school')).overflowY !== 'hidden',
