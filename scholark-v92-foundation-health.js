@@ -32,8 +32,8 @@
 
   async function endpoint(path){
     const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
-    try{const r=await fetch(path,{cache:'no-store',signal:c.signal});return {ok:r.ok,status:r.status}}
-    catch(e){return {ok:false,error:e?.name==='AbortError'?'timeout':clean(e?.message||e)}}
+    try{const r=await fetch(path,{cache:'no-store',signal:c.signal}),data=await r.clone().json().catch(()=>null);return {ok:r.ok,status:r.status,data}}
+    catch(e){return {ok:false,error:e?.name==='AbortError'?'timeout':clean(e?.message||e),data:null}}
     finally{clearTimeout(t)}
   }
   function duplicateIds(){
@@ -53,12 +53,20 @@
     const paths=['/api/health','/api/guard/health','/api/learning/health','/api/export/health','/api/schools/health'];
     const results=checks.online?await Promise.all(paths.map(endpoint)):paths.map(()=>({ok:false,error:'offline'}));
     checks.endpoints=Object.fromEntries(paths.map((p,i)=>[p,results[i]]));
-    checks.i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null;
+    const schoolHealth=checks.endpoints['/api/schools/health']?.data||{};
+    checks.globalSchools=schoolHealth.global===true&&schoolHealth.countryWideWithoutCity===true&&schoolHealth.nearbyWithCoordinates===true&&schoolHealth.citySearch===true&&schoolHealth.dynamicCountryCodes===true;
+    const i18n=window.__SCHOLARK_I18N__,langCode=i18n?.code?.()||document.documentElement.lang||'en',coverage=i18n?.coverage?.(620)||null;
+    checks.languageReady=document.documentElement.dataset.scholarkI18nReady===langCode;
+    checks.languageCoverage=coverage;
+    checks.languageCoverageHealthy=langCode==='en'||!coverage||coverage.total<8||coverage.ratio>=0.78;
+    checks.selectorLocks=$('select[data-sch-select-interacting="1"]').length;
+    checks.selectorLocksHealthy=checks.selectorLocks===0||document.activeElement?.matches?.('select[data-sch-select-interacting="1"]');
+    checks.i18nReport=i18n?.selftest?.()||null;
     const endpointOk=!checks.online||results.every(x=>x.ok);
     checks.orchestratorReport=window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.()||null;
     checks.orchestratorSelftest=window.__SCHOLARK_V114_ORCHESTRATOR__?.selftest?.()||null;
     checks.hardeningReport=(window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.()||null;
-    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.language74&&checks.cloudApi&&checks.connectedCore&&checks.connectedExperience&&checks.visualSystem&&checks.orchestrator&&checks.hardening&&checks.homeOwner&&checks.qualityMaxGone&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&(checks.orchestratorReport?.ok!==false)&&(checks.orchestratorSelftest?.ok!==false)&&(checks.hardeningReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
+    const ok=checks.sidebar&&checks.workspaceMain&&checks.learningApi&&checks.bookApi&&checks.languageApi&&checks.language74&&checks.globalSchools&&checks.languageReady&&checks.languageCoverageHealthy&&checks.selectorLocksHealthy&&checks.cloudApi&&checks.connectedCore&&checks.connectedExperience&&checks.visualSystem&&checks.orchestrator&&checks.hardening&&checks.homeOwner&&checks.qualityMaxGone&&checks.i18n&&checks.countryFoundation&&checks.performanceFoundation&&endpointOk&&(checks.i18nReport?.ok!==false)&&(checks.orchestratorReport?.ok!==false)&&(checks.orchestratorSelftest?.ok!==false)&&(checks.hardeningReport?.ok!==false)&&!checks.duplicateIds.length&&!checks.runtimeErrors.length;
     const report={ok,at:new Date().toISOString(),route:r||'home',checks};
     lastReport=report;lastRun=Date.now();
     try{sessionStorage.setItem('scholark_foundation_health',JSON.stringify(report))}catch{}
