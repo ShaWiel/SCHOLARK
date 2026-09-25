@@ -591,7 +591,16 @@
     }
   }
   rebuildReverseKnown();
-  function saveMap(c,m){try{const safe={...sanitizeStoredMap(m||{}),...(STATIC_UI[c]||{})};localStorage.setItem(key(c),JSON.stringify(safe));indexMap(safe)}catch{}}
+  const CACHE_ENTRY_MAX=1400;
+  function saveMap(c,m){
+    try{
+      const staticPart=STATIC_UI[c]||{},staticKeys=new Set(Object.keys(staticPart)),safe={...sanitizeStoredMap(m||{}),...staticPart};
+      const dynamicEntries=Object.entries(safe).filter(([k])=>!staticKeys.has(k));
+      const keep=Math.max(0,CACHE_ENTRY_MAX-staticKeys.size),compact={...Object.fromEntries(dynamicEntries.slice(-keep)),...staticPart};
+      localStorage.setItem(key(c),JSON.stringify(compact));indexMap(compact);
+      for(const version of LEGACY_CACHE_VERSIONS)try{localStorage.removeItem(legacyKey(version,c))}catch{}
+    }catch{}
+  }
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
@@ -882,7 +891,7 @@
     if(!home)document.documentElement.classList.add('scholark-language-switching');
 
     localStorage.setItem('scholark_ui_language',target);
-    rebuildReverseKnown();
+    /* reverse index is incremental after boot */
     map=loadMap(target);mapCode=target;
     document.documentElement.lang=target;
     document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
