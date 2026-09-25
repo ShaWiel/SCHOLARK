@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r193';
+  const RELEASE = 'r194';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -228,6 +228,7 @@
   function health() {
     const info = routeInfo();
     const runtimeErrors = window.__SCHOLARK_RUNTIME__?.errors?.() || [];
+    const i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null,countryApi=window.__SCHOLARK_COUNTRY__,schoolsApi=window.__SCHOLARK_V50_SCHOOLS__;
     const report = {
       release:RELEASE,
       route:info.raw,
@@ -239,8 +240,11 @@
       connectedExperience:info.kind==='home'||!!window.__SCHOLARK_V111_EXPERIENCE__,
       workspaceRootLocked:info.kind==='home'||document.documentElement.classList.contains('v51-workspace-root'),
       localeControls:info.kind==='home'||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
-      language74:window.__SCHOLARK_I18N__?.count===74&&window.__SCHOLARK_I18N__?.selftest?.().ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
+      language74:window.__SCHOLARK_I18N__?.count===74&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
+      languageResilience:i18nReport?.abortable===true&&i18nReport?.retryReady===true,
       languageCoverage:window.__SCHOLARK_I18N__?.coverage?.(620)||null,
+      globalCountryRegistry:countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195,
+      globalSchools:info.base!=='schools'||(schoolsApi?.global===true&&countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195),
       countryLevels:info.kind==='home'||document.querySelectorAll('#v51-main .v51-levels [data-education-group]').length>0,
       visualSystem:info.kind==='home'||!!window.__SCHOLARK_V112_VISUAL__,
       visualHealthy:info.kind==='home'||info.kind==='dashboard'||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true,
@@ -258,7 +262,7 @@
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable && report.staleSelectorLocks===0;
+    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.languageResilience && report.globalCountryRegistry && report.globalSchools && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable && report.staleSelectorLocks===0;
     try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
