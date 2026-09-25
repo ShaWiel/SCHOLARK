@@ -19,7 +19,8 @@ const COUNTRY_CODES={
 let officialCache=null;
 let officialPromise=null;
 const discoveryCache=new Map();
-const DISCOVERY_TTL=10*60*1000;
+const DISCOVERY_TTL=10*60*1000,DISCOVERY_CACHE_MAX=240;
+function cacheDiscovery(key,value){discoveryCache.set(key,{at:Date.now(),value});while(discoveryCache.size>DISCOVERY_CACHE_MAX)discoveryCache.delete(discoveryCache.keys().next().value)}
 const SRC_POLANEN='https://gov.sr/priority-social-projects-program-renovation-of-schools-phase-1/';
 const SRC_TVET='https://gov.sr/beroepsonderwijs/scholen/';
 const SRC_NUFFIC='https://www.nuffic.nl/onderwijssystemen/suriname/onderwijsinstellingen-en-opleidingen';
@@ -428,7 +429,7 @@ async function discover(body){
     if(curatedFast.length){
       curatedFast.sort((a,b)=>a.name.localeCompare(b.name));
       const value={ok:true,strictCountry:true,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider:'SCHOLARK verified current Suriname supplement',sourceStatus:[{source:'SCHOLARK verified current Suriname supplement',ok:true,count:curatedFast.length}],count:curatedFast.length,schools:curatedFast.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
-      discoveryCache.set(cacheKey,{at:Date.now(),value});return value;
+      cacheDiscovery(cacheKey,value);return value;
     }
   }
 
@@ -472,7 +473,7 @@ async function discover(body){
   rows.sort((a,b)=>countryWide?String(a.name||'').localeCompare(String(b.name||'')):(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
 
   const value={ok:true,strictCountry:true,global:true,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
-  discoveryCache.set(cacheKey,{at:Date.now(),value});
+  cacheDiscovery(cacheKey,value);
   console.log(`[SCHOLARK] Global school search ${country}${city?', '+city:''} · mode ${value.searchMode} · level ${level}${nameQuery?' · name '+nameQuery:''} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
   return value;
 }
@@ -499,8 +500,10 @@ http.Server.prototype.emit=function(type,...args){
 setTimeout(()=>officialSurinameSchools().catch(()=>{}),2200);
 setTimeout(async()=>{
   try{
-    const center=await resolveCenter({},'Japan','Tokyo'),o=await overpass(countryAreaQuery('Japan',center.countryCode,center,12,false,false));
-    console.log('[SCHOLARK] Global school discovery self-test '+(o.elements.length?'PASS':'WARN')+' · Tokyo, Japan · '+o.elements.length+' source records');
+    const cityCenter=await resolveCenter({},'Japan','Tokyo'),nearby=await overpass(countryAreaQuery('Japan',cityCenter.countryCode,cityCenter,12,false,false));
+    const countryCenter=await resolveCenter({},'Singapore',''),countryWide=await overpass(countryAreaQuery('Singapore',countryCenter.countryCode,countryCenter,50,true,false));
+    const ok=nearby.elements.length>0&&countryWide.elements.length>0;
+    console.log('[SCHOLARK] Global school discovery self-test '+(ok?'PASS':'WARN')+' · Tokyo nearby '+nearby.elements.length+' · Singapore country-wide '+countryWide.elements.length);
   }catch(e){console.warn('[SCHOLARK] Global school discovery self-test WARN · '+clean(e?.message||e))}
 },5200);
 console.log('[SCHOLARK] Strict school country + level search '+VERSION+' ready');
