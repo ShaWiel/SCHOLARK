@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260925-school-global-v10';
+const VERSION='20260925-school-global-v11';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -209,13 +209,21 @@ async function geocode(country,city=''){
   return{lat:Number(row.lat),lon:Number(row.lon),country:clean(row.address?.country||country),countryCode:code||expected,display:clean(row.display_name||q)};
 }
 async function reverseGeocode(lat,lon){
-  const u=new URL('https://nominatim.openstreetmap.org/reverse');
-  u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('zoom','10');u.searchParams.set('lat',String(lat));u.searchParams.set('lon',String(lon));
-  const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-location'}},7500);
-  if(!r.ok)throw new Error('Reverse geocoder HTTP '+r.status);
-  const row=await r.json().catch(()=>null);if(!row)throw new Error('Current location could not be resolved');
-  const a=row.address||{},country=clean(a.country),countryCode=clean(a.country_code).toUpperCase(),city=clean(a.city||a.town||a.village||a.municipality||a.county||a.state_district||a.state);
-  return{lat:Number(row.lat??lat),lon:Number(row.lon??lon),country,countryCode,city,display:clean(row.display_name||[city,country].filter(Boolean).join(', '))};
+  try{
+    const u=new URL('https://nominatim.openstreetmap.org/reverse');
+    u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('zoom','10');u.searchParams.set('lat',String(lat));u.searchParams.set('lon',String(lon));
+    const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-location'}},6500);
+    if(r.ok){
+      const row=await r.json().catch(()=>null),a=row?.address||{},country=clean(a.country),countryCode=clean(a.country_code).toUpperCase(),city=clean(a.city||a.town||a.village||a.municipality||a.county||a.state_district||a.state);
+      if(row&&countryCode)return{lat:Number(row.lat??lat),lon:Number(row.lon??lon),country,countryCode,city,display:clean(row.display_name||[city,country].filter(Boolean).join(', ')),provider:'Nominatim'};
+    }
+  }catch{}
+  const u=new URL('https://photon.komoot.io/reverse');u.searchParams.set('lat',String(lat));u.searchParams.set('lon',String(lon));u.searchParams.set('limit','1');
+  const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-location'}},7000);
+  if(!r.ok)throw new Error('Current location geocoders unavailable');
+  const d=await r.json().catch(()=>null),f=d?.features?.[0],p=f?.properties||{},coords=f?.geometry?.coordinates||[],country=clean(p.country),countryCode=clean(p.countrycode||p.countryCode).toUpperCase(),city=clean(p.city||p.name||p.county||p.state);
+  if(!f||!countryCode)throw new Error('Current location could not be resolved');
+  return{lat:Number(coords[1]??lat),lon:Number(coords[0]??lon),country,countryCode,city,display:[p.name||p.city,p.state,country].map(clean).filter(Boolean).join(', '),provider:'Photon'};
 }
 async function resolveLocation(body){
   const lat=Number(body.lat),lon=Number(body.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new Error('Valid latitude and longitude are required');
