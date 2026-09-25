@@ -120,7 +120,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260924-r191",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20260925-r191",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R174__=foundationApi;
