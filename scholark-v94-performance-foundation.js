@@ -92,5 +92,5 @@
   idle(()=>{tuneImages();fitText(activeRoot(),true)});
   setTimeout(routeTransition,350);
 
-  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r191'};
+  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r192'};
 })();
