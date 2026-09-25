@@ -582,13 +582,11 @@
       reverseKnown.set(src,src);if(tr)reverseKnown.set(tr,src);
     }
   }
-  function rebuildReverseKnown(){
+  function rebuildReverseKnown(active=code()){
     reverseKnown.clear();
     for(const m of Object.values(STATIC_UI))indexMap(m);
-    for(const [lc] of LANGS){
-      indexMap(sanitizeStoredMap(parseStored(key(lc))));
-      for(const version of LEGACY_CACHE_VERSIONS)indexMap(sanitizeStoredMap(parseStored(legacyKey(version,lc))));
-    }
+    indexMap(sanitizeStoredMap(parseStored(key(active))));
+    for(const version of LEGACY_CACHE_VERSIONS)indexMap(sanitizeStoredMap(parseStored(legacyKey(version,active))));
   }
   rebuildReverseKnown();
   const CACHE_ENTRY_MAX=1400;
@@ -727,7 +725,7 @@
         const strings=[...new Set(collectDom(480))].filter(eligibleText);
         const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
-        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()});
+        const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()});
         if(epoch!==translationEpoch)break;
         if(!Object.keys(add).length)break;
         map={...map,...add};saveMap(target,map);applyVisible();
@@ -824,6 +822,16 @@
     return roots.length?roots:[document.body];
   }
   function applyVisible(){visibleRoots().forEach(applyKnown)}
+  let applyVisibleFrame=0,applyVisibleDelay=0;
+  function scheduleApplyVisible(delay=0){
+    if(delay>0){
+      clearTimeout(applyVisibleDelay);
+      applyVisibleDelay=setTimeout(()=>{applyVisibleDelay=0;scheduleApplyVisible(0)},delay);
+      return;
+    }
+    if(applyVisibleFrame)return;
+    applyVisibleFrame=requestAnimationFrame(()=>{applyVisibleFrame=0;applyVisible()});
+  }
   function visibleCoverage(limit=520){
     const target=code(),strings=[...new Set(collectDom(limit))].filter(eligibleText);
     if(target==='en')return {ratio:1,total:strings.length,translated:strings.length,missing:[]};
@@ -846,7 +854,7 @@
           const primed=primeDeviceTranslator(target);
           const add=await translateBatch(target,missing,part=>{
             if(epoch!==translationEpoch)return;
-            map={...map,...part};saveMap(target,map);applyVisible();
+            map={...map,...part};saveMap(target,map);scheduleApplyVisible();
           },'ui',primed);
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
@@ -892,7 +900,7 @@
 
     localStorage.setItem('scholark_ui_language',target);
     /* reverse index is incremental after boot */
-    map=loadMap(target);mapCode=target;
+    map=loadMap(target);mapCode=target;indexMap(map);
     document.documentElement.lang=target;
     document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
     syncDocumentTitle(target);
@@ -909,7 +917,7 @@
       try{
         const seed=[...new Set(home?collectDom(340):[...CORE,...collectDom(480)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
-          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)applyVisible()},'ui');
+          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)scheduleApplyVisible()},'ui');
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
         if(epoch===translationEpoch)await window.__SCHOLARK_V55_TOPBAR__?.localize?.(target);
@@ -922,7 +930,7 @@
       if(coverage.ratio<.92&&coverage.missing.length){
         try{
           const focus=coverage.missing.slice(0,140);
-          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);applyVisible()},'ui');
+          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()},'ui');
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map)}
         }catch(e){console.warn('[SCHOLARK] final language coverage pass:',clean(e?.message||e))}
       }
@@ -1035,7 +1043,7 @@
     const excluded=new Set(['srn']);
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
     const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone};
+    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX};
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
