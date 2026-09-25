@@ -182,10 +182,10 @@ await page.click('.v51-level[data-level="mulo"]');
 check(await page.evaluate(()=>localStorage.getItem('scholark_education_track')==='mulo'),'MULO selection did not persist');
 check(await page.locator('.v51-level[data-level="mulo"]').evaluate(el=>el.classList.contains('active')),'MULO did not become active');
 
-await route('studio','#v41-studio-workspace:not([hidden])');
-check(await page.locator('#v41-prompt').count()===1,'Studio prompt missing');
-await page.fill('#v41-prompt','Workspace smoke presentation');
-check((await page.inputValue('#v41-prompt'))==='Workspace smoke presentation','Studio prompt is not editable');
+const studioComing=page.locator('#v51-sidebar [data-v51-tool="studio"]');
+check(await studioComing.count()===1,'Studio AI Coming Soon entry missing');
+check((await studioComing.getAttribute('data-v51-inactive'))==='1','Studio AI should remain feature-gated in R194');
+check((await studioComing.innerText()).includes('COMING SOON'),'Studio AI feature gate is not visible to users');
 
 await route('ai','#v107-ai');
 check(await page.locator('#v107-q').count()===1,'ARKI prompt missing');
