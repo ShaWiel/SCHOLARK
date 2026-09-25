@@ -145,9 +145,9 @@
     return Math.max(0,Math.min(100,Math.round(levelScore+locationScore+evidenceScore+studyScore)));
   }
   function grade(s){const t=ui();return s>=88?t.excellent:s>=76?t.veryGood:s>=62?t.good:s>=48?t.fair:t.low}
-  function syncCountryContext(value,source='schools'){
-    const country=String(value||'').trim();if(!country)return;
-    try{window.__SCHOLARK_COUNTRY__?.set?.(country,source)}catch{}
+  function syncCountryContext(value,source='schools',countryCode=''){
+    const api=window.__SCHOLARK_COUNTRY__,fromCode=api?.fromCode?.(countryCode),country=String(fromCode||value||'').trim();if(!country)return;
+    try{api?.set?.(country,source)}catch{}
     setTimeout(syncStudyField,0);
   }
   function scheduleSchoolLocalization(deep=false){
@@ -254,7 +254,7 @@
 
   async function useLocation(){
     const loc=$('#v50-location'),btn=$('#v50-location-btn');btn.disabled=true;loc.textContent='Requesting your current location…';
-    try{currentPos=await geo();const r=await reverse(currentPos);const a=r.address||{},country=a.country||'',city=a.city||a.town||a.village||a.suburb||'';currentPos.countryCode=String(a.country_code||'').toUpperCase();currentPos.country=country;$('#v50-country').value=country;$('#v50-city').value=city;markLocationBinding(country,city);syncCountryContext(country,'schools-location');loc.textContent=`Current location ready · accuracy about ${Math.round(currentPos.accuracy||0)} m · ${r.display_name||''}`;scheduleSchoolLocalization(false)}
+    try{currentPos=await geo();const r=await reverse(currentPos);const a=r.address||{},country=a.country||'',city=a.city||a.town||a.village||a.suburb||'';currentPos.countryCode=String(a.country_code||'').toUpperCase();currentPos.country=country;$('#v50-country').value=country;$('#v50-city').value=city;markLocationBinding(country,city);syncCountryContext(country,'schools-location',currentPos.countryCode);loc.textContent=`Current location ready · accuracy about ${Math.round(currentPos.accuracy||0)} m · ${r.display_name||''}`;scheduleSchoolLocalization(false)}
     catch{currentPos=null;loc.textContent='Your location could not be read. Enter country + city/area manually.'}finally{btn.disabled=false}
   }
 
@@ -269,7 +269,7 @@
       const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),signal:searchController.signal});
       const live=await response.json().catch(()=>({}));if(epoch!==searchEpoch)return;
       if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
-      const resolvedCountry=String(live.resolvedCountry||country).trim();if(resolvedCountry)syncCountryContext(resolvedCountry,'schools-search');
+      const resolvedCountry=String(live.resolvedCountry||country).trim(),resolvedCode=String(live.center?.countryCode||'').toUpperCase();if(resolvedCountry||resolvedCode)syncCountryContext(resolvedCountry,'schools-search',resolvedCode);
       const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)},countryWide=!!live.countryWide;
       const db=await dbSchools(country,countryWide?'':city,level,study,pos).catch(()=>[]);if(epoch!==searchEpoch)return;
       const items=merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
