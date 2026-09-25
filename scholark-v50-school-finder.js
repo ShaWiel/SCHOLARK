@@ -36,8 +36,15 @@
 
   const rad=x=>x*Math.PI/180;function dist(a,b,c,d){const R=6371,p=rad(c-a),q=rad(d-b),z=Math.sin(p/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(q/2)**2;return 2*R*Math.asin(Math.sqrt(z));}
   async function json(url,ms=12000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal,headers:{Accept:'application/json'}});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}}
+  async function postJson(url,body,ms=12000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{method:'POST',signal:c.signal,headers:{Accept:'application/json','content-type':'application/json'},body:JSON.stringify(body||{})});const d=await r.json().catch(()=>null);if(!r.ok)throw new Error(d?.error||('HTTP '+r.status));return d}finally{clearTimeout(t)}}
   function geo(){return new Promise((res,rej)=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy}),rej,{enableHighAccuracy:true,timeout:12000,maximumAge:180000}):rej(new Error('No geolocation')))}
-  async function reverse(pos){const u=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${pos.lat}&lon=${pos.lon}`;return json(u,9000)}
+  async function reverse(pos){
+    try{
+      const d=await postJson('/api/schools/location',{lat:pos.lat,lon:pos.lon},9000);
+      if(d?.ok)return{display_name:d.display||'',address:{country:d.country||'',country_code:String(d.countryCode||'').toLowerCase(),city:d.city||''}};
+    }catch(e){console.warn('[SCHOLARK] server location resolver fallback:',String(e?.message||e))}
+    const u=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${pos.lat}&lon=${pos.lon}`;return json(u,9000)
+  }
   async function geocode(country,city){const q=[city,country].filter(Boolean).join(', '),u='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q='+encodeURIComponent(q);const d=await json(u,9000);if(!d?.[0])throw new Error('Place not found');return{lat:+d[0].lat,lon:+d[0].lon,country:d[0].address?.country||country,countryCode:(d[0].address?.country_code||'').toUpperCase(),display:d[0].display_name||q}}
   async function dbSchools(country,city,level,study,pos){
     const req=cloud()?.publicRequest;if(!req)return[];
@@ -260,6 +267,6 @@
   function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
   function close(){root?.classList.remove('open')}
   function selection(){return {country:$('#v50-country')?.value?.trim()||'',city:$('#v50-city')?.value?.trim()||'',name:$('#v50-name')?.value?.trim()||'',level:$('#v50-level')?.value||'all',study:$('#v50-study')?.value?.trim()||'',results:renderedItems.slice(0,25).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''})),compared:renderedItems.filter(x=>compareIds.has(schoolId(x))).slice(0,4).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''}))}}
-  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r191'};
+  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r193'};
   build();
 })();
