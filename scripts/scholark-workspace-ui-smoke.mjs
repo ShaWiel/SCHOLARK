@@ -399,8 +399,10 @@ const schoolGroups=await page.locator('#v50-level optgroup').evaluateAll(nodes=>
 check(schoolGroups.includes('Basisonderwijs')&&schoolGroups.includes('Hoger Onderwijs'),'Dutch school optgroup labels are inconsistent after language round-trip');
 await route('study','#v51-fallback .v62-study');
 check(await page.locator('#v62-study-run').count()===1,'Study Ahead action missing');
-await route('book','#v51-fallback .v65-book');
-check(await page.locator('#v65-plan').count()===1,'Book Studio plan button missing');
+const bookComing=page.locator('#v51-sidebar [data-v51-tool="book"]');
+check(await bookComing.count()===1,'Book Studio Coming Soon entry missing');
+check((await bookComing.getAttribute('data-v51-inactive'))==='1','Book Studio should remain feature-gated in R194');
+check((await bookComing.innerText()).includes('COMING SOON'),'Book Studio feature gate is not visible to users');
 await route('dashboard','#v51-main [data-v51-page="dashboard"].active');
 check(await visible('.v51-levels.v51-levels-suriname',5000),'Suriname groups disappeared after workspace route round-trip');
 
