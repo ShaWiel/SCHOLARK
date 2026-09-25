@@ -12,7 +12,7 @@
   function releaseSelect(sel){
     if(!sel)return;
     delete sel.dataset.schSelectInteracting;
-    if(deferredApply&&!$(MANAGED_SELECTS).some(selectBusy)){deferredApply=false;scheduleApply(20)}
+    if(deferredApply&&!$$(MANAGED_SELECTS).some(selectBusy)){deferredApply=false;scheduleApply(20)}
   }
   function wireStableSelect(sel){
     if(!sel||sel.dataset.v96StableSelect==='1')return sel;
