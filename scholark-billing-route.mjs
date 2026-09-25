@@ -10,7 +10,7 @@ const API_BASE=ENV==='sandbox'?'https://sandbox-api.paddle.com':'https://api.pad
 function cleanSecret(value,key=''){let v=String(value||'').trim();if(key&&v.startsWith(key+'='))v=v.slice(key.length+1).trim();if((v.startsWith('"')&&v.endsWith('"'))||(v.startsWith("'")&&v.endsWith("'")))v=v.slice(1,-1).trim();return v}
 const CLIENT_TOKEN=cleanSecret(process.env.PADDLE_CLIENT_TOKEN,'PADDLE_CLIENT_TOKEN');
 const API_KEY=cleanSecret(process.env.PADDLE_API_KEY,'PADDLE_API_KEY');
-const WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_WEBHOOK_SECRET,'PADDLE_WEBHOOK_SECRET');
+let WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_WEBHOOK_SECRET,'PADDLE_WEBHOOK_SECRET');
 const PRICES={plus:String(process.env.PADDLE_PLUS_PRICE_ID||'').trim(),pro:String(process.env.PADDLE_PRO_PRICE_ID||'').trim()};
 const WEBHOOK_URL=String(process.env.PADDLE_WEBHOOK_URL||'https://scholark-app-shawiel.onrender.com/api/billing/webhook').trim();
 let catalogHealth={checked:false,ok:false,environment:ENV};
@@ -59,14 +59,31 @@ async function auditCatalogBrandPreview(){
   return {ok:!!plans.plus&&!!plans.pro&&!plans.plus.legacyBrand&&!plans.pro.legacyBrand,plans};
 }
 async function verifyWebhookDestination(){
-  const required=new Set(['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled']);
-  const r=await paddle('/notification-settings?active=true&per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
+  const required=['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled'];
+  const normalize=v=>String(v||'').trim().replace(/\/+$/,'');
+  const r=await paddle('/notification-settings?per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
   if(!r.ok)return {ok:false,verified:false,http:r.status,reason:d?.error?.code||d?.error?.type||'notification_settings_read_failed'};
-  const row=(Array.isArray(d?.data)?d.data:[]).find(x=>String(x?.destination||'').replace(/\/+$/,'')===WEBHOOK_URL.replace(/\/+$/,''));
-  if(!row)return {ok:false,verified:true,reason:'webhook_destination_missing'};
-  const events=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),missing=[...required].filter(x=>!events.has(x));
-  const secretMatches=String(row.endpoint_secret_key||'')===WEBHOOK_SECRET;
-  return {ok:!!row.active&&secretMatches&&!missing.length,verified:true,active:!!row.active,secretMatches,missingEvents:missing,destination:WEBHOOK_URL};
+  const rows=Array.isArray(d?.data)?d.data:[],wanted=normalize(WEBHOOK_URL);
+  let row=rows.find(x=>normalize(x?.destination)===wanted);
+  let repaired=false,reusedLegacy=false;
+  if(!row){
+    const candidates=rows.filter(x=>{
+      const dest=normalize(x?.destination),description=String(x?.description||'');
+      return String(x?.type||'')==='url'&&(/\/api\/billing\/webhook$/i.test(dest)||/scholark|student\s*os|studentos/i.test(description+' '+dest));
+    });
+    row=candidates.find(x=>/\/api\/billing\/webhook$/i.test(normalize(x?.destination)))||candidates[0]||null;
+    reusedLegacy=!!row;
+  }
+  if(!row)return {ok:false,verified:true,reason:'webhook_destination_missing_no_reusable_candidate',destination:WEBHOOK_URL,candidateCount:0,secretConfigured:!!WEBHOOK_SECRET};
+  const currentEvents=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),missing=required.filter(x=>!currentEvents.has(x));
+  const needsRepair=normalize(row.destination)!==wanted||!row.active||missing.length>0||String(row.traffic_source||'')!=='all';
+  if(needsRepair){
+    const patch=await paddle('/notification-settings/'+encodeURIComponent(String(row.id||'')),{method:'PATCH',body:JSON.stringify({description:'SCHOLARK billing webhook',destination:WEBHOOK_URL,active:true,traffic_source:'all',subscribed_events:required})}),pd=await patch.json().catch(()=>({}));
+    if(!patch.ok)return {ok:false,verified:true,http:patch.status,reason:pd?.error?.code||pd?.error?.type||'webhook_destination_repair_failed',destination:WEBHOOK_URL,reusedLegacy,secretConfigured:!!WEBHOOK_SECRET};
+    row=pd?.data||row;repaired=true;
+  }
+  const events=new Set((row.subscribed_events||[]).map(x=>String(x?.name||x||''))),remaining=required.filter(x=>!events.has(x));
+  return {ok:!!row.active&&!!WEBHOOK_SECRET&&!remaining.length&&normalize(row.destination)===wanted,verified:true,active:!!row.active,secretConfigured:!!WEBHOOK_SECRET,missingEvents:remaining,destination:WEBHOOK_URL,repaired,reusedLegacy,notificationSettingId:String(row.id||'')};
 }
 async function billingSelftest(){
   if(!configured()){catalogHealth={checked:true,ok:false,environment:ENV,reason:'credentials_or_prices_missing'};console.warn('[SCHOLARK] Paddle catalog self-test SKIP · billing credentials incomplete');return catalogHealth}
@@ -74,7 +91,7 @@ async function billingSelftest(){
     const [plus,pro,brandPreview,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),auditCatalogBrandPreview(),verifyWebhookDestination()]);
     catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!brandPreview.ok&&!!webhook.ok,environment:ENV,plus,pro,brandPreview,webhook,checkedAt:new Date().toISOString()};
     const level=catalogHealth.ok?'log':'warn';
-    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?'OK':(webhook.reason||(!webhook.secretMatches?'secret_mismatch':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
+    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?(webhook.repaired?(webhook.reusedLegacy?'REPAIRED_LEGACY':'REPAIRED'):'OK'):(webhook.reason||(!webhook.secretConfigured?'secret_missing':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLARK] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
   }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLARK] Paddle catalog self-test WARN · '+catalogHealth.reason)}
   return catalogHealth;
 }

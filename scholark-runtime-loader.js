@@ -83,7 +83,7 @@
   }
 
   const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js'];
-  const HOME_FIRST=['scholark-v109-home-owner.js','scholark-v72-cloud-projects.js','scholark-v55-home-topbar-workspace-entry.js'];
+  const HOME_FIRST=['scholark-v55-home-topbar-workspace-entry.js','scholark-v109-home-owner.js','scholark-v72-cloud-projects.js'];
   function required(key) {
     const set = new Set(BASE);
     if (key === 'home') HOME.forEach(x => set.add(x));

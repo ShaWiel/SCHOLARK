@@ -85,7 +85,7 @@ const geminiHealth=await get('/api/gemini/health',{requireOk:live});
 if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
-  check(schoolHealth.version==='20260919-school-suriname-taxonomy-v7','School country/level search version mismatch');
+  check(schoolHealth.version==='20260925-school-global-v12','School country/level search version mismatch');
   check(/Kleuterschool/i.test(String(schoolHealth.levels?.kindergarten||'')),'Kleuteronderwijs taxonomy missing');
   check(/Lagere school|Basisschool/i.test(String(schoolHealth.levels?.primary||'')),'Basisonderwijs taxonomy missing');
   check(/MULO/i.test(String(schoolHealth.levels?.mulo||''))&&/LBO/i.test(String(schoolHealth.levels?.lbo||'')),'VOJ taxonomy missing');
@@ -111,7 +111,7 @@ if(vwoHealth){
   check(Number(vwoHealth.vwoCount)>0,'No VWO schools were detected in the official Suriname roster');
 }
 if(schoolResilience){
-  check(schoolResilience.version==='20260917-school-resilience-v1','School resilience version mismatch');
+  check(schoolResilience.version==='20260925-school-resilience-v2','School resilience version mismatch');
   check(Array.isArray(schoolResilience.providers)&&schoolResilience.providers.some(x=>/Photon/i.test(x)),'School Photon fallback missing');
 }
 if(geminiHealth){
