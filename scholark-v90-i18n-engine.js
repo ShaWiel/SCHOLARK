@@ -629,6 +629,7 @@
   }
   function protectedNode(el){
     if(!el)return false;
+    if(el.closest?.('select[data-sch-select-interacting="1"],select[data-sch-select-interacting="1"] option'))return true;
     if(el.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-topbar,#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,[data-sch-school-name="1"],[data-sch-school-name="1"] *,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]'))return true;
     if(STATIC_CORE_LANGS.has(code())&&el.closest?.('[data-v96-i18n-owned="1"],[data-v96-i18n-owned="1"] option,[data-sch-i18n-owned="1"],[data-sch-i18n-owned="1"] option,#v96-country,#v96-country option,#v96-side-country select,#v96-side-country option'))return true;
     return false;
@@ -722,8 +723,19 @@
 
   function upgradeSelectors(){
     const expected=LANGS.map(([v,n])=>[v,n]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
+    const wireStableSelect=sel=>{
+      if(!sel||sel.dataset.v90StableSelect==='1')return;
+      sel.dataset.v90StableSelect='1';
+      const lock=()=>{sel.dataset.schSelectInteracting='1'};
+      const release=()=>{delete sel.dataset.schSelectInteracting;setTimeout(upgradeSelectors,30)};
+      sel.addEventListener('pointerdown',lock,{passive:true});sel.addEventListener('focusin',lock);
+      sel.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ','Enter'].includes(e.key)||e.altKey)lock();if(e.key==='Escape')setTimeout(release,0)});
+      sel.addEventListener('change',()=>setTimeout(release,0));sel.addEventListener('blur',()=>setTimeout(release,0));
+    };
     const normalize=sel=>{
       if(!sel)return null;
+      wireStableSelect(sel);
+      if(sel.dataset.schSelectInteracting==='1')return sel;
       const current=[...sel.options].map(o=>[String(o.value),clean(o.textContent)]);
       const exact=current.length===expected.length&&expected.every(([v,n],i)=>current[i]?.[0]===v&&current[i]?.[1]===n);
       if(!exact)sel.innerHTML=options;
