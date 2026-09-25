@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20260925-school-global-v9';
+const VERSION='20260925-school-global-v10';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -208,8 +208,23 @@ async function geocode(country,city=''){
   if(expected&&code&&!sameCode(expected,code))throw new Error('The selected city/area is not in '+country);
   return{lat:Number(row.lat),lon:Number(row.lon),country:clean(row.address?.country||country),countryCode:code||expected,display:clean(row.display_name||q)};
 }
+async function reverseGeocode(lat,lon){
+  const u=new URL('https://nominatim.openstreetmap.org/reverse');
+  u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('zoom','10');u.searchParams.set('lat',String(lat));u.searchParams.set('lon',String(lon));
+  const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 strict-school-location'}},7500);
+  if(!r.ok)throw new Error('Reverse geocoder HTTP '+r.status);
+  const row=await r.json().catch(()=>null);if(!row)throw new Error('Current location could not be resolved');
+  const a=row.address||{},country=clean(a.country),countryCode=clean(a.country_code).toUpperCase(),city=clean(a.city||a.town||a.village||a.municipality||a.county||a.state_district||a.state);
+  return{lat:Number(row.lat??lat),lon:Number(row.lon??lon),country,countryCode,city,display:clean(row.display_name||[city,country].filter(Boolean).join(', '))};
+}
+async function resolveLocation(body){
+  const lat=Number(body.lat),lon=Number(body.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw new Error('Valid latitude and longitude are required');
+  const place=await reverseGeocode(lat,lon);
+  return{ok:true,...place};
+}
+
 async function resolveCenter(body,country,city){
-  const lat=Number(body.lat),lon=Number(body.lon),provided=clean(body.countryCode).toUpperCase();
+  const lat=Number(body.lat),lon=Number(body.lon),provided=clean(body.countryCode).toUpperCase(),hasCoords=Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180;
   let expected=expectedCode(country),countryRoot=null;
   if(!expected){
     try{countryRoot=await geocode(country,'');expected=clean(countryRoot.countryCode).toUpperCase()}catch{}
@@ -219,8 +234,12 @@ async function resolveCenter(body,country,city){
     if(expected&&code&&!sameCode(expected,code))throw new Error('The selected city/area is not in '+country);
     return{...hit,countryCode:code||expected,mode:'city'};
   }
-  if(Number.isFinite(lat)&&Number.isFinite(lon)&&provided&&(!expected||sameCode(provided,expected))){
-    return{lat,lon,country,countryCode:provided,display:country,mode:'coordinates'};
+  if(hasCoords){
+    let actualCode=provided,reverse=null;
+    if(!actualCode){try{reverse=await reverseGeocode(lat,lon);actualCode=clean(reverse.countryCode).toUpperCase()}catch{}}
+    if(!expected||!actualCode||sameCode(actualCode,expected)){
+      return{lat,lon,country:reverse?.country||country,countryCode:actualCode||expected,display:reverse?.display||country,mode:'coordinates'};
+    }
   }
   const root=countryRoot||await geocode(country,'');
   return{...root,countryCode:clean(root.countryCode||expected).toUpperCase(),mode:'country'};
@@ -412,7 +431,7 @@ async function overpass(query){
 }
 function countryAreaQuery(country,countryCode,pos,radius,countryWide,forceName=false){
   const iso=clean(countryCode).toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),safeName=clean(country).replace(/["\\]/g,''),scope=countryWide?'(area.country)':`(area.country)(around:${Math.round(radius*1000)},${pos.lat},${pos.lon})`;
-  const area=!forceName&&iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]["admin_level"="2"]->.country;`;
+  const area=!forceName&&iso?`area["ISO3166-1"="${iso}"]["boundary"="administrative"]->.country;`:`area["name"="${safeName}"]["boundary"="administrative"]->.country;`;
   return`[out:json][timeout:20];${area}(nwr["amenity"~"kindergarten|school|college|university|language_school"]${scope};nwr["building"="school"]${scope};nwr["office"="educational_institution"]${scope};);out center tags 1800;`;
 }
 
@@ -502,8 +521,11 @@ async function discover(body){
 http.Server.prototype.emit=function(type,...args){
   if(type!=='request')return previousEmit.call(this,type,...args);
   const[req,res]=args;let pathname='';try{pathname=new URL(req.url||'/','http://localhost').pathname}catch{return previousEmit.call(this,type,...args)}
+  if(req.method==='POST'&&pathname==='/api/schools/location'){
+    readJson(req).then(resolveLocation).then(x=>json(res,200,x)).catch(e=>json(res,422,{ok:false,error:clean(e?.message||e)}));return true;
+  }
   if(req.method==='GET'&&pathname==='/api/schools/health'){
-    json(res,200,{ok:true,strictCountry:true,global:true,countryWideWithoutCity:true,nearbyWithCoordinates:true,citySearch:true,dynamicCountryCodes:true,searchCacheEntries:discoveryCache.size,overpassCircuitOpen:Date.now()<overpassDownUntil,overpassCircuitRetryAt:overpassDownUntil||null,version:VERSION,providers:['OpenStreetMap country-boundary search','OpenStreetMap Nominatim school fallback','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesPrakiki:SURINAME_CURATED_RAW.some(x=>/Prakiki Kleuterschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name)),includesNatinNickerie:SURINAME_CURATED_RAW.some(x=>/NATIN Nickerie/i.test(x.name)),includesWaaldijkCollege:SURINAME_CURATED_RAW.some(x=>/Waaldijk College/i.test(x.name)),includesCPI:SURINAME_CURATED_RAW.some(x=>/Christelijk Pedagogisch Instituut/i.test(x.name)),includesSPI:SURINAME_CURATED_RAW.some(x=>/Surinaams Pedagogisch Instituut/i.test(x.name)),includesVCS:SURINAME_CURATED_RAW.some(x=>/Vocational College Suriname/i.test(x.name))},researchBaseline:{source:SRC_POLICY_2024,year:2024,generalAndSecondaryTotal:597,gradeBands:{years1to8:373,years9to12:163,years13to16:61},higherInstitutesApprox:30,note:'MinOWC count is by education type, not school buildings.'}});return true;
+    json(res,200,{ok:true,strictCountry:true,global:true,countryWideWithoutCity:true,nearbyWithCoordinates:true,citySearch:true,dynamicCountryCodes:true,currentLocationResolve:true,coordinateCountryValidation:true,searchCacheEntries:discoveryCache.size,overpassCircuitOpen:Date.now()<overpassDownUntil,overpassCircuitRetryAt:overpassDownUntil||null,version:VERSION,providers:['OpenStreetMap country-boundary search','OpenStreetMap Nominatim school fallback','MinOWC official Suriname school list','SCHOLARK verified current Suriname supplement','Photon geocoder fallback'],levels:{kindergarten:'Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar',primary:'Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar',mulo:'VOJ · MULO · 12–16 jaar',lbo:'VOJ · LBO · 12–16 jaar',havo:'VOS · HAVO · 16–18 jaar',vwo:'VOS · VWO · 16–19 jaar',mbo:'VOS · MBO · NATIN / IMEAO / Kweekschool · 16–20+ jaar',hbo:'Hoger Onderwijs · HBO · 18/19+ jaar',wo:'Hoger Onderwijs · WO / Universiteit · AdeKUS · 19+ jaar',early:'ISCED 0 / early childhood',secondary:'lower secondary / VOJ',upper_secondary:'upper secondary / VOS',vocational:'vocational generic',higher:'higher education generic',adult:'adult/professional learning'},officialRoster:{configured:true,cached:!!officialCache,count:officialCache?.rows?.length||0},curatedSupplement:{count:SURINAME_CURATED_RAW.length,includesPolanen:SURINAME_CURATED_RAW.some(x=>/J\.H\.N\. Polanenschool/i.test(x.name)),includesPrakiki:SURINAME_CURATED_RAW.some(x=>/Prakiki Kleuterschool/i.test(x.name)),includesAAHA:SURINAME_CURATED_RAW.some(x=>/Arthur Alex Hogendoorn Atheneum/i.test(x.name)),includesKangoeroe:SURINAME_CURATED_RAW.some(x=>/Kangoeroe High/i.test(x.name)),includesAdFontes:SURINAME_CURATED_RAW.some(x=>/Ad Fontes Lyceum/i.test(x.name)),includesNatinNickerie:SURINAME_CURATED_RAW.some(x=>/NATIN Nickerie/i.test(x.name)),includesWaaldijkCollege:SURINAME_CURATED_RAW.some(x=>/Waaldijk College/i.test(x.name)),includesCPI:SURINAME_CURATED_RAW.some(x=>/Christelijk Pedagogisch Instituut/i.test(x.name)),includesSPI:SURINAME_CURATED_RAW.some(x=>/Surinaams Pedagogisch Instituut/i.test(x.name)),includesVCS:SURINAME_CURATED_RAW.some(x=>/Vocational College Suriname/i.test(x.name))},researchBaseline:{source:SRC_POLICY_2024,year:2024,generalAndSecondaryTotal:597,gradeBands:{years1to8:373,years9to12:163,years13to16:61},higherInstitutesApprox:30,note:'MinOWC count is by education type, not school buildings.'}});return true;
   }
   if(req.method==='GET'&&pathname==='/api/schools/vwo-health'){
     officialSurinameSchools().then(rows=>{
