@@ -38,6 +38,13 @@
     if (state.errors.length > 16) state.errors.splice(0, state.errors.length - 16);
   }
 
+  function releaseStaleSelectorLocks(force=false) {
+    for (const sel of document.querySelectorAll('select[data-sch-select-interacting="1"]')) {
+      if (!force && document.activeElement === sel) continue;
+      delete sel.dataset.schSelectInteracting;
+    }
+  }
+
   function closeForeign(info) {
     if (info.kind !== 'studio') {
       $('#v41-studio-workspace')?.setAttribute('hidden','');
@@ -117,6 +124,7 @@
     overlay.dataset.v136Wheel = '1';
     overlay.addEventListener('wheel', e => {
       if (routeInfo().base !== 'schools' || !overlay.classList.contains('open')) return;
+      if (e.target?.closest?.('select,input,textarea,[contenteditable="true"],[data-sch-select-interacting="1"]')) return;
       const max = overlay.scrollHeight - overlay.clientHeight;
       if (max <= 2) return;
       const before = overlay.scrollTop;
@@ -185,6 +193,7 @@
     if (repairing) return;
     repairing = true;
     try {
+      releaseStaleSelectorLocks(false);
       const info = routeInfo();
       const routeChanged = state.lastRoute !== info.raw;
       if (routeChanged) { state.lastRoute = info.raw; state.routeEpoch++; }
@@ -243,24 +252,25 @@
       qualityMaxGone:!Array.from(document.querySelectorAll('.v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max')).some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(String(el.textContent||''))),
       previewHealthy:info.kind !== 'home' || previewHealthy(),
       schoolsScrollable:info.base !== 'schools' || !$('#v50-school') || getComputedStyle($('#v50-school')).overflowY !== 'hidden',
+      staleSelectorLocks:Array.from(document.querySelectorAll('select[data-sch-select-interacting="1"]')).filter(sel=>document.activeElement!==sel).length,
       repairs:state.repairs,
       recoveries:state.recoveries,
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable;
+    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable && report.staleSelectorLocks===0;
     try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
 
   addEventListener('hashchange', () => schedule('hashchange',0,true));
   addEventListener('popstate', () => schedule('popstate',0,true));
-  addEventListener('pageshow', () => schedule('pageshow',20,true));
-  addEventListener('focus', () => schedule('focus',60,false));
+  addEventListener('pageshow', () => { releaseStaleSelectorLocks(true); schedule('pageshow',20,true); });
+  addEventListener('focus', () => { releaseStaleSelectorLocks(false); schedule('focus',60,false); });
   addEventListener('online', () => schedule('online',100,false));
   addEventListener('scholark-runtime-ready', () => schedule('runtime-ready',0,true));
   addEventListener('scholark-language-complete', () => schedule('language',50,false));
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) schedule('visible',60,false); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { releaseStaleSelectorLocks(false); schedule('visible',60,false); } });
 
   setInterval(() => {
     if (document.hidden || document.documentElement.classList.contains('scholark-route-loading') || document.documentElement.classList.contains('scholark-home-language-adapting')) return;
