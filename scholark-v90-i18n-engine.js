@@ -538,8 +538,8 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLARK | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v7-global74-stable';
-  const LEGACY_CACHE_VERSIONS=['v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
+  const CACHE_VERSION='v8-global74-resilient';
+  const LEGACY_CACHE_VERSIONS=['v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
@@ -599,7 +599,7 @@
       for(const version of LEGACY_CACHE_VERSIONS)try{localStorage.removeItem(legacyKey(version,c))}catch{}
     }catch{}
   }
-  let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false;
+  let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
@@ -667,25 +667,46 @@
     }
     return [...out];
   }
-  async function translateBatch(target,strings,onChunk,purpose='ui',primed=null){
+  async function translateBatch(target,strings,onChunk,purpose='ui',primed=null,parentSignal=null){
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
-    const result={};
-    const local=await deviceTranslate(target,strings,part=>{Object.assign(result,part);onChunk?.(part)},primed);
-    if(!local.missing.length)return result;
+    const result={},emit=part=>{if(parentSignal?.aborted)return;Object.assign(result,part);onChunk?.(part)};
+    const local=await deviceTranslate(target,strings,emit,primed);
+    if(parentSignal?.aborted||!local.missing.length)return result;
     const chunks=[];for(let i=0;i<local.missing.length;i+=55)chunks.push(local.missing.slice(i,i+55));
     let cursor=0;
-    const worker=async()=>{
-      while(cursor<chunks.length){
-        const idx=cursor++,chunk=chunks[idx],ctrl=new AbortController(),timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000,timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+    const wait=ms=>new Promise(r=>setTimeout(r,ms));
+    const requestChunk=async(chunk,idx)=>{
+      let last='';
+      for(let attempt=0;attempt<2;attempt++){
+        if(parentSignal?.aborted)return null;
+        const ctrl=new AbortController(),timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000,timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+        const relay=()=>ctrl.abort();if(parentSignal)parentSignal.addEventListener('abort',relay,{once:true});
         try{
           const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
-          const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
-          const part={};for(const x of d.result?.translations||[]){const source=String(x.source||''),translated=clean(x.translated);if(chunk.includes(source)&&translated!==source&&safeTranslation(source,translated)){result[source]=translated;part[source]=translated}}
-          if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part);
-        }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
+          const d=await r.json().catch(()=>({}));
+          if(r.ok&&d?.ok)return d;
+          last='HTTP '+r.status;
+          if(r.status>=400&&r.status<500&&r.status!==408&&r.status!==429)break;
+        }catch(e){
+          if(parentSignal?.aborted)return null;
+          last=clean(e?.name==='AbortError'?'timeout':e?.message||e);
+        }finally{
+          clearTimeout(timer);if(parentSignal)parentSignal.removeEventListener('abort',relay);
+        }
+        if(attempt===0)await wait(140+Math.min(180,idx*12));
+      }
+      if(last)console.warn('[SCHOLARK] translation chunk '+(idx+1)+' failed after retry:',last);
+      return null;
+    };
+    const worker=async()=>{
+      while(cursor<chunks.length&&!parentSignal?.aborted){
+        const idx=cursor++,chunk=chunks[idx],d=await requestChunk(chunk,idx);if(!d||parentSignal?.aborted)continue;
+        const part={};for(const x of d.result?.translations||[]){const source=String(x.source||''),translated=clean(x.translated);if(chunk.includes(source)&&translated!==source&&safeTranslation(source,translated)){result[source]=translated;part[source]=translated}}
+        if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part);
       }
     };
-    await Promise.all(Array.from({length:Math.min(purpose==='ui'||purpose==='topbar_ui'?3:2,chunks.length)},()=>worker()));
+    const cores=Number(navigator.hardwareConcurrency)||4,workers=Math.min(purpose==='ui'||purpose==='topbar_ui'?(cores<=4?2:3):2,chunks.length||1);
+    await Promise.all(Array.from({length:workers},()=>worker()));
     return result;
   }
   function applyKnown(root=document){
@@ -841,7 +862,7 @@
   }
 
   let backgroundLanguageTimer=null,backgroundLanguageFollowup=null,completionRunning=false,completionQueued=false;
-  function scheduleLanguageCompletion(target,epoch){
+  function scheduleLanguageCompletion(target,epoch,parentSignal=null){
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);
     if(target==='en')return;
     const run=async()=>{
@@ -855,7 +876,7 @@
           const add=await translateBatch(target,missing,part=>{
             if(epoch!==translationEpoch)return;
             map={...map,...part};saveMap(target,map);scheduleApplyVisible();
-          },'ui',primed);
+          },'ui',primed,parentSignal);
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
         if(epoch===translationEpoch){
@@ -879,6 +900,7 @@
     if(!LANGS.some(x=>x[0]===target))return;
     if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();applyVisible();return}
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);completionQueued=false;
+    try{activeUiAbort?.abort()}catch{}activeUiAbort=new AbortController();const uiSignal=activeUiAbort.signal;
     translating=true;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
     if(home){document.documentElement.classList.add('scholark-home-language-adapting');freezeHomeSurface()}
@@ -891,7 +913,7 @@
       document.documentElement.dataset.scholarkI18nReady=target;
       releaseHomeSurface();
       document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
-      overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;
+      try{activeUiAbort?.abort()}catch{}overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;
       console.warn('[SCHOLARK] language transition released by failsafe',target);
     },16000);
 
@@ -917,7 +939,7 @@
       try{
         const seed=[...new Set(home?collectDom(340):[...CORE,...collectDom(480)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
         if(missing.length){
-          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);if(!home)scheduleApplyVisible()},'ui');
+          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch||uiSignal.aborted)return;map={...map,...part};saveMap(target,map);if(!home)scheduleApplyVisible()},'ui',null,uiSignal);
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
         }
         if(epoch===translationEpoch)await window.__SCHOLARK_V55_TOPBAR__?.localize?.(target);
@@ -930,7 +952,7 @@
       if(coverage.ratio<.92&&coverage.missing.length){
         try{
           const focus=coverage.missing.slice(0,140);
-          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()},'ui');
+          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch||uiSignal.aborted)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()},'ui',null,uiSignal);
           if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map)}
         }catch(e){console.warn('[SCHOLARK] final language coverage pass:',clean(e?.message||e))}
       }
@@ -957,7 +979,7 @@
     overlay.style.opacity='0';setTimeout(()=>{if(epoch===translationEpoch){overlay.classList.remove('open');overlay.style.removeProperty('opacity')}},120);
     translating=false;
     if(!home)setTimeout(()=>document.documentElement.classList.remove('scholark-language-switching'),20);
-    if(target!=='en')scheduleLanguageCompletion(target,epoch);
+    if(target!=='en')scheduleLanguageCompletion(target,epoch,uiSignal);
   }
 
   async function translateStrings(target,strings,purpose='content'){
@@ -1042,8 +1064,9 @@
     const canonicalCrossLocale=canonicalSource('Todos los niveles')==='All levels'||!reverseKnown.has('Todos los niveles');
     const excluded=new Set(['srn']);
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
-    const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX};
+    const abortable=typeof AbortController==='function',retryReady=/resilient/.test(CACHE_VERSION);
+    const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
+    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
     console[ok?'log':'warn']('[SCHOLARK] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
