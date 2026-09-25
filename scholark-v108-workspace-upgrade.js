@@ -214,7 +214,13 @@
   },true);
 
   let raf=0;function enhance(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{applyArkiPending();enhancePlanner();enhanceGoals();enhanceProgress();enhanceProjects();enhanceFiles();enhancePower();enhanceContext()})}
-  const mo=new MutationObserver(enhance);mo.observe(document.body,{childList:true,subtree:true});
+  const enhancementRoute=()=>/^(#ai|#planner|#goal|#progress|#project|#files|#focus|#flashcards|#assignments|#language|#study|#schools|#education|#tutor)/.test(String(location.hash||'').toLowerCase());
+  const mo=new MutationObserver(muts=>{
+    if(!enhancementRoute())return;
+    const relevant=muts.some(m=>[...m.addedNodes,...m.removedNodes].some(n=>n?.nodeType===1));
+    if(relevant)enhance();
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
   addEventListener('hashchange',enhance);addEventListener('popstate',enhance);addEventListener('scholark-runtime-ready',enhance);setTimeout(enhance,120);
-  window.__SCHOLARK_V108_UPGRADE__={version:'20260921-r176',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
+  window.__SCHOLARK_V108_UPGRADE__={version:'20260925-r191',enhance,ai,features:window.__SCHOLARK_FEATURE_FLAGS__};
 })();
