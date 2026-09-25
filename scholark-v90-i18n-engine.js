@@ -611,9 +611,12 @@
   async function deviceTranslate(target,strings,onChunk,primed){
     const promise=primed||primeDeviceTranslator(target);if(!promise)return {translated:{},missing:[...strings]};
     let translator;try{translator=await promise}catch{return {translated:{},missing:[...strings]}}
-    const translated={},queue=[...strings.entries()];
-    const worker=async()=>{while(queue.length){const [,source]=queue.shift();try{const tr=clean(await translator.translate(source));if(tr&&tr!==source){translated[source]=tr;if(typeof onChunk==='function')onChunk({[source]:tr})}}catch{}}};
-    await Promise.all(Array.from({length:Math.min(6,strings.length)},()=>worker()));
+    const translated={},queue=[...strings.entries()],pending={};let flushTimer=0;
+    const flush=()=>{clearTimeout(flushTimer);flushTimer=0;const part={...pending};for(const k of Object.keys(pending))delete pending[k];if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part)};
+    const emit=(source,tr)=>{pending[source]=tr;if(Object.keys(pending).length>=10)flush();else if(!flushTimer)flushTimer=setTimeout(flush,36)};
+    const concurrency=Math.min((Number(navigator.hardwareConcurrency)||4)<=4?3:5,Math.max(1,strings.length));
+    const worker=async()=>{while(queue.length){const [,source]=queue.shift();try{const tr=clean(await translator.translate(source));if(tr&&tr!==source&&safeTranslation(source,tr)){translated[source]=tr;emit(source,tr)}}catch{}}};
+    await Promise.all(Array.from({length:concurrency},()=>worker()));flush();
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
   const rememberText=n=>{
@@ -642,6 +645,7 @@
   function protectedNode(el){
     if(!el)return false;
     if(el.closest?.('select[data-sch-select-interacting="1"],select[data-sch-select-interacting="1"] option'))return true;
+    if(el.closest?.('#v96-country option,#v96-side-country option'))return true;
     if(el.closest?.('script,style,code,pre,[contenteditable="true"],input[type="password"],#v55-topbar,#v55-language,#v55-native-language,#v36-language,#v90-language,#v89-lang,#v55-language option,#v55-native-language option,#v36-language option,#v90-language option,#v89-lang option,[data-sch-school-name="1"],[data-sch-school-name="1"] *,.v52-msg.user,.v52-msg.ai,#v52-chat,.v93-ai,.v62-answer,.v62-results,#v86-output,.v65-prose,.v65-editor,[data-v65-body],[data-v65-title],.v57-slide,.v58-canvas,.v68-editor,.v75-doc-editor,.v76-canvas,.v77-page-preview,#v29-prompt,.v29-float,.v30-tutor-demo,.v30-diagnostic-demo,.v30-live-label,.v30-ahead-caption,[data-v106-user="1"]'))return true;
     if(STATIC_CORE_LANGS.has(code())&&el.closest?.('[data-v96-i18n-owned="1"],[data-v96-i18n-owned="1"] option,[data-sch-i18n-owned="1"],[data-sch-i18n-owned="1"] option,#v96-country,#v96-country option,#v96-side-country select,#v96-side-country option'))return true;
     return false;
@@ -669,7 +673,7 @@
         try{
           const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)continue;
-          const part={};for(const x of d.result?.translations||[])if(chunk.includes(String(x.source||''))&&clean(x.translated)&&clean(x.translated)!==String(x.source||'')){result[x.source]=x.translated;part[x.source]=x.translated}
+          const part={};for(const x of d.result?.translations||[]){const source=String(x.source||''),translated=clean(x.translated);if(chunk.includes(source)&&translated!==source&&safeTranslation(source,translated)){result[source]=translated;part[source]=translated}}
           if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part);
         }catch(e){console.warn('[SCHOLARK] translation chunk '+(idx+1)+':',clean(e?.message||e))}finally{clearTimeout(timer)}
       }
@@ -856,6 +860,9 @@
 
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
+    if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();applyVisible();return}
+    clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);completionQueued=false;
+    translating=true;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
     if(home){document.documentElement.classList.add('scholark-home-language-adapting');freezeHomeSurface()}
 
