@@ -175,7 +175,8 @@
     const groups=suriname?SURINAME_GROUPS:UNIVERSAL_GROUPS;
     const html=groups.map(group=>{
       const groupRows=suriname?rows.filter(x=>x[4]===group.id):rows.filter(x=>group.levels.includes(x[0]));
-      const cards=groupRows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
+      const toneStyle=group.tone==='dark'?' style="background:linear-gradient(135deg,#1f2b5b 0%,#385294 52%,#172349 100%)!important;color:#fff!important;border-color:rgba(23,35,73,.30)!important"':'';
+      const cards=groupRows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"${toneStyle}><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
       return `<section class="v51-level-cluster ${group.tone}" data-v51-group="${group.id}" data-v96-i18n-owned="1" data-sch-i18n-owned="1"><div class="v51-level-group" data-sch-i18n-owned="1">${esc(suriname?surinameGroupLabel(group):universalGroupLabel(group))}</div><div class="v51-level-cluster-cards">${cards}</div></section>`;
     }).join('');
     const key=country+'|'+lang+'|'+selected+'|'+rows.map(x=>x.slice(0,5).join('~')).join('^');

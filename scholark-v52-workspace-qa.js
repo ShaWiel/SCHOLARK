@@ -240,6 +240,6 @@
   function syncRoute(){const id=String(location.hash||'').replace(/^#/,'').toLowerCase();if(FAST.includes(id))openDirect(id)}
   // V51 is the single route owner. Avoid duplicate hash/popstate handlers that
   // can remount the same tool twice during navigation.
-  setTimeout(()=>{cleanDashboard();const id=String(location.hash||'').replace(/^#/,'').toLowerCase();if(FAST.includes(id)&&document.body.classList.contains('v51-workspace'))openDirect(id)},120);
+  setTimeout(()=>{cleanDashboard();const id=String(location.hash||'').replace(/^#/,'').toLowerCase();const mounted=$('.v52-tool')?.dataset?.v52Tool||'';if(FAST.includes(id)&&document.body.classList.contains('v51-workspace')&&mounted!==id)openDirect(id)},120);
   window.__SCHOLARK_V52_FAST__={open:openDirect,sync:syncRoute,tools:[...FAST]};
 })();
