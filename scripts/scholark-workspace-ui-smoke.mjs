@@ -198,6 +198,7 @@ await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
 await page.waitForTimeout(80);
 
+try{await page.waitForFunction(()=>{const el=document.querySelector('[data-v51-group="higher"] .v51-level');const bg=el?getComputedStyle(el).backgroundImage:'';return /31, 43, 91|56, 82, 148|23, 35, 73/.test(bg)},{timeout:2500})}catch{}
 const darkGroupBackground=await page.locator('[data-v51-group="higher"] .v51-level').first().evaluate(el=>getComputedStyle(el).backgroundImage);
 check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupBackground),`Higher Education cards do not use the requested dark navy palette: ${darkGroupBackground}`);
 
@@ -287,6 +288,7 @@ await page.click('[data-a-plan]');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.id||'').startsWith('assignment-'))}catch{return false}}),'Assignment did not create Planner steps');
 
 await route('progress','#v51-fallback .v52-tool');
+try{await page.waitForFunction(()=>/photosynthesis/i.test(document.querySelector('#v51-fallback .v52-tool')?.textContent||''),{timeout:2500})}catch{}
 const progressText=(await page.locator('#v51-fallback .v52-tool').innerText()).toLowerCase();
 check(progressText.includes('photosynthesis'),'Progress did not consume Mastery data');
 check(await page.locator('#v52-progress-export').count()===1,'Progress snapshot export missing');
