@@ -115,15 +115,16 @@ check((await page.locator('#v72-modal input[type="password"]').getAttribute('aut
 await page.click('#v72-modal .v72-x');
 check(await page.locator('#v72-modal').evaluate(el=>!el.classList.contains('open')),'Auth modal did not close cleanly');
 
-await page.goto(base+'/#pricing',{waitUntil:'domcontentloaded',timeout:30000});
+await page.evaluate(()=>{location.hash='pricing'});
+await page.waitForFunction(()=>location.hash==='#pricing',{timeout:3000});
 const plusCheckout='#v41-home-pricing .v41-plan.plus [data-plan="plus"]';
 check(await visible(plusCheckout,5000),'Plus checkout action is not visible on Pricing');
 await page.click(plusCheckout);
 check(await visible('#v72-modal.open',3000),'Unauthenticated Plus checkout did not route to account authentication');
 check(await page.evaluate(()=>sessionStorage.getItem('scholark_pending_plan')==='plus'),'Pending Plus plan was not preserved across authentication');
 await page.click('#v72-modal .v72-x');
-await page.evaluate(()=>sessionStorage.removeItem('scholark_pending_plan'));
-await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
+await page.evaluate(()=>{sessionStorage.removeItem('scholark_pending_plan');location.hash='home'});
+await page.waitForFunction(()=>location.hash==='#home',{timeout:3000});
 check(await visible('#v55-topbar',5000),'Homepage topbar did not recover after auth/checkout round-trip');
 await page.selectOption('#v55-language','es');
 await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
