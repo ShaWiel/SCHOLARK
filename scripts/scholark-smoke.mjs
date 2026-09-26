@@ -76,6 +76,58 @@ try{
   check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin expensive API request was not blocked: HTTP ${r.status}`);
   results.push(`cross-origin-guard ${r.status}`);
 }catch(e){failures.push('Cross-origin guard verification threw '+(e?.message||e))}
+const billingHealth=await get('/api/billing/health');
+const billingConfig=await get('/api/billing/config');
+if(billingHealth&&billingConfig){
+  check(['sandbox','production'].includes(String(billingHealth.environment||'')),'Paddle environment is invalid');
+  check(billingConfig.environment===billingHealth.environment,'Billing config/health environment mismatch');
+  check(typeof billingHealth.checkoutConfigured==='boolean','Billing checkout readiness missing');
+  check(typeof billingHealth.webhookConfigured==='boolean','Billing webhook readiness missing');
+  check(typeof billingHealth.credentialEnvironmentMatches==='boolean','Paddle credential/environment check missing');
+  check(!Object.prototype.hasOwnProperty.call(billingConfig,'apiKey'),'Billing config leaked Paddle API key');
+  check(!Object.prototype.hasOwnProperty.call(billingConfig,'webhookSecret'),'Billing config leaked webhook secret');
+  if(live){
+    check(billingHealth.checkoutConfigured===true,'Live Paddle checkout is not configured');
+    check(billingHealth.webhookConfigured===true,'Live Paddle webhook is not configured');
+    check(billingHealth.credentialEnvironmentMatches===true,'Live Paddle credentials do not match the selected environment');
+    check(billingHealth.catalog?.checked===true,'Live Paddle catalog audit has not completed');
+    check(billingHealth.catalog?.ok===true,'Live Paddle catalog/webhook audit is not green');
+    check(billingConfig.configured===true,'Live billing config is not checkout-ready');
+    check(/^pri_[a-z\d]{26}$/.test(String(billingConfig.priceIds?.plus||'')),'Live Plus Paddle price ID missing/invalid');
+    check(/^pri_[a-z\d]{26}$/.test(String(billingConfig.priceIds?.pro||'')),'Live Pro Paddle price ID missing/invalid');
+    check(typeof billingConfig.clientToken==='string'&&billingConfig.clientToken.length>0,'Live Paddle client token missing');
+  }else{
+    check(billingHealth.checkoutConfigured===false,'Local zero-credit smoke unexpectedly has Paddle checkout credentials');
+    check(billingConfig.configured===false,'Local billing config should remain unconfigured');
+    check(!billingConfig.clientToken,'Unconfigured local billing exposed a client token');
+  }
+}
+try{
+  const {r,data}=await request('/api/billing/status',{},15000);
+  check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated billing status was not blocked: HTTP ${r.status}`);
+  results.push(`billing:status-auth ${r.status}`);
+}catch(e){failures.push('Billing status auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({plan:'plus'})},15000);
+  check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated checkout was not blocked: HTTP ${r.status}`);
+  results.push(`billing:checkout-auth ${r.status}`);
+}catch(e){failures.push('Billing checkout auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/checkout',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:JSON.stringify({plan:'plus'})},15000);
+  check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin billing checkout was not blocked: HTTP ${r.status}`);
+  results.push(`billing:checkout-origin ${r.status}`);
+}catch(e){failures.push('Billing checkout origin verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/finalize',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({transactionId:'txn_00000000000000000000000000'})},15000);
+  check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated billing finalize was not blocked: HTTP ${r.status}`);
+  results.push(`billing:finalize-auth ${r.status}`);
+}catch(e){failures.push('Billing finalize auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/webhook',{method:'POST',headers:{'content-type':'application/json','paddle-signature':'ts=0;h1=invalid'},body:'{}'},15000);
+  check(r.status===401&&data?.code==='INVALID_SIGNATURE',`Invalid Paddle webhook signature was not rejected: HTTP ${r.status}`);
+  results.push(`billing:webhook-signature ${r.status}`);
+}catch(e){failures.push('Billing webhook signature verification threw '+(e?.message||e))}
+
 const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
 const schoolHealth=await get('/api/schools/health');
