@@ -163,16 +163,20 @@
   }
   function card(id,ic,title,desc,primary=false){const inactive=INACTIVE.has(id);return `<button class="v51-card ${primary?'primary':''} ${inactive?'inactive':''}" data-v51-tool="${id}" ${inactive?'data-v51-inactive="1" aria-disabled="true"':''}><span class="icon">${ic}</span><h3>${title}</h3>${inactive?'':'<p>'+desc+'</p>'}<b>${inactive?'COMING SOON':'OPEN '+title.toUpperCase()+' →'}</b></button>`}
   function wireLevelScroll(){
-    const host=$('.v51-levels',main);if(!host||host.dataset.v51ScrollWired==='1')return;
-    host.dataset.v51ScrollWired='1';host.tabIndex=0;
-    host.addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();host.scrollBy({left:(e.key==='ArrowRight'?1:-1)*300,behavior:'smooth'})});
+    const host=$('.v51-levels',main);if(!host)return;
+    const horizontal=host.classList.contains('v51-levels-suriname');
+    if(!horizontal){host.removeAttribute('tabindex');return}
+    host.tabIndex=0;
+    if(host.dataset.v51ScrollWired==='1')return;
+    host.dataset.v51ScrollWired='1';
+    host.addEventListener('keydown',e=>{if(!host.classList.contains('v51-levels-suriname')||(e.key!=='ArrowLeft'&&e.key!=='ArrowRight'))return;e.preventDefault();host.scrollBy({left:(e.key==='ArrowRight'?1:-1)*300,behavior:'smooth'})});
   }
   let levelRenderHost=null,levelRenderKey='';
   function renderLevels(){
     if(!side)return;const host=$('.v51-levels',main);if(!host)return;
     const rows=dashboardLevels(),selected=levelId(),country=workspaceCountry(),suriname=country==='suriname',lang=localStorage.getItem('scholark_ui_language')||'en';
     host.classList.toggle('v51-levels-suriname',suriname);host.classList.toggle('v51-levels-global',!suriname);host.dataset.v51CountryPalette='1';
-    host.setAttribute('aria-label',(suriname?'Suriname':'Country-aware')+' education levels. Scroll horizontally for more levels.');
+    host.setAttribute('aria-label',suriname?'Suriname education levels. Scroll horizontally for more levels.':'Country-specific education levels for '+(window.__SCHOLARK_COUNTRY__?.displayName?.(window.__SCHOLARK_COUNTRY__?.current?.())||country)+'.');
     const groups=suriname?SURINAME_GROUPS:UNIVERSAL_GROUPS;
     const html=groups.map(group=>{
       const groupRows=suriname?rows.filter(x=>x[4]===group.id):rows.filter(x=>group.levels.includes(x[0]));
