@@ -202,6 +202,41 @@ try{await page.waitForFunction(()=>{const el=document.querySelector('[data-v51-g
 const darkGroupBackground=await page.locator('[data-v51-group="higher"] .v51-level').first().evaluate(el=>getComputedStyle(el).backgroundImage);
 check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupBackground),`Higher Education cards do not use the requested dark navy palette: ${darkGroupBackground}`);
 
+const countryCoverage=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.countryProfileCoverage?.()||null);
+check(countryCoverage&&countryCoverage.missing?.length===0,`Country education profiles missing: ${countryCoverage?.missing?.join(', ')||'coverage API unavailable'}`);
+check(Number(countryCoverage?.covered)===Number(countryCoverage?.total),`Country education coverage incomplete: ${countryCoverage?.covered}/${countryCoverage?.total}`);
+
+async function selectEducationCountry(country,expectedTitles,expectedGroups=[]){
+  await page.selectOption('#v96-country',{label:country}).catch(async()=>page.selectOption('#v96-country',country));
+  await page.waitForFunction(c=>window.__SCHOLARK_COUNTRY__?.current?.()===c,country,{timeout:5000});
+  await page.waitForTimeout(140);
+  const titles=await page.locator('.v51-levels .v51-level b').allInnerTexts();
+  for(const expected of expectedTitles)check(titles.some(x=>x.includes(expected)),`${country} education stage missing: ${expected} | got: ${titles.join(' | ')}`);
+  const groups=await page.locator('.v51-levels .v51-level-group').allInnerTexts();
+  for(const expected of expectedGroups)check(groups.some(x=>x.includes(expected)),`${country} education group missing: ${expected} | got: ${groups.join(' | ')}`);
+  const fallback=['Early childhood education','Primary education','Lower secondary education','Upper secondary / vocational education','Higher education'];
+  check(!fallback.every(x=>titles.some(t=>t.trim().toLowerCase()===x.toLowerCase())),`${country} fell back to generic international education labels`);
+  const overlap=await page.evaluate(()=>{
+    const cards=[...document.querySelectorAll('.v51-levels-global .v51-level')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0}).map(el=>({text:(el.querySelector('b')?.textContent||'').trim(),r:el.getBoundingClientRect()}));
+    const bad=[];
+    for(let i=0;i<cards.length;i++)for(let j=i+1;j<cards.length;j++){
+      const a=cards[i].r,b=cards[j].r,w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
+      if(w>2&&h>2)bad.push(cards[i].text+' <> '+cards[j].text);
+    }
+    return bad;
+  });
+  check(overlap.length===0,`${country} education cards overlap: ${overlap.join(', ')}`);
+}
+
+await selectEducationCountry('Panama',['Educación inicial / Preescolar','Educación primaria','Educación premedia','Educación media','Educación superior'],['Educación Básica General','Premedia','Educación Media','Educación Superior']);
+await selectEducationCountry('Japan',['Yōchien','Shōgakkō','Chūgakkō','Kōtō gakkō','Daigaku']);
+await selectEducationCountry('Kenya',['Pre-primary','Lower / Upper Primary','Junior School','Senior School','Tertiary / University']);
+await page.selectOption('#v96-country','Suriname');
+await page.waitForFunction(()=>window.__SCHOLARK_COUNTRY__?.current?.()==='Suriname',{timeout:5000});
+await page.waitForTimeout(140);
+check(await page.locator('.v51-levels.v51-levels-suriname [data-level]').count()===9,'Suriname 9-track education system did not restore after global country switching');
+check(await page.locator('.v51-levels.v51-levels-global').count()===0,'Global education layout leaked into Suriname after country switching');
+
 await page.click('.v51-level[data-level="mulo"]');
 check(await page.evaluate(()=>localStorage.getItem('scholark_education_track')==='mulo'),'MULO selection did not persist');
 check(await page.locator('.v51-level[data-level="mulo"]').evaluate(el=>el.classList.contains('active')),'MULO did not become active');
