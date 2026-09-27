@@ -198,9 +198,11 @@ await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
 await page.waitForTimeout(80);
 
-try{await page.waitForFunction(()=>{const el=document.querySelector('[data-v51-group="higher"] .v51-level');const bg=el?getComputedStyle(el).backgroundImage:'';return /31, 43, 91|56, 82, 148|23, 35, 73/.test(bg)},{timeout:2500})}catch{}
-const darkGroupBackground=await page.locator('[data-v51-group="higher"] .v51-level').first().evaluate(el=>getComputedStyle(el).backgroundImage);
-check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupBackground),`Higher Education cards do not use the requested dark navy palette: ${darkGroupBackground}`);
+await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.set?.('Suriname','ci-palette'));
+await page.waitForFunction(()=>window.__SCHOLARK_COUNTRY__?.current?.()==='Suriname'&&!!document.querySelector('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level'),null,{timeout:5000});
+try{await page.waitForFunction(()=>{const el=document.querySelector('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level');if(!el||!el.isConnected||!el.getClientRects().length)return false;const bg=getComputedStyle(el).backgroundImage;return /31, 43, 91|56, 82, 148|23, 35, 73/.test(bg)},null,{timeout:5000})}catch{}
+const darkGroupDiag=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level').first().evaluate(el=>({background:getComputedStyle(el).backgroundImage,inline:el.getAttribute('style')||'',visible:!!el.getClientRects().length,country:window.__SCHOLARK_COUNTRY__?.current?.()}));
+check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupDiag.background),`Higher Education cards do not use the requested dark navy palette: ${JSON.stringify(darkGroupDiag)}`);
 
 const countryCoverage=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.countryProfileCoverage?.()||null);
 check(countryCoverage&&countryCoverage.missing?.length===0,`Country education profiles missing: ${countryCoverage?.missing?.join(', ')||'coverage API unavailable'}`);
