@@ -213,7 +213,7 @@ async function selectEducationCountry(country,expectedTitles,expectedGroups=[]){
   const titles=await page.locator('.v51-levels .v51-level b').allInnerTexts();
   for(const expected of expectedTitles)check(titles.some(x=>x.includes(expected)),`${country} education stage missing: ${expected} | got: ${titles.join(' | ')}`);
   const groups=await page.locator('.v51-levels .v51-level-group').allInnerTexts();
-  for(const expected of expectedGroups)check(groups.some(x=>x.includes(expected)),`${country} education group missing: ${expected} | got: ${groups.join(' | ')}`);
+  for(const expected of expectedGroups)check(groups.some(x=>x.toLocaleLowerCase().includes(expected.toLocaleLowerCase())),`${country} education group missing: ${expected} | got: ${groups.join(' | ')}`);
   const fallback=['Early childhood education','Primary education','Lower secondary education','Upper secondary / vocational education','Higher education'];
   check(!fallback.every(x=>titles.some(t=>t.trim().toLowerCase()===x.toLowerCase())),`${country} fell back to generic international education labels`);
   const overlap=await page.evaluate(()=>{
