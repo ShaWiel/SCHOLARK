@@ -604,7 +604,11 @@ http.Server.prototype.emit=function(type,...args){
   return previousEmit.call(this,type,...args);
 };
 
-setTimeout(()=>officialSurinameSchools().catch(()=>{}),2200);
+const officialRosterWarmupDelays=[2200,14000,45000];
+for(const delay of officialRosterWarmupDelays){
+  const timer=setTimeout(()=>{if(!officialCache)officialSurinameSchools().catch(()=>{})},delay);
+  timer.unref?.();
+}
 setTimeout(async()=>{
   const taxonomyOk=[
     levelSet({amenity:'school',name:'北京市第一小学'}).includes('primary'),
