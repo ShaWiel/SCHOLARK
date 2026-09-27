@@ -120,7 +120,7 @@ RUN npm install --omit=dev --no-audit --no-fund \
     && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r194
+ENV SCHOLARK_RELEASE=r195
 ENV SCHOLARK_TEST_MODE=0
 ENV SCHOLARK_FREE_AI_ONLY=1
 ENV SCHOLARK_AI_LIVE=1
