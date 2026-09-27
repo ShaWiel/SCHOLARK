@@ -205,6 +205,19 @@ check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupBackground),`Higher Educ
 const countryCoverage=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.countryProfileCoverage?.()||null);
 check(countryCoverage&&countryCoverage.missing?.length===0,`Country education profiles missing: ${countryCoverage?.missing?.join(', ')||'coverage API unavailable'}`);
 check(Number(countryCoverage?.covered)===Number(countryCoverage?.total),`Country education coverage incomplete: ${countryCoverage?.covered}/${countryCoverage?.total}`);
+const countryIntegrity=await page.evaluate(()=>{
+  const api=window.__SCHOLARK_COUNTRY__,bad=[];
+  for(const country of api?.countries||[]){
+    const sys=api.system(country),stages=Array.isArray(sys?.stages)?sys.stages:[];
+    const titles=stages.map(x=>String(x?.[2]||'').trim());
+    if(country!=='Suriname'&&String(sys?.label||'').includes('International / ISCED'))bad.push(country+': international fallback');
+    if(stages.length!==5)bad.push(country+': '+stages.length+' stages');
+    if(titles.some(x=>!x))bad.push(country+': empty stage');
+    if(titles.some(x=>/ISCED\s*[0-9]/i.test(x)))bad.push(country+': raw ISCED title');
+  }
+  return bad;
+});
+check(countryIntegrity.length===0,`Country education integrity failures: ${countryIntegrity.slice(0,12).join(' | ')}`);
 
 async function selectEducationCountry(country,expectedTitles,expectedGroups=[]){
   await page.selectOption('#v96-country',{label:country}).catch(async()=>page.selectOption('#v96-country',country));
