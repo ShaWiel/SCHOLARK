@@ -453,8 +453,6 @@
     TW:P(['幼兒園 · Kindergarten','國民小學 · Elementary','國民中學 · Junior High','高級中等學校 / 技職 · Senior High / TVE','大專校院 · Higher Education'],{basic:'國民教育',voj:'國民中學',vos:'高級中等教育',higher:'高等教育'},'技術及職業教育'),
     TR:P(['Okul öncesi','İlkokul','Ortaokul','Lise / Mesleki ve Teknik Eğitim','Yükseköğretim'],{basic:'Temel Eğitim',voj:'Ortaokul',vos:'Ortaöğretim',higher:'Yükseköğretim'},'Mesleki ve Teknik Eğitim'),
     IR:P(['Pish-dabestani · پیش‌دبستانی','Dabestan · دبستان','Motavaseteh-ye avval · متوسطه اول','Motavaseteh-ye dovom / Fanni · متوسطه دوم','Amozesh-e Ali · آموزش عالی'],{basic:'General Education',voj:'Lower Secondary',vos:'Upper Secondary / Technical',higher:'Higher Education'},'Fanni-o-herfei · Technical/Vocational'),
-    IL:P(['Gan · גן','Beit sefer yesodi · יסודי','Hativat beinayim · חטיבת ביניים','Hativa elyona / technological · חטיבה עליונה','Higher Education · השכלה גבוהה'],{basic:'Yesodi · Primary',voj:'Hativat Beinayim',vos:'Hativa Elyona',higher:'Higher Education'},'Technological / vocational education'),
-
     AF:P(['Kudakistan / Preschool','Ibtidaiya · Primary','Motawasseta · Lower secondary','Thanawi / vocational · Upper secondary','Higher Education'],{basic:'General Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},'Technical & vocational education'),
     BD:P(['Pre-primary','Primary · Class 1–5','Junior Secondary · Class 6–8','Secondary / Higher Secondary · SSC/HSC / TVET','Tertiary Education'],{basic:'Primary Education',voj:'Junior Secondary',vos:'SSC / HSC',higher:'Tertiary Education'},'Technical & Madrasah / TVET'),
     BT:P(['ECCD','Primary · PP–VI','Lower Secondary · VII–VIII','Middle / Higher Secondary · IX–XII / TVET','Tertiary Education'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Middle / Higher Secondary',higher:'Tertiary Education'},'TVET'),
@@ -598,7 +596,7 @@
     return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||worldLocalized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
-  function system(country=currentCountry()){const n=normalizeCountry(country);if(n==='Suriname')return SYSTEMS.Suriname;const prof=nationalProfile(n),generated=profileSystem(n,prof),explicit=SYSTEMS[n];if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source};return generated||explicit||{...GENERIC,label:n||GENERIC.label}}
+  function system(country=currentCountry()){const n=normalizeCountry(country);if(n==='Suriname')return SYSTEMS.Suriname;const code=COUNTRY_CODES[n]||worldCodeByName.get(n)||'',override=NATIONAL_OVERRIDES[code]||null,explicit=SYSTEMS[n],prof=override||nationalProfile(n),generated=profileSystem(n,prof);if(override&&generated)return generated;if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source};return generated||explicit||{...GENERIC,label:n||GENERIC.label}}
   function stage(id,country=currentCountry()){return system(country).stages.find(x=>x[0]===id)||GENERIC.stages.find(x=>x[0]===id)}
   function setCountry(value,source='ui'){
     const country=normalizeCountry(value);if(!country)return currentCountry();
@@ -709,7 +707,8 @@
   function seedInputs(){
     const c=currentCountry();
     for(const el of [$('#v50-country'),$('#v62-country'),$('#v52-cur-country')]){
-      if(el&&!clean(el.value))el.value=c;
+      if(!el||document.activeElement===el||el.dataset.schSelectInteracting==='1')continue;
+      if(clean(el.value)!==c)el.value=c;
     }
   }
   function observeCountryInputs(){
