@@ -233,6 +233,285 @@
   };
   const LANG_INDEX={nl:0,en:1,es:2,fr:3,de:4,pt:5,it:6};
   const COUNTRY_CODES={Suriname:'SR',Netherlands:'NL','United States':'US','United Kingdom':'GB',Germany:'DE',France:'FR',Spain:'ES',Portugal:'PT',Italy:'IT',Brazil:'BR',Canada:'CA',Australia:'AU',India:'IN','South Africa':'ZA',Guyana:'GY','Trinidad & Tobago':'TT',Jamaica:'JM',Belgium:'BE'};
+  const P=(titles,groups,vocational='')=>({titles,groups,vocational});
+  const NATIONAL_SCHEMES={
+    spanish:P(
+      ['Educación inicial / preescolar','Educación primaria / básica','Educación secundaria básica / ciclo básico','Educación media / bachillerato / técnica','Educación superior'],
+      {basic:'Educación básica',voj:'Secundaria básica',vos:'Educación media',higher:'Educación superior'},
+      'Formación profesional / técnica'
+    ),
+    portuguese:P(
+      ['Educação pré-escolar','Ensino primário / básico','Ensino secundário · 1.º ciclo','Ensino secundário · 2.º ciclo / técnico','Ensino superior'],
+      {basic:'Ensino básico',voj:'Ensino secundário I',vos:'Ensino secundário II',higher:'Ensino superior'},
+      'Ensino técnico / profissional'
+    ),
+    french:P(
+      ['Éducation préscolaire / maternelle','Enseignement primaire','Secondaire · 1er cycle / collège','Secondaire · 2e cycle / lycée / technique','Enseignement supérieur'],
+      {basic:'Enseignement de base',voj:'Secondaire 1er cycle',vos:'Secondaire 2e cycle',higher:'Enseignement supérieur'},
+      'Enseignement technique / professionnel'
+    ),
+    caribbean:P(
+      ['Early Childhood / Nursery','Primary Education','Lower Secondary / CSEC preparation','Upper Secondary / CSEC · CAPE · Sixth Form','Tertiary Education'],
+      {basic:'Primary Education',voj:'Lower Secondary',vos:'CSEC / CAPE / Sixth Form',higher:'Tertiary Education'},
+      'TVET / Technical & Vocational'
+    ),
+    angloAfrica:P(
+      ['ECD / Pre-primary','Primary Education','Junior / Lower Secondary','Senior / Upper Secondary / TVET','Tertiary / University'],
+      {basic:'Basic Education',voj:'Junior Secondary',vos:'Senior Secondary / TVET',higher:'Tertiary Education'},
+      'TVET / Technical & Vocational'
+    ),
+    pacific:P(
+      ['Early Childhood Education','Primary School','Junior Secondary','Senior Secondary / TVET','Tertiary / Higher Education'],
+      {basic:'Primary Education',voj:'Junior Secondary',vos:'Senior Secondary',higher:'Tertiary Education'},
+      'TVET / Vocational Education'
+    ),
+    arabic:P(
+      ['Rawda / Kindergarten','Ibtida’i / Primary','I’dadi / Intermediate','Thanawiya / Secondary / Technical','Higher Education / University'],
+      {basic:'Basic Education',voj:'Intermediate / Preparatory',vos:'Secondary Education',higher:'Higher Education'},
+      'Technical / Vocational Education'
+    ),
+    europe:P(
+      ['Pre-primary / Kindergarten','Primary education','Lower secondary','Upper secondary / vocational','Higher education'],
+      {basic:'Primary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},
+      'Vocational education / training'
+    ),
+    southAsia:P(
+      ['Pre-primary / ECE','Primary Education','Middle / Lower Secondary','Secondary / Higher Secondary / TVET','Higher Education'],
+      {basic:'Basic Education',voj:'Middle / Lower Secondary',vos:'Secondary / Higher Secondary',higher:'Higher Education'},
+      'Technical & Vocational Education'
+    ),
+    southeastAsia:P(
+      ['Pre-primary / Kindergarten','Primary Education','Lower Secondary','Upper Secondary / Vocational','Higher Education'],
+      {basic:'Basic Education',voj:'Lower Secondary',vos:'Upper Secondary / Vocational',higher:'Higher Education'},
+      'Technical & Vocational Education'
+    ),
+    centralAsia:P(
+      ['Mektepke deyingi / Preschool','Bastauysh / Primary','Negizgi orta / Basic secondary','Jalpy orta / College / TVET','Higher Education'],
+      {basic:'General Education',voj:'Basic Secondary',vos:'Upper Secondary / TVET',higher:'Higher Education'},
+      'Technical & Vocational Education'
+    ),
+    eastAfrica:P(
+      ['Pre-primary / ECD','Primary Education','Lower Secondary','Upper Secondary / TVET','Higher Education'],
+      {basic:'Basic Education',voj:'Lower Secondary',vos:'Upper Secondary / TVET',higher:'Higher Education'},
+      'TVET / Vocational Education'
+    )
+  };
+
+  const NATIONAL_SCHEME_CODES={};
+  const useScheme=(name,codes)=>String(codes).trim().split(/\s+/).filter(Boolean).forEach(code=>NATIONAL_SCHEME_CODES[code]=name);
+  useScheme('spanish','AR BO CL CO CR CU DO EC SV GQ GT HN MX NI PA PY PE UY VE');
+  useScheme('portuguese','AO CV GW MZ ST TL');
+  useScheme('french','BJ BF BI CM CF TD KM CG CD CI DJ GA GN MG ML MR NE SN TG HT');
+  useScheme('caribbean','AG BS BB BZ DM GD KN LC VC');
+  useScheme('angloAfrica','BW SZ GM GH KE LS LR MW MU NA NG SC SL SS UG ZM ZW');
+  useScheme('pacific','FJ KI MH FM NR NZ PW PG WS SB TO TV VU');
+  useScheme('arabic','DZ BH EG IQ JO KW LB LY MA OM PS QA SA SD SY TN AE YE EH');
+  useScheme('europe','AL AD AM AT AZ BY BA BG HR CY CZ DK EE FI GE GR HU IS LV LI LT LU MD MC ME MK NO PL RO RU SM RS SK SI SE CH UA VA XK');
+  useScheme('southAsia','AF BD BT MV NP PK LK');
+  useScheme('southeastAsia','BN KH CN ID IR IL JP KP KR LA MY MN MM PH TH TR VN TW');
+  useScheme('centralAsia','KZ KG TJ TM UZ');
+  useScheme('eastAfrica','ER ET RW SO TZ');
+
+  const NATIONAL_OVERRIDES={
+    PA:P(
+      ['Educación inicial / Preescolar','Educación primaria · Educación Básica General','Educación premedia · Educación Básica General','Educación media · Académica / Profesional y Técnica','Educación superior · Posmedia / universitaria'],
+      {basic:'Educación Básica General',voj:'Premedia',vos:'Educación Media',higher:'Educación Superior'},
+      'Educación profesional y técnica'
+    ),
+    AR:P(
+      ['Nivel inicial','Educación primaria','Educación secundaria · ciclo básico','Educación secundaria · ciclo orientado / técnica','Educación superior'],
+      {basic:'Educación obligatoria',voj:'Secundaria · ciclo básico',vos:'Secundaria · ciclo orientado',higher:'Educación Superior'},
+      'Educación técnico-profesional'
+    ),
+    BO:P(
+      ['Educación inicial en familia comunitaria','Primaria comunitaria vocacional','Secundaria comunitaria productiva · tramo inicial','Secundaria comunitaria productiva / Bachillerato Técnico Humanístico','Educación superior'],
+      {basic:'Educación Regular',voj:'Secundaria Comunitaria Productiva',vos:'Bachillerato Técnico Humanístico',higher:'Educación Superior'},
+      'Formación técnica y tecnológica'
+    ),
+    CL:P(
+      ['Educación parvularia','Educación básica · 1.º–6.º','Educación básica 7.º–8.º / transición a media','Educación media · HC / TP','Educación superior'],
+      {basic:'Educación Básica',voj:'7.º–8.º básico',vos:'Educación Media',higher:'Educación Superior'},
+      'Educación media técnico-profesional'
+    ),
+    CO:P(
+      ['Educación inicial / preescolar','Educación básica primaria','Educación básica secundaria','Educación media · académica / técnica','Educación superior'],
+      {basic:'Educación Básica',voj:'Básica Secundaria',vos:'Educación Media',higher:'Educación Superior'},
+      'Educación media técnica / ETDH'
+    ),
+    CR:P(
+      ['Educación preescolar','Educación General Básica · I y II ciclos','Educación General Básica · III ciclo','Educación diversificada · académica / técnica','Educación superior'],
+      {basic:'Educación General Básica',voj:'III Ciclo',vos:'Educación Diversificada',higher:'Educación Superior'},
+      'Educación técnica profesional'
+    ),
+    CU:P(
+      ['Primera infancia / Preescolar','Educación primaria','Secundaria básica','Preuniversitario / Educación Técnica y Profesional','Educación superior'],
+      {basic:'Educación General',voj:'Secundaria Básica',vos:'Preuniversitario / ETP',higher:'Educación Superior'},
+      'Educación Técnica y Profesional'
+    ),
+    DO:P(
+      ['Nivel inicial','Nivel primario','Nivel secundario · primer ciclo','Nivel secundario · segundo ciclo / modalidades','Educación superior'],
+      {basic:'Educación Primaria',voj:'Secundaria · Primer Ciclo',vos:'Secundaria · Segundo Ciclo',higher:'Educación Superior'},
+      'Modalidad técnico-profesional'
+    ),
+    EC:P(
+      ['Educación inicial','Educación General Básica · elemental / media','Educación General Básica · superior','Bachillerato General Unificado / técnico','Educación superior'],
+      {basic:'Educación General Básica',voj:'EGB Superior',vos:'Bachillerato',higher:'Educación Superior'},
+      'Bachillerato técnico'
+    ),
+    SV:P(
+      ['Educación inicial / parvularia','Educación básica · 1.º y 2.º ciclos','Educación básica · 3.er ciclo','Educación media / bachillerato','Educación superior'],
+      {basic:'Educación Básica',voj:'Tercer Ciclo',vos:'Educación Media',higher:'Educación Superior'},
+      'Bachillerato técnico vocacional'
+    ),
+    GT:P(
+      ['Educación inicial / preprimaria','Educación primaria','Ciclo básico','Ciclo diversificado · bachillerato / perito','Educación superior'],
+      {basic:'Educación Primaria',voj:'Ciclo Básico',vos:'Ciclo Diversificado',higher:'Educación Superior'},
+      'Formación técnica / ocupacional'
+    ),
+    HN:P(
+      ['Educación prebásica','Educación básica · 1.º–6.º','Educación básica · 7.º–9.º','Educación media / bachillerato','Educación superior'],
+      {basic:'Educación Básica',voj:'Tercer Ciclo',vos:'Educación Media',higher:'Educación Superior'},
+      'Bachillerato técnico profesional'
+    ),
+    MX:P(
+      ['Educación inicial / preescolar','Primaria','Secundaria','Educación media superior · bachillerato / profesional técnico','Educación superior'],
+      {basic:'Educación Básica',voj:'Secundaria',vos:'Media Superior',higher:'Educación Superior'},
+      'Profesional técnico / tecnológico'
+    ),
+    NI:P(
+      ['Educación inicial / preescolar','Educación primaria','Educación secundaria · ciclo básico','Bachillerato / formación técnica','Educación superior'],
+      {basic:'Educación Básica',voj:'Secundaria',vos:'Bachillerato',higher:'Educación Superior'},
+      'Educación técnica'
+    ),
+    PY:P(
+      ['Educación inicial','Educación Escolar Básica · 1.º/2.º ciclos','Educación Escolar Básica · 3.er ciclo','Educación media · bachillerato / técnica','Educación superior'],
+      {basic:'Educación Escolar Básica',voj:'EEB · Tercer Ciclo',vos:'Educación Media',higher:'Educación Superior'},
+      'Bachillerato técnico'
+    ),
+    PE:P(
+      ['Educación inicial','Educación primaria · EBR','Educación secundaria · EBR','Secundaria / Educación técnico-productiva','Educación superior'],
+      {basic:'Educación Básica Regular',voj:'Secundaria EBR',vos:'Secundaria / Técnica',higher:'Educación Superior'},
+      'Educación técnico-productiva'
+    ),
+    UY:P(
+      ['Educación inicial','Educación primaria','Educación media básica','Educación media superior · bachillerato / UTU','Educación terciaria'],
+      {basic:'Educación Primaria',voj:'Media Básica',vos:'Media Superior',higher:'Educación Terciaria'},
+      'Educación técnico-profesional · UTU'
+    ),
+    VE:P(
+      ['Educación inicial','Educación primaria','Educación media general · tramo inicial','Educación media general / técnica','Educación universitaria'],
+      {basic:'Educación Básica',voj:'Educación Media',vos:'Media General / Técnica',higher:'Educación Universitaria'},
+      'Educación media técnica'
+    ),
+
+    AT:P(['Kindergarten','Volksschule','Sekundarstufe I · Mittelschule / AHS-Unterstufe','Sekundarstufe II · AHS/BHS/Berufsschule','Universität / Fachhochschule'],{basic:'Primarstufe',voj:'Sekundarstufe I',vos:'Sekundarstufe II',higher:'Tertiärbereich'},'Berufsbildung'),
+    CH:P(['Kindergarten','Primarstufe','Sekundarstufe I','Sekundarstufe II · Gymnasium / Berufsbildung','Tertiärstufe · Universität / FH'],{basic:'Primarstufe',voj:'Sekundarstufe I',vos:'Sekundarstufe II',higher:'Tertiärstufe'},'Berufsbildung'),
+    DK:P(['Dagtilbud / Børnehave','Folkeskole · indskoling/mellemtrin','Folkeskole · udskoling','Gymnasiale uddannelser / EUD','Videregående uddannelser'],{basic:'Folkeskole',voj:'Udskoling',vos:'Ungdomsuddannelser',higher:'Videregående uddannelser'},'Erhvervsuddannelser · EUD'),
+    SE:P(['Förskola','Grundskola · tidigare år','Grundskola · senare år','Gymnasieskola / yrkesprogram','Högskola / universitet'],{basic:'Grundskola',voj:'Grundskolans senare år',vos:'Gymnasieskola',higher:'Högre utbildning'},'Yrkesutbildning'),
+    NO:P(['Barnehage','Barneskole','Ungdomsskole','Videregående opplæring','Høyere utdanning'],{basic:'Grunnskole',voj:'Ungdomsskole',vos:'Videregående',higher:'Høyere utdanning'},'Yrkesfag'),
+    FI:P(['Varhaiskasvatus / esiopetus','Perusopetus · vuosiluokat 1–6','Perusopetus · vuosiluokat 7–9','Lukio / ammatillinen koulutus','Korkeakoulutus'],{basic:'Perusopetus',voj:'Vuosiluokat 7–9',vos:'Toinen aste',higher:'Korkeakoulutus'},'Ammatillinen koulutus'),
+    IS:P(['Leikskóli','Grunnskóli · yngri stig','Grunnskóli · unglingastig','Framhaldsskóli','Háskóli'],{basic:'Grunnskóli',voj:'Unglingastig',vos:'Framhaldsskóli',higher:'Háskólastig'},'Starfsnám'),
+    EE:P(['Alusharidus','Põhikool · I–II kooliaste','Põhikool · III kooliaste','Gümnaasium / kutseõpe','Kõrgharidus'],{basic:'Põhiharidus',voj:'Põhikooli III aste',vos:'Gümnaasium / kutseõpe',higher:'Kõrgharidus'},'Kutseharidus'),
+    LV:P(['Pirmsskolas izglītība','Sākumskola','Pamatizglītība','Vidējā / profesionālā izglītība','Augstākā izglītība'],{basic:'Pamatizglītība',voj:'Pamatizglītības otrais posms',vos:'Vidējā izglītība',higher:'Augstākā izglītība'},'Profesionālā izglītība'),
+    LT:P(['Ikimokyklinis / priešmokyklinis ugdymas','Pradinis ugdymas','Pagrindinis ugdymas','Vidurinis / profesinis mokymas','Aukštasis mokslas'],{basic:'Pradinis ugdymas',voj:'Pagrindinis ugdymas',vos:'Vidurinis ugdymas',higher:'Aukštasis mokslas'},'Profesinis mokymas'),
+    PL:P(['Wychowanie przedszkolne','Szkoła podstawowa · klasy 1–6','Szkoła podstawowa · klasy 7–8','Liceum / technikum / szkoła branżowa','Szkolnictwo wyższe'],{basic:'Szkoła podstawowa',voj:'Klasy 7–8',vos:'Szkoły ponadpodstawowe',higher:'Szkolnictwo wyższe'},'Technikum / szkoła branżowa'),
+    CZ:P(['Mateřská škola','Základní škola · 1. stupeň','Základní škola · 2. stupeň','Gymnázium / střední škola / SOU','Vysoká škola'],{basic:'Základní vzdělávání',voj:'2. stupeň ZŠ',vos:'Střední vzdělávání',higher:'Vysoké školství'},'Střední odborné vzdělávání'),
+    SK:P(['Materská škola','Základná škola · 1. stupeň','Základná škola · 2. stupeň','Gymnázium / stredná odborná škola','Vysoká škola'],{basic:'Základné vzdelávanie',voj:'2. stupeň ZŠ',vos:'Stredné vzdelávanie',higher:'Vysoké školstvo'},'Stredné odborné vzdelávanie'),
+    HU:P(['Óvoda','Általános iskola · alsó tagozat','Általános iskola · felső tagozat','Gimnázium / technikum / szakképzés','Felsőoktatás'],{basic:'Általános iskola',voj:'Felső tagozat',vos:'Középfokú oktatás',higher:'Felsőoktatás'},'Szakképzés'),
+    RO:P(['Educație timpurie','Învățământ primar','Învățământ gimnazial','Învățământ liceal / profesional','Învățământ superior'],{basic:'Învățământ primar',voj:'Gimnaziu',vos:'Liceal / profesional',higher:'Învățământ superior'},'Învățământ profesional'),
+    GR:P(['Nipiagogeio · Νηπιαγωγείο','Dimotiko · Δημοτικό','Gymnasio · Γυμνάσιο','Lykeio / EPAL · Λύκειο / ΕΠΑΛ','Panepistimio · Πανεπιστήμιο'],{basic:'Dimotiko',voj:'Gymnasio',vos:'Lykeio / EPAL',higher:'Anotati Ekpaidefsi'},'EPAL · vocational upper secondary'),
+    AL:P(['Arsimi parashkollor','Arsimi fillor','Arsimi i mesëm i ulët','Arsimi i mesëm i lartë / profesional','Arsimi i lartë'],{basic:'Arsimi bazë',voj:'I mesëm i ulët',vos:'I mesëm i lartë',higher:'Arsimi i lartë'},'Arsimi profesional'),
+    HR:P(['Predškolski odgoj','Osnovna škola · razredna nastava','Osnovna škola · predmetna nastava','Gimnazija / strukovna škola','Visoko obrazovanje'],{basic:'Osnovno obrazovanje',voj:'Predmetna nastava',vos:'Srednje obrazovanje',higher:'Visoko obrazovanje'},'Strukovno obrazovanje'),
+    SI:P(['Predšolska vzgoja','Osnovna šola · razredna stopnja','Osnovna šola · predmetna stopnja','Gimnazija / poklicno in strokovno','Visokošolsko izobraževanje'],{basic:'Osnovna šola',voj:'Predmetna stopnja',vos:'Srednje izobraževanje',higher:'Visokošolsko'},'Poklicno in strokovno izobraževanje'),
+    RS:P(['Predškolsko vaspitanje','Osnovna škola · prvi ciklus','Osnovna škola · drugi ciklus','Gimnazija / stručna škola','Visoko obrazovanje'],{basic:'Osnovno obrazovanje',voj:'Drugi ciklus',vos:'Srednje obrazovanje',higher:'Visoko obrazovanje'},'Srednje stručno obrazovanje'),
+    BA:P(['Predškolsko obrazovanje','Osnovna škola · razredna nastava','Osnovna škola · predmetna nastava','Gimnazija / srednja stručna škola','Visoko obrazovanje'],{basic:'Osnovno obrazovanje',voj:'Predmetna nastava',vos:'Srednje obrazovanje',higher:'Visoko obrazovanje'},'Stručno obrazovanje'),
+    ME:P(['Predškolsko vaspitanje','Osnovna škola · prvi ciklus','Osnovna škola · drugi/treći ciklus','Gimnazija / stručna škola','Visoko obrazovanje'],{basic:'Osnovno obrazovanje',voj:'Viši ciklusi',vos:'Srednje obrazovanje',higher:'Visoko obrazovanje'},'Stručno obrazovanje'),
+    MK:P(['Предучилишно / Preduchilisno','Основно образование / Osnovno','Lower secondary · osnovno viših razreda','Гимназиско / стручно образование','Високо образование'],{basic:'Osnovno obrazovanie',voj:'Lower secondary',vos:'Sredno obrazovanie',higher:'Visoko obrazovanie'},'Stručno obrazovanie'),
+    BG:P(['Предучилищно образование','Начален етап','Прогимназиален етап','Гимназиален етап / професионално','Висше образование'],{basic:'Основно образование',voj:'Прогимназиален етап',vos:'Средно образование',higher:'Висше образование'},'Професионално образование'),
+    UA:P(['Дошкільна освіта','Початкова освіта','Базова середня освіта','Профільна середня / професійна освіта','Вища освіта'],{basic:'Загальна середня освіта',voj:'Базова середня',vos:'Профільна середня',higher:'Вища освіта'},'Професійна освіта'),
+    RU:P(['Дошкольное образование','Начальное общее образование','Основное общее образование','Среднее общее / СПО','Высшее образование'],{basic:'Общее образование',voj:'Основное общее',vos:'Среднее общее / СПО',higher:'Высшее образование'},'Среднее профессиональное образование'),
+    MD:P(['Educație timpurie','Învățământ primar','Învățământ gimnazial','Învățământ liceal / profesional tehnic','Învățământ superior'],{basic:'Învățământ general',voj:'Gimnaziu',vos:'Liceu / profesional tehnic',higher:'Învățământ superior'},'Învățământ profesional tehnic'),
+    AM:P(['Նախադպրոցական / Nakhadprotsakan','Տարրական / Elementary','Հիմնական դպրոց / Basic school','Ավագ դպրոց / vocational','Բարձրագույն կրթություն'],{basic:'General education',voj:'Basic school',vos:'High school / vocational',higher:'Higher education'},'Vocational education'),
+    AZ:P(['Məktəbəqədər təhsil','İbtidai təhsil','Ümumi orta təhsil','Tam orta / peşə təhsili','Ali təhsil'],{basic:'Ümumi təhsil',voj:'Ümumi orta',vos:'Tam orta / peşə',higher:'Ali təhsil'},'Peşə təhsili'),
+    GE:P(['სკოლამდელი / Preschool','დაწყებითი / Primary','საბაზო / Basic','საშუალო / პროფესიული','უმაღლესი განათლება'],{basic:'General education',voj:'Basic education',vos:'Secondary / vocational',higher:'Higher education'},'Vocational education'),
+    BY:P(['Дашкольная адукацыя','Пачатковая адукацыя','Базавая сярэдняя адукацыя','Агульная сярэдняя / прафесійная','Вышэйшая адукацыя'],{basic:'Агульная адукацыя',voj:'Базавая сярэдняя',vos:'Сярэдняя / прафесійная',higher:'Вышэйшая адукацыя'},'Прафесійная адукацыя'),
+
+    JP:P(['Yōchien / Hoikuen · 幼稚園/保育所','Shōgakkō · 小学校','Chūgakkō · 中学校','Kōtō gakkō / Kōsen · 高等学校/高専','Daigaku / Senmon gakkō · 大学/専門学校'],{basic:'Elementary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},'Specialized training / Kōsen'),
+    CN:P(['Xuéqián jiàoyù · 学前教育','Xiǎoxué · 小学','Chūzhōng · 初中','Gāozhōng / Zhōngzhí · 高中/中职','Gāoděng jiàoyù · 高等教育'],{basic:'义务教育 · Primary',voj:'初中',vos:'高中 / 中职',higher:'高等教育'},'中等职业教育 · Zhongzhi'),
+    KR:P(['Yuchiwon · 유치원','Chodeung-hakgyo · 초등학교','Junghakgyo · 중학교','Godeung-hakgyo · 고등학교','Daehak · 대학'],{basic:'초등교육',voj:'중학교',vos:'고등학교',higher:'고등교육'},'직업계고 / 전문대'),
+    KP:P(['Kindergarten','Primary School','Junior Middle School','Senior Middle School / Vocational','University / College'],{basic:'Compulsory Education',voj:'Junior Middle',vos:'Senior Middle',higher:'Higher Education'},'Vocational education'),
+    ID:P(['PAUD / TK','SD / MI','SMP / MTs','SMA / SMK / MA','Perguruan Tinggi'],{basic:'Pendidikan Dasar',voj:'SMP / MTs',vos:'SMA / SMK / MA',higher:'Pendidikan Tinggi'},'SMK · Pendidikan vokasi'),
+    MY:P(['Prasekolah','Sekolah Rendah','Menengah Rendah','Menengah Atas / TVET','Pendidikan Tinggi'],{basic:'Pendidikan Rendah',voj:'Menengah Rendah',vos:'Menengah Atas',higher:'Pendidikan Tinggi'},'TVET'),
+    SG:P(['Preschool','Primary School','Secondary School','Post-secondary · JC / Polytechnic / ITE','University / Higher Education'],{basic:'Primary Education',voj:'Secondary Education',vos:'Post-secondary',higher:'Higher Education'},'ITE / Polytechnic'),
+    PH:P(['Kindergarten','Elementary · Grades 1–6','Junior High School · Grades 7–10','Senior High School · Grades 11–12 / TVET','Higher Education'],{basic:'Basic Education',voj:'Junior High School',vos:'Senior High School',higher:'Higher Education'},'TVET · TESDA'),
+    TH:P(['Anuban · อนุบาล','Prathom · ประถมศึกษา','Mathayom Ton Ton · มัธยมต้น','Mathayom Ton Plai / Vocational · มัธยมปลาย','Higher Education · อุดมศึกษา'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Upper Secondary / Vocational',higher:'Higher Education'},'Vocational Education'),
+    VN:P(['Mầm non','Tiểu học','THCS · Trung học cơ sở','THPT / Giáo dục nghề nghiệp','Đại học / Cao đẳng'],{basic:'Giáo dục phổ thông',voj:'THCS',vos:'THPT / nghề nghiệp',higher:'Giáo dục đại học'},'Giáo dục nghề nghiệp'),
+    BN:P(['Prasekolah','Pendidikan Rendah','Menengah Bawah','Menengah Atas / Sixth Form / Technical','Pendidikan Tinggi'],{basic:'Pendidikan Asas',voj:'Menengah Bawah',vos:'Menengah Atas',higher:'Pendidikan Tinggi'},'Pendidikan teknikal'),
+    KH:P(['មត្តេយ្យ / Preschool','បឋមសិក្សា / Primary','មធ្យមសិក្សាបឋមភូមិ / Lower secondary','មធ្យមសិក្សាទុតិយភូមិ / Upper secondary / TVET','ឧត្តមសិក្សា / Higher education'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Upper Secondary / TVET',higher:'Higher Education'},'Technical & Vocational Education'),
+    LA:P(['ອະນຸບານ / Kindergarten','ປະຖົມ / Primary','ມັດທະຍົມຕົ້ນ / Lower secondary','ມັດທະຍົມປາຍ / Upper secondary / TVET','Higher Education'],{basic:'General Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},'TVET'),
+    MM:P(['Kindergarten','Primary School','Middle School','High School / TVET','University / College'],{basic:'Basic Education',voj:'Middle School',vos:'High School / TVET',higher:'Higher Education'},'Technical / vocational education'),
+    TW:P(['幼兒園 · Kindergarten','國民小學 · Elementary','國民中學 · Junior High','高級中等學校 / 技職 · Senior High / TVE','大專校院 · Higher Education'],{basic:'國民教育',voj:'國民中學',vos:'高級中等教育',higher:'高等教育'},'技術及職業教育'),
+    TR:P(['Okul öncesi','İlkokul','Ortaokul','Lise / Mesleki ve Teknik Eğitim','Yükseköğretim'],{basic:'Temel Eğitim',voj:'Ortaokul',vos:'Ortaöğretim',higher:'Yükseköğretim'},'Mesleki ve Teknik Eğitim'),
+    IR:P(['Pish-dabestani · پیش‌دبستانی','Dabestan · دبستان','Motavaseteh-ye avval · متوسطه اول','Motavaseteh-ye dovom / Fanni · متوسطه دوم','Amozesh-e Ali · آموزش عالی'],{basic:'General Education',voj:'Lower Secondary',vos:'Upper Secondary / Technical',higher:'Higher Education'},'Fanni-o-herfei · Technical/Vocational'),
+    IL:P(['Gan · גן','Beit sefer yesodi · יסודי','Hativat beinayim · חטיבת ביניים','Hativa elyona / technological · חטיבה עליונה','Higher Education · השכלה גבוהה'],{basic:'Yesodi · Primary',voj:'Hativat Beinayim',vos:'Hativa Elyona',higher:'Higher Education'},'Technological / vocational education'),
+
+    AF:P(['Kudakistan / Preschool','Ibtidaiya · Primary','Motawasseta · Lower secondary','Thanawi / vocational · Upper secondary','Higher Education'],{basic:'General Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Higher Education'},'Technical & vocational education'),
+    BD:P(['Pre-primary','Primary · Class 1–5','Junior Secondary · Class 6–8','Secondary / Higher Secondary · SSC/HSC / TVET','Tertiary Education'],{basic:'Primary Education',voj:'Junior Secondary',vos:'SSC / HSC',higher:'Tertiary Education'},'Technical & Madrasah / TVET'),
+    BT:P(['ECCD','Primary · PP–VI','Lower Secondary · VII–VIII','Middle / Higher Secondary · IX–XII / TVET','Tertiary Education'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Middle / Higher Secondary',higher:'Tertiary Education'},'TVET'),
+    NP:P(['ECD / Pre-primary','Basic Education · Grades 1–5','Basic Education · Grades 6–8','Secondary · Grades 9–12 / Technical','Higher Education'],{basic:'Basic Education',voj:'Basic · Grades 6–8',vos:'Secondary Education',higher:'Higher Education'},'Technical / vocational education'),
+    PK:P(['Katchi / ECE','Primary · Grades 1–5','Middle · Grades 6–8','Secondary / Higher Secondary · SSC/HSSC','Higher Education'],{basic:'School Education',voj:'Middle School',vos:'SSC / HSSC',higher:'Higher Education'},'Technical & vocational education'),
+    LK:P(['Pre-primary','Primary · Grades 1–5','Junior Secondary · Grades 6–9','Senior Secondary / GCE O/L–A/L / TVET','Higher Education'],{basic:'General Education',voj:'Junior Secondary',vos:'Senior Secondary',higher:'Higher Education'},'Technical & vocational education'),
+    MV:P(['Foundation Stage','Primary · Key Stages 1–2','Lower Secondary · Key Stage 3','Higher Secondary / TVET','Higher Education'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Higher Secondary',higher:'Higher Education'},'TVET'),
+    IN:P(['Foundational Stage','Preparatory Stage','Middle Stage','Secondary Stage / Vocational','Higher Education'],{basic:'School Education · Foundational/Preparatory',voj:'Middle Stage',vos:'Secondary Stage',higher:'Higher Education'},'Vocational Education'),
+
+    KZ:P(['Mektepke deyingi / Мектепке дейінгі','Bastauysh / Бастауыш','Negizgi orta / Негізгі орта','Jalpy orta / College / TVET','Joğary bilim / Жоғары білім'],{basic:'Jalpy bilim',voj:'Negizgi orta',vos:'Jalpy orta / TVET',higher:'Joğary bilim'},'Tehnikalyq jäne käsiptik bilim'),
+    KG:P(['Mektepke cheyinki','Bashtalgych bilim','Negizgi jalpy bilim','Orto jalpy / kesiptik bilim','Jogorku bilim'],{basic:'Jalpy bilim',voj:'Negizgi jalpy',vos:'Orto jalpy / kesiptik',higher:'Jogorku bilim'},'Kesiptik bilim'),
+    UZ:P(["Maktabgacha ta'lim","Boshlang'ich ta'lim","Umumiy o'rta ta'lim","O'rta maxsus / professional ta'lim","Oliy ta'lim"],{basic:"Umumiy ta'lim",voj:"Umumiy o'rta",vos:"Professional / upper secondary",higher:"Oliy ta'lim"},'Professional ta’lim'),
+    TJ:P(['Таҳсилоти томактабӣ','Таҳсилоти ибтидоӣ','Таҳсилоти умумии асосӣ','Таҳсилоти миёнаи умумӣ / касбӣ','Таҳсилоти олии касбӣ'],{basic:'Таҳсилоти умумӣ',voj:'Умумии асосӣ',vos:'Миёна / касбӣ',higher:'Таҳсилоти олӣ'},'Таҳсилоти касбӣ'),
+    TM:P(['Mekdebe çenli bilim','Başlangyç bilim','Esasy orta bilim','Doly orta / hünär bilimi','Ýokary bilim'],{basic:'Umumy bilim',voj:'Esasy orta',vos:'Doly orta / hünär',higher:'Ýokary bilim'},'Hünär bilimi'),
+
+    KE:P(['Pre-primary · PP1–PP2','Lower / Upper Primary · Grades 1–6','Junior School · Grades 7–9','Senior School · Grades 10–12','Tertiary / University'],{basic:'Early Years & Primary',voj:'Junior School',vos:'Senior School',higher:'Tertiary Education'},'TVET'),
+    NG:P(['ECCDE / Pre-primary','Primary · UBE','Junior Secondary · JSS','Senior Secondary · SSS / TVET','Tertiary Education'],{basic:'Universal Basic Education',voj:'Junior Secondary',vos:'Senior Secondary',higher:'Tertiary Education'},'Technical & Vocational Education'),
+    GH:P(['Kindergarten · KG','Primary','Junior High School · JHS','Senior High School · SHS / TVET','Tertiary Education'],{basic:'Basic Education',voj:'Junior High School',vos:'Senior High / TVET',higher:'Tertiary Education'},'TVET'),
+    UG:P(['Pre-primary / Nursery','Primary · P1–P7','Lower Secondary','Upper Secondary / TVET','Tertiary Education'],{basic:'Primary Education',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Tertiary Education'},'BTVET / TVET'),
+    TZ:P(['Pre-primary','Primary','Ordinary Secondary · O-Level','Advanced Secondary · A-Level / VET','Higher Education'],{basic:'Basic Education',voj:'O-Level',vos:'A-Level / VET',higher:'Higher Education'},'Vocational Education & Training'),
+    RW:P(['Nursery','Primary','Lower Secondary','Upper Secondary / TVET','Higher Education'],{basic:'Basic Education',voj:'Lower Secondary',vos:'Upper Secondary / TVET',higher:'Higher Education'},'TVET'),
+    ET:P(['Kindergarten / O-Class','Primary · Grades 1–6','Middle School · Grades 7–8','Secondary · Grades 9–12 / TVET','Higher Education'],{basic:'General Education',voj:'Middle School',vos:'Secondary / TVET',higher:'Higher Education'},'TVET'),
+    ZM:P(['Early Childhood Education','Primary · Grades 1–7','Junior Secondary · Grades 8–9','Senior Secondary · Grades 10–12 / TEVET','Tertiary Education'],{basic:'Basic Education',voj:'Junior Secondary',vos:'Senior Secondary',higher:'Tertiary Education'},'TEVET'),
+    ZW:P(['ECD','Primary · Grade 1–7','Junior Secondary · Forms 1–2','Senior Secondary · O-Level / A-Level / TVET','Tertiary Education'],{basic:'Primary Education',voj:'Junior Secondary',vos:'Senior Secondary',higher:'Tertiary Education'},'TVET'),
+
+    DZ:P(['Éducation préparatoire','Enseignement primaire','Enseignement moyen','Enseignement secondaire / formation professionnelle','Enseignement supérieur'],{basic:'Enseignement fondamental',voj:'Enseignement moyen',vos:'Enseignement secondaire',higher:'Enseignement supérieur'},'Formation professionnelle'),
+    MA:P(['Préscolaire','Enseignement primaire','Secondaire collégial','Secondaire qualifiant / formation professionnelle','Enseignement supérieur'],{basic:'Enseignement primaire',voj:'Secondaire collégial',vos:'Secondaire qualifiant',higher:'Enseignement supérieur'},'Formation professionnelle'),
+    TN:P(['Préscolaire','Enseignement de base · 1er degré','Enseignement de base · 2e degré','Enseignement secondaire / formation professionnelle','Enseignement supérieur'],{basic:'Enseignement de base',voj:'2e degré de base',vos:'Secondaire',higher:'Enseignement supérieur'},'Formation professionnelle'),
+    EG:P(['Kindergarten · KG','Primary Education','Preparatory Education','General / Technical Secondary','Higher Education'],{basic:'Basic Education',voj:'Preparatory',vos:'Secondary Education',higher:'Higher Education'},'Technical secondary education'),
+    AE:P(['Kindergarten · KG1–KG2','Cycle 1 · Grades 1–4','Cycle 2 · Grades 5–8','Cycle 3 · Grades 9–12','Higher Education'],{basic:'Kindergarten & Cycle 1',voj:'Cycle 2',vos:'Cycle 3',higher:'Higher Education'},'Applied / technical education'),
+    SA:P(['Kindergarten','Primary School','Intermediate School','Secondary School / Technical & Vocational','Higher Education'],{basic:'General Education',voj:'Intermediate',vos:'Secondary',higher:'Higher Education'},'Technical & Vocational Training'),
+    IL:P(['Gan · גן','Beit sefer yesodi · יסודי','Hativat beinayim · חטיבת ביניים','Hativa elyona / technological · חטיבה עליונה','Higher Education · השכלה גבוהה'],{basic:'Yesodi · Primary',voj:'Hativat Beinayim',vos:'Hativa Elyona',higher:'Higher Education'},'Technological / vocational education')
+  };
+
+  const nationalProfile=(country)=>{
+    const code=COUNTRY_CODES[country]||worldCodeByName.get(country)||'';
+    return NATIONAL_OVERRIDES[code]||NATIONAL_SCHEMES[NATIONAL_SCHEME_CODES[code]]||null;
+  };
+  const profileSystem=(country,profile)=>{
+    if(!profile)return null;
+    const d={
+      young:'National pre-primary / early-childhood stage.',
+      primary:'National primary/basic stage.',
+      secondary:'National lower-secondary stage.',
+      student:'National upper-secondary, academic or vocational stage.',
+      adult:'National tertiary/higher-education stage.'
+    };
+    const ids=['young','primary','secondary','student','adult'],icons=['🧸','📚','🎒','🎓','🏛️'];
+    return {
+      label:country,
+      groups:profile.groups||null,
+      vocational:profile.vocational||'',
+      source:'UNESCO UIS ISCED / national terminology',
+      stages:ids.map((id,i)=>[id,icons[i],profile.titles[i],d[id]])
+    };
+  };
+
   const countryName=c=>{
     const lang=uiLang(),idx=LANG_INDEX[lang];
     if(idx!=null&&COUNTRY_NAMES[c]?.[idx])return COUNTRY_NAMES[c][idx];
@@ -269,7 +548,7 @@
     pt:{basic:'Ensino primário',voj:'Ensino secundário inferior',vos:'Ensino secundário superior',higher:'Ensino superior'},
     it:{basic:'Istruzione primaria',voj:'Secondaria inferiore',vos:'Secondaria superiore',higher:'Istruzione superiore'}
   };
-  const groupCopy=()=>{const source=currentCountry()==='Suriname'?GROUP_COPY:UNIVERSAL_GROUP_COPY;return source[uiLang()]||source.en};
+  const groupCopy=()=>{if(currentCountry()==='Suriname')return GROUP_COPY[uiLang()]||GROUP_COPY.en;const national=system(currentCountry()).groups;if(national)return national;return UNIVERSAL_GROUP_COPY[uiLang()]||UNIVERSAL_GROUP_COPY.en};
   const OFFICIAL={
     Suriname:{primary:'GLO',secondary:'VOJ · MULO/LBO',student:'VOS · HAVO · NATIN/IMEAO',adult:'AdeKUS'},
     Netherlands:{primary:'groep 1–8',secondary:'VMBO/HAVO/VWO',student:'MBO · HAVO/VWO',adult:'HBO/WO'},
@@ -301,7 +580,7 @@
     hbo:{title:'HBO',description:'18/19+ jaar',group:'Hoger Onderwijs',ai:'adult',schoolLevel:'hbo'},
     wo:{title:'WO / Universiteit',description:'AdeKUS · 19+ jaar',group:'Hoger Onderwijs',ai:'adult',schoolLevel:'wo'}
   };
-  const localizedStage=(id,country=currentCountry())=>{const ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en,row=ui[id]||['',''],official=OFFICIAL[country]?.[id];return {title:row[0]+(official?' · '+official:''),description:row[1]}};
+  const localizedStage=(id,country=currentCountry())=>{const ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en,row=ui[id]||['',''],st=system(country).stages.find(x=>x[0]===id);return {title:st?.[2]||row[0],description:row[1],national:true}};
 
   function normalizeCountry(value){
     const x=clean(value);if(!x)return '';
@@ -319,7 +598,7 @@
     return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||worldLocalized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
-  function system(country=currentCountry()){const n=normalizeCountry(country);return SYSTEMS[n]||{...GENERIC,label:n||GENERIC.label}}
+  function system(country=currentCountry()){const n=normalizeCountry(country);if(n==='Suriname')return SYSTEMS.Suriname;const prof=nationalProfile(n),generated=profileSystem(n,prof),explicit=SYSTEMS[n];if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source};return generated||explicit||{...GENERIC,label:n||GENERIC.label}}
   function stage(id,country=currentCountry()){return system(country).stages.find(x=>x[0]===id)||GENERIC.stages.find(x=>x[0]===id)}
   function setCountry(value,source='ui'){
     const country=normalizeCountry(value);if(!country)return currentCountry();
@@ -408,14 +687,14 @@
       const html='<option value="all">'+ui.all+'</option>'+groups.map(([label,ids])=>'<optgroup label="'+label+'">'+ids.map(id=>{const x=SURINAME_TRACKS[id];return '<option value="'+id+'">'+x.title+' · '+x.description+'</option>'}).join('')+'</optgroup>').join('');
       syncSelectOptions(sel,html,value,'school-level|'+uiLang()+'|'+c+'|'+value);
     }else{
-      const supportsVwo=c==='Netherlands';
+      const supportsVwo=c==='Netherlands',sys=system(c);
       const rows=[
         ['all',ui.all],
         ['primary',localizedStage('primary',c).title],
         ['secondary',localizedStage('secondary',c).title],
-        ['upper_secondary',ui.upperFilter],
+        ['upper_secondary',localizedStage('student',c).title],
         ...(supportsVwo?[['vwo','VWO']]:[]),
-        ['vocational',ui.vocFilter],
+        ['vocational',sys.vocational||ui.vocFilter],
         ['higher',localizedStage('adult',c).title],
         ['adult',ui.adultFilter]
       ];
@@ -473,5 +752,5 @@
   addEventListener('scholark-language-complete',()=>scheduleApply(160));
   [100,500].forEach(ms=>setTimeout(()=>scheduleApply(0),ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,fromCode:countryFromCode,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,global:true};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,fromCode:countryFromCode,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,countryProfileCoverage:()=>({total:countryList.length,covered:countryList.filter(x=>x==='Suriname'||!!nationalProfile(x)||!!SYSTEMS[x]).length,missing:countryList.filter(x=>x!=='Suriname'&&!nationalProfile(x)&&!SYSTEMS[x])}),global:true};
 })();
