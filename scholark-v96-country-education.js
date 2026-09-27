@@ -306,7 +306,7 @@
   useScheme('angloAfrica','BW SZ GM GH KE LS LR MW MU NA NG SC SL SS UG ZM ZW');
   useScheme('pacific','FJ KI MH FM NR NZ PW PG WS SB TO TV VU');
   useScheme('arabic','DZ BH EG IQ JO KW LB LY MA OM PS QA SA SD SY TN AE YE EH');
-  useScheme('europe','AL AD AM AT AZ BY BA BG HR CY CZ DK EE FI GE GR HU IS LV LI LT LU MD MC ME MK NO PL RO RU SM RS SK SI SE CH UA VA XK');
+  useScheme('europe','AL AD AM AT AZ BY BA BG HR CY CZ DK EE FI GE GR HU IE IS LV LI LT LU MT MD MC ME MK NO PL RO RU SM RS SK SI SE CH UA VA XK');
   useScheme('southAsia','AF BD BT MV NP PK LK');
   useScheme('southeastAsia','BN KH CN ID IR IL JP KP KR LA MY MN MM PH TH TR VN TW');
   useScheme('centralAsia','KZ KG TJ TM UZ');
