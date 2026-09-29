@@ -15,7 +15,7 @@
     last=detail;localStorage.setItem('scholark_v83_study_ahead',JSON.stringify(detail));
     try{
       const x=await ctx();if(!x){decorate();return}
-      const body={user_id:x.uid,field:clean(detail.field).slice(0,180),country:clean(detail.country)||null,target_school:clean(detail.targetSchool)||null,data:{schema:1,result:detail.result,context:detail.context||'',provider:detail.provider||'',model:detail.model||''},updated_at:new Date().toISOString()};
+      const body={user_id:x.uid,field:clean(detail.field).slice(0,180),country:clean(detail.country)||null,target_school:clean(detail.targetSchool)||null,data:{schema:2,result:detail.result,context:detail.context||'',specialization:detail.specialization||'',depth:detail.depth||'foundation',horizon:detail.horizon||'',weeklyHours:detail.weeklyHours||'',studyFocus:detail.studyFocus||'balanced',provider:detail.provider||'',model:detail.model||''},updated_at:new Date().toISOString()};
       const r=await x.c.request('/rest/v1/study_ahead?select=id,field,country,target_school,data,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.message||'Could not save Study Ahead track')}
       await loadSaved();decorate('Saved to SCHOLARK Cloud.');
@@ -30,21 +30,37 @@
   }
   function renderSaved(){
     const host=$('#v83-saved');if(!host)return;
-    host.innerHTML=saved.length?'<div class="v52-kicker">SAVED STUDY AHEAD TRACKS</div><div class="v83-saved">'+saved.map((x,i)=>'<button type="button" class="v83-saved-card" data-v83-saved="'+i+'"><b>'+esc(x.field)+(x.target_school?' · '+esc(x.target_school):'')+'</b><span>'+esc(x.country||'')+(x.updated_at?' · '+esc(new Date(x.updated_at).toLocaleDateString()):'')+' · open track</span></button>').join('')+'</div>':'';
+    host.innerHTML=saved.length?'<div class="v52-kicker">SAVED STUDY AHEAD TRACKS</div><div class="v83-saved">'+saved.map((x,i)=>'<button type="button" class="v83-saved-card" data-v83-saved="'+i+'"><b>'+esc(x.field)+(x.data?.specialization?' · '+esc(x.data.specialization):'')+(x.target_school?' · '+esc(x.target_school):'')+'</b><span>'+esc(x.country||'')+(x.data?.horizon?' · '+esc(x.data.horizon):'')+(x.updated_at?' · '+esc(new Date(x.updated_at).toLocaleDateString()):'')+' · open track</span></button>').join('')+'</div>':'';
     $$('[data-v83-saved]',host).forEach(b=>b.onclick=()=>openSaved(saved[+b.dataset.v83Saved]));
   }
   function list(items){const a=(items||[]).filter(Boolean);return a.length?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
+  function books(items){return (items||[]).slice().sort((a,b)=>(Number(a?.readingOrder)||99)-(Number(b?.readingOrder)||99)).map(x=>'<div class="v62-book"><strong>'+esc((x.readingOrder?x.readingOrder+'. ':'')+(x.title||''))+'</strong><small>'+esc(x.author||'')+(x.level?' · '+esc(x.level):'')+'</small><div>'+esc(x.why||'')+'</div></div>').join('')}
+  function rows(items,titleKey='name',detailKey='purpose'){return '<div class="v62-study-table">'+(items||[]).map(x=>'<div class="v62-study-line"><b>'+esc(x?.[titleKey]||'')+'</b><span>'+esc(x?.[detailKey]||'')+'</span></div>').join('')+'</div>'}
+  function branches(items){return '<div class="v62-branch-grid">'+(items||[]).map(x=>'<div class="v62-branch"><h4>'+esc(x.name||'')+'</h4><p>'+esc(x.summary||'')+'</p><div><b>Specializations</b><div class="v62-pillrow">'+(x.specializations||[]).map(v=>'<span class="v62-pill">'+esc(v)+'</span>').join('')+'</div></div><div><b>Foundation topics</b>'+list(x.foundationTopics)+'</div><div><b>Starter skills</b>'+list(x.starterSkills)+'</div><div><b>Career examples</b>'+list(x.careerExamples)+'</div><button type="button" data-v83-focus-branch="'+esc(x.name||'')+'">Focus this branch</button></div>').join('')+'</div>'}
   function renderTrack(detail){
     if(!detail?.result)return;last=detail;localStorage.setItem('scholark_v83_study_ahead',JSON.stringify(detail));
     const r=detail.result,out=$('#v62-study-results');if(!out)return;
-    out.innerHTML='<div class="v62-answer-card"><h3>'+esc(r.title||detail.field||'Study Ahead')+'</h3><p>'+esc(r.overview||'')+'</p></div>'+
-      '<div class="v62-row"><div class="v62-answer-card"><h4>Skills to build</h4>'+list(r.skills)+'</div><div class="v62-answer-card"><h4>Key subjects</h4>'+list(r.keySubjects)+'</div></div>'+
-      '<div class="v62-row"><div class="v62-answer-card"><h4>Books & resources</h4>'+list(r.books)+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
-      '<div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<p><b>'+esc(x.phase)+'</b></p>'+list(x.actions)).join(''))+'</div>';
-    decorate('Track opened. Connect it to Tutor, Planner or Mastery when ready.');
+    const advanced=Array.isArray(r.branchMap)&&r.branchMap.length;
+    out.innerHTML=advanced
+      ? '<div class="v62-answer-card"><h3>'+esc(r.title||detail.field||'Study Ahead')+'</h3><p>'+esc(r.overview||'')+'</p></div>'+
+        '<div class="v62-answer-card"><h4>Branches & specializations</h4>'+branches(r.branchMap)+'</div>'+
+        '<div class="v62-answer-card"><h4>Recommended specialization focus</h4><p><b>'+esc(r.recommendedSpecialization?.name||detail.specialization||'Explore first')+'</b></p><p>'+esc(r.recommendedSpecialization?.why||'')+'</p><div class="v62-study-grid"><div><b>Prerequisites</b>'+list(r.recommendedSpecialization?.prerequisites)+'</div><div><b>Next steps</b>'+list(r.recommendedSpecialization?.nextSteps)+'</div></div></div>'+
+        '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Skills to build</h4>'+list(r.skills)+'</div><div class="v62-answer-card"><h4>Key subjects</h4>'+list(r.keySubjects)+'</div></div>'+
+        '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Reading path</h4>'+books(r.books)+'</div><div class="v62-answer-card"><h4>Learning resources</h4>'+rows(r.learningResources,'name','purpose')+'</div></div>'+
+        '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Starter projects / practice</h4>'+rows(r.starterProjects,'title','outcome')+'</div><div class="v62-answer-card"><h4>Tools, software & methods</h4>'+rows(r.tools,'name','purpose')+'</div></div>'+
+        '<div class="v62-study-grid"><div class="v62-answer-card"><h4>First-year preview</h4>'+rows(r.firstYearPreview,'topic','whyItMatters')+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
+        '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Questions to explore</h4>'+list(r.questionsToExplore)+'</div></div>'+
+        '<div class="v62-answer-card"><h4>Weekly preparation plan</h4>'+(r.weeklyPlan||[]).map(x=>'<div class="v62-study-line"><b>'+esc(x.block||'Study block')+' · '+esc(x.minutes||0)+' min</b><span>'+esc(x.focus||'')+'</span></div>').join('')+'</div>'+
+        '<div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<div class="v62-book"><strong>'+esc(x.phase||'Phase')+'</strong><small>'+esc(x.goal||'')+'</small>'+list(x.actions)+(x.milestone?'<p><b>Milestone:</b> '+esc(x.milestone)+'</p>':'')+'</div>').join(''))+'</div>'
+      : '<div class="v62-answer-card"><h3>'+esc(r.title||detail.field||'Study Ahead')+'</h3><p>'+esc(r.overview||'')+'</p></div>'+
+        '<div class="v62-row"><div class="v62-answer-card"><h4>Skills to build</h4>'+list(r.skills)+'</div><div class="v62-answer-card"><h4>Key subjects</h4>'+list(r.keySubjects)+'</div></div>'+
+        '<div class="v62-row"><div class="v62-answer-card"><h4>Books & resources</h4>'+list(r.books)+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
+        '<div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<p><b>'+esc(x.phase)+'</b></p>'+list(x.actions)).join(''))+'</div>';
+    $('[data-v83-focus-branch]',out).forEach(b=>b.onclick=()=>{const v=clean(b.dataset.v83FocusBranch);if($('#v62-specialization'))$('#v62-specialization').value=v;$('#v62-specialization')?.scrollIntoView({behavior:'smooth',block:'center'});$('#v62-specialization')?.focus()});
+    decorate('Track opened. Connect it to Tutor, Planner, reading, projects or Mastery when ready.');
     out.scrollIntoView({behavior:'smooth',block:'start'});
   }
-  function openSaved(row){if(!row)return;renderTrack({field:row.field,country:row.country||'',targetSchool:row.target_school||'',context:row.data?.context||'',result:row.data?.result||{},provider:row.data?.provider||'',model:row.data?.model||''})}
+  function openSaved(row){if(!row)return;renderTrack({field:row.field,country:row.country||'',targetSchool:row.target_school||'',specialization:row.data?.specialization||'',depth:row.data?.depth||'foundation',horizon:row.data?.horizon||'',weeklyHours:row.data?.weeklyHours||'',studyFocus:row.data?.studyFocus||'balanced',context:row.data?.context||'',result:row.data?.result||{},provider:row.data?.provider||'',model:row.data?.model||''})}
   function ensureSavedHost(){
     const h=$('.v62-study');if(!h||$('#v83-saved',h))return;
     const host=document.createElement('section');host.id='v83-saved';
@@ -52,14 +68,14 @@
   }
   function decorate(statusText=''){
     const out=$('#v62-study-results');if(!out||!last)return;
-    let bar=$('#v83-actions',out);if(!bar){bar=document.createElement('div');bar.id='v83-actions';bar.innerHTML='<div class="v83-actions"><button type="button" data-v83="tutor">Start learning with AI Tutor</button><button type="button" data-v83="planner">Add roadmap to Planner</button><button type="button" class="alt" data-v83="mastery">Add key subjects to Mastery</button><button type="button" class="alt" data-v83="goal">Turn this into a Goal</button><button type="button" class="alt" data-v83="refresh">Save / refresh track</button></div><div class="v83-status"></div>';out.appendChild(bar);$$('[data-v83]',bar).forEach(b=>b.onclick=()=>action(b.dataset.v83,b))}
+    let bar=$('#v83-actions',out);if(!bar){bar=document.createElement('div');bar.id='v83-actions';bar.innerHTML='<div class="v83-actions"><button type="button" data-v83="tutor">Start learning with AI Tutor</button><button type="button" data-v83="planner">Add roadmap to Planner</button><button type="button" data-v83="reading">Add reading plan</button><button type="button" data-v83="projects">Add projects to Planner</button><button type="button" class="alt" data-v83="mastery">Add key subjects to Mastery</button><button type="button" class="alt" data-v83="goal">Turn this into a Goal</button><button type="button" class="alt" data-v83="refresh">Save / refresh track</button></div><div class="v83-status"></div>';out.appendChild(bar);$$('[data-v83]',bar).forEach(b=>b.onclick=()=>action(b.dataset.v83,b))}
     $('.v83-status',bar).textContent=statusText||'Study Ahead is connected to your Planner and Mastery Map.';
   }
   async function action(type,btn){
     if(!last)return;btn.disabled=true;const st=$('#v83-actions .v83-status');if(st)st.textContent='Working…';
     try{
       if(type==='tutor'){
-        const prompt='Teach me the foundations I should know before studying '+clean(last.field)+'. Start at my current level, explain everything step by step, use worked examples, and connect the lesson to these key subjects: '+(last.result?.keySubjects||[]).slice(0,8).join(', ')+'.';
+        const prompt='Teach me the foundations I should know before studying '+clean(last.field)+(last.specialization?' with a focus on '+clean(last.specialization):'')+'. Start at my current level, explain everything step by step, use worked examples, and connect the lesson to these key subjects: '+(last.result?.keySubjects||[]).slice(0,8).join(', ')+'.';
         if(window.__SCHOLARK_V91__?.openTool)window.__SCHOLARK_V91__.openTool('tutor');else $('#v51-sidebar [data-v51-tool="tutor"]')?.click();
         setTimeout(()=>{const q=$('#v52-tutor-q');if(q){q.value=prompt;q.focus()}},180);return;
       }
@@ -72,16 +88,27 @@
         actions.slice(0,18).forEach((a,i)=>api?.actions?.addPlan?.({text:a.text,type:'study',subject:field,date:new Date(Date.now()+(1+i*2)*86400000).toISOString().slice(0,10),time:'',duration:45,priority:i<4?'high':'medium',goalId:'',sourceKey:'study:'+field.toLowerCase()+':'+clean(a.phase).toLowerCase()+':'+clean(a.text).toLowerCase()}));
         const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true,true);
         if(st)st.textContent=(added||0)+' new Study Ahead action'+(added===1?'':'s')+' connected to Planner'+(x?' · Cloud sync queued':'')+'.';
+      }else if(type==='reading'){
+        const api=window.__SCHOLARK_WORKSPACE_CORE__,field=clean(last.field)||'Study Ahead',before=api?.data?.planner?.().length||0;
+        const reading=(last.result?.books||[]).slice().sort((a,b)=>(Number(a?.readingOrder)||99)-(Number(b?.readingOrder)||99)).slice(0,12);
+        if(!reading.length)throw new Error('This track has no structured reading plan yet.');
+        reading.forEach((book,i)=>api?.actions?.addPlan?.({text:'Read: '+clean(book.title)+(book.author?' — '+clean(book.author):''),type:'study',subject:field,date:new Date(Date.now()+(2+i*4)*86400000).toISOString().slice(0,10),time:'',duration:45,priority:i<3?'high':'medium',goalId:'',sourceKey:'study-reading:'+field.toLowerCase()+':'+clean(book.title).toLowerCase()}));
+        const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true,true);if(st)st.textContent=added+' reading item'+(added===1?'':'s')+' added to Planner.';
+      }else if(type==='projects'){
+        const api=window.__SCHOLARK_WORKSPACE_CORE__,field=clean(last.field)||'Study Ahead',before=api?.data?.planner?.().length||0,projects=(last.result?.starterProjects||[]).slice(0,8);
+        if(!projects.length)throw new Error('This track has no starter projects yet.');
+        projects.forEach((project,i)=>api?.actions?.addPlan?.({text:'Project: '+clean(project.title),type:'study',subject:field,date:new Date(Date.now()+(5+i*7)*86400000).toISOString().slice(0,10),time:'',duration:90,priority:i<2?'high':'medium',goalId:'',sourceKey:'study-project:'+field.toLowerCase()+':'+clean(project.title).toLowerCase()}));
+        const added=Math.max(0,(api?.data?.planner?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadPlanner?.(true,true);if(st)st.textContent=added+' starter project'+(added===1?'':'s')+' added to Planner.';
       }else if(type==='mastery'){
-        const topics=[...(last.result?.keySubjects||[]),...(last.result?.skills||[])].map(clean).filter(Boolean).slice(0,24);
+        const focusBranch=(last.result?.branchMap||[]).find(x=>clean(x?.name).toLowerCase()===clean(last.specialization||last.result?.recommendedSpecialization?.name).toLowerCase());const topics=[...(last.result?.keySubjects||[]),...(last.result?.skills||[]),...(last.result?.recommendedSpecialization?.prerequisites||[]),...(focusBranch?.foundationTopics||[])].map(clean).filter(Boolean).slice(0,30);
         if(!topics.length)throw new Error('This roadmap has no mastery topics.');
         const api=window.__SCHOLARK_WORKSPACE_CORE__,subject=clean(last.field)||'Study Ahead',before=api?.data?.mastery?.().length||0;
         for(const topic of topics){const due=new Date();due.setDate(due.getDate()+1);api?.actions?.upsertMastery?.({subject,topic,status:'New',mastery:0,nextReviewAt:due.toISOString()})}
         const added=Math.max(0,(api?.data?.mastery?.().length||0)-before);if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadMastery?.(true,true);
         if(st)st.textContent=added+' new key subject'+(added===1?'':'s')+'/skill'+(added===1?'':'s')+' connected to Mastery'+(x?' · Cloud sync queued':'')+'.';
       }else if(type==='goal'){
-        const text='Prepare for '+clean(last.field),api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.goals?.().length||0;
-        api?.actions?.addGoal?.({text,category:'school',date:'',measure:'Complete the Study Ahead roadmap and reach confident mastery of the key subjects.',sourceKey:'study-goal:'+clean(last.field).toLowerCase()});
+        const text='Prepare for '+clean(last.field)+(last.specialization?' · '+clean(last.specialization):''),api=window.__SCHOLARK_WORKSPACE_CORE__,before=api?.data?.goals?.().length||0;
+        api?.actions?.addGoal?.({text,category:'school',date:'',measure:'Complete the Study Ahead roadmap, reading path and starter projects, and reach confident mastery of the key subjects.',sourceKey:'study-goal:'+clean(last.field).toLowerCase()+':'+clean(last.specialization||'general').toLowerCase()});
         const added=(api?.data?.goals?.().length||0)>before;if(x)window.__SCHOLARK_V80_WORKSPACE_CLOUD_API__?.loadGoals?.(true,true);if(st)st.textContent=added?'Study Ahead goal added to Goals.':'Study Ahead goal is already connected to Goals.';
       }
     }catch(e){if(st)st.textContent=clean(e?.message||e)}finally{btn.disabled=false}
@@ -90,7 +117,7 @@
   function sync(){if(location.hash.toLowerCase()==='#study'){ensureSavedHost();loadSaved();try{last=last||JSON.parse(localStorage.getItem('scholark_v83_study_ahead')||'null')}catch{}if(last)decorate()}}
   addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,280)});setTimeout(sync,300);
   function prefill(data={}){
-    const apply=()=>{if($('#v62-field')&&data.field!==undefined)$('#v62-field').value=clean(data.field);if($('#v62-country')&&data.country!==undefined)$('#v62-country').value=clean(data.country);if($('#v62-school')&&data.targetSchool!==undefined)$('#v62-school').value=clean(data.targetSchool);if($('#v62-context')&&data.context!==undefined)$('#v62-context').value=clean(data.context);$('#v62-field')?.focus()};
+    const apply=()=>{if($('#v62-field')&&data.field!==undefined)$('#v62-field').value=clean(data.field);if($('#v62-country')&&data.country!==undefined)$('#v62-country').value=clean(data.country);if($('#v62-school')&&data.targetSchool!==undefined)$('#v62-school').value=clean(data.targetSchool);if($('#v62-specialization')&&data.specialization!==undefined)$('#v62-specialization').value=clean(data.specialization);if($('#v62-context')&&data.context!==undefined)$('#v62-context').value=clean(data.context);if($('#v62-horizon')&&data.horizon&&[...$('#v62-horizon').options].some(o=>o.value===data.horizon))$('#v62-horizon').value=data.horizon;if($('#v62-weekly-hours')&&data.weeklyHours&&[...$('#v62-weekly-hours').options].some(o=>o.value===String(data.weeklyHours)))$('#v62-weekly-hours').value=String(data.weeklyHours);if($('#v62-focus')&&data.studyFocus&&[...$('#v62-focus').options].some(o=>o.value===data.studyFocus))$('#v62-focus').value=data.studyFocus;$('#v62-field')?.focus()};
     if(String(location.hash||'').toLowerCase()!=='#study')window.__SCHOLARK_WORKSPACE__?.openTool?.('study');setTimeout(apply,140);return true;
   }
   window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,refresh:sync,version:'20260921-r176'};
