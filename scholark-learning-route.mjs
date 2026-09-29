@@ -116,8 +116,37 @@ function schemaFor(mode){
     }
   };
   if(mode==='study_ahead') return {
-    type:'object',additionalProperties:false,required:['title','overview','skills','keySubjects','books','universityPrep','careers','roadmap'],properties:{
-      title:{type:'string'},overview:{type:'string'},skills:{type:'array',items:{type:'string'}},keySubjects:{type:'array',items:{type:'string'}},books:{type:'array',items:{type:'string'}},universityPrep:{type:'array',items:{type:'string'}},careers:{type:'array',items:{type:'string'}},roadmap:{type:'array',items:{type:'object',additionalProperties:false,required:['phase','actions'],properties:{phase:{type:'string'},actions:{type:'array',items:{type:'string'}}}}}
+    type:'object',additionalProperties:false,
+    required:['title','overview','branchMap','recommendedSpecialization','skills','keySubjects','books','learningResources','starterProjects','tools','universityPrep','firstYearPreview','careers','weeklyPlan','roadmap','questionsToExplore'],
+    properties:{
+      title:{type:'string'},
+      overview:{type:'string'},
+      branchMap:{type:'array',minItems:4,maxItems:18,items:{type:'object',additionalProperties:false,required:['name','summary','specializations','foundationTopics','starterSkills','careerExamples'],properties:{
+        name:{type:'string'},summary:{type:'string'},
+        specializations:{type:'array',minItems:1,maxItems:10,items:{type:'string'}},
+        foundationTopics:{type:'array',minItems:2,maxItems:10,items:{type:'string'}},
+        starterSkills:{type:'array',minItems:1,maxItems:8,items:{type:'string'}},
+        careerExamples:{type:'array',minItems:1,maxItems:8,items:{type:'string'}}
+      }}},
+      recommendedSpecialization:{type:'object',additionalProperties:false,required:['name','why','prerequisites','nextSteps'],properties:{
+        name:{type:'string'},why:{type:'string'},prerequisites:{type:'array',items:{type:'string'}},nextSteps:{type:'array',items:{type:'string'}}
+      }},
+      skills:{type:'array',items:{type:'string'}},
+      keySubjects:{type:'array',items:{type:'string'}},
+      books:{type:'array',minItems:4,maxItems:14,items:{type:'object',additionalProperties:false,required:['title','author','level','why','readingOrder'],properties:{
+        title:{type:'string'},author:{type:'string'},level:{type:'string',enum:['starter','foundation','intermediate','advanced']},why:{type:'string'},readingOrder:{type:'integer',minimum:1,maximum:20}
+      }}},
+      learningResources:{type:'array',maxItems:14,items:{type:'object',additionalProperties:false,required:['type','name','purpose'],properties:{type:{type:'string'},name:{type:'string'},purpose:{type:'string'}}}},
+      starterProjects:{type:'array',minItems:2,maxItems:10,items:{type:'object',additionalProperties:false,required:['title','difficulty','outcome','skills'],properties:{
+        title:{type:'string'},difficulty:{type:'string',enum:['starter','intermediate','advanced']},outcome:{type:'string'},skills:{type:'array',items:{type:'string'}}
+      }}},
+      tools:{type:'array',maxItems:14,items:{type:'object',additionalProperties:false,required:['name','purpose','priority'],properties:{name:{type:'string'},purpose:{type:'string'},priority:{type:'string',enum:['learn-now','learn-soon','optional']}}}},
+      universityPrep:{type:'array',items:{type:'string'}},
+      firstYearPreview:{type:'array',minItems:3,maxItems:12,items:{type:'object',additionalProperties:false,required:['topic','whyItMatters'],properties:{topic:{type:'string'},whyItMatters:{type:'string'}}}},
+      careers:{type:'array',items:{type:'string'}},
+      weeklyPlan:{type:'array',minItems:3,maxItems:8,items:{type:'object',additionalProperties:false,required:['block','focus','minutes'],properties:{block:{type:'string'},focus:{type:'string'},minutes:{type:'integer',minimum:15,maximum:600}}}},
+      roadmap:{type:'array',minItems:3,maxItems:8,items:{type:'object',additionalProperties:false,required:['phase','goal','actions','milestone'],properties:{phase:{type:'string'},goal:{type:'string'},actions:{type:'array',items:{type:'string'}},milestone:{type:'string'}}}},
+      questionsToExplore:{type:'array',maxItems:10,items:{type:'string'}}
     }
   };
   if(mode==='translate_ui') return {
@@ -175,6 +204,7 @@ function instructions(mode,p){
   if(mode==='flashcards') return base+`\nCreate a high-quality spaced-repetition flashcard deck. Use short, answerable prompts that test active recall, not vague recognition. Each back should be concise but sufficient. Split complex ideas across multiple cards. Mix definitions, relationships, causes, applications and common misconceptions when appropriate. Keep every card aligned to the learner level and supplied subject/topics/context. Return the requested number of cards where practical.`;
   if(mode==='exam') return base+`\nCreate a rigorous practice exam. Match requested subjects/topics and difficulty. Multiple-choice questions must have plausible distractors and exactly one correct answer. Open questions need a concise model answer and explanation.`;
   if(mode==='curriculum') return base+`\nBuild a practical curriculum explorer. Organize the subject into major areas, foundational knowledge, skill progression, and a sensible roadmap. Avoid pretending a curriculum is officially mandated unless the user supplied one.`;
+  if(mode==='study_ahead') return base+`\nBuild an advanced Study Ahead intelligence track for someone preparing before entering a field of study. Field: ${clean(p.field)||'unspecified'}. Preferred branch/specialization: ${clean(p.specialization)||'none yet — map the field broadly first'}. Preparation horizon: ${clean(p.horizon)||'flexible'}. Weekly time available: ${clean(p.weeklyHours)||'flexible'}. Learning focus: ${clean(p.studyFocus)||'balanced'}. Depth: ${clean(p.depth)||'foundation'}. Country: ${clean(p.country)||'not specified'}. Target school: ${clean(p.targetSchool)||'not specified'}. Give a comprehensive map of the major recognized branches/subfields inside the chosen field, with representative specializations under every branch. Do not collapse a broad field into only four generic categories and do not omit a major established branch merely to stay concise. If the field is itself a specialization, map its meaningful sub-branches instead. If the user supplied a preferred specialization, still show the wider field map but make recommendedSpecialization and the roadmap focus on that specialization. Recommend real books that are widely used or respected and include author names; never invent a title or author. Put the books in a sensible reading order and distinguish starter, foundation, intermediate and advanced reading. Also recommend learning resources by type (course, open textbook, documentation, lecture series, journal/review source, practice platform where appropriate) but never invent URLs. Add starter projects or practical exercises, important tools/software/lab methods, a realistic preview of first-year topics, career directions, a weekly preparation plan that fits the supplied time, and a phased roadmap with measurable milestones. Country and target school may be blank; never invent admissions requirements, accreditation rules, protected professional titles, required licenses or a university's exact curriculum. Where a path depends on jurisdiction, say that the learner should verify the local requirement. Use the learner's current education level to decide prerequisite depth. The result should help the learner both explore the field and actually start preparing today.`;
   return base+`\nBuild a serious Study Ahead track for someone preparing before entering a field of study. Include what they should learn, skills, key subjects, useful books/resources, university preparation, career paths and an actionable roadmap. Country and target school may be blank; do not invent admission requirements.`;
 }
 
@@ -198,6 +228,11 @@ function userPayload(mode,p){
     country:clean(p.country),
     targetSchool:clean(p.targetSchool),
     field:clean(p.field),
+    specialization:clean(p.specialization),
+    horizon:clean(p.horizon),
+    weeklyHours:clean(p.weeklyHours),
+    studyFocus:clean(p.studyFocus),
+    depth:clean(p.depth),
     context:clean(p.context),
     targetLanguage:clean(p.targetLanguage),
     nativeLanguage:clean(p.nativeLanguage),
