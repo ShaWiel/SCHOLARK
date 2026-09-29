@@ -497,6 +497,34 @@ check((await page.inputValue('#v62-specialization'))==='Cardiology','Study Ahead
 check((await page.inputValue('#v62-horizon'))==='12 months','Study Ahead prefill did not set horizon');
 check((await page.inputValue('#v62-weekly-hours'))==='8','Study Ahead prefill did not set weekly hours');
 check((await page.inputValue('#v62-focus'))==='books-theory','Study Ahead prefill did not set learning focus');
+await page.evaluate(()=>{
+  window.__SCHOLARK_V83_STUDY_AHEAD__?.openTrack?.({
+    field:'Computer Science',specialization:'Cybersecurity',country:'Suriname',horizon:'6 months',weeklyHours:'6',studyFocus:'projects-practical',
+    result:{
+      title:'Computer Science Study Ahead',overview:'Advanced preparation track.',
+      branchMap:[{name:'Cybersecurity',summary:'Protect systems, networks and information.',specializations:['Application Security','Network Security'],foundationTopics:['Computer Networks','Operating Systems'],starterSkills:['Linux','Scripting'],careerExamples:['Security Analyst','Security Engineer']}],
+      recommendedSpecialization:{name:'Cybersecurity',why:'Matches the selected focus.',prerequisites:['Networking'],nextSteps:['Learn Linux']},
+      skills:['Programming'],keySubjects:['Algorithms'],
+      books:[{title:'Computer Networking: A Top-Down Approach',author:'James F. Kurose and Keith W. Ross',level:'foundation',why:'Networking foundation.',readingOrder:1}],
+      learningResources:[{type:'documentation',name:'MDN Web Docs',purpose:'Reference practice'}],
+      starterProjects:[{title:'Build a simple port scanner',difficulty:'starter',outcome:'Practice sockets and networking.',skills:['Networking']}],
+      tools:[{name:'Git',purpose:'Version control',priority:'learn-now'}],
+      universityPrep:['Review discrete mathematics'],
+      firstYearPreview:[{topic:'Discrete Mathematics',whyItMatters:'Supports algorithms and logic.'}],
+      careers:['Security Engineer'],
+      weeklyPlan:[{block:'Block 1',focus:'Networking foundations',minutes:60},{block:'Block 2',focus:'Linux practice',minutes:60},{block:'Block 3',focus:'Programming project',minutes:90}],
+      roadmap:[{phase:'Foundation',goal:'Build core knowledge',actions:['Study networking'],milestone:'Explain TCP/IP clearly'},{phase:'Practice',goal:'Apply skills',actions:['Build a small project'],milestone:'Finish one project'},{phase:'Preview',goal:'Prepare for first year',actions:['Review discrete math'],milestone:'Complete a diagnostic'}],
+      questionsToExplore:['Do I prefer offensive or defensive security?']
+    }
+  });
+});
+await page.waitForTimeout(80);
+check(await page.locator('#v62-study-results .v62-branch').count()===1,'Advanced Study Ahead branch map did not render');
+check(await page.locator('#v83-actions [data-v83="reading"]').count()===1,'Study Ahead reading-plan action missing');
+check(await page.locator('#v83-actions [data-v83="projects"]').count()===1,'Study Ahead project-plan action missing');
+check((await page.locator('#v62-study-results').innerText()).includes('First-year preview'),'Advanced Study Ahead first-year preview missing');
+await page.click('[data-v83-focus-branch="Cybersecurity"]');
+check((await page.inputValue('#v62-specialization'))==='Cybersecurity','Study Ahead branch focus did not populate specialization');
 const bookComing=page.locator('#v51-sidebar [data-v51-tool="book"]');
 check(await bookComing.count()===1,'Book Studio Coming Soon entry missing');
 check((await bookComing.getAttribute('data-v51-inactive'))==='1','Book Studio should remain feature-gated in R194');
