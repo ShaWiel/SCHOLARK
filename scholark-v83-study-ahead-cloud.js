@@ -56,7 +56,7 @@
         '<div class="v62-row"><div class="v62-answer-card"><h4>Skills to build</h4>'+list(r.skills)+'</div><div class="v62-answer-card"><h4>Key subjects</h4>'+list(r.keySubjects)+'</div></div>'+
         '<div class="v62-row"><div class="v62-answer-card"><h4>Books & resources</h4>'+list(r.books)+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
         '<div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<p><b>'+esc(x.phase)+'</b></p>'+list(x.actions)).join(''))+'</div>';
-    $('[data-v83-focus-branch]',out).forEach(b=>b.onclick=()=>{const v=clean(b.dataset.v83FocusBranch);if($('#v62-specialization'))$('#v62-specialization').value=v;$('#v62-specialization')?.scrollIntoView({behavior:'smooth',block:'center'});$('#v62-specialization')?.focus()});
+    Array.from(out.querySelectorAll('[data-v83-focus-branch]')).forEach(b=>b.onclick=()=>{const v=clean(b.dataset.v83FocusBranch);if($('#v62-specialization'))$('#v62-specialization').value=v;$('#v62-specialization')?.scrollIntoView({behavior:'smooth',block:'center'});$('#v62-specialization')?.focus()});
     decorate('Track opened. Connect it to Tutor, Planner, reading, projects or Mastery when ready.');
     out.scrollIntoView({behavior:'smooth',block:'start'});
   }
