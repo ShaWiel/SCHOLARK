@@ -654,21 +654,7 @@ function scholarkTestFallback(mode,p){
   const skills=['Academic reading','Critical thinking','Research','Structured writing','Problem solving','Time management','Communication','Digital study skills'];
 
   if(mode==='study_ahead'){
-    return {ok:true,provider:'scholark-test-engine',model:'local-study-v1',tier:'test',result:{
-      title:'Study Ahead · '+field,
-      overview:'Testing mode is active, so this roadmap works without paid AI. It prepares you for '+field+(country?' in '+country:'')+' without inventing admission requirements.',
-      skills,
-      keySubjects:subjectBank,
-      books:['A current introductory textbook for '+field,'An academic writing and study-skills guide','An official curriculum or programme page from your target institution'],
-      universityPrep:['Check the official programme curriculum','Review prerequisite subjects','Build a weekly study routine','Practice academic reading and summarising','Create a glossary of core terms'],
-      careers:['Entry-level roles connected to '+field,'Specialist roles after further study','Research / analysis roles','Public or private-sector applications'],
-      roadmap:[
-        {phase:'1 · Foundations',actions:['Learn the basic vocabulary of '+field,'Review prerequisite school subjects','Set a weekly study schedule']},
-        {phase:'2 · Core knowledge',actions:subjectBank.slice(0,5).map(x=>'Learn the fundamentals of '+x)},
-        {phase:'3 · Practice',actions:['Complete short practice tasks weekly','Explain key ideas without notes','Write one structured mini-assignment']},
-        {phase:'4 · Readiness',actions:['Compare your knowledge with the target programme','Identify your three weakest areas','Plan your first 30 study days']}
-      ]
-    }};
+    return {ok:true,provider:'scholark-test-engine',model:'local-study-v2',tier:'test',result:buildLocalStudyAhead(p,{resilient:false})};
   }
 
   if(mode==='curriculum'){
