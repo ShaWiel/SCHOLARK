@@ -27,11 +27,12 @@ const TRANSLATION_MEMORY_MAX=24000;
 const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
 function rememberTranslation(key,value){
   if(!key||!value)return;
-  if(!translationMemory.has(key)&&translationMemory.size>=TRANSLATION_MEMORY_MAX){
+  if(translationMemory.has(key))translationMemory.delete(key);
+  if(translationMemory.size>=TRANSLATION_MEMORY_MAX){
     let drop=Math.max(1,Math.floor(TRANSLATION_MEMORY_MAX*.08));
     for(const k of translationMemory.keys()){translationMemory.delete(k);if(--drop<=0)break}
   }
-  rememberTranslation(key,value);
+  translationMemory.set(key,value);
 }
 const LINGVA_INSTANCES=['https://translate.dr460nf1r3.org','https://lingva.garudalinux.org','https://translate.jae.fi'];
 const LIBRE_INSTANCES=['https://libretranslate.de','https://translate.argosopentech.com','https://translate.api.skitzen.com'];
@@ -225,15 +226,15 @@ function userPayload(mode,p){
     topics:Array.isArray(p.topics)?p.topics.map(clean).filter(Boolean):clean(p.topics).split(',').map(clean).filter(Boolean),
     count:Math.max(1,Math.min(60,Number(p.count)||10)),
     difficulty:clean(p.difficulty)||'mixed',
-    country:clean(p.country),
-    targetSchool:clean(p.targetSchool),
-    field:clean(p.field),
-    specialization:clean(p.specialization),
-    horizon:clean(p.horizon),
-    weeklyHours:clean(p.weeklyHours),
-    studyFocus:clean(p.studyFocus),
-    depth:clean(p.depth),
-    context:clean(p.context),
+    country:clean(p.country).slice(0,160),
+    targetSchool:clean(p.targetSchool).slice(0,240),
+    field:clean(p.field).slice(0,180),
+    specialization:clean(p.specialization).slice(0,180),
+    horizon:clean(p.horizon).slice(0,60),
+    weeklyHours:clean(p.weeklyHours).slice(0,20),
+    studyFocus:clean(p.studyFocus).slice(0,80),
+    depth:clean(p.depth).slice(0,40),
+    context:clean(p.context).slice(0,5000),
     targetLanguage:clean(p.targetLanguage),
     nativeLanguage:clean(p.nativeLanguage),
     proficiency:clean(p.proficiency),
