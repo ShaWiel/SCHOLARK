@@ -267,6 +267,7 @@
     const s=core()?.compute?.()||{};return [tool,actions.map(x=>x.id+':'+x.disabled).join('|'),s.planner?.active?.length||0,s.mastery?.weak?.length||0,s.flashcards?.due?.length||0,s.assignments?.active?.length||0,s.goals?.active?.length||0].join('~')
   }
   function refresh(force=false){
+    if(document.documentElement.classList.contains('scholark-language-switching')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force),120);return}
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
       $$('.v108-context').forEach(x=>x.remove());
