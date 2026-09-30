@@ -242,7 +242,7 @@
     document.body.classList.remove('v55-public-home','v81-home');
     document.documentElement.classList.remove('v55-public-home');
     document.body.classList.add('v51-workspace');document.documentElement.classList.add('v51-workspace-root');
-    const homeLayer=$('#v29-home-layer');if(homeLayer){homeLayer.hidden=true;homeLayer.setAttribute('aria-hidden','true')}
+    if(homeLayer){homeLayer.hidden=true;homeLayer.setAttribute('aria-hidden','true')}
     $('.v55-account-wrap')?.classList.remove('open');
     Array.from(document.querySelectorAll('[id="v51-main"]')).slice(1).forEach(x=>x.remove());
     Array.from(document.querySelectorAll('[id="v51-sidebar"]')).slice(1).forEach(x=>x.remove());
