@@ -179,6 +179,10 @@
     // exclusive ownership of the transition instead of combining hashchange,
     // prepareEntry and a delayed synthetic Dashboard click.
     if(ws?.openTool){
+      // One transaction, one owner: move the URL without a hashchange, mark
+      // the entry epoch, clear public ownership, then let V51 render once.
+      history.replaceState(null,'',location.pathname+location.search+'#dashboard');
+      ws.prepareEntry?.('home-cta');
       document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
       ws.openTool('dashboard');
       return;
