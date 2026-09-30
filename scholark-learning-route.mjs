@@ -24,6 +24,27 @@ const readJson = req => new Promise((resolve,reject)=>{
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
 const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''};
 const creditRequestId=req=>String(req.headers?.['x-scholark-request-id']||'').trim();
+async function authorizeLearningCredits(req,mode){
+  if(TEST_MODE||mode==='translate_ui')return {ok:true,feature:null,needed:0,balance:null};
+  const token=bearer(req);
+  if(!token)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'Sign in to use SCHOLARK AI features so credits and usage can be protected on your account.'};
+  const feature=CREDIT_MODE_FEATURE[mode];
+  if(!feature)return {ok:false,http:400,code:'CREDIT_FEATURE_UNKNOWN',error:'This learning feature is not connected to the SCHOLARK credit system.'};
+  const requestId=creditRequestId(req);
+  if(!/^[a-zA-Z0-9._:-]{8,120}$/.test(requestId))return {ok:false,http:400,code:'REQUEST_ID_REQUIRED',error:'A valid SCHOLARK request ID is required.'};
+  if(!SUPABASE_URL||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
+  const headers={apikey:PUB,authorization:'Bearer '+token,accept:'application/json'},signal=AbortSignal.timeout?.(8000);
+  const [cr,wr]=await Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/ai_feature_costs?select=credits&feature=eq.'+encodeURIComponent(feature)+'&active=is.true&limit=1',{headers,signal}),
+    fetch(SUPABASE_URL+'/rest/v1/credit_wallets?select=balance,plan,monthly_allowance&limit=1',{headers,signal})
+  ]);
+  if(cr.status===401||cr.status===403||wr.status===401||wr.status===403)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'Your SCHOLARK session has expired. Sign in again.'};
+  if(!cr.ok||!wr.ok)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK could not verify your credit balance before this request.'};
+  const cd=await cr.json().catch(()=>[]),wd=await wr.json().catch(()=>[]);
+  const needed=Math.max(0,Number((Array.isArray(cd)?cd[0]:cd)?.credits)||0),wallet=Array.isArray(wd)?wd[0]:wd,balance=Math.max(0,Number(wallet?.balance)||0);
+  if(needed>0&&balance<needed)return {ok:false,http:402,code:'INSUFFICIENT_CREDITS',error:'Not enough SCHOLARK credits for this action.',balance,needed};
+  return {ok:true,feature,requestId,needed,balance,plan:String(wallet?.plan||'free')};
+}
 async function chargeLearningCredits(req,mode,p,out){
   if(TEST_MODE||mode==='translate_ui')return {ok:true,usage:{billingMode:TEST_MODE?'test':'free-system',serverCharged:false,feature:null,spent:0}};
   const token=bearer(req);
@@ -815,7 +836,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
+    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
@@ -869,6 +890,8 @@ http.Server.prototype.emit = function(event,...args){
         json(res,200,{ok:true,provider,model,result:{translations},cacheHits:strings.length-missing.length,translated:translatedCount,untranslated:strings.length-translatedCount});
         return;
       }
+      const authorized=await authorizeLearningCredits(req,mode);
+      if(!authorized.ok)return json(res,authorized.http||500,{ok:false,code:authorized.code,error:authorized.error,balance:authorized.balance,needed:authorized.needed});
       const out=await generate(mode,p);
       const charged=await chargeLearningCredits(req,mode,p,out);
       if(!charged.ok)return json(res,charged.http||500,{ok:false,code:charged.code,error:charged.error,balance:charged.balance,needed:charged.needed});
