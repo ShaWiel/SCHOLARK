@@ -515,6 +515,10 @@
     .v90-switch-card small{display:block;font:950 8px Inter;letter-spacing:.14em;color:#c9ff6a}.v90-switch-card h2{font:950 30px/1 Inter;margin:10px 0}.v90-switch-card p{font:650 10px/1.55 Inter;color:#c8c4cf}.v90-progress{height:7px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:16px}.v90-progress i{display:block;height:100%;width:35%;background:#c9ff6a;border-radius:inherit;animation:v90move 1s ease-in-out infinite alternate}@keyframes v90move{to{transform:translateX(180%)}}
     .v90-langbox{margin:12px 8px 4px;padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}.v90-langbox label{display:block;margin-bottom:6px;font:900 6.8px Inter;letter-spacing:.13em;color:#8f8b98}.v90-langbox select{width:100%;border:1px solid rgba(255,255,255,.12);background:#22252e;color:#fff;border-radius:10px;padding:8px;font:800 8px Inter;outline:0}.v90-langbox option{background:#fff;color:#17191f}
     html[dir="rtl"] #v51-sidebar{left:auto;right:0}html[dir="rtl"] #v51-main{left:0;right:var(--v51-side)}html[dir="rtl"] #v51-side-toggle{left:auto;right:calc(var(--v51-side) - 16px)}html[dir="rtl"] .v51-nav{text-align:right}html[dir="rtl"] #v55-topbar,html[dir="rtl"] #v29-home-layer,html[dir="rtl"] #v51-main{direction:rtl}html[dir="rtl"] #v55-topbar .v55-menu{right:auto;left:0;text-align:right}html[dir="rtl"] #v55-topbar .v55-menu button{text-align:right}html[dir="rtl"] .v90-switch-card{text-align:right}html.scholark-home-language-adapting #v29-home-layer{visibility:hidden!important;pointer-events:none!important}html.scholark-home-language-adapting{scroll-behavior:auto!important}
+    html.scholark-language-switching body.v51-workspace #v51-main,html.scholark-language-switching body.v51-workspace #v51-sidebar,html.scholark-language-switching body.v51-workspace #v51-side-toggle{visibility:hidden!important;pointer-events:none!important}
+    html.scholark-language-switching body.v51-workspace #v51-main *,html.scholark-language-switching body.v51-workspace #v51-sidebar *{transition:none!important;animation:none!important}
+    body.v51-workspace .v51-head,body.v51-workspace .v51-head>div{min-width:0;max-width:100%}
+    body.v51-workspace .v51-head h1{max-width:100%;overflow-wrap:anywhere;word-break:normal;text-wrap:balance}
   `;document.head.appendChild(css);
 
   const overlay=document.createElement('div');overlay.id='v90-language-overlay';overlay.innerHTML='<div class="v90-switch-card"><small>SCHOLARK LANGUAGE ENGINE</small><h2>Adapting SCHOLARK…</h2><p id="v90-switch-copy">Translating the homepage, workspace and live product demo before reload.</p><div class="v90-progress"><i></i></div></div>';document.body.appendChild(overlay);
@@ -538,7 +542,7 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLARK | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v8-global74-resilient';
+  const CACHE_VERSION='v9-global74-atomic-layout';
   const LEGACY_CACHE_VERSIONS=['v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
@@ -599,7 +603,7 @@
       for(const version of LEGACY_CACHE_VERSIONS)try{localStorage.removeItem(legacyKey(version,c))}catch{}
     }catch{}
   }
-  let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null;
+  let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null,activeTransitionFailsafe=0;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
@@ -763,7 +767,9 @@
   async function fillUnknown(){return translateCurrentPage(false)}
   function scheduleUnknown(){
     if(code()==='en')return;
-    clearTimeout(unknownTimer);unknownTimer=setTimeout(fillUnknown,isHomeRoute()?760:300);
+    clearTimeout(unknownTimer);
+    const run=()=>{if(document.documentElement.classList.contains('scholark-language-switching')){unknownTimer=setTimeout(run,120);return}fillUnknown()};
+    unknownTimer=setTimeout(run,isHomeRoute()?760:300);
   }
 
   function upgradeSelectors(){
@@ -1013,6 +1019,10 @@
   const activeRoot=()=>visibleRoots().find(r=>r!==$('#v55-topbar'))||visibleRoots()[0]||document.body;
   function flushMutations(){
     mutationTimer=null;
+    if(document.documentElement.classList.contains('scholark-language-switching')){
+      mutationTimer=setTimeout(flushMutations,90);
+      return;
+    }
     const roots=[...pendingRoots];pendingRoots.clear();
     const authRoots=authDialogRoots();
     if(code()!=='en'){
