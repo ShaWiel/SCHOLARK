@@ -51,6 +51,7 @@ const orchestrator=read('scholark-v114-workspace-orchestrator.js');
 const apiGuard=read('scholark-api-guard.mjs');
 const billingRoute=read('scholark-billing-route.mjs');
 const billingClient=read('scholark-v115-billing.js');
+const credits=read('scholark-v85-credits-hud.js');
 const launchRoute=read('scholark-launch-route.mjs');
 const launchFoundation=read('scholark-v116-launch-foundation.js');
 const loadSmoke=read('scripts/scholark-load-smoke.mjs');
