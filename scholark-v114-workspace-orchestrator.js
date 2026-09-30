@@ -270,10 +270,13 @@
     if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force),120);return}
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      $$('.v108-context').forEach(x=>x.remove());
-      $$('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==tool)x.remove()});
-      const root=rootFor(tool);if(!root)return;
-      const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions),existing=$('.v114-connect',root);
+      $('.v108-context').forEach(x=>x.remove());
+      const root=rootFor(tool);if(!root){$('.v114-connect').forEach(x=>x.remove());return}
+      const candidates=$('.v114-connect'),inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
+      // Keep one connected-flow bar for exactly one active root. Older code
+      // removed other routes but preserved same-route duplicates indefinitely.
+      candidates.forEach(x=>{if(x!==existing)x.remove()});
+      const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions);
       if(!force&&existing&&existing.dataset.v114Signature===sig)return;
       activeActions=new Map(actions.map(x=>[x.id,x]));
       const bar=existing||document.createElement('section');bar.className='v114-connect';bar.dataset.v114Route=tool;bar.dataset.v114Signature=sig;
@@ -299,15 +302,15 @@
   setTimeout(()=>refresh(true),40);setTimeout(()=>refresh(true),220);
 
   function verify(){
-    const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),bar=rootFor(tool)?.querySelector?.('.v114-connect');
-    const stale=!!row&&Date.now()>Number(row.expiresAt||0),duplicates=$$('.v114-connect').filter(x=>x.dataset.v114Route===tool).length;
+    const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
+    const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=$('.v114-connect'),activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
-    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&duplicates<=1,release:'r176',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:duplicates,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
+    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r202',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
     const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
     return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }
-  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260921-r176',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
+  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260930-r202',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();
