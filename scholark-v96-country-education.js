@@ -46,7 +46,7 @@
   function scheduleApply(delay=80){
     clearTimeout(applyTimer);
     const run=()=>{
-      if(document.documentElement.classList.contains('scholark-language-switching')){applyTimer=setTimeout(run,120);return}
+      if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){applyTimer=setTimeout(run,120);return}
       apply();
     };
     applyTimer=setTimeout(run,delay);
