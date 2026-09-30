@@ -609,7 +609,10 @@
   const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
   function primeDeviceTranslator(target,onProgress){
-    if(target==='en'||!DEVICE_LANGS.has(target)||!('Translator' in window))return null;
+    // CI/local smoke runs must stay deterministic and must never wait for
+    // browser-native language-pack downloads. Production still uses the
+    // Translator API whenever the browser supports it.
+    if(window.__SCHOLARK_TEST_MODE__||target==='en'||!DEVICE_LANGS.has(target)||!('Translator' in window))return null;
     if(deviceTranslators.has(target))return deviceTranslators.get(target);
     const options={sourceLanguage:'en',targetLanguage:target};
     let promise;
