@@ -40,7 +40,8 @@
     dialogFocusTimer=setTimeout(()=>{if(epoch!==dialogEpoch||!dialog.classList.contains('open'))return;$('#v116-dialog-body button,#v116-dialog-body input,#v116-dialog-body textarea,#v116-dialog-body select')?.focus()},20);
   }
   dialog.addEventListener('click',e=>{if(e.target===dialog||e.target.closest('[data-v116-close]'))closeDialog()});
-  dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeDialog();return}if(e.key!=='Tab')return;const focus=$$('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',dialog).filter(x=>x.offsetParent!==null);if(!focus.length)return;const first=focus[0],last=focus[focus.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dialog.classList.contains('open')){e.preventDefault();e.stopPropagation();closeDialog()}},true);
+  dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeDialog();return}if(e.key!=='Tab')return;const focus=$$('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',dialog).filter(x=>x.offsetParent!==null);if(!focus.length)return;const first=focus[0],last=focus[focus.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});
 
   async function api(path,opt={}){
     const headers={'content-type':'application/json',...(opt.headers||{})};if(token())headers.authorization='Bearer '+token();
