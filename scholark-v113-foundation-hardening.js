@@ -51,14 +51,14 @@
   }
   function removeDuplicateControls(){
     window.__SCHOLARK_WORKSPACE__?.sanitize?.('foundation');
-    const keepLast=(selector,root=document)=>{const rows=$(selector,root);if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove());return rows.at(-1)||null};
+    const keepLast=(selector,root=document)=>{const rows=[...root.querySelectorAll(selector)];if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove());return rows.at(-1)||null};
     keepLast("#v51-sidebar .v90-langbox");
     keepLast("#v51-sidebar #v96-side-country");
     keepLast("#v51-sidebar .v116-side-actions");
     keepLast("#v55-topbar .v116-public-actions");
     keepLast("#v51-main #v116-onboarding");
-    const byParent=new Map();$(".v111-live[data-v111-owner]").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
-    const bars=$(".v114-connect");if(bars.length>1)bars.slice(0,-1).forEach(x=>x.remove());
+    const byParent=new Map();document.querySelectorAll(".v111-live[data-v111-owner]").forEach(el=>{const p=el.parentElement;if(!p)return;const rows=byParent.get(p)||[];rows.push(el);byParent.set(p,rows)});byParent.forEach(rows=>{if(rows.length>1)rows.slice(0,-1).forEach(x=>x.remove())});
+    const bars=[...document.querySelectorAll(".v114-connect")];if(bars.length>1)bars.slice(0,-1).forEach(x=>x.remove());
   }
   function scrubQuality(root=document){
     $$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max",root).forEach(el=>{
