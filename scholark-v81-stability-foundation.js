@@ -89,6 +89,15 @@
 
   function routeCleanup(){
     const h=hash();
+    // Once V51 exists it is the sole owner of Workspace route/layout state.
+    // V81 remains a watchdog only; it must not independently re-apply route
+    // classes during Home -> Workspace re-entry, which previously let two
+    // recovery paths race and re-mount visible surfaces.
+    if(window.__SCHOLARK_WORKSPACE__){
+      if(h==='#home'||h===''||h==='#pricing'||h==='#start')forceNewHome();
+      else closeLegacyOverlays(h==='#study'?'study':h==='#schools'?'schools':h==='#book'?'book':h==='#studio'?'studio':'');
+      return;
+    }
     if(h==='#study'){
       closeLegacyOverlays('study');
       $('#v50-school')?.classList.remove('open');
