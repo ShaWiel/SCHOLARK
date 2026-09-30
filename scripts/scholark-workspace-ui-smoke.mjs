@@ -500,6 +500,19 @@ check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept
 check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
 
 await route('education','#v51-fallback .v52-tool');
+try{
+  await page.waitForSelector('#v51-fallback .v52-tool[data-v52-tool="education"] [data-edu="mastery"]',{state:'visible',timeout:5000});
+}catch(e){
+  const diag=await page.evaluate(()=>({
+    hash:location.hash,
+    active:window.__SCHOLARK_WORKSPACE__?.active?.(),
+    fallback:String(document.querySelector('#v51-fallback')?.innerText||'').replace(/\s+/g,' ').slice(0,500),
+    fastTool:document.querySelector('#v51-fallback .v52-tool')?.dataset?.v52Tool||'',
+    fastApi:!!window.__SCHOLARK_V52_FAST__,
+    shell:window.__SCHOLARK_WORKSPACE__?.sanitize?.('education-ci-timeout')||null
+  }));
+  throw new Error('Education route did not settle on its own surface: '+JSON.stringify(diag));
+}
 await page.click('[data-edu="mastery"]');
 check(await visible('#v52-m-add',3000),'Education Mastery Map did not open');
 await page.fill('#v52-m-subject','Biology');
