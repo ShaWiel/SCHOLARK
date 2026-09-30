@@ -384,7 +384,21 @@ for(let cycle=2;cycle<=6;cycle++){
   await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.querySelector('#v55-topbar')).display!=='none',null,{timeout:5000});
   await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
   await page.click('#v55-workspace-cta .v55-entry');
-  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+  try{
+    await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+  }catch(e){
+    const diag=await page.evaluate(cycle=>({
+      cycle,
+      hash:location.hash,
+      entry:window.__SCHOLARK_WORKSPACE__?.entryState?.(),
+      html:[...document.documentElement.classList],
+      body:[...document.body.classList],
+      topbar:document.querySelector('#v55-topbar')?getComputedStyle(document.querySelector('#v55-topbar')).display:'missing',
+      home:document.querySelector('#v29-home-layer')?{display:getComputedStyle(document.querySelector('#v29-home-layer')).display,hidden:document.querySelector('#v29-home-layer').hidden,aria:document.querySelector('#v29-home-layer').getAttribute('aria-hidden')}:'missing',
+      shell:window.__SCHOLARK_WORKSPACE__?.sanitize?.('ci-timeout')||null
+    }),cycle);
+    throw new Error('Home CTA repeated re-entry '+cycle+' did not settle: '+JSON.stringify(diag));
+  }
   await page.waitForTimeout(420);
   await checkWorkspaceSingletons('Home CTA re-entry '+cycle);
 }
