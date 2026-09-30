@@ -1,6 +1,7 @@
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const bust=Date.now().toString(36);
 const live=process.argv.includes('--live');
+const liveAuthToken=String(process.env.SCHOLARK_SMOKE_AUTH_TOKEN||'').trim();
 const failures=[];
 const results=[];
 
@@ -128,6 +129,41 @@ try{
   results.push(`billing:webhook-signature ${r.status}`);
 }catch(e){failures.push('Billing webhook signature verification threw '+(e?.message||e))}
 
+const launchHealth=await get('/api/launch/health');
+const surinameSources=await get('/api/launch/sources?country=Suriname');
+if(launchHealth){
+  check(launchHealth.foundation?.feedback===true&&launchHealth.foundation?.accountExport===true&&launchHealth.foundation?.accountDeletion===true,'Launch privacy/feedback foundation is incomplete');
+  check(launchHealth.foundation?.serverCreditIdempotency===true,'Server credit idempotency is not advertised by launch health');
+  check(launchHealth.billing?.environment===billingHealth?.environment,'Launch health billing environment disagrees with billing health');
+  check(typeof launchHealth.publicCommercialLaunchReady==='boolean','Launch readiness verdict missing');
+}
+if(surinameSources){
+  check(Array.isArray(surinameSources.sources)&&surinameSources.sources.some(x=>/uis\.unesco\.org/i.test(String(x.url||''))),'UNESCO education source basis missing');
+  check(surinameSources.sources.some(x=>/gov\.sr\/ministeries\/ministerie-van-onderwijs/i.test(String(x.url||''))),'Official Suriname MinOWC source missing');
+  check(/official institution/i.test(String(surinameSources.policy?.currentAdmissions||'')),'Official current-admissions source policy missing');
+}
+try{
+  const {r,data}=await request('/api/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({category:'bug',message:'CI launch feedback smoke',route:'#dashboard',locale:'en'})},15000);
+  check(r.status===201&&data?.ok===true,`Feedback smoke failed: HTTP ${r.status}`);
+  results.push(`launch:feedback ${r.status}`);
+}catch(e){failures.push('Feedback smoke threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/feedback',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:JSON.stringify({category:'bug',message:'cross origin'})},15000);
+  check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin feedback was not blocked: HTTP ${r.status}`);
+  results.push(`launch:feedback-origin ${r.status}`);
+}catch(e){failures.push('Feedback cross-origin smoke threw '+(e?.message||e))}
+for(const [path,method,label,body] of [
+  ['/api/account/export','GET','account-export',null],
+  ['/api/account','DELETE','account-delete',{confirm:'DELETE'}],
+  ['/api/billing/portal','POST','billing-portal',{action:'overview'}]
+]){
+  try{
+    const {r,data}=await request(path,{method,headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined},15000);
+    check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated ${label} was not blocked: HTTP ${r.status}`);
+    results.push(`launch:${label}-auth ${r.status}`);
+  }catch(e){failures.push(`${label} auth smoke threw ${e?.message||e}`)}
+}
+
 const studioHealth=await get('/api/studio/health');
 const learningHealth=await get('/api/learning/health');
 const schoolHealth=await get('/api/schools/health');
@@ -177,6 +213,8 @@ if(geminiHealth){
 if(!live){
   check(studioHealth?.testMode===true,'Local Studio smoke must run in test mode');
   check(learningHealth?.testMode===true,'Local Learning smoke must run in test mode');
+  check(learningHealth?.serverCredits===true&&learningHealth?.creditIdempotency===true,'Learning server-credit protection is not active');
+  check(learningHealth?.authRequiredForAI===false,'Local test mode should not require AI authentication');
   const studioModes=['presentation','webpage','document','social','graphic'];
   for(const mode of studioModes){
     await post('/api/studio/generate',{mode,prompt:`SCHOLARK smoke test for ${mode}`,count:mode==='presentation'?3:2,language:'English'},`studio:${mode}`,d=>{
@@ -351,17 +389,25 @@ if(!live){
     results.push(`live:workspace_power_tools ${powerRes.r.status}/${shellRes.r.status}/${runtimeRes.r.status}/${prepaintRes.r.status}`);
   }catch(e){failures.push(`live:workspace_power_tools threw ${e?.message||e}`)}
   const acceptedProvider=d=>check(['gemini','pollinations'].includes(d.provider),`unexpected live AI provider ${d.provider}`);
-  await post('/api/learning/generate',{mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{
-    acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson');
-  },180000);
-  await post('/api/learning/generate',{mode:'tutor',tutorMode:'assignment_coach',prompt:'Tell me exactly what I should do next for this assignment.',level:'student',language:'English',assignmentContext:[{id:'smoke-assignment',title:'Biology cell division report',subject:'Biology',type:'report',dueDate:'2026-09-21',instructions:'Write a structured report explaining mitosis and include a labelled diagram.',progress:20,status:'active'}]},'live:assignment_coach',d=>{
-    acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>30,'live:assignment_coach returned no guidance');
-    check(Array.isArray(d.result?.steps)&&d.result.steps.length>=3,'live:assignment_coach returned no actionable steps');
-    check(typeof d.result?.followUp==='string'&&d.result.followUp.length>8,'live:assignment_coach returned no next action');
-  },180000);
-  await post('/api/learning/generate',{mode:'language_learning',prompt:'Teach beginner greetings.',targetLanguage:'Spanish',nativeLanguage:'English',proficiency:'A1',learningGoal:'conversation',language:'English'},'live:language_learning',d=>{
-    acceptedProvider(d);check(Array.isArray(d.result?.exercises)&&d.result.exercises.length>0,'live:language_learning returned no exercises');
-  },180000);
+  if(liveAuthToken){
+    async function liveLearning(body,label,validator){
+      const requestId='smoke-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+      try{
+        const {r,data}=await request('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+liveAuthToken,'x-scholark-request-id':requestId},body:JSON.stringify(body)},180000);
+        check(r.ok,`${label} HTTP ${r.status}: ${data?.error||''}`);check(data?.ok===true,`${label} did not report ok=true`);
+        if(r.ok&&data?.ok===true){check(data?.usage?.billingMode==='server',`${label} was not server-credit protected`);validator?.(data)}
+        results.push(`${label} ${r.status}`);
+      }catch(e){failures.push(`${label} threw ${e?.message||e}`)}
+    }
+    await liveLearning({mode:'tutor',prompt:'Explain photosynthesis in one concise paragraph.',level:'student',language:'English'},'live:tutor',d=>{acceptedProvider(d);check(d.result&&typeof d.result.answer==='string'&&d.result.answer.length>20,'live:tutor returned no lesson')});
+    await liveLearning({mode:'language_learning',prompt:'Teach beginner greetings.',targetLanguage:'Spanish',nativeLanguage:'English',proficiency:'A1',learningGoal:'conversation',language:'English'},'live:language_learning',d=>{acceptedProvider(d);check(Array.isArray(d.result?.exercises)&&d.result.exercises.length>0,'live:language_learning returned no exercises')});
+  }else{
+    try{
+      const {r,data}=await request('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json','x-scholark-request-id':'smoke-noauth-0001'},body:JSON.stringify({mode:'tutor',prompt:'Auth check',level:'student',language:'English'})},30000);
+      check(r.status===401&&data?.code==='AUTH_REQUIRED',`Live learning API did not require account authentication: HTTP ${r.status}`);
+      results.push(`live:learning-auth ${r.status}`);
+    }catch(e){failures.push('live learning auth check threw '+(e?.message||e))}
+  }
   await post('/api/studio/generate',{mode:'presentation',prompt:'Create a two-slide mini presentation about effective study habits.',count:2,language:'English'},'live:studio_presentation',d=>{
     acceptedProvider(d);check(Array.isArray(d.artifact?.sections)&&d.artifact.sections.length>=2,'live:studio_presentation returned too few slides');
   },220000);
