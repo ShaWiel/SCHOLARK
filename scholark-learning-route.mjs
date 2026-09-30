@@ -752,16 +752,34 @@ function scholarkTestFallback(mode,p){
 }
 
 async function generate(mode,p){
-  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))&&mode!=='translate_ui')return scholarkTestFallback(mode,p);
+  const cacheKey=mode==='study_ahead'?studyCacheKey(p):'';
+  if(cacheKey){
+    const cached=getStudyCache(cacheKey);
+    if(cached)return {...cached,cache:'hit'};
+  }
+  const finalize=(out,ttl=STUDY_CACHE_AI_TTL)=>{
+    if(mode==='study_ahead'&&out?.result){
+      out={...out,result:completeStudyResult(out.result,p)};
+      setStudyCache(cacheKey,out,ttl);
+    }
+    return out;
+  };
+  if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))&&mode!=='translate_ui')return finalize(scholarkTestFallback(mode,p),STUDY_CACHE_LOCAL_TTL);
   const route=learningModels(mode,p),freeOnly=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_FREE_AI_ONLY||'')),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=!freeOnly&&/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
   const order=route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasGemini,gemini],[hasOpenAI,openai]];
-  for(const [ok,fn] of order){if(!ok)continue;try{return await fn(mode,p)}catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}}
+  for(const [ok,fn] of order){
+    if(!ok)continue;
+    try{return finalize(await fn(mode,p))}
+    catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}
+  }
   if(mode!=='translate_ui'){
     const fallback=scholarkTestFallback(mode,p);
     fallback.provider='scholark-local-fallback';
-    fallback.model='local-resilience-v1';
+    fallback.model=mode==='study_ahead'?'local-study-resilience-v2':'local-resilience-v1';
+    if(mode==='study_ahead')fallback.result=buildLocalStudyAhead(p,{resilient:true});
     if(mode==='general_ai'&&!/2\s*\+\s*2/.test(clean(p.prompt||'')))fallback.result={title:'ARKI temporarily offline',answer:'ARKI could not reach the configured free AI providers for this request. Your message was not lost; please try again shortly.',suggestedFollowUps:['Try again','Ask a shorter question']};
-    return fallback;
+    fallback.errors=errors.slice(-3);
+    return finalize(fallback,STUDY_CACHE_LOCAL_TTL);
   }
   const e=new Error(errors.length?errors.map(x=>`${x.provider}: ${x.message}`).join(' | '):'No learning AI provider configured');e.code='AI_ENGINE_UNAVAILABLE';e.details=errors;throw e;
 }
@@ -771,7 +789,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size});
+    json(res,200,{ok:true,testMode:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
