@@ -188,12 +188,13 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       if(busy)return;const api=core();if(!api)return;const tool=route();const root=rootFor(tool);if(!root)return;
+      document.querySelectorAll('.v111-live[data-v111-owner]').forEach(x=>{if(!root.contains(x))x.remove()});
       const owned=[...root.querySelectorAll('.v111-live[data-v111-owner]')],old=owned[0]||$('.v111-live',root);
       // A forced refresh used to remove only one panel. If two observers raced,
       // the second panel survived every later refresh and made the Workspace
       // look permanently duplicated. Collapse every SCHOLARK-owned panel first.
       owned.slice(1).forEach(x=>x.remove());
-      if(old&&!force){if(old.dataset)old.dataset.v111Tool=tool;augmentTutorMessages();return}
+      if(old&&!force){if(old.dataset)old.dataset.v111Tool=tool;augmentTutorMessages();window.dispatchEvent(new CustomEvent('scholark-experience-ready',{detail:{tool,source:'v111',reused:true}}));return}
       busy=true;try{
         root.querySelectorAll('.v111-live[data-v111-owner]').forEach(x=>x.remove());
         const html=htmlFor(tool,api.compute());
@@ -202,7 +203,8 @@
           const live=$('.v111-live[data-v111-owner]',root)||$('.v111-live',root);
           if(live){live.dataset.v111Tool=tool;wire(live,tool)}
         }
-        augmentTutorMessages()
+        augmentTutorMessages();
+        window.dispatchEvent(new CustomEvent('scholark-experience-ready',{detail:{tool,source:'v111',reused:false}}))
       }finally{busy=false}
     })
   }
