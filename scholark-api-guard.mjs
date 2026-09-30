@@ -9,10 +9,16 @@ const MAX_BUCKETS = 10000;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
 
 const rules = [
-  { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30, maxBytes:3*1024*1024 },
-  { match:(m,p)=>m==='POST' && p==='/api/studio/image', limit:testMode?100:40, maxBytes:25*1024*1024 },
-  { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30, maxBytes:2*1024*1024 },
-  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024 }
+  { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30, maxBytes:3*1024*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p==='/api/studio/image', limit:testMode?100:40, maxBytes:25*1024*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30, maxBytes:2*1024*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p==='/api/feedback', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='GET' && p==='/api/account/export', limit:testMode?30:3, maxBytes:1024, expensive:true },
+  { match:(m,p)=>m==='DELETE' && p==='/api/account', limit:testMode?20:3, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:12, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/checkout', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/finalize', limit:testMode?80:20, maxBytes:16*1024, expensive:false }
 ];
 
 function clientKey(req) {
@@ -88,7 +94,7 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,originGuard:true,securityHeaders:true,requestBodyLimits:true});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true});
     return true;
   }
 
@@ -113,11 +119,12 @@ http.Server.prototype.emit = function(type,...args) {
     json(res,429,{ok:false,code:'RATE_LIMITED',error:'Too many requests. Please wait and try again.'},{'retry-after':String(rate.retryAfter)});
     return true;
   }
-  if (activeExpensive >= MAX_CONCURRENT) {
+  if (rule.expensive && activeExpensive >= MAX_CONCURRENT) {
     json(res,503,{ok:false,code:'SCHOLARK_BUSY',error:'SCHOLARK is handling many requests right now. Please retry shortly.'},{'retry-after':'3'});
     return true;
   }
 
+  if(!rule.expensive)return previousEmit.call(this,type,...args);
   activeExpensive++;
   let released = false;
   const release = () => { if (!released) { released = true; activeExpensive = Math.max(0,activeExpensive-1); } };
