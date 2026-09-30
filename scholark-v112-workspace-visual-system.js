@@ -52,10 +52,12 @@
   }
   function decorate(){
     const tool=route();scrub();
-    $$(".v112-feature-shell").forEach(el=>el.classList.remove("v112-feature-shell"));
+    $(".v112-feature-shell").forEach(el=>el.classList.remove("v112-feature-shell"));
+    $(".v111-live.v112-live").forEach(el=>{el.classList.remove("v112-live");delete el.dataset.v112Tone;delete el.dataset.v112Tool});
     if(!workspaceRoutes.has(tool)){document.body.removeAttribute("data-v112-tool");return}
     document.body.dataset.v112Tool=tool;
-    const live=$("#v51-main .v111-live")||$(".v111-live");if(!live)return;
+    const candidates=$(".v111-live[data-v111-owner]");
+    const live=candidates.find(x=>x.dataset.v111Tool===tool&&x.getClientRects().length)||candidates.find(x=>x.dataset.v111Tool===tool)||$("#v51-main .v111-live")||$(".v111-live");if(!live)return;
     const m=meta[tool]||meta.ai,root=live.parentElement;
     if(root)root.classList.add("v112-feature-shell");
     live.classList.add("v112-live");live.dataset.v112Tone=m[3];live.dataset.v112Tool=tool;
@@ -67,9 +69,9 @@
   let raf=0,timer=0;
   const schedule=()=>{if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(timer);timer=setTimeout(schedule,120);return}cancelAnimationFrame(raf);raf=requestAnimationFrame(decorate)};
   const mo=new MutationObserver(m=>{if(!document.body.classList.contains("v51-workspace"))return;if(!m.some(x=>x.addedNodes.length||x.removedNodes.length))return;clearTimeout(timer);timer=setTimeout(schedule,120)});
-  const observeRoot=$("#v51-main")||document.body;mo.observe(observeRoot,{subtree:true,childList:true});
-  addEventListener("hashchange",()=>setTimeout(schedule,45));addEventListener("scholark-workspace-change",()=>setTimeout(schedule,35));addEventListener("scholark-runtime-ready",()=>setTimeout(schedule,40));addEventListener("scholark-country-change",()=>setTimeout(schedule,40));
+  const observeRoot=document.documentElement;mo.observe(observeRoot,{subtree:true,childList:true});
+  addEventListener("hashchange",()=>setTimeout(schedule,45));addEventListener("scholark-workspace-entry-ready",()=>setTimeout(schedule,20));addEventListener("scholark-workspace-change",()=>setTimeout(schedule,35));addEventListener("scholark-runtime-ready",()=>setTimeout(schedule,40));addEventListener("scholark-country-change",()=>setTimeout(schedule,40));
   document.addEventListener("visibilitychange",()=>document.documentElement.classList.toggle("v112-background",document.hidden));
   setTimeout(schedule,30);setTimeout(schedule,220);
-  window.__SCHOLARK_V112_VISUAL__={version:"20260924-r183",decorate,verify(){const tool=route(),w=workspaceRoutes.has(tool),live=$("#v51-main .v111-live")||$(".v111-live"),root=live?.parentElement,bad=$$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(x=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(x.textContent))),showcases=live?$$(".v112-showcase",live).length:0,unified=!w||!!(live?.classList.contains("v112-live")&&root?.classList.contains("v112-feature-shell")&&showcases===0);return{ok:unified&&!bad,tool,workspace:w,unified,showcases,qualityBadge:bad}}};
+  window.__SCHOLARK_V112_VISUAL__={version:"20260930-r202",decorate,verify(){const tool=route(),w=workspaceRoutes.has(tool),candidates=$(".v111-live[data-v111-owner]"),live=candidates.find(x=>x.dataset.v111Tool===tool&&x.getClientRects().length)||candidates.find(x=>x.dataset.v111Tool===tool)||null,root=live?.parentElement,bad=$(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max").some(x=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(x.textContent))),showcases=live?$(".v112-showcase",live).length:0,unified=!w||!!(live?.classList.contains("v112-live")&&root?.classList.contains("v112-feature-shell")&&showcases===0);return{ok:unified&&!bad,tool,workspace:w,unified,showcases,qualityBadge:bad}}};
 })();
