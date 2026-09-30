@@ -91,7 +91,7 @@
     const visualReport=window.__SCHOLARK_V112_VISUAL__?.verify?.()||null,visual=!work||r==="dashboard"||visualReport?.ok===true,unifiedFeature=!work||r==="dashboard"||visualReport?.unified===true;
     const orchestration=!work||!!window.__SCHOLARK_V114_ORCHESTRATOR__&&window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok!==false;
     const owners=window.__SCHOLARK_ACTION_OWNERS__||{},learningOwnerNeeded=['tutor','education','study'].includes(r),educationOwnerNeeded=r==='education',eventOwnership=!learningOwnerNeeded||(owners.tutor==='v62'&&owners.curriculum==='v62'&&owners.exam==='v62'&&(!educationOwnerNeeded||(owners.diagnostic==='v108'&&owners.review==='v108')));
-    const connectedBars=$('.v114-connect').length,connectedSurfaceHealthy=!window.__SCHOLARK_V114_ORCHESTRATOR__||(connectedBars<=1&&$('.v108-context').length===0);
+    const connectedBars=document.querySelectorAll('.v114-connect').length,connectedSurfaceHealthy=!window.__SCHOLARK_V114_ORCHESTRATOR__||(connectedBars<=1&&document.querySelectorAll('.v108-context').length===0);
     const experienceReport=window.__SCHOLARK_V111_EXPERIENCE__?.verify?.()||null,experienceHealthy=!window.__SCHOLARK_V111_EXPERIENCE__||experienceReport?.ok!==false;
     const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
     const selectors=$$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
