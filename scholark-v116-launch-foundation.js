@@ -76,7 +76,7 @@
   }
   function renderOnboarding(){
     const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell)return;
-    const boxes=$('#v116-onboarding',shell);boxes.slice(0,-1).forEach(x=>x.remove());
+    const boxes=[...shell.querySelectorAll('#v116-onboarding')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;const state=readOnboarding();
     if(state.dismissed){box?.remove();return}
     if(!box){box=document.createElement('section');box.id='v116-onboarding';box.className='v116-onboarding';const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',box)}
@@ -100,7 +100,7 @@
 
   function sidebarActions(){
     const side=$('#v51-sidebar');if(!side)return;
-    const boxes=$('.v116-side-actions',side);boxes.slice(0,-1).forEach(x=>x.remove());
+    const boxes=[...side.querySelectorAll('.v116-side-actions')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;if(box)return;
     box=document.createElement('div');box.className='v116-side-actions';
     box.innerHTML='<button type="button" data-v116-feedback>Feedback</button><button type="button" data-v116-privacy>Privacy & data</button>';
@@ -111,7 +111,7 @@
 
   function publicActions(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return;
-    const boxes=$('.v116-public-actions',actions);boxes.slice(0,-1).forEach(x=>x.remove());
+    const boxes=[...actions.querySelectorAll('.v116-public-actions')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;
     const onHome=!document.body.classList.contains('v51-workspace');
     if(!onHome){box?.remove();return}
