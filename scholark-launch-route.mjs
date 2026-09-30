@@ -108,6 +108,12 @@ async function deleteAuthUser(userId){
   const d=await r.json().catch(()=>({}));
   return {ok:r.ok,status:r.status,body:d};
 }
+async function deleteUserData(userId){
+  const r=await sb('/rest/v1/rpc/delete_scholark_user_data',{method:'POST',body:JSON.stringify({p_user_id:userId})});
+  const d=await r.json().catch(()=>({}));
+  return {ok:r.ok,status:r.status,body:d};
+}
+
 function launchHealth(){
   const mem=process.memoryUsage?.()||{};
   const liveBilling=PADDLE_ENV==='production';
@@ -132,7 +138,7 @@ function launchHealth(){
   return {
     ok:true,release:RELEASE,nodeEnv:String(process.env.NODE_ENV||''),testMode:TEST_MODE,productStage:PRODUCT_STAGE,uptimeSeconds:Math.round(process.uptime()),
     runtime:{rssMB:Math.round((mem.rss||0)/1048576),heapUsedMB:Math.round((mem.heapUsed||0)/1048576)},
-    foundation:{feedback:true,accountExport:true,accountDeletion:true,sourceProvenance:true,observability:true,serverCreditIdempotency:true,accessibility:true,onboarding:true,languageQa:74},
+    foundation:{feedback:true,accountExport:true,accountDeletion:true,transactionalDataDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,accessibility:true,onboarding:true,languageQa:74},
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
     billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
@@ -191,9 +197,11 @@ http.Server.prototype.emit=function(type,...args){
       if(billing&&['trialing','active','past_due','paused'].includes(String(billing.status||''))){
         return json(res,409,{ok:false,code:'ACTIVE_SUBSCRIPTION',error:'Manage or cancel the active subscription before deleting this SCHOLARK account.',manageBilling:true,plan:billing.plan,status:billing.status,currentPeriodEnd:billing.current_period_end||null});
       }
+      const dataResult=await deleteUserData(user.id);
+      if(!dataResult.ok)return json(res,500,{ok:false,code:'ACCOUNT_DATA_DELETE_FAILED',error:'SCHOLARK could not safely remove account data, so the account itself was not deleted.'});
       const result=await deleteAuthUser(user.id);
-      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED'});
-      json(res,200,{ok:true,deleted:true});
+      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED',dataDeleted:true,error:'Account data was removed, but the authentication account still needs cleanup.'});
+      json(res,200,{ok:true,deleted:true,dataDeleted:true});
     }).catch(e=>json(res,e?.code==='REQUEST_TOO_LARGE'?413:400,{ok:false,code:e?.code||'ACCOUNT_DELETE_FAILED'}));return true;
   }
 
