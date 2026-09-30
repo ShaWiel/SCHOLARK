@@ -37,6 +37,45 @@ function check(cond,msg){if(!cond)failures.push(msg)}
 async function visible(sel,timeout=7000){
   try{await page.waitForSelector(sel,{state:'visible',timeout});return true}catch{return false}
 }
+async function checkWorkspaceSingletons(label){
+  const state=await page.evaluate(()=>{
+    const shown=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.02&&r.width>0&&r.height>0};
+    const ids=['v51-main','v51-sidebar','v51-home','v51-side-toggle'];
+    const idCounts=Object.fromEntries(ids.map(id=>[id,document.querySelectorAll('#'+id).length]));
+    const byParent={};
+    [...document.querySelectorAll('.v111-live[data-v111-owner]')].forEach(el=>{const p=el.parentElement;if(!p)return;const key=p.id||p.className||p.tagName;byParent[key]=(byParent[key]||0)+1});
+    const sidebarTools=[...document.querySelectorAll('#v51-sidebar [data-v51-tool]')].map(x=>x.dataset.v51Tool);
+    const duplicateTools=[...new Set(sidebarTools.filter((x,i,a)=>a.indexOf(x)!==i))];
+    return {
+      idCounts,
+      duplicateTools,
+      languageBoxes:document.querySelectorAll('#v51-sidebar .v90-langbox').length,
+      countryBoxes:document.querySelectorAll('#v51-sidebar #v96-side-country').length,
+      sideActions:document.querySelectorAll('#v51-sidebar .v116-side-actions').length,
+      onboarding:document.querySelectorAll('#v51-main #v116-onboarding').length,
+      connectedBars:document.querySelectorAll('.v114-connect').length,
+      visibleConnectedBars:[...document.querySelectorAll('.v114-connect')].filter(shown).length,
+      experienceByParent:byParent,
+      visibleExperience:[...document.querySelectorAll('.v111-live[data-v111-owner]')].filter(shown).length,
+      emergency:document.querySelectorAll('#v53-emergency').length,
+      emergencyVisible:[...document.querySelectorAll('#v53-emergency')].filter(shown).length,
+      levelGroups:document.querySelectorAll('#v51-main [data-v51-page="dashboard"] .v51-level-cluster').length,
+      levelIds:[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"] [data-level]')].map(x=>x.dataset.level),
+      hardening:window.__SCHOLARK_HARDENING__?.verify?.()||null,
+      orchestration:window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.()||null,
+      experience:window.__SCHOLARK_V111_EXPERIENCE__?.verify?.()||null
+    };
+  });
+  check(Object.values(state.idCounts).every(n=>n===1),`${label}: canonical Workspace shell duplicated: ${JSON.stringify(state)}`);
+  check(state.duplicateTools.length===0,`${label}: sidebar tools duplicated: ${JSON.stringify(state)}`);
+  check(state.languageBoxes<=1&&state.countryBoxes<=1&&state.sideActions<=1&&state.onboarding<=1,`${label}: Workspace controls duplicated: ${JSON.stringify(state)}`);
+  check(state.connectedBars<=1&&state.visibleConnectedBars<=1,`${label}: connected-flow bar duplicated: ${JSON.stringify(state)}`);
+  check(Object.values(state.experienceByParent).every(n=>n<=1)&&state.visibleExperience<=1,`${label}: Workspace experience panel duplicated: ${JSON.stringify(state)}`);
+  check(state.emergencyVisible===0,`${label}: emergency Workspace is visible beside primary shell: ${JSON.stringify(state)}`);
+  check(new Set(state.levelIds).size===state.levelIds.length,`${label}: education level cards duplicated: ${JSON.stringify(state)}`);
+  check(state.hardening?.ok!==false&&state.orchestration?.ok!==false&&state.experience?.ok!==false,`${label}: singleton health check failed: ${JSON.stringify(state)}`);
+  return state;
+}
 async function route(id,selector){
   const button=`#v51-sidebar [data-v51-tool="${id}"]`;
   check(await visible(button,5000),`Sidebar button missing: ${id}`);
@@ -48,6 +87,8 @@ async function route(id,selector){
   check(ms<5000,`${id} route took ${ms}ms (>5000ms)`);
   const active=await page.locator(button).evaluate(el=>el.classList.contains('active')).catch(()=>false);
   check(active,`Sidebar active state missing for ${id}`);
+  await page.waitForTimeout(180);
+  await checkWorkspaceSingletons('route '+id);
 }
 
 // Homepage topbar must keep the exact visual structure without first-paint flicker or competing headers.
@@ -261,7 +302,7 @@ check(languageLayout.mainVisibility!=='hidden'&&!languageLayout.switching&&!lang
 
 // Reproduce the reported glitch: leave Workspace and return before old Home timers fire.
 // Different delays exercise the old 80ms/220ms/320ms repair windows.
-for(const delay of [8,24,72,140]){
+for(const delay of [0,1,8,24,72,140,260]){
   await page.evaluate(d=>{
     window.__SCHOLARK_WORKSPACE__?.goHome?.();
     setTimeout(()=>{location.hash='dashboard'},d);
@@ -273,6 +314,7 @@ for(const delay of [8,24,72,140]){
     throw new Error('Rapid workspace re-entry did not settle: '+JSON.stringify(diag));
   }
   await page.waitForTimeout(380);
+  await checkWorkspaceSingletons('rapid re-entry '+delay+'ms');
 }
 const reentryState=await page.evaluate(()=>{
   const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active');
@@ -335,6 +377,17 @@ const ctaReentry=await page.evaluate(()=>{
   };
 });
 check(ctaReentry.title==='Tu espacio de aprendizaje y creación.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='none'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
+
+await checkWorkspaceSingletons('Home CTA re-entry 1');
+for(let cycle=2;cycle<=6;cycle++){
+  await page.click('#v51-home');
+  await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.querySelector('#v55-topbar')).display!=='none',null,{timeout:5000});
+  await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
+  await page.click('#v55-workspace-cta .v55-entry');
+  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+  await page.waitForTimeout(420);
+  await checkWorkspaceSingletons('Home CTA re-entry '+cycle);
+}
 
 await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dataset.scholarkI18nReady==='nl'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:6000});
