@@ -178,8 +178,9 @@
   function workspaceEntryBusy(){return document.documentElement.classList.contains('scholark-workspace-entering')}
   function beginWorkspaceEntry(reason='route'){
     build();
+    if(workspaceEntryBusy())return Number(document.documentElement.dataset.scholarkWorkspaceEntry||workspaceEntryEpoch)||workspaceEntryEpoch||1;
     const wasPublic=!document.body.classList.contains('v51-workspace')||document.body.classList.contains('v55-public-home')||document.documentElement.classList.contains('v55-public-home')||document.body.classList.contains('v81-home');
-    if(!wasPublic&&!workspaceEntryBusy())return 0;
+    if(!wasPublic)return 0;
     const epoch=++workspaceEntryEpoch;homeTransitionEpoch++;
     clearTimeout(workspaceEntryTimer);
     document.documentElement.classList.add('scholark-workspace-entering');
