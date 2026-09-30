@@ -225,8 +225,16 @@
     if(!workspaceRoute())return 0;
     build();
     if(workspaceEntryBusy())return Number(document.documentElement.dataset.scholarkWorkspaceEntry||workspaceEntryEpoch)||workspaceEntryEpoch||1;
-    const wasPublic=!document.body.classList.contains('v51-workspace')||document.body.classList.contains('v55-public-home')||document.documentElement.classList.contains('v55-public-home')||document.body.classList.contains('v81-home');
-    if(!wasPublic)return 0;
+    const homeLayer=$('#v29-home-layer');
+    const canonicalWorkspace=document.body.classList.contains('v51-workspace')&&document.documentElement.classList.contains('v51-workspace-root')&&(!homeLayer||homeLayer.hidden||homeLayer.getAttribute('aria-hidden')==='true');
+    // Delayed Home repair callbacks may momentarily restore a public-home class.
+    // Never let a stale class alone start a second entry epoch after the
+    // canonical Workspace already owns the viewport.
+    if(canonicalWorkspace){
+      document.body.classList.remove('v55-public-home','v81-home');
+      document.documentElement.classList.remove('v55-public-home');
+      return 0;
+    }
     const epoch=++workspaceEntryEpoch;homeTransitionEpoch++;
     clearTimeout(workspaceEntryTimer);clearTimeout(workspaceEntryFailsafe);
     workspaceEntryFailsafe=setTimeout(()=>{if(epoch===workspaceEntryEpoch&&workspaceRoute()&&workspaceEntryBusy())finishWorkspaceEntry(epoch)},2200);
