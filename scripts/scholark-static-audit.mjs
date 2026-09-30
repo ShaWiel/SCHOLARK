@@ -268,6 +268,7 @@ ok(docker.includes('scholark-v103-language-next-lesson.js?v=20260918-language-ne
 
 ok(billingRoute.includes("'/customers/'+encodeURIComponent(row.paddle_customer_id)+'/portal-sessions'")&&billingRoute.includes("url.pathname==='/api/billing/portal'")&&billingRoute.includes('customerPortalSupported:true'),'Paddle customer self-service portal is incomplete');
 ok(billingClient.includes("async function manage(action='overview')")&&billingClient.includes("'/api/billing/portal'"),'Billing client does not expose secure subscription management');
+ok(billingClient.includes('TEST CHECKOUT · NO REAL CHARGE')&&billingClient.includes("c?.environment==='sandbox'"),'Sandbox checkout is not clearly disclosed to users');
 ok(launchRoute.includes("'/api/launch/health'")&&launchRoute.includes("'/api/launch/sources'")&&launchRoute.includes("'/api/feedback'")&&launchRoute.includes("'/api/account/export'")&&launchRoute.includes("'/api/account'"),'Launch health/source/feedback/account API is incomplete');
 ok(launchRoute.includes('ACTIVE_SUBSCRIPTION')&&launchRoute.includes('/auth/v1/admin/users/')&&launchRoute.includes('content-disposition'),'Account export/delete safeguards are incomplete');
 ok(launchRoute.includes('uis.unesco.org/en/glossary-term/levels-education')&&launchRoute.includes('gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/'),'Launch education source policy is incomplete');
