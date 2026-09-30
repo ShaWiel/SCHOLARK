@@ -54,15 +54,20 @@
   document.head.appendChild(css);
 
   async function call(mode,payload={}) {
-    const feature=({tutor:'tutor_message',curriculum:'curriculum',exam:'quiz',study_ahead:'study_ahead',language_learning:'language_lesson'}[mode]||'tutor_message');
-    await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
+    const feature=({tutor:'tutor_message',curriculum:'curriculum',exam:'quiz',study_ahead:'study_ahead',language_learning:'language_lesson',flashcards:'quiz'}[mode]||'tutor_message');
+    const test=!!window.__SCHOLARK_TEST_MODE__,session=window.__SCHOLARK_V72_CLOUD__?.currentSession?.();
+    if(!test&&!session?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');const e=new Error('Sign in to use SCHOLARK AI features and protect your credits.');e.code='AUTH_REQUIRED';throw e}
+    if(!test)await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),90000);
+    const requestId=(globalThis.crypto?.randomUUID?.()||('sch-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
+    const headers={'content-type':'application/json','x-scholark-request-id':requestId};
+    if(session?.access_token)headers.authorization='Bearer '+session.access_token;
     try {
-      const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,level:level(),language:language(),...payload}),signal:ctrl.signal});
+      const r=await fetch('/api/learning/generate',{method:'POST',headers,body:JSON.stringify({mode,level:level(),language:language(),...payload}),signal:ctrl.signal});
       const data=await r.json().catch(()=>({}));
-      if(!r.ok||!data?.ok||!data?.result){const e=new Error(data?.error||'SCHOLARK learning AI is unavailable');e.code=data?.code;e.status=r.status;throw e}
-      await window.__SCHOLARK_CREDITS__?.consume?.(feature,{mode,tier:data.tier||'',provider:data.provider||'',model:data.model||''});
+      if(!r.ok||!data?.ok||!data?.result){const e=new Error(data?.error||'SCHOLARK learning AI is unavailable');e.code=data?.code;e.status=r.status;e.balance=data?.balance;e.needed=data?.needed;throw e}
+      if(data?.usage?.serverCharged||data?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
       return data;
     } finally { clearTimeout(timer); }
   }
