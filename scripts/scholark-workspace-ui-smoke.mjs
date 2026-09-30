@@ -474,6 +474,57 @@ const schoolGroups=await page.locator('#v50-level optgroup').evaluateAll(nodes=>
 check(schoolGroups.includes('Basisonderwijs')&&schoolGroups.includes('Hoger Onderwijs'),'Dutch school optgroup labels are inconsistent after language round-trip');
 await route('study','#v51-fallback .v62-study');
 check(await page.locator('#v62-study-run').count()===1,'Study Ahead action missing');
+const lawStudyAheadResponse={
+  ok:true,provider:'ci-mock',model:'study-ahead-law',tier:'balanced',
+  result:{
+    title:'Law Study Ahead',overview:'Preparation for studying law.',
+    branchMap:[
+      {name:'Public Law',summary:'Law governing the state and public institutions.',specializations:['Constitutional Law','Administrative Law'],foundationTopics:['Sources of law','Constitutional structure'],starterSkills:['Case reading','Legal reasoning'],careerExamples:['Public-sector lawyer','Policy adviser']},
+      {name:'Private Law',summary:'Law governing relationships between private persons and organizations.',specializations:['Contract Law','Property Law'],foundationTopics:['Obligations','Legal persons'],starterSkills:['Issue spotting','Argument writing'],careerExamples:['Private-practice lawyer','Legal counsel']},
+      {name:'Criminal Law',summary:'Law concerning offences, responsibility and punishment.',specializations:['Substantive Criminal Law','Criminal Procedure'],foundationTopics:['Elements of offences','Procedure'],starterSkills:['Case analysis','Evidence reasoning'],careerExamples:['Prosecutor','Criminal lawyer']},
+      {name:'International Law',summary:'Rules governing states and cross-border legal relationships.',specializations:['Public International Law','International Human Rights'],foundationTopics:['Treaties','Jurisdiction'],starterSkills:['Treaty reading','Comparative analysis'],careerExamples:['International legal adviser','NGO legal officer']}
+    ],
+    recommendedSpecialization:{name:'Explore before choosing',why:'No specialization preference was supplied.',prerequisites:['Legal reasoning','Academic reading'],nextSteps:['Compare branches','Read introductory cases']},
+    skills:['Legal reasoning','Academic writing'],keySubjects:['Introduction to Law','Legal Research'],
+    books:[
+      {title:'Learning the Law',author:'Glanville Williams',level:'starter',why:'Introduces legal study and reasoning.',readingOrder:1},
+      {title:'The Rule of Law',author:'Tom Bingham',level:'foundation',why:'Introduces a core legal principle.',readingOrder:2},
+      {title:'Letters to a Law Student',author:'Nicholas J. McBride',level:'starter',why:'Practical preparation for law study.',readingOrder:3},
+      {title:'An Introduction to Law',author:'Phil Harris',level:'foundation',why:'Broad introduction to legal systems and concepts.',readingOrder:4}
+    ],
+    learningResources:[{type:'open course',name:'Introductory law lectures',purpose:'Preview legal reasoning and core concepts'}],
+    starterProjects:[{title:'Brief a court decision',difficulty:'starter',outcome:'Produce a one-page case brief.',skills:['Case reading','Issue spotting']},{title:'Compare two legal arguments',difficulty:'starter',outcome:'Write a structured comparison.',skills:['Argument analysis']}],
+    tools:[{name:'Case brief template',purpose:'Structure facts, issue, rule, analysis and holding.',priority:'learn-now'}],
+    universityPrep:['Practice academic reading','Learn basic citation habits'],
+    firstYearPreview:[{topic:'Legal Method',whyItMatters:'Builds the reasoning method used across law subjects.'},{topic:'Constitutional Law',whyItMatters:'Introduces the structure and limits of public power.'},{topic:'Contract Law',whyItMatters:'Introduces enforceable agreements and obligations.'}],
+    careers:['Legal counsel','Attorney','Policy adviser'],
+    weeklyPlan:[{block:'Reading',focus:'Read and brief one case',minutes:60},{block:'Writing',focus:'Write one structured legal argument',minutes:60},{block:'Exploration',focus:'Compare two branches of law',minutes:60}],
+    roadmap:[{phase:'Foundation',goal:'Understand legal systems and reasoning',actions:['Learn sources of law','Practice case briefs'],milestone:'Brief a case independently'},{phase:'Skills',goal:'Build legal reading and writing',actions:['Write issue-rule-analysis conclusions'],milestone:'Complete three structured analyses'},{phase:'Preview',goal:'Prepare for first-year subjects',actions:['Preview constitutional and contract law'],milestone:'Explain the purpose of three first-year subjects'}],
+    questionsToExplore:['Do I prefer disputes between private parties or public-law questions?','Do I enjoy case analysis, policy questions, or cross-border issues most?']
+  }
+};
+await page.route('**/api/learning/generate',async route=>{
+  const req=route.request();
+  if(req.method()==='POST'){
+    let payload={};try{payload=JSON.parse(req.postData()||'{}')}catch{}
+    if(payload.mode==='study_ahead'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(lawStudyAheadResponse)});return}
+  }
+  await route.continue();
+});
+await page.fill('#v62-field','Law');
+await page.fill('#v62-specialization','');
+await page.selectOption('#v62-horizon','flexible');
+await page.selectOption('#v62-weekly-hours','4');
+await page.selectOption('#v62-focus','balanced');
+await page.fill('#v62-context','');
+await page.click('#v62-study-run');
+await page.waitForSelector('#v62-study-results .v62-branch',{state:'visible',timeout:5000});
+check(await page.locator('#v62-study-results .v62-error').count()===0,'Law Study Ahead generation rendered an error');
+check(await page.locator('#v62-study-results .v62-branch').count()===4,'Law Study Ahead branch map did not render after clicking Build');
+check((await page.locator('#v62-study-results').innerText()).includes('Learning the Law'),'Law Study Ahead reading path did not render after clicking Build');
+await page.click('[data-v62-focus-branch="Public Law"]');
+check((await page.inputValue('#v62-specialization'))==='Public Law','Generated Study Ahead branch action did not populate specialization');
+await page.unroute('**/api/learning/generate');
 for(const id of ['#v62-specialization','#v62-horizon','#v62-weekly-hours','#v62-focus'])check(await page.locator(id).count()===1,'Advanced Study Ahead control missing: '+id);
 await page.fill('#v62-field','Computer Science');
 await page.fill('#v62-specialization','Cybersecurity');
