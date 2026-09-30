@@ -21,6 +21,7 @@ COPY scholark-school-strict.mjs /app/scholark-school-strict.mjs
 COPY scholark-api-guard.mjs /app/scholark-api-guard.mjs
 COPY scholark-gemini-primary.mjs /app/scholark-gemini-primary.mjs
 COPY scholark-billing-route.mjs /app/scholark-billing-route.mjs
+COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 COPY scholark-v105-school-vwo.js /tmp/scholark-v105-school-vwo.js
@@ -34,6 +35,7 @@ COPY scholark-v112-workspace-visual-system.js /tmp/scholark-v112-workspace-visua
 COPY scholark-v113-foundation-hardening.js /tmp/scholark-v113-foundation-hardening.js
 COPY scholark-v114-workspace-orchestrator.js /tmp/scholark-v114-workspace-orchestrator.js
 COPY scholark-v115-billing.js /tmp/scholark-v115-billing.js
+COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
@@ -145,4 +147,4 @@ ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash
 ENV GEMINI_FAST_MODEL=gemini-3.8-flash
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-resilience.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-school-strict.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-api-guard.mjs", "--import", "./scholark-billing-route.mjs", "--import", "./scholark-gemini-primary.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-resilience.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-school-strict.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-billing-route.mjs", "--import", "./scholark-launch-route.mjs", "--import", "./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs", "backend/server.mjs"]
