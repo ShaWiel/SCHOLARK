@@ -403,7 +403,7 @@
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   let workspaceLanguageTimer=0;
-  const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);workspaceLanguageTimer=setTimeout(()=>{if(!workspaceRoute())return;renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()},delay)};
+  const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);const run=()=>{if(!workspaceRoute())return;if(document.documentElement.classList.contains('scholark-language-switching')){workspaceLanguageTimer=setTimeout(run,120);return}renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()};workspaceLanguageTimer=setTimeout(run,delay)};
   addEventListener('scholark-language-applied',()=>scheduleWorkspaceLanguageRefresh(90));
   addEventListener('scholark-language-ready',()=>scheduleWorkspaceLanguageRefresh(120));
   addEventListener('scholark-language-complete',()=>scheduleWorkspaceLanguageRefresh(150));
