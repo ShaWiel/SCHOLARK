@@ -78,10 +78,30 @@
     host.innerHTML='<div class="v62-error"><b>Could not finish this request.</b><br>'+esc(msg)+'</div>';
   }
   function list(items,ordered=false){const a=(items||[]).filter(Boolean);if(!a.length)return'';return '<'+(ordered?'ol':'ul')+'>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</'+(ordered?'ol':'ul')+'>';}
-  function studyBooks(items){return (items||[]).slice().sort((a,b)=>(Number(a?.readingOrder)||99)-(Number(b?.readingOrder)||99)).map(x=>'<div class="v62-book"><strong>'+esc((x.readingOrder?x.readingOrder+'. ':'')+(x.title||''))+'</strong><small>'+esc(x.author||'')+(x.level?' · '+esc(x.level):'')+'</small><div>'+esc(x.why||'')+'</div></div>').join('')}
-  function studyObjects(items,titleKey='name',detailKey='purpose'){return '<div class="v62-study-table">'+(items||[]).map(x=>'<div class="v62-study-line"><b>'+esc(x?.[titleKey]||'')+'</b><span>'+esc(x?.[detailKey]||'')+'</span></div>').join('')+'</div>'}
-  function studyBranches(items){return '<div class="v62-branch-grid">'+(items||[]).map(x=>'<div class="v62-branch"><h4>'+esc(x.name||'')+'</h4><p>'+esc(x.summary||'')+'</p><div><b>Specializations</b><div class="v62-pillrow">'+(x.specializations||[]).map(v=>'<span class="v62-pill">'+esc(v)+'</span>').join('')+'</div></div><div><b>Foundation topics</b>'+list(x.foundationTopics)+'</div><div><b>Starter skills</b>'+list(x.starterSkills)+'</div><div><b>Career examples</b>'+list(x.careerExamples)+'</div><button type="button" data-v62-focus-branch="'+esc(x.name||'')+'">Focus this branch</button></div>').join('')+'</div>'}
-  function studyProjects(items){return (items||[]).map(x=>'<div class="v62-study-line"><b>'+esc((x.difficulty||'')+' · '+(x.title||''))+'</b><span>'+esc(x.outcome||'')+(x.skills?.length?'<br><small>Skills: '+esc(x.skills.join(', '))+'</small>':'')+'</span></div>').join('')}
+  function studyLegacyEmpty(label){return '<div class="v62-study-line"><b>'+esc(label||'More detail')+'</b><span>This saved track predates the advanced Study Ahead format. Rebuild the track once to populate this section with full details.</span></div>'}
+  function studyBooks(items){
+    const a=Array.isArray(items)?items.slice():[];
+    if(!a.length)return '<div class="v62-study-table">'+studyLegacyEmpty('Reading path')+'</div>';
+    return a.sort((x,y)=>(Number(x?.readingOrder)||99)-(Number(y?.readingOrder)||99)).map((x,i)=>{
+      if(typeof x==='string')return '<div class="v62-book"><strong>'+esc((i+1)+'. '+x)+'</strong><small>Legacy recommendation</small><div>Rebuild this track for author, level and reading-order detail.</div></div>';
+      return '<div class="v62-book"><strong>'+esc((x.readingOrder?x.readingOrder+'. ':'')+(x.title||''))+'</strong><small>'+esc(x.author||'')+(x.level?' · '+esc(x.level):'')+'</small><div>'+esc(x.why||'')+'</div></div>';
+    }).join('')
+  }
+  function studyObjects(items,titleKey='name',detailKey='purpose'){
+    const a=Array.isArray(items)?items:[];
+    if(!a.length)return '<div class="v62-study-table">'+studyLegacyEmpty('Advanced detail')+'</div>';
+    return '<div class="v62-study-table">'+a.map(x=>typeof x==='string'?'<div class="v62-study-line"><b>'+esc(x)+'</b><span>Rebuild the track for expanded guidance.</span></div>':'<div class="v62-study-line"><b>'+esc(x?.[titleKey]||'')+'</b><span>'+esc(x?.[detailKey]||'')+'</span></div>').join('')+'</div>'
+  }
+  function studyBranches(items){
+    const a=Array.isArray(items)?items:[];
+    if(!a.length)return '<div class="v62-study-table">'+studyLegacyEmpty('Branches & specializations')+'</div>';
+    return '<div class="v62-branch-grid">'+a.map(x=>'<div class="v62-branch"><h4>'+esc(x.name||'')+'</h4><p>'+esc(x.summary||'')+'</p>'+(x.whatYouDo?'<div><b>What you actually do</b><p>'+esc(x.whatYouDo)+'</p></div>':'')+'<div><b>Specializations</b><div class="v62-pillrow">'+(x.specializations||[]).map(v=>'<span class="v62-pill">'+esc(v)+'</span>').join('')+'</div></div><div><b>Foundation topics</b>'+list(x.foundationTopics)+'</div><div><b>Typical tasks</b>'+list(x.typicalTasks)+'</div><div><b>Good fit if</b>'+list(x.goodFitIf)+'</div><div><b>Starter skills</b>'+list(x.starterSkills)+'</div><div><b>Career examples</b>'+list(x.careerExamples)+'</div><button type="button" data-v62-focus-branch="'+esc(x.name||'')+'">Use this branch as my focus</button></div>').join('')+'</div>'
+  }
+  function studyProjects(items){
+    const a=Array.isArray(items)?items:[];
+    if(!a.length)return studyLegacyEmpty('Starter projects');
+    return a.map((x,i)=>typeof x==='string'?'<div class="v62-study-line"><b>'+esc(x)+'</b><span>Legacy project suggestion. Rebuild for outcome and skill detail.</span></div>':'<div class="v62-study-line"><b>'+esc((x.difficulty||'starter')+' · '+(x.title||('Project '+(i+1))))+'</b><span>'+esc(x.outcome||'')+(x.skills?.length?'<br><small>Skills: '+esc(x.skills.join(', '))+'</small>':'')+'</span></div>').join('')
+  }
   function paragraphs(s){return String(s||'').split(/\n{2,}|\n(?=[A-ZÀ-Ž0-9])/).map(x=>clean(x)).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('')}
   function tutorPlain(r){
     const parts=[clean(r.answer||r.summary)];
