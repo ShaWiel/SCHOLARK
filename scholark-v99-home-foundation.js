@@ -84,6 +84,7 @@
   }
   function visibleRoots(){return [$('#v55-topbar'),$('#v29-home-layer'),$('#v41-home-pricing'),$('#v51-sidebar'),$('#v51-main'),$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book')].filter(Boolean)}
   function repairLocalization(){
+    if(document.documentElement.classList.contains('scholark-workspace-entering')){setTimeout(repairLocalization,120);return}
     window.__SCHOLARK_V55_TOPBAR__?.buildTopbar?.();normalizeSelector(window.__SCHOLARK_V55_TOPBAR__?.ensureLanguageSelector?.()||$('#v55-language'));normalizeSelector($('#v90-language'));
     const i18n=window.__SCHOLARK_I18N__;visibleRoots().forEach(root=>{i18n?.apply?.(root);replaceKnown(root)});
     repairLanguageIcon();repairPlanNames();
