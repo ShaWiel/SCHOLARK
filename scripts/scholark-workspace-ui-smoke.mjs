@@ -145,6 +145,9 @@ const idleTopbarMutations=await page.evaluate(async()=>{
 });
 check(idleTopbarMutations<=1,`Homepage topbar kept mutating while idle: ${idleTopbarMutations} mutations`);
 check(await visible('.v116-public-actions',5000),'Public privacy/feedback controls did not mount');
+await page.waitForTimeout(120);
+check(await page.locator('#v41-home-pricing .v115-env').count()>=2,'Sandbox checkout disclosure badges did not mount on paid plans');
+check((await page.locator('#v41-home-pricing .v115-env').first().innerText()).includes('NO REAL CHARGE'),'Sandbox checkout disclosure is unclear');
 await page.click('[data-v116-public-privacy]');
 check(await visible('#v116-dialog.open',3000),'Privacy & terms dialog did not open');
 check((await page.locator('#v116-dialog').getAttribute('role'))==='dialog'&&(await page.locator('#v116-dialog').getAttribute('aria-modal'))==='true','Privacy dialog accessibility semantics missing');
@@ -355,6 +358,7 @@ const sourceValidation=await page.evaluate(()=>{
 });
 check(sourceValidation.length===0,`Country source provenance missing: ${sourceValidation.slice(0,12).join(', ')}`);
 check(await page.locator('#v96-country-context .v116-source').count()===1,'Dashboard education source link missing');
+check((await page.locator('#v96-country-context .v116-source').getAttribute('data-source-verification'))==='national-official','Suriname source badge is not marked nationally verified');
 const countryIntegrity=await page.evaluate(()=>{
   const api=window.__SCHOLARK_COUNTRY__,bad=[];
   for(const country of api?.countries||[]){
