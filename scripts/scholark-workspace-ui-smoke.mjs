@@ -503,6 +503,12 @@ const lawStudyAheadResponse={
     questionsToExplore:['Do I prefer disputes between private parties or public-law questions?','Do I enjoy case analysis, policy questions, or cross-border issues most?']
   }
 };
+lawStudyAheadResponse.result.branchMap=lawStudyAheadResponse.result.branchMap.map((x,i)=>({
+  ...x,
+  whatYouDo:i===0?'Analyse constitutional structures, public powers and administrative decisions.':'Study and apply the rules, reasoning and evidence used in this branch of law.',
+  typicalTasks:i===0?['Read constitutional cases','Review government decisions']:['Read cases','Research legal rules','Build structured arguments'],
+  goodFitIf:i===0?['You enjoy public institutions and rights','You like policy questions']:['You enjoy close reading','You like structured argument']
+}));
 await page.route('**/api/learning/generate',async route=>{
   const req=route.request();
   if(req.method()==='POST'){
@@ -521,7 +527,13 @@ await page.click('#v62-study-run');
 await page.waitForSelector('#v62-study-results .v62-branch',{state:'visible',timeout:5000});
 check(await page.locator('#v62-study-results .v62-error').count()===0,'Law Study Ahead generation rendered an error');
 check(await page.locator('#v62-study-results .v62-branch').count()===4,'Law Study Ahead branch map did not render after clicking Build');
-check((await page.locator('#v62-study-results').innerText()).includes('Learning the Law'),'Law Study Ahead reading path did not render after clicking Build');
+const lawStudyText=await page.locator('#v62-study-results').innerText();
+check(lawStudyText.includes('Learning the Law'),'Law Study Ahead reading path did not render after clicking Build');
+check(lawStudyText.includes('Introductory law lectures'),'Law Study Ahead learning resources did not render after clicking Build');
+check(lawStudyText.includes('Brief a court decision'),'Law Study Ahead starter projects did not render after clicking Build');
+check(lawStudyText.includes('Legal Method'),'Law Study Ahead first-year preview did not render after clicking Build');
+check(lawStudyText.includes('Do I prefer disputes between private parties'),'Law Study Ahead exploration questions did not render after clicking Build');
+check(lawStudyText.includes('What you actually do')&&lawStudyText.includes('Typical tasks')&&lawStudyText.includes('Good fit if'),'Law Study Ahead branch intelligence is not visible');
 await page.click('[data-v62-focus-branch="Public Law"]');
 check((await page.inputValue('#v62-specialization'))==='Public Law','Generated Study Ahead branch action did not populate specialization');
 await page.unroute('**/api/learning/generate');
