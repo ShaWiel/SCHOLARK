@@ -252,7 +252,12 @@ for(const delay of [8,24,72,140]){
     window.__SCHOLARK_WORKSPACE__?.goHome?.();
     setTimeout(()=>{location.hash='dashboard'},d);
   },delay);
-  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering'),{timeout:5000});
+  try{
+    await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:5000});
+  }catch(e){
+    const diag=await page.evaluate(()=>({hash:location.hash,entry:window.__SCHOLARK_WORKSPACE__?.entryState?.(),html:[...document.documentElement.classList],body:[...document.body.classList]}));
+    throw new Error('Rapid workspace re-entry did not settle: '+JSON.stringify(diag));
+  }
   await page.waitForTimeout(380);
 }
 const reentryState=await page.evaluate(()=>{
@@ -292,10 +297,15 @@ check(reentryState.huge.length===0&&reentryState.titleBottom<=reentryState.gridT
 
 // Also exercise the actual Home CTA route once, not only direct hash return.
 await page.click('#v51-home');
-await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.querySelector('#v55-topbar')).display!=='none',{timeout:5000});
+await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.querySelector('#v55-topbar')).display!=='none',null,{timeout:5000});
 await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
 await page.click('#v55-workspace-cta .v55-entry');
-await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',{timeout:6000});
+try{
+  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+}catch(e){
+  const diag=await page.evaluate(()=>({hash:location.hash,entry:window.__SCHOLARK_WORKSPACE__?.entryState?.(),topbar:document.querySelector('#v55-topbar')?getComputedStyle(document.querySelector('#v55-topbar')).display:'missing',html:[...document.documentElement.classList],body:[...document.body.classList]}));
+  throw new Error('Home CTA workspace re-entry did not settle: '+JSON.stringify(diag));
+}
 await page.waitForTimeout(360);
 const ctaReentry=await page.evaluate(()=>{
   const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active'),h1=dash?.querySelector('.v51-head h1'),grid=dash?.querySelector('.v51-grid');
