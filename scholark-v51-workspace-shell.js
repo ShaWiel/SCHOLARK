@@ -421,8 +421,11 @@
   }
 
   function openTool(id){
+    // Calls from Home must become a Workspace route before entry begins.
+    // This makes openTool the single safe entry point for every caller.
+    if(!workspaceRoute())setRoute(id);
     const entryEpoch=beginWorkspaceEntry('open-'+id);
-    build();document.body.classList.add('v51-workspace');document.documentElement.classList.add('v51-workspace-root');document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');forceQuality();state.active=id;syncNav();
+    build();sanitizeWorkspace('open-'+id);document.body.classList.add('v51-workspace');document.documentElement.classList.add('v51-workspace-root');document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');forceQuality();state.active=id;syncNav();
     if(entryEpoch)scheduleWorkspaceEntryFinish(entryEpoch);
     if(INACTIVE.has(id)){showComingSoon(id);return}
     if(id==='dashboard'){clearModes();setRoute('dashboard');showPage('dashboard');syncWorkspaceLanguage(main);return}
