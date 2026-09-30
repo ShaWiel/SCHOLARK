@@ -236,5 +236,5 @@
   addEventListener('hashchange',()=>{setTimeout(sync,60);setTimeout(sync,240)});
   [80,500].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_ACTION_OWNERS__=Object.assign({},window.__SCHOLARK_ACTION_OWNERS__||{},{tutor:'v62',curriculum:'v62',exam:'v62'});
-  window.__SCHOLARK_V62_LEARNING_API__={openStudyAhead,runStudyAhead,runTutor,runExam,runCurriculum,version:'20260929-r196'};
+  window.__SCHOLARK_V62_LEARNING_API__={openStudyAhead,runStudyAhead,runTutor,runExam,runCurriculum,version:'20260929-r197'};
 })();
