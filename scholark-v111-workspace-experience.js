@@ -188,9 +188,22 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       if(busy)return;const api=core();if(!api)return;const tool=route();const root=rootFor(tool);if(!root)return;
-      const old=$(':scope > .v111-live',root)||$('.v111-live',root);
-      if(old&&!force){augmentTutorMessages();return}
-      busy=true;try{old?.remove();const html=htmlFor(tool,api.compute());if(html){root.insertAdjacentHTML('afterbegin',html);wire($('.v111-live',root),tool)}augmentTutorMessages()}finally{busy=false}
+      const owned=$('.v111-live[data-v111-owner]',root),old=owned[0]||$('.v111-live',root);
+      // A forced refresh used to remove only one panel. If two observers raced,
+      // the second panel survived every later refresh and made the Workspace
+      // look permanently duplicated. Collapse every SCHOLARK-owned panel first.
+      owned.slice(1).forEach(x=>x.remove());
+      if(old&&!force){if(old.dataset)old.dataset.v111Tool=tool;augmentTutorMessages();return}
+      busy=true;try{
+        $('.v111-live[data-v111-owner]',root).forEach(x=>x.remove());
+        const html=htmlFor(tool,api.compute());
+        if(html){
+          root.insertAdjacentHTML('afterbegin',html);
+          const live=$('.v111-live[data-v111-owner]',root)||$('.v111-live',root);
+          if(live){live.dataset.v111Tool=tool;wire(live,tool)}
+        }
+        augmentTutorMessages()
+      }finally{busy=false}
     })
   }
   const schedule=(force=false)=>[30,140,420].forEach((ms,i)=>setTimeout(()=>refresh(force&&i===0),ms));
@@ -207,5 +220,5 @@
   const observerRoot=$('#v51-main')||document.body;observer.observe(observerRoot,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260921-r176',refresh:()=>refresh(true),generateCards};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260930-r202',refresh:()=>refresh(true),generateCards,verify(){const tool=route(),root=rootFor(tool),owned=root?$('.v111-live[data-v111-owner]',root):[];return{ok:!root||owned.length<=1,tool,ownedPanels:owned.length}}};
 })();
