@@ -65,7 +65,7 @@
     window.dispatchEvent(new CustomEvent("scholark-visual-ready",{detail:{release:"r176",tool,unified:true}}));
   }
   let raf=0,timer=0;
-  const schedule=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(decorate)};
+  const schedule=()=>{if(document.documentElement.classList.contains('scholark-language-switching')){clearTimeout(timer);timer=setTimeout(schedule,120);return}cancelAnimationFrame(raf);raf=requestAnimationFrame(decorate)};
   const mo=new MutationObserver(m=>{if(!document.body.classList.contains("v51-workspace"))return;if(!m.some(x=>x.addedNodes.length||x.removedNodes.length))return;clearTimeout(timer);timer=setTimeout(schedule,120)});
   const observeRoot=$("#v51-main")||document.body;mo.observe(observeRoot,{subtree:true,childList:true});
   addEventListener("hashchange",()=>setTimeout(schedule,45));addEventListener("scholark-workspace-change",()=>setTimeout(schedule,35));addEventListener("scholark-runtime-ready",()=>setTimeout(schedule,40));addEventListener("scholark-country-change",()=>setTimeout(schedule,40));
