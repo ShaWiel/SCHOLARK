@@ -316,6 +316,322 @@ async function gemini(mode,p){
   const text=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
   return{ok:true,provider:'gemini',model,tier:route.tier,result:parseText(text,'Gemini')};
 }
+
+const STUDY_CACHE=new Map();
+const STUDY_CACHE_MAX=160;
+const STUDY_CACHE_AI_TTL=15*60*1000;
+const STUDY_CACHE_LOCAL_TTL=3*60*1000;
+const studyList=v=>Array.isArray(v)?v.filter(Boolean):[];
+const studyText=(v,fallback='')=>clean(v)||fallback;
+const studyCacheKey=p=>JSON.stringify([
+  clean(p.field).toLowerCase().slice(0,180),clean(p.specialization).toLowerCase().slice(0,180),
+  clean(p.country).toLowerCase().slice(0,120),clean(p.targetSchool).toLowerCase().slice(0,180),
+  clean(p.depth).slice(0,40),clean(p.horizon).slice(0,60),clean(p.weeklyHours).slice(0,20),
+  clean(p.studyFocus).slice(0,80),clean(p.level).slice(0,60),clean(p.language).slice(0,80),
+  clean(p.context).slice(0,1000)
+]);
+function getStudyCache(key){
+  const hit=STUDY_CACHE.get(key);
+  if(!hit)return null;
+  if(hit.expires<=Date.now()){STUDY_CACHE.delete(key);return null}
+  STUDY_CACHE.delete(key);STUDY_CACHE.set(key,hit);
+  return structuredClone(hit.value);
+}
+function setStudyCache(key,value,ttl){
+  if(!key||!value)return;
+  if(STUDY_CACHE.has(key))STUDY_CACHE.delete(key);
+  while(STUDY_CACHE.size>=STUDY_CACHE_MAX)STUDY_CACHE.delete(STUDY_CACHE.keys().next().value);
+  STUDY_CACHE.set(key,{expires:Date.now()+ttl,value:structuredClone(value)});
+}
+const SB=(name,summary,whatYouDo,specializations,foundationTopics,starterSkills,careerExamples,typicalTasks,goodFitIf)=>({
+  name,summary,whatYouDo,specializations,foundationTopics,starterSkills,careerExamples,typicalTasks,goodFitIf
+});
+const GENERIC_STUDY_BOOKS=[
+  {title:'The Craft of Research',author:'Wayne C. Booth, Gregory G. Colomb, Joseph M. Williams, Joseph Bizup and William T. FitzGerald',level:'foundation',why:'Builds research-question, evidence and argument skills useful across university fields.',readingOrder:1},
+  {title:'Make It Stick',author:'Peter C. Brown, Henry L. Roediger III and Mark A. McDaniel',level:'starter',why:'Explains evidence-based learning strategies such as retrieval practice and spacing.',readingOrder:2},
+  {title:'How to Read a Book',author:'Mortimer J. Adler and Charles Van Doren',level:'foundation',why:'Helps with analytical reading of difficult academic texts.',readingOrder:3},
+  {title:'A Mind for Numbers',author:'Barbara Oakley',level:'starter',why:'Offers practical study methods for demanding technical and conceptual material.',readingOrder:4}
+];
+function genericStudyBranches(field){
+  return [
+    SB('Foundations & Theory','The concepts and frameworks that define '+field+'.','You learn the core language, models and principles used throughout the field.',['Foundational theory','History of the field'],['Core terminology','Major theories','Historical development'],['Academic reading','Concept mapping'],['Research assistant','Entry-level analyst'],['Compare major theories','Explain core concepts','Read introductory research'],['You enjoy understanding why ideas work','You like building a strong conceptual base']),
+    SB('Applied Practice','Using '+field+' knowledge to solve practical problems.','You translate theory into real cases, projects, services or decisions.',['Professional practice','Applied methods'],['Case analysis','Problem framing','Implementation'],['Problem solving','Project work'],['Practitioner','Consultant'],['Work through cases','Build practical outputs','Evaluate solutions'],['You prefer learning by doing','You like concrete outcomes']),
+    SB('Research & Methods','How new knowledge in '+field+' is produced and tested.','You design studies, collect or interpret evidence and judge the quality of claims.',['Quantitative methods','Qualitative methods'],['Research design','Evidence evaluation','Data interpretation'],['Research literacy','Analytical writing'],['Researcher','Analyst'],['Read studies','Design a small investigation','Compare evidence'],['You ask how we know something','You enjoy evidence and careful reasoning']),
+    SB('Technology & Tools','The technologies, software, instruments or technical methods used in '+field+'.','You learn the practical tools that make modern work in the field possible.',['Digital tools','Technical methods'],['Tool fundamentals','Data handling','Workflow design'],['Digital literacy','Technical practice'],['Technical specialist','Operations specialist'],['Use field tools','Automate or improve a workflow','Document a technical process'],['You enjoy tools and systems','You like improving how work gets done']),
+    SB('Policy, Ethics & Society','How '+field+' affects people, institutions, rules and society.','You examine responsibility, governance, ethics and the wider consequences of decisions in the field.',['Ethics','Policy','Regulation'],['Ethical reasoning','Institutions','Social impact'],['Argumentation','Stakeholder analysis'],['Policy adviser','Compliance or governance roles'],['Analyse an ethical case','Compare stakeholder interests','Review a policy question'],['You care about consequences and fairness','You like complex social questions']),
+    SB('Interdisciplinary & Emerging Areas','Where '+field+' overlaps with other disciplines and new developments.','You combine perspectives and explore newer directions that may not fit one traditional branch.',['Interdisciplinary studies','Emerging applications'],['Cross-disciplinary thinking','Current developments','Systems thinking'],['Synthesis','Adaptability'],['Innovation roles','Interdisciplinary specialist'],['Compare two disciplines','Explore an emerging application','Map a complex system'],['You like connecting different subjects','You enjoy new and changing areas'])
+  ];
+}
+const STUDY_PROFILES=[
+  {
+    match:/\b(law|legal|rechten|jurid|jurisprudence)\b/i,
+    subjects:['Introduction to law','Legal systems & institutions','Legal method & research','Constitutional law','Contract law','Criminal law','Tort / obligations','Public international law'],
+    branches:[
+      SB('Public Law','Law governing public institutions and the relationship between the state and individuals.','You study constitutional structures, administrative decision-making, public powers and limits on government.',['Constitutional Law','Administrative Law','Public Finance Law'],['Constitutional structure','Judicial review','Administrative decision-making'],['Case reading','Statutory interpretation','Public-law reasoning'],['Public-sector lawyer','Constitutional lawyer','Policy adviser'],['Analyse government decisions','Read constitutional cases','Compare institutional powers'],['You like institutions and public policy','You enjoy questions about rights and state power']),
+      SB('Private / Civil Law','Rules governing relationships, rights and obligations between private persons and organisations.','You work with agreements, property, liability, family or other private legal relationships.',['Contract Law','Tort Law','Property Law','Family Law'],['Obligations','Contracts','Civil liability'],['Issue spotting','Case analysis','Legal drafting'],['Civil lawyer','Private-practice lawyer','Legal counsel'],['Analyse disputes','Draft clauses','Compare remedies'],['You like structured disputes','You enjoy detailed reasoning and practical problem solving']),
+      SB('Criminal Law','Law defining offences, responsibility, procedure and punishment.','You study how criminal responsibility is established and how criminal cases move through the justice system.',['Substantive Criminal Law','Criminal Procedure','Evidence'],['Elements of offences','Defences','Criminal procedure'],['Evidence reasoning','Case analysis','Advocacy'],['Criminal lawyer','Prosecutor','Justice-policy analyst'],['Analyse offence elements','Evaluate evidence','Prepare arguments'],['You are interested in justice and procedure','You can handle contested facts carefully']),
+      SB('Commercial & Corporate Law','Law governing companies, transactions and commercial relationships.','You work with business structures, contracts, governance, transactions and commercial risk.',['Company Law','Commercial Contracts','Banking Law','Competition Law'],['Companies','Commercial transactions','Corporate governance'],['Contract analysis','Risk spotting','Drafting'],['Corporate lawyer','In-house counsel','Compliance specialist'],['Review agreements','Analyse company decisions','Map transaction risks'],['You like business and law together','You enjoy detail and negotiation']),
+      SB('International Law','Rules and institutions governing cross-border and international relationships.','You study treaties, state responsibility, international organisations and cross-border legal problems.',['Public International Law','International Human Rights Law','International Trade Law'],['Treaties','Jurisdiction','International institutions'],['Treaty reading','Comparative analysis','Research'],['International legal adviser','NGO legal officer','Diplomatic legal roles'],['Interpret treaty provisions','Compare jurisdictions','Research international cases'],['You like global affairs','You enjoy comparing legal systems']),
+      SB('Labour & Employment Law','Rules governing work, employment relationships and workplace rights.','You analyse employment contracts, worker protections, disputes and organisational obligations.',['Employment Law','Collective Labour Law','Workplace Compliance'],['Employment relationships','Dismissal','Collective rights'],['Negotiation','Policy reading','Dispute analysis'],['Employment lawyer','HR legal adviser','Labour-relations specialist'],['Review employment policies','Analyse disputes','Compare rights and duties'],['You are interested in workplaces and fairness','You enjoy practical people-related issues'])
+    ],
+    books:[
+      {title:'Learning the Law',author:'Glanville Williams',level:'starter',why:'A classic introduction to legal study, legal sources and legal reasoning.',readingOrder:1},
+      {title:'Letters to a Law Student',author:'Nicholas J. McBride',level:'starter',why:'Practical guidance on reading, thinking and studying like a law student.',readingOrder:2},
+      {title:'The Rule of Law',author:'Tom Bingham',level:'foundation',why:'Introduces a foundational idea that cuts across many areas of law.',readingOrder:3},
+      {title:'An Introduction to Law',author:'Phil Harris',level:'foundation',why:'Provides a broad introduction to legal systems, institutions and concepts.',readingOrder:4}
+    ],
+    firstYear:[['Legal Method','Develops case reading, statutory interpretation and legal reasoning.'],['Constitutional / Public Law','Introduces the legal structure and limits of public power.'],['Contract Law','Introduces enforceable agreements and private obligations.'],['Criminal Law','Introduces criminal responsibility, offences and defences.'],['Legal Research & Writing','Builds the research, citation and argument skills used across law school.']],
+    projects:[['Brief a court decision','Produce a one-page case brief identifying facts, issue, rule, reasoning and outcome.',['Case reading','Issue spotting']],['Compare two legal arguments','Write a structured comparison of competing arguments in one legal problem.',['Argument analysis','Structured writing']],['Mini legal research memo','Answer one narrow legal question using authoritative sources available in your jurisdiction.',['Research','Citation']]],
+    resources:[['official sources','Official legislation and court portals','Learn to locate primary legal materials in the relevant jurisdiction.'],['legal database','Legal Information Institute / comparable reputable legal database','Practice locating definitions, cases and legal explanations.'],['lecture series','Introductory legal method lectures','Preview case reading, precedent and legal reasoning.']],
+    tools:[['Case brief template','Structure facts, issue, rule, analysis and holding.'],['Citation guide','Learn the citation system required by your institution or jurisdiction.'],['Reference manager','Organise cases, articles and notes.']]
+  },
+  {
+    match:/\b(computer science|software|informatics|ict|programming|computing)\b/i,
+    subjects:['Programming fundamentals','Algorithms & data structures','Discrete mathematics','Computer systems','Databases','Computer networks','Software engineering','Probability & statistics'],
+    branches:[
+      SB('Software Engineering','Designing, building, testing and maintaining reliable software systems.','You turn requirements into working software and improve code quality, architecture and team workflows.',['Backend Engineering','Frontend Engineering','Mobile Development','Cloud Engineering'],['Programming','Data structures','Software design'],['Coding','Testing','Version control'],['Software engineer','Backend developer','Full-stack developer'],['Build features','Write tests','Review code','Design APIs'],['You enjoy building things','You like debugging and improving systems']),
+      SB('Artificial Intelligence & Machine Learning','Building systems that learn patterns, make predictions or generate outputs from data.','You work with data, models, evaluation and the mathematics behind learning algorithms.',['Machine Learning','Deep Learning','Natural Language Processing','Computer Vision'],['Linear algebra','Probability','Algorithms'],['Python','Data analysis','Model evaluation'],['ML engineer','AI engineer','Data scientist'],['Prepare datasets','Train models','Evaluate errors','Read research'],['You like mathematics and experimentation','You enjoy patterns in data']),
+      SB('Cybersecurity','Protecting systems, networks, software and information from threats.','You study how systems fail, how attacks work and how to design, test and monitor defenses.',['Application Security','Network Security','Digital Forensics','Security Engineering'],['Networks','Operating systems','Secure coding'],['Linux','Scripting','Threat modelling'],['Security analyst','Security engineer','Penetration tester'],['Analyse vulnerabilities','Review logs','Harden systems','Model threats'],['You enjoy adversarial problem solving','You are patient and detail-oriented']),
+      SB('Data Science & Analytics','Extracting useful knowledge from data using statistics, computation and domain understanding.','You clean, explore, model and communicate data to answer questions or support decisions.',['Data Analytics','Statistical Learning','Data Engineering','Business Intelligence'],['Statistics','Databases','Programming'],['SQL','Python','Data visualisation'],['Data analyst','Data scientist','Analytics engineer'],['Clean data','Build analyses','Visualise results','Explain findings'],['You enjoy evidence and patterns','You like explaining insights clearly']),
+      SB('Computer Systems & Networks','Understanding and building the infrastructure underneath software.','You work with operating systems, networks, distributed systems, hardware-software interaction and performance.',['Operating Systems','Distributed Systems','Networking','Cloud Infrastructure'],['Computer architecture','Operating systems','Networks'],['Linux','Networking','Performance analysis'],['Systems engineer','Cloud engineer','Network engineer'],['Configure systems','Trace performance','Design distributed services'],['You like understanding how computers work underneath apps','You enjoy performance and reliability problems']),
+      SB('Human-Computer Interaction','Designing technology around human needs, behaviour and usability.','You combine computing, design and user research to make systems easier and more effective to use.',['UX Engineering','Interaction Design','Accessibility','User Research'],['Design principles','Psychology','Prototyping'],['User research','Prototyping','Usability testing'],['UX engineer','Interaction designer','UX researcher'],['Interview users','Prototype interfaces','Run usability tests'],['You care about people as much as technology','You enjoy design and observation'])
+    ],
+    books:[
+      {title:'Code: The Hidden Language of Computer Hardware and Software',author:'Charles Petzold',level:'starter',why:'Builds intuition for how computers represent and process information.',readingOrder:1},
+      {title:'Python Crash Course',author:'Eric Matthes',level:'starter',why:'A practical way to build programming fluency through exercises and projects.',readingOrder:2},
+      {title:'Grokking Algorithms',author:'Aditya Bhargava',level:'foundation',why:'Introduces important algorithms visually and accessibly.',readingOrder:3},
+      {title:'Computer Science: An Overview',author:'J. Glenn Brookshear and Dennis Brylow',level:'foundation',why:'Surveys major areas of computer science before specialization.',readingOrder:4}
+    ],
+    firstYear:[['Programming','Builds the ability to express solutions as code.'],['Discrete Mathematics','Supports logic, algorithms, proofs and data structures.'],['Algorithms & Data Structures','Teaches how to organise data and reason about efficiency.'],['Computer Systems','Explains how software interacts with hardware and operating systems.'],['Databases','Introduces structured data storage and querying.']],
+    projects:[['Build a small command-line application','Create a useful program with input, validation and saved data.',['Programming','Debugging']],['Analyse a public dataset','Clean a dataset, answer three questions and visualise the results.',['Python or SQL','Data analysis']],['Build and document a simple web API','Create endpoints, validate input and write basic tests.',['Software design','Testing']]],
+    resources:[['documentation','MDN Web Docs','Learn reliable web-platform concepts and reference material.'],['course','CS50 or a comparable introductory computer science course','Build broad programming and problem-solving foundations.'],['practice platform','A reputable coding-practice platform','Develop fluency through short algorithm and programming exercises.']],
+    tools:[['Git','Version control and collaboration.'],['Code editor / IDE','Write, navigate and debug code.'],['Terminal','Work with files, programs and development tooling directly.']]
+  },
+  {
+    match:/\b(medicine|medical|geneesk|doctor|physician)\b/i,
+    subjects:['Biology','General chemistry','Organic chemistry basics','Anatomy','Physiology','Biochemistry','Cell biology','Public health'],
+    branches:[
+      SB('Internal Medicine','Diagnosis and non-surgical treatment of diseases in adults.','You integrate symptoms, examination findings, tests and evidence to manage complex medical conditions.',['Cardiology','Endocrinology','Gastroenterology','Pulmonology'],['Physiology','Pathology','Clinical reasoning'],['History taking','Evidence interpretation','Clinical reasoning'],['Physician','Internal-medicine specialist'],['Interpret cases','Build differential diagnoses','Review treatment evidence'],['You enjoy complex diagnostic problems','You like integrating many body systems']),
+      SB('Surgery','Treating disease or injury with operative and procedural methods.','You combine anatomy, decision-making, technical procedures and peri-operative care.',['General Surgery','Orthopaedics','Neurosurgery','Cardiothoracic Surgery'],['Anatomy','Physiology','Surgical principles'],['Spatial reasoning','Procedural discipline','Teamwork'],['Surgeon','Surgical trainee'],['Plan procedures','Review imaging','Manage peri-operative risks'],['You like hands-on technical work','You stay focused under pressure']),
+      SB('Paediatrics','Medical care of infants, children and adolescents.','You study growth, development, childhood disease and communication with children and families.',['General Paediatrics','Neonatology','Paediatric Cardiology'],['Development','Physiology','Common childhood illness'],['Communication','Clinical observation','Family-centred reasoning'],['Paediatrician','Child-health clinician'],['Assess growth','Interpret age-specific symptoms','Communicate with families'],['You enjoy working with children and families','You value development and prevention']),
+      SB('Psychiatry','Assessment and treatment of mental and behavioural disorders.','You combine neuroscience, psychology, communication and longitudinal care.',['General Psychiatry','Child & Adolescent Psychiatry','Addiction Psychiatry'],['Neuroscience','Psychology','Clinical interviewing'],['Listening','Clinical interviewing','Risk assessment'],['Psychiatrist','Mental-health clinician'],['Conduct interviews','Build formulations','Evaluate treatment response'],['You are interested in behaviour and mental health','You value long-term patient relationships']),
+      SB('Public Health','Improving health at population level through prevention, policy, epidemiology and systems.','You analyse patterns of disease, prevention programmes and health systems rather than only individual cases.',['Epidemiology','Health Policy','Global Health','Environmental Health'],['Epidemiology','Statistics','Health systems'],['Data interpretation','Policy analysis','Population thinking'],['Public-health physician','Epidemiologist','Health-policy analyst'],['Analyse population data','Evaluate programmes','Design prevention strategies'],['You like statistics and prevention','You are interested in systems and policy']),
+      SB('Diagnostic & Laboratory Medicine','Using laboratory, imaging and pathology methods to support diagnosis.','You study how tests, samples and images reveal disease processes and guide clinical decisions.',['Pathology','Radiology','Clinical Chemistry','Microbiology'],['Pathology','Laboratory science','Imaging principles'],['Pattern recognition','Quality control','Analytical reasoning'],['Pathologist','Radiologist','Laboratory physician'],['Interpret tests','Assess quality','Connect findings to disease'],['You enjoy analytical work','You like evidence from tests and images'])
+    ],
+    books:[
+      {title:"Gray's Anatomy for Students",author:'Richard L. Drake, A. Wayne Vogl and Adam W. M. Mitchell',level:'foundation',why:'A widely used student-focused introduction to human anatomy.',readingOrder:1},
+      {title:'Guyton and Hall Textbook of Medical Physiology',author:'John E. Hall and Michael E. Hall',level:'foundation',why:'Builds a systematic understanding of human physiology.',readingOrder:2},
+      {title:'Lippincott Illustrated Reviews: Biochemistry',author:'Denise R. Ferrier',level:'foundation',why:'Introduces core biochemical pathways with strong visual support.',readingOrder:3},
+      {title:"Bates' Guide to Physical Examination and History Taking",author:'Lynn S. Bickley',level:'intermediate',why:'Introduces structured clinical history-taking and examination methods.',readingOrder:4}
+    ],
+    firstYear:[['Anatomy','Provides the structural map needed for later clinical subjects.'],['Physiology','Explains how healthy body systems function.'],['Biochemistry','Connects molecular processes to normal function and disease.'],['Cell Biology / Histology','Builds understanding from cells to tissues.'],['Foundations of Clinical Skills','Introduces communication, history-taking and basic examination.']],
+    projects:[['Build an anatomy concept map','Connect one organ system from structure to function.',['Anatomy','Systems thinking']],['Explain a physiological mechanism','Create a diagram and short explanation of one feedback loop.',['Physiology','Scientific communication']],['Read a simple epidemiology paper','Identify question, population, measure and main limitation.',['Research literacy','Statistics']]],
+    resources:[['open textbook','OpenStax Anatomy & Physiology','Review foundational anatomy and physiology concepts.'],['lecture series','Reputable university introductory anatomy/physiology lectures','Preview first-year biomedical science concepts.'],['practice resource','Anatomy identification and physiology question practice','Develop retrieval and application skills.']],
+    tools:[['Anatomy atlas','Build spatial understanding of structures.'],['Flashcard / spaced-repetition system','Retain high-volume terminology efficiently.'],['Reference manager','Organise scientific papers and notes.']]
+  },
+  {
+    match:/\b(engineer|engineering|civil engineering|mechanical engineering|electrical engineering)\b/i,
+    subjects:['Algebra & calculus','Physics','Statistics','Programming','Engineering design','Materials','Technical drawing / modelling'],
+    branches:[
+      SB('Mechanical Engineering','Designing and analysing machines, motion, energy and mechanical systems.','You apply mechanics, thermodynamics and design to machines, products and energy systems.',['Mechanical Design','Thermal Engineering','Mechatronics'],['Statics','Dynamics','Thermodynamics'],['CAD','Mathematical modelling','Problem solving'],['Mechanical engineer','Design engineer'],['Model forces','Design components','Analyse heat and motion'],['You enjoy physics and machines','You like designing tangible systems']),
+      SB('Civil Engineering','Designing infrastructure such as buildings, roads, bridges and water systems.','You combine structural, geotechnical, transport and water knowledge to build safe infrastructure.',['Structural Engineering','Geotechnical Engineering','Transportation','Water Resources'],['Statics','Materials','Surveying'],['Technical drawing','Quantitative analysis','Project planning'],['Civil engineer','Structural engineer'],['Analyse loads','Plan infrastructure','Evaluate materials and sites'],['You care about the built environment','You like large real-world projects']),
+      SB('Electrical & Electronic Engineering','Designing systems involving electricity, electronics, signals and control.','You work with circuits, power, electronics, communications and embedded systems.',['Power Systems','Electronics','Control Systems','Telecommunications'],['Circuits','Signals','Electromagnetism'],['Circuit analysis','Programming','Lab measurement'],['Electrical engineer','Electronics engineer'],['Analyse circuits','Build prototypes','Measure signals'],['You enjoy maths and electronics','You like systems that mix hardware and software']),
+      SB('Chemical Engineering','Designing processes that transform materials safely and efficiently.','You combine chemistry, physics and process design for industrial production and energy systems.',['Process Engineering','Biochemical Engineering','Energy Systems'],['Chemistry','Thermodynamics','Transport phenomena'],['Mass balances','Process modelling','Safety thinking'],['Chemical engineer','Process engineer'],['Model processes','Design flows','Evaluate safety and efficiency'],['You enjoy chemistry and maths','You like industrial-scale problem solving']),
+      SB('Computer Engineering','Designing computing systems at the boundary of hardware and software.','You study digital logic, computer architecture, embedded systems and low-level programming.',['Embedded Systems','Computer Architecture','Robotics'],['Digital logic','Programming','Electronics'],['C/C++','Circuit basics','Debugging'],['Computer engineer','Embedded engineer'],['Program hardware','Design digital systems','Debug embedded devices'],['You like both hardware and software','You enjoy low-level technical problems']),
+      SB('Industrial & Systems Engineering','Improving complex operations, processes and resource use.','You optimise workflows, logistics, quality and decision-making across organisations and systems.',['Operations Research','Supply Chain','Quality Engineering'],['Statistics','Optimisation','Systems modelling'],['Data analysis','Process mapping','Optimisation'],['Industrial engineer','Operations analyst'],['Model processes','Reduce waste','Optimise schedules'],['You enjoy efficiency and data','You like seeing the whole system'])
+    ],
+    books:GENERIC_STUDY_BOOKS,
+    firstYear:[['Calculus','Provides mathematical tools for rates, change and modelling.'],['Physics','Builds the mechanics, energy and electricity foundations used across engineering.'],['Programming','Supports modelling, automation and technical problem solving.'],['Engineering Design','Introduces iterative design and constraints.'],['Materials / Mechanics','Builds intuition for how physical systems carry loads and fail.']],
+    projects:[['Reverse-engineer a household object','Sketch components, functions, materials and likely design trade-offs.',['Design thinking','Technical observation']],['Build a spreadsheet or code model','Model a simple physical or operational system and test assumptions.',['Mathematical modelling','Data analysis']],['Create a small prototype','Design, build and document a simple prototype using accessible materials or electronics.',['Prototyping','Testing']]],
+    resources:[['open textbook','OpenStax Physics / Calculus','Strengthen the maths and physics prerequisites used in first-year engineering.'],['course','A reputable introductory engineering or programming course','Preview engineering problem-solving and computational thinking.'],['practice platform','Maths and physics problem sets','Develop fluency before calculus- and physics-heavy coursework.']],
+    tools:[['Spreadsheet','Quick calculations, modelling and data checks.'],['CAD software','Develop spatial and design skills.'],['Programming environment','Automate calculations and build engineering models.']]
+  },
+  {
+    match:/\b(business|management|marketing|entrepreneur|bedrijf|commerce)\b/i,
+    subjects:['Accounting','Finance','Marketing','Management','Microeconomics','Macroeconomics','Statistics','Operations'],
+    branches:[
+      SB('Finance','How organisations raise, allocate and manage money and financial risk.','You analyse investments, cash flows, capital decisions and financial performance.',['Corporate Finance','Investment Finance','Risk Management'],['Time value of money','Financial statements','Risk and return'],['Excel','Quantitative analysis','Financial reasoning'],['Financial analyst','Corporate-finance analyst'],['Build financial models','Compare investments','Analyse performance'],['You like numbers and decisions','You enjoy evaluating trade-offs']),
+      SB('Marketing','Understanding customers and creating, communicating and delivering value.','You research markets, shape positioning, plan campaigns and measure customer response.',['Brand Management','Digital Marketing','Consumer Behaviour','Market Research'],['Segmentation','Positioning','Customer behaviour'],['Research','Communication','Analytics'],['Marketing analyst','Brand manager','Digital marketer'],['Research audiences','Build campaign plans','Analyse metrics'],['You are curious about people and markets','You enjoy creativity plus analysis']),
+      SB('Accounting','Recording, interpreting and assuring financial information.','You work with financial statements, controls, reporting, audit and tax-related information.',['Financial Accounting','Management Accounting','Audit','Tax'],['Double-entry','Financial statements','Internal controls'],['Accuracy','Spreadsheet work','Standards reading'],['Accountant','Auditor','Controller'],['Prepare statements','Reconcile accounts','Test controls'],['You like precision and structure','You enjoy rules and financial detail']),
+      SB('Operations & Supply Chain','Designing and improving how goods and services are produced and delivered.','You manage processes, capacity, inventory, quality and supply networks.',['Operations Management','Supply Chain','Logistics','Quality'],['Process design','Inventory','Forecasting'],['Process mapping','Data analysis','Planning'],['Operations analyst','Supply-chain specialist'],['Map processes','Plan inventory','Analyse bottlenecks'],['You enjoy systems and efficiency','You like practical optimisation']),
+      SB('Human Resource Management','Managing people systems across hiring, development, performance and employee relations.','You design people practices and help organisations build effective workplaces.',['Talent Management','Learning & Development','Compensation','Employee Relations'],['Organisational behaviour','Employment practices','Performance'],['Communication','Policy analysis','Coaching'],['HR specialist','Talent adviser'],['Design onboarding','Analyse workforce needs','Support employee processes'],['You enjoy people and organisations','You like balancing policy with human needs']),
+      SB('Entrepreneurship & Strategy','Creating ventures and making long-term competitive choices.','You test opportunities, design business models and decide where an organisation should compete.',['Entrepreneurship','Corporate Strategy','Innovation'],['Business models','Competition','Opportunity analysis'],['Pitching','Market analysis','Decision-making'],['Entrepreneur','Strategy analyst'],['Test an idea','Analyse competitors','Build a business model'],['You like ambiguity and ownership','You enjoy connecting many business functions'])
+    ],
+    books:[
+      {title:'The Personal MBA',author:'Josh Kaufman',level:'starter',why:'A broad overview of business concepts before specialising.',readingOrder:1},
+      {title:'Principles of Marketing',author:'Philip Kotler and Gary Armstrong',level:'foundation',why:'Introduces core marketing concepts used across business programmes.',readingOrder:2},
+      {title:'Financial Intelligence',author:'Karen Berman and Joe Knight',level:'foundation',why:'Builds practical understanding of financial statements and business numbers.',readingOrder:3},
+      {title:'Good Strategy/Bad Strategy',author:'Richard Rumelt',level:'intermediate',why:'Develops clearer thinking about strategy and competitive problems.',readingOrder:4}
+    ],
+    firstYear:[['Introduction to Management','Explains how organisations coordinate people and resources.'],['Accounting','Builds fluency in the financial language of business.'],['Economics','Explains incentives, markets and economic decision-making.'],['Marketing','Introduces customers, markets and value creation.'],['Business Statistics','Provides tools for evidence-based decisions.']],
+    projects:[['Analyse a local business model','Map customers, value proposition, costs and revenue.',['Business analysis','Research']],['Build a simple financial model','Create a basic revenue, cost and cash-flow forecast.',['Excel','Financial reasoning']],['Design a mini marketing campaign','Define audience, message, channels and metrics.',['Marketing','Communication']]],
+    resources:[['open textbook','OpenStax business, economics or accounting texts','Build foundational concepts at no cost.'],['case studies','Reputable business-school or company case material','Practice decision-making with real organisational problems.'],['data source','Official statistics or company annual reports','Practice interpreting real business and market data.']],
+    tools:[['Spreadsheet','Financial modelling, forecasting and analysis.'],['Presentation software','Communicate recommendations clearly.'],['Survey / analytics tools','Collect and interpret customer or market information.']]
+  },
+  {
+    match:/\b(psychology|psych|behavio)\b/i,
+    subjects:['Introduction to psychology','Research methods','Statistics','Cognitive psychology','Developmental psychology','Social psychology','Biological psychology','Personality'],
+    branches:[
+      SB('Clinical Psychology','Understanding, assessing and treating psychological difficulties.','You study mental health, assessment, therapeutic approaches and evidence-based intervention.',['Adult Clinical','Child Clinical','Neuropsychology'],['Psychopathology','Assessment','Therapy models'],['Listening','Evidence evaluation','Case formulation'],['Clinical psychologist','Mental-health researcher'],['Read case formulations','Compare therapies','Evaluate evidence'],['You care about mental health','You value careful listening and evidence']),
+      SB('Cognitive Psychology','How people perceive, remember, think, learn and make decisions.','You study mental processes through experiments and cognitive models.',['Memory','Attention','Decision Science'],['Experimental design','Memory','Attention'],['Data interpretation','Experiment design','Critical reading'],['Cognitive researcher','UX researcher'],['Design experiments','Analyse results','Compare cognitive models'],['You enjoy experiments and mental processes','You like precise questions']),
+      SB('Developmental Psychology','How people change across childhood, adolescence and adulthood.','You study cognitive, emotional and social development across the lifespan.',['Child Development','Adolescent Development','Lifespan Development'],['Developmental theory','Attachment','Learning'],['Observation','Research literacy','Communication'],['Developmental researcher','Child-development roles'],['Analyse developmental cases','Compare theories','Observe behaviour'],['You are interested in how people change over time','You enjoy working with developmental questions']),
+      SB('Social Psychology','How people think, feel and behave in social contexts.','You study groups, attitudes, identity, persuasion, relationships and social influence.',['Group Processes','Attitudes & Persuasion','Intergroup Relations'],['Social influence','Identity','Group behaviour'],['Experiment design','Survey analysis','Critical reasoning'],['Social researcher','Behavioural insights analyst'],['Analyse group behaviour','Design surveys','Evaluate social interventions'],['You are curious about groups and society','You like linking individual behaviour to context']),
+      SB('Biological / Neuropsychology','How brain and biological systems relate to behaviour and cognition.','You connect neuroscience, physiology and psychology to explain behaviour and impairment.',['Behavioural Neuroscience','Cognitive Neuroscience','Neuropsychology'],['Neuroscience','Brain anatomy','Cognition'],['Scientific reading','Data analysis','Biological reasoning'],['Neuropsychologist','Neuroscience researcher'],['Interpret brain-behaviour findings','Read neuroscience studies','Compare mechanisms'],['You enjoy biology and psychology together','You like mechanistic explanations']),
+      SB('Industrial & Organisational Psychology','Applying psychology to work, organisations and employee behaviour.','You study selection, motivation, leadership, teams, performance and organisational change.',['Personnel Psychology','Leadership','Organisational Development'],['Motivation','Measurement','Teams'],['Survey design','Data analysis','Communication'],['I/O psychologist','People analytics specialist'],['Analyse surveys','Design selection methods','Evaluate workplace interventions'],['You are interested in workplaces and people systems','You enjoy applied research'])
+    ],
+    books:[
+      {title:'Psychology',author:'David G. Myers and C. Nathan DeWall',level:'starter',why:'Provides a broad overview of major psychological topics and methods.',readingOrder:1},
+      {title:'The Man Who Mistook His Wife for a Hat',author:'Oliver Sacks',level:'starter',why:'Introduces memorable neuropsychological cases while encouraging careful observation.',readingOrder:2},
+      {title:'Thinking, Fast and Slow',author:'Daniel Kahneman',level:'foundation',why:'Explores judgement and decision-making; useful alongside formal psychology study.',readingOrder:3},
+      {title:'Discovering Statistics Using IBM SPSS Statistics',author:'Andy Field',level:'intermediate',why:'Supports the statistics and research-methods work common in psychology degrees.',readingOrder:4}
+    ],
+    firstYear:[['Introduction to Psychology','Surveys the major areas of psychology.'],['Research Methods','Teaches how psychological evidence is generated and evaluated.'],['Statistics','Builds skills for analysing behavioural data.'],['Cognitive Psychology','Introduces memory, attention, perception and thinking.'],['Biological Psychology','Connects brain and biology to behaviour.']],
+    projects:[['Replicate a simple memory experiment','Design a small non-clinical memory task and analyse the results.',['Experiment design','Data analysis']],['Critique a psychology article','Identify research question, method, findings and limitations.',['Research literacy','Critical thinking']],['Build a behaviour-observation codebook','Define observable behaviours and test whether categories are clear.',['Operationalisation','Measurement']]],
+    resources:[['open textbook','OpenStax Psychology','Build broad foundational knowledge.'],['research database','Google Scholar / institutional research database','Practice locating peer-reviewed psychology research.'],['lecture series','Reputable introductory psychology lectures','Preview major first-year topics.']],
+    tools:[['Spreadsheet or statistics software','Analyse simple behavioural datasets.'],['Reference manager','Organise research papers and citations.'],['Survey tool','Practice questionnaire design and data collection.']]
+  },
+  {
+    match:/\b(nursing|nurse|verpleeg)\b/i,
+    subjects:['Anatomy & physiology','Microbiology','Pharmacology basics','Health assessment','Fundamentals of nursing','Communication','Public health'],
+    branches:[
+      SB('Medical-Surgical Nursing','Care of adults with acute and chronic medical conditions.','You assess patients, plan care, administer treatments and monitor response across many body systems.',['Adult Health','Perioperative Nursing','Critical Care'],['Anatomy & physiology','Pathophysiology','Assessment'],['Observation','Clinical communication','Prioritisation'],['Registered nurse','Medical-surgical nurse'],['Assess patients','Prioritise care','Monitor treatment response'],['You like broad clinical care','You can organise many patient needs']),
+      SB('Paediatric Nursing','Nursing care for infants, children and adolescents.','You adapt assessment, communication and care to development and family needs.',['General Paediatrics','Neonatal Nursing'],['Child development','Paediatric assessment','Family-centred care'],['Communication','Observation','Safety'],['Paediatric nurse','Neonatal nurse'],['Assess children','Educate families','Monitor development'],['You enjoy working with children and families','You are attentive to developmental differences']),
+      SB('Mental Health Nursing','Nursing care for people experiencing mental-health conditions.','You combine therapeutic communication, risk assessment and recovery-oriented care.',['Community Mental Health','Acute Psychiatry','Addiction Nursing'],['Mental health','Communication','Risk assessment'],['Listening','De-escalation','Care planning'],['Mental-health nurse','Community psychiatric nurse'],['Conduct assessments','Build therapeutic relationships','Support recovery plans'],['You value communication and long-term support','You can stay calm in emotional situations']),
+      SB('Community & Public Health Nursing','Promoting health and preventing illness in communities and populations.','You work on prevention, education, outreach and population health.',['Community Nursing','School Health','Public Health'],['Epidemiology basics','Health promotion','Community assessment'],['Education','Programme planning','Population thinking'],['Community nurse','Public-health nurse'],['Run education activities','Assess community needs','Support prevention programmes'],['You enjoy prevention and education','You like working beyond hospital settings'])
+    ],
+    books:GENERIC_STUDY_BOOKS,
+    firstYear:[['Anatomy & Physiology','Builds the body-system knowledge needed for safe care.'],['Fundamentals of Nursing','Introduces core nursing processes, safety and basic care.'],['Health Assessment','Develops structured observation and assessment skills.'],['Microbiology','Supports infection prevention and understanding of pathogens.'],['Communication','Builds therapeutic and professional communication.']],
+    projects:[['Create a patient-safety checklist','Design a checklist for one routine care process.',['Safety','Process thinking']],['Explain one body system to a patient','Create a clear patient-friendly explanation and diagram.',['Communication','Anatomy']],['Analyse a public-health campaign','Identify audience, behaviour goal, message and evidence.',['Health promotion','Critical thinking']]],
+    resources:[['open textbook','OpenStax Anatomy & Physiology','Build core biological knowledge.'],['guideline source','Official nursing or health guidelines in your jurisdiction','Learn to recognise authoritative clinical guidance.'],['skills videos','Reputable nursing-skills demonstrations','Preview procedures while remembering that supervised practice is still required.']],
+    tools:[['Drug-calculation practice','Build safe quantitative fluency.'],['Clinical note template','Practice concise, structured documentation.'],['Spaced-repetition system','Retain anatomy, terminology and pharmacology facts.']]
+  },
+  {
+    match:/\b(hospitality|hotel|tourism|horeca|culinary)\b/i,
+    subjects:['Hospitality operations','Front office','Food & beverage','Service management','Marketing','Revenue management','Tourism systems'],
+    branches:[
+      SB('Hotel Operations','Running guest accommodation and coordinating hotel departments.','You study front office, housekeeping, service standards and operational coordination.',['Front Office','Rooms Division','Housekeeping Management'],['Guest cycle','Service operations','Quality standards'],['Communication','Scheduling','Service recovery'],['Hotel operations manager','Front-office supervisor'],['Manage reservations','Coordinate rooms','Handle guest issues'],['You enjoy service and operations','You like fast-moving environments']),
+      SB('Food & Beverage Management','Managing restaurants, catering and food-service operations.','You work with menu operations, service, cost control, quality and guest experience.',['Restaurant Management','Catering','Beverage Management'],['Food service','Cost control','Service design'],['Teamwork','Costing','Quality control'],['F&B manager','Restaurant manager'],['Plan service','Cost menus','Monitor quality'],['You enjoy food-service environments','You like balancing people and numbers']),
+      SB('Tourism Management','Planning and managing visitor experiences, destinations and tourism businesses.','You study destinations, travel systems, visitor behaviour and sustainable tourism.',['Destination Management','Tour Operations','Sustainable Tourism'],['Tourism systems','Visitor behaviour','Destination planning'],['Planning','Research','Communication'],['Tourism manager','Destination officer'],['Design itineraries','Analyse destinations','Evaluate visitor experience'],['You enjoy travel and culture','You like planning experiences']),
+      SB('Revenue & Commercial Management','Using pricing, demand and distribution data to improve hospitality revenue.','You analyse occupancy, demand, pricing and sales channels to optimise commercial performance.',['Revenue Management','Sales','Distribution'],['Demand forecasting','Pricing','Channels'],['Excel','Analytics','Commercial reasoning'],['Revenue analyst','Commercial manager'],['Forecast demand','Adjust pricing','Analyse channel performance'],['You like numbers and hospitality','You enjoy commercial decisions'])
+    ],
+    books:GENERIC_STUDY_BOOKS,
+    firstYear:[['Hospitality Operations','Introduces the major departments and guest journey.'],['Food & Beverage','Builds service and operational foundations.'],['Hospitality Marketing','Explains customers, positioning and demand.'],['Accounting / Cost Control','Builds financial discipline for hospitality operations.'],['Tourism Fundamentals','Explains the wider travel and destination system.']],
+    projects:[['Audit a hotel guest journey','Map booking-to-checkout touchpoints and identify three improvements.',['Service design','Observation']],['Build a simple room-revenue forecast','Estimate occupancy, average rate and revenue for a sample month.',['Excel','Revenue management']],['Design a one-day local tourism experience','Create itinerary, audience, value proposition and operating considerations.',['Planning','Marketing']]],
+    resources:[['industry reports','Reputable tourism-board and hospitality-industry reports','Understand demand, visitor trends and operational benchmarks.'],['course','Introductory hospitality operations course','Preview hotel and service-management fundamentals.'],['official source','Tourism authority information for the target country','Learn the local tourism context and official visitor information.']],
+    tools:[['Spreadsheet','Costing, forecasting and revenue analysis.'],['Property-management-system concepts','Understand reservations, rooms and guest records.'],['Customer-feedback framework','Analyse service quality and recurring issues.']]
+  }
+];
+function studyProfile(field){
+  const hit=STUDY_PROFILES.find(x=>x.match.test(field));
+  if(hit)return hit;
+  return {
+    subjects:['Foundations of '+field,'Core theory','Research methods','Applied practice','Communication','Ethics & professional context'],
+    branches:genericStudyBranches(field),
+    books:GENERIC_STUDY_BOOKS,
+    firstYear:[['Foundations of '+field,'Introduces the field’s core vocabulary, questions and frameworks.'],['Research & Evidence','Builds the ability to judge claims and use evidence.'],['Methods / Practice','Introduces the standard ways problems are approached in the field.'],['Communication','Builds discipline-specific writing, presentation or documentation.'],['Ethics & Context','Examines responsibility, professional norms and social impact.']],
+    projects:[['Create a field map','Map the main concepts, questions and real-world applications of '+field+'.',['Research','Synthesis']],['Analyse one real example','Choose a real case and explain it using concepts from '+field+'.',['Application','Critical thinking']],['Build a mini research brief','Write one question, identify credible evidence and summarise what the evidence suggests.',['Research literacy','Academic writing']]],
+    resources:[['official programme pages','Official curricula or programme descriptions from reputable institutions','Compare common subject areas without assuming one institution’s curriculum is universal.'],['open textbook','A reputable open or university-level introductory text in '+field,'Build foundational vocabulary and concepts.'],['lecture series','A reputable university introductory lecture series','Preview how the field is taught at higher-education level.']],
+    tools:[['Reference manager','Organise sources and citations.'],['Spreadsheet / analysis tool','Organise evidence, calculations or structured comparisons.'],['Note system','Build a searchable glossary and concept map.']]
+  };
+}
+function completeStudyBranch(branch,fallback){
+  const b=branch&&typeof branch==='object'?branch:{};
+  const f=fallback||{};
+  const arr=(x,y,min=1)=>{const a=studyList(x).map(clean).filter(Boolean);return (a.length>=min?a:studyList(y).map(clean).filter(Boolean)).slice(0,12)};
+  return {
+    name:studyText(b.name,f.name||'Branch'),
+    summary:studyText(b.summary,f.summary||'A major path within this field.'),
+    whatYouDo:studyText(b.whatYouDo,f.whatYouDo||f.summary||'Study and apply the core methods used in this branch.'),
+    specializations:arr(b.specializations,f.specializations),
+    foundationTopics:arr(b.foundationTopics,f.foundationTopics,2),
+    starterSkills:arr(b.starterSkills,f.starterSkills),
+    careerExamples:arr(b.careerExamples,f.careerExamples),
+    typicalTasks:arr(b.typicalTasks,f.typicalTasks),
+    goodFitIf:arr(b.goodFitIf,f.goodFitIf)
+  };
+}
+function buildLocalStudyAhead(p,{resilient=false}={}){
+  const field=clean(p.field||p.subject||p.prompt||'your field').slice(0,180),country=clean(p.country||'').slice(0,120),profile=studyProfile(field),specialization=clean(p.specialization),hours=Math.max(2,Math.min(12,Number(p.weeklyHours)||4)),block=Math.max(30,Math.round((hours*60/3)/15)*15);
+  const preferred=profile.branches.find(b=>specialization&&((b.name||'').toLowerCase().includes(specialization.toLowerCase())||studyList(b.specializations).some(x=>String(x).toLowerCase().includes(specialization.toLowerCase()))));
+  const recommended=specialization?{
+    name:specialization,
+    why:preferred?'This focus belongs to a recognised branch in the local Study Ahead map. Use the wider map to compare it before committing.':'You selected this focus. SCHOLARK keeps the wider field visible so you can compare prerequisites and alternatives before committing.',
+    prerequisites:studyList(preferred?.foundationTopics).slice(0,5).length?studyList(preferred.foundationTopics).slice(0,5):profile.subjects.slice(0,5),
+    nextSteps:['Compare this focus with at least two neighbouring branches','Read one introductory source before specialising','Complete one small project or case connected to this focus']
+  }:{
+    name:'Explore before choosing',
+    why:'No specialization preference was supplied, so SCHOLARK is not guessing. Compare the branches, tasks and fit signals first.',
+    prerequisites:profile.subjects.slice(0,5),
+    nextSteps:['Compare what people actually do in at least three branches','Mark which tasks sound energising versus draining','Choose one branch for a short trial project before deciding']
+  };
+  const books=(profile.books||GENERIC_STUDY_BOOKS).map((x,i)=>({...x,readingOrder:i+1}));
+  const firstYear=(profile.firstYear||[]).map(([topic,whyItMatters])=>({topic,whyItMatters}));
+  const projects=(profile.projects||[]).map(([title,outcome,skills],i)=>({title,difficulty:i===0?'starter':i===1?'intermediate':'advanced',outcome,skills}));
+  const learningResources=(profile.resources||[]).map(([type,name,purpose])=>({type,name,purpose}));
+  const tools=(profile.tools||[]).map(([name,purpose],i)=>({name,purpose,priority:i===0?'learn-now':i===1?'learn-soon':'optional'}));
+  const branchMap=profile.branches.map(x=>completeStudyBranch(x,x));
+  return {
+    title:'Study Ahead · '+field,
+    overview:(resilient?'SCHOLARK created a complete resilience track while external AI was unavailable. ':'SCHOLARK created a complete local preparation track. ')+'It maps '+field+(country?' in the context of '+country:'')+' without inventing admission requirements or a university-specific curriculum.',
+    branchMap,recommendedSpecialization:recommended,
+    skills:[...new Set(branchMap.flatMap(x=>x.starterSkills))].slice(0,10),
+    keySubjects:profile.subjects.slice(0,10),
+    books,
+    learningResources,
+    starterProjects:projects,
+    tools,
+    universityPrep:['Check the official programme curriculum for your target institution','Review prerequisite subjects and diagnose weak foundations','Build a weekly study routine before classes begin','Practice academic reading, note-taking and summarising','Create a glossary of core terms and update it every week'],
+    firstYearPreview:firstYear,
+    careers:[...new Set(branchMap.flatMap(x=>x.careerExamples))].slice(0,12),
+    weeklyPlan:[
+      {block:'Foundation block',focus:'Study one core subject and make retrieval questions',minutes:block},
+      {block:'Branch exploration',focus:'Compare one branch, its tasks and one real application',minutes:block},
+      {block:'Practice block',focus:'Work on a starter project, case or problem set',minutes:block}
+    ],
+    roadmap:[
+      {phase:'1 · Foundations',goal:'Build the vocabulary and prerequisites of '+field,actions:['Study the first core subjects','Create a glossary','Diagnose weak prerequisites'],milestone:'Explain the field’s core concepts without notes'},
+      {phase:'2 · Branch exploration',goal:'Understand the major paths inside '+field,actions:['Compare at least three branches','Read what people actually do','Choose one branch for a trial'],milestone:'Explain why two branches fit you differently'},
+      {phase:'3 · Practice',goal:'Turn theory into usable skill',actions:['Complete a starter project or case','Review feedback or errors','Repeat with higher difficulty'],milestone:'Finish and explain one portfolio-quality practice output'},
+      {phase:'4 · First-year readiness',goal:'Reduce the shock of the first semester',actions:['Preview common first-year topics','Read the first books in the reading path','Set a realistic weekly study system'],milestone:'Complete a self-check across the main first-year foundations'}
+    ],
+    questionsToExplore:[
+      'Which branch contains the kind of problems I would willingly spend hours solving?',
+      'Do I prefer theory, practical work, people-focused work, data, systems or creative work?',
+      'Which branch uses my current strengths, and which skills would I need to build?',
+      'What does a normal week look like in careers connected to each branch?',
+      'Which first-year subjects are shared across branches, and which become important only after specialising?',
+      'Would I still enjoy this branch if the glamorous parts were removed and only the routine work remained?'
+    ]
+  };
+}
+function completeStudyResult(raw,p){
+  const base=buildLocalStudyAhead(p,{resilient:false}),r=raw&&typeof raw==='object'?raw:{};
+  const take=(x,y,min=1,max=24)=>{const a=studyList(x).filter(Boolean);return (a.length>=min?a:studyList(y)).slice(0,max)};
+  const byName=new Map(base.branchMap.map(x=>[x.name.toLowerCase(),x]));
+  const supplied=studyList(r.branchMap).map(x=>completeStudyBranch(x,byName.get(clean(x?.name).toLowerCase())||base.branchMap[0]));
+  const branchMap=[...supplied];
+  for(const b of base.branchMap){if(branchMap.length>=4)break;if(!branchMap.some(x=>x.name.toLowerCase()===b.name.toLowerCase()))branchMap.push(b)}
+  const books=take(r.books,base.books,4,14).map((x,i)=>{
+    if(typeof x==='string')return base.books[i]||{title:clean(x),author:'',level:'foundation',why:'Introductory reading for the field.',readingOrder:i+1};
+    return {title:studyText(x?.title,base.books[i]?.title||'Recommended reading'),author:studyText(x?.author,base.books[i]?.author||''),level:['starter','foundation','intermediate','advanced'].includes(x?.level)?x.level:(base.books[i]?.level||'foundation'),why:studyText(x?.why,base.books[i]?.why||'Supports preparation for this field.'),readingOrder:Number(x?.readingOrder)||i+1}
+  });
+  const rs=r.recommendedSpecialization&&typeof r.recommendedSpecialization==='object'?r.recommendedSpecialization:{};
+  return {
+    title:studyText(r.title,base.title),overview:studyText(r.overview,base.overview),branchMap:branchMap.slice(0,24),
+    recommendedSpecialization:{name:studyText(rs.name,base.recommendedSpecialization.name),why:studyText(rs.why,base.recommendedSpecialization.why),prerequisites:take(rs.prerequisites,base.recommendedSpecialization.prerequisites,1,10).map(clean),nextSteps:take(rs.nextSteps,base.recommendedSpecialization.nextSteps,1,10).map(clean)},
+    skills:take(r.skills,base.skills,4,14).map(clean),keySubjects:take(r.keySubjects,base.keySubjects,4,14).map(clean),books,
+    learningResources:take(r.learningResources,base.learningResources,2,14).map((x,i)=>typeof x==='string'?{type:'resource',name:clean(x),purpose:'Supports structured preparation for '+clean(p.field||'this field')+'.'}:{type:studyText(x?.type,base.learningResources[i]?.type||'resource'),name:studyText(x?.name,base.learningResources[i]?.name||'Learning resource'),purpose:studyText(x?.purpose,base.learningResources[i]?.purpose||'Supports preparation for this field.')}),
+    starterProjects:take(r.starterProjects,base.starterProjects,2,10).map((x,i)=>typeof x==='string'?{title:clean(x),difficulty:i?'intermediate':'starter',outcome:'Complete a practical output and reflect on what you learned.',skills:['Application']}:{title:studyText(x?.title,base.starterProjects[i]?.title||'Starter project'),difficulty:['starter','intermediate','advanced'].includes(x?.difficulty)?x.difficulty:(base.starterProjects[i]?.difficulty||'starter'),outcome:studyText(x?.outcome,base.starterProjects[i]?.outcome||'Apply the field in practice.'),skills:take(x?.skills,base.starterProjects[i]?.skills||['Application'],1,8).map(clean)}),
+    tools:take(r.tools,base.tools,2,14).map((x,i)=>typeof x==='string'?{name:clean(x),purpose:'Useful tool or method for this field.',priority:i?'learn-soon':'learn-now'}:{name:studyText(x?.name,base.tools[i]?.name||'Tool'),purpose:studyText(x?.purpose,base.tools[i]?.purpose||'Supports study or practice.'),priority:['learn-now','learn-soon','optional'].includes(x?.priority)?x.priority:(base.tools[i]?.priority||'learn-soon')}),
+    universityPrep:take(r.universityPrep,base.universityPrep,3,12).map(clean),
+    firstYearPreview:take(r.firstYearPreview,base.firstYearPreview,3,12).map((x,i)=>typeof x==='string'?{topic:clean(x),whyItMatters:'A common foundation worth previewing before starting.'}:{topic:studyText(x?.topic,base.firstYearPreview[i]?.topic||'Foundation topic'),whyItMatters:studyText(x?.whyItMatters,base.firstYearPreview[i]?.whyItMatters||'Builds first-year readiness.')}),
+    careers:take(r.careers,base.careers,3,16).map(clean),
+    weeklyPlan:take(r.weeklyPlan,base.weeklyPlan,3,8).map((x,i)=>({block:studyText(x?.block,base.weeklyPlan[i]?.block||('Block '+(i+1))),focus:studyText(x?.focus,base.weeklyPlan[i]?.focus||'Study and practice'),minutes:Math.max(15,Math.min(600,Number(x?.minutes)||base.weeklyPlan[i]?.minutes||60))})),
+    roadmap:take(r.roadmap,base.roadmap,3,8).map((x,i)=>({phase:studyText(x?.phase,base.roadmap[i]?.phase||('Phase '+(i+1))),goal:studyText(x?.goal,base.roadmap[i]?.goal||'Build readiness'),actions:take(x?.actions,base.roadmap[i]?.actions||['Study','Practice'],1,10).map(clean),milestone:studyText(x?.milestone,base.roadmap[i]?.milestone||'Complete the phase successfully')})),
+    questionsToExplore:take(r.questionsToExplore,base.questionsToExplore,4,12).map(clean)
+  };
+}
+
 function scholarkTestFallback(mode,p){
   const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
   const field=clean(p.field||p.subject||p.prompt||'your subject');
