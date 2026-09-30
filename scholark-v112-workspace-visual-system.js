@@ -52,11 +52,11 @@
   }
   function decorate(){
     const tool=route();scrub();
-    $(".v112-feature-shell").forEach(el=>el.classList.remove("v112-feature-shell"));
-    $(".v111-live.v112-live").forEach(el=>{el.classList.remove("v112-live");delete el.dataset.v112Tone;delete el.dataset.v112Tool});
+    $$(".v112-feature-shell").forEach(el=>el.classList.remove("v112-feature-shell"));
+    $$(".v111-live.v112-live").forEach(el=>{el.classList.remove("v112-live");delete el.dataset.v112Tone;delete el.dataset.v112Tool});
     if(!workspaceRoutes.has(tool)){document.body.removeAttribute("data-v112-tool");return}
     document.body.dataset.v112Tool=tool;
-    const candidates=$(".v111-live[data-v111-owner]");
+    const candidates=$$(".v111-live[data-v111-owner]");
     const live=candidates.find(x=>x.dataset.v111Tool===tool&&x.getClientRects().length)||candidates.find(x=>x.dataset.v111Tool===tool)||$("#v51-main .v111-live")||$(".v111-live");if(!live)return;
     const m=meta[tool]||meta.ai,root=live.parentElement;
     if(root)root.classList.add("v112-feature-shell");
