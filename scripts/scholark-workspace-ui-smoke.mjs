@@ -245,6 +245,73 @@ check(languageLayout.visibleHuge.length===0,`Oversized workspace text appeared a
 check(languageLayout.titleBottom<=languageLayout.gridTop,`Translated dashboard headline overlaps tool grid: ${JSON.stringify(languageLayout)}`);
 check(languageLayout.mainVisibility!=='hidden'&&!languageLayout.switching&&!languageLayout.overlay&&languageLayout.ready==='es',`Workspace did not settle after language stress: ${JSON.stringify(languageLayout)}`);
 
+// Reproduce the reported glitch: leave Workspace and return before old Home timers fire.
+// Different delays exercise the old 80ms/220ms/320ms repair windows.
+for(const delay of [8,24,72,140]){
+  await page.evaluate(d=>{
+    window.__SCHOLARK_WORKSPACE__?.goHome?.();
+    setTimeout(()=>{location.hash='dashboard'},d);
+  },delay);
+  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering'),{timeout:5000});
+  await page.waitForTimeout(380);
+}
+const reentryState=await page.evaluate(()=>{
+  const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active');
+  const h1=dash?.querySelector('.v51-head h1'),grid=dash?.querySelector('.v51-grid');
+  const hr=h1?.getBoundingClientRect(),gr=grid?.getBoundingClientRect();
+  const topbar=document.querySelector('#v55-topbar'),home=document.querySelector('#v29-home-layer');
+  const huge=dash?[...dash.querySelectorAll('*')].filter(el=>{
+    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+    return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'&&parseFloat(cs.fontSize||'0')>72;
+  }).map(el=>({tag:el.tagName,text:String(el.textContent||'').trim().slice(0,90),font:getComputedStyle(el).fontSize})):[];
+  return {
+    route:location.hash,
+    title:String(h1?.textContent||'').replace(/\s+/g,' ').trim(),
+    mainCount:document.querySelectorAll('#v51-main').length,
+    sidebarCount:document.querySelectorAll('#v51-sidebar').length,
+    h1Count:dash?.querySelectorAll('.v51-head h1').length||0,
+    homeCount:document.querySelectorAll('#v29-home-layer').length,
+    topbarDisplay:topbar?getComputedStyle(topbar).display:'',
+    homeDisplay:home?getComputedStyle(home).display:'',
+    bodyPublic:document.body.classList.contains('v55-public-home'),
+    htmlPublic:document.documentElement.classList.contains('v55-public-home'),
+    entering:document.documentElement.classList.contains('scholark-workspace-entering'),
+    workspace:document.body.classList.contains('v51-workspace'),
+    workspaceRoot:document.documentElement.classList.contains('v51-workspace-root'),
+    huge,
+    titleBottom:hr?.bottom||0,
+    gridTop:gr?.top||0
+  };
+});
+check(reentryState.route==='#dashboard'&&reentryState.workspace&&reentryState.workspaceRoot,`Rapid Workspace re-entry lost route ownership: ${JSON.stringify(reentryState)}`);
+check(!reentryState.entering&&!reentryState.bodyPublic&&!reentryState.htmlPublic,`Home state leaked into Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
+check(reentryState.topbarDisplay==='none'&&reentryState.homeDisplay==='none',`Home UI remained visible over Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
+check(reentryState.mainCount===1&&reentryState.sidebarCount===1&&reentryState.homeCount===1&&reentryState.h1Count===1,`Workspace/home surfaces duplicated after rapid re-entry: ${JSON.stringify(reentryState)}`);
+check(reentryState.title==='Tu espacio de aprendizaje y creación.',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
+check(reentryState.huge.length===0&&reentryState.titleBottom<=reentryState.gridTop,`Workspace layout glitched after Home round-trip: ${JSON.stringify(reentryState)}`);
+
+// Also exercise the actual Home CTA route once, not only direct hash return.
+await page.click('#v51-home');
+await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.querySelector('#v55-topbar')).display!=='none',{timeout:5000});
+await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
+await page.click('#v55-workspace-cta .v55-entry');
+await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',{timeout:6000});
+await page.waitForTimeout(360);
+const ctaReentry=await page.evaluate(()=>{
+  const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active'),h1=dash?.querySelector('.v51-head h1'),grid=dash?.querySelector('.v51-grid');
+  const hr=h1?.getBoundingClientRect(),gr=grid?.getBoundingClientRect();
+  return {
+    title:String(h1?.textContent||'').replace(/\s+/g,' ').trim(),
+    h1Count:dash?.querySelectorAll('.v51-head h1').length||0,
+    topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,
+    home:getComputedStyle(document.querySelector('#v29-home-layer')).display,
+    bodyPublic:document.body.classList.contains('v55-public-home'),
+    htmlPublic:document.documentElement.classList.contains('v55-public-home'),
+    titleBottom:hr?.bottom||0,gridTop:gr?.top||0
+  };
+});
+check(ctaReentry.title==='Tu espacio de aprendizaje y creación.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='none'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
+
 await page.selectOption('#v90-language','nl');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dataset.scholarkI18nReady==='nl'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:6000});
 await page.waitForTimeout(80);
