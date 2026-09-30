@@ -799,6 +799,8 @@ http.Server.prototype.emit = function(event,...args){
       const p=await readJson(req); const mode=clean(p.mode||'tutor').toLowerCase();
       if(!['tutor','general_ai','flashcards','exam','curriculum','study_ahead','translate_ui','language_learning'].includes(mode)) return json(res,400,{ok:false,error:'Unsupported learning mode'});
       if((mode==='tutor'||mode==='general_ai')&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
+      if(mode==='study_ahead'&&!clean(p.field)) return json(res,400,{ok:false,code:'FIELD_REQUIRED',error:'Field of study is required'});
+      if(mode==='study_ahead'&&(String(p.field||'').length>180||String(p.specialization||'').length>180||String(p.country||'').length>160||String(p.targetSchool||'').length>240||String(p.context||'').length>5000)) return json(res,400,{ok:false,code:'STUDY_INPUT_TOO_LARGE',error:'Study Ahead input is too large'});
       if(mode==='translate_ui'&&(!Array.isArray(p.strings)||!p.strings.length)) return json(res,400,{ok:false,error:'Strings required'});
       if(mode==='language_learning'&&!clean(p.targetLanguage)) return json(res,400,{ok:false,error:'Target language required'});
       if(mode==='language_learning'&&clean(p.targetLanguageCode)&&!UI_LANGUAGE_CODES.has(clean(p.targetLanguageCode).toLowerCase())) return json(res,400,{ok:false,code:'UNSUPPORTED_TARGET_LANGUAGE',error:'This Language Learner target is not supported yet.'});
