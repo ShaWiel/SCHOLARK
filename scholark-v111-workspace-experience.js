@@ -220,5 +220,5 @@
   const observerRoot=$('#v51-main')||document.body;observer.observe(observerRoot,{subtree:true,childList:true});
   schedule(true);
 
-  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260930-r202',refresh:()=>refresh(true),generateCards,verify(){const tool=route(),root=rootFor(tool),owned=root?$('.v111-live[data-v111-owner]',root):[];return{ok:!root||owned.length<=1,tool,ownedPanels:owned.length}}};
+  window.__SCHOLARK_V111_EXPERIENCE__={version:'20260930-r202',refresh:()=>refresh(true),generateCards,verify(){const tool=route(),root=rootFor(tool),owned=root?[...root.querySelectorAll('.v111-live[data-v111-owner]')]:[];return{ok:!root||owned.length<=1,tool,ownedPanels:owned.length}}};
 })();
