@@ -80,6 +80,8 @@
     // Prefer the central Workspace router. The old retry loop is now only a
     // failsafe for extremely early boot before V51 exists.
     const api=window.__SCHOLARK_WORKSPACE__;
+    // V51 openTool is home-safe in R202, so this legacy bootstrap never needs
+    // its own second entry transaction when the central router is available.
     if(api?.openTool){api.openTool('dashboard');return}
     const old=location.href;
     history.replaceState(null,'',location.pathname+location.search+'#dashboard');
