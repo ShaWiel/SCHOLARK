@@ -329,7 +329,11 @@
   }
   function setCollapsed(on,save=true){document.body.classList.toggle('v51-collapsed',!!on);if(toggle){toggle.textContent=on?'›':'‹';toggle.title=on?'Open sidebar':'Close sidebar';toggle.setAttribute('aria-label',toggle.title)}if(save)localStorage.setItem('scholark_v51_collapsed',on?'1':'0')}
 
-  function setRoute(id){history.replaceState(null,'',location.pathname+location.search+'#'+id)}
+  function setRoute(id){
+    const from=route(),next='#'+id;
+    history.replaceState(null,'',location.pathname+location.search+next);
+    if(from!==next)window.dispatchEvent(new CustomEvent('scholark-workspace-change',{detail:{from:from.replace(/^#/,'')||'home',to:id,source:'v51'}}));
+  }
   function clearModes(){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');if(nativeHost){nativeHost.classList.remove('v51-native-host');nativeHost=null}clearTimeout(nativeTimer);nativeTimer=null;$('#v41-studio-workspace')?.setAttribute('hidden','');$('#sv24-overlay')?.classList.remove('open');$('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v58-suite')?.classList.remove('open');$('#v57-deck')?.classList.remove('open');$('#v57-present')?.classList.remove('open');if(main){main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>p.style.removeProperty('display'))}}
   function applyLanguageRoot(el){
     const i18n=window.__SCHOLARK_I18N__;if(!el||!i18n?.apply)return;
