@@ -903,6 +903,23 @@
     backgroundLanguageFollowup=setTimeout(()=>idle(run,{timeout:900}),560);
   }
 
+  async function settleLanguageLayout(target,epoch){
+    if(epoch!==translationEpoch||code()!==target)return false;
+    try{
+      const fontsReady=document.fonts?.ready;
+      if(fontsReady)await Promise.race([fontsReady,new Promise(r=>setTimeout(r,700))]);
+    }catch{}
+    if(epoch!==translationEpoch||code()!==target)return false;
+    upgradeSelectors();
+    window.__SCHOLARK_COUNTRY__?.apply?.();
+    if(!isHomeRoute())window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
+    applyVisible();
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    if(epoch!==translationEpoch||code()!==target)return false;
+    const main=$('#v51-main');if(main)void main.offsetHeight;
+    return true;
+  }
+
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
     if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();applyVisible();return}
