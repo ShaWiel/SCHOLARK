@@ -150,7 +150,10 @@
   }
 
   function rescueBlankWorkspace(){
-    if(document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(window.__v81blank);window.__v81blank=setTimeout(rescueBlankWorkspace,180);return}
+    const html=document.documentElement,ws=window.__SCHOLARK_WORKSPACE__,entry=ws?.entryState?.();
+    if(html.classList.contains('scholark-workspace-entering')||html.classList.contains('scholark-route-loading')||html.classList.contains('scholark-runtime-loading')||entry?.busy){
+      clearTimeout(window.__v81blank);window.__v81blank=setTimeout(rescueBlankWorkspace,220);return
+    }
     if(!document.body.classList.contains('v51-workspace'))return;
     const h=hash();
     if(!/^#(dashboard|studio|ai|tutor|education|language|planner|focus|flashcards|assignments|progress|goal|project|files|schools|study|book)$/.test(h))return;
@@ -158,7 +161,9 @@
     const visible=candidates.some(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>80&&r.height>80});
     if(!visible){
       console.warn('[SCHOLARK] Route rescue for '+h);
-      const b=$('#v51-sidebar [data-v51-tool="'+h.slice(1)+'"]');b?.click();
+      ws?.sanitize?.('v81-rescue');
+      if(ws?.openTool)ws.openTool(h.slice(1));
+      else $('#v51-sidebar [data-v51-tool="'+h.slice(1)+'"]')?.click();
     }
   }
 
