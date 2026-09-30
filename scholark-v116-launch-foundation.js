@@ -76,7 +76,8 @@
   }
   function renderOnboarding(){
     const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell)return;
-    let box=$('#v116-onboarding',shell);const state=readOnboarding();
+    const boxes=$('#v116-onboarding',shell);boxes.slice(0,-1).forEach(x=>x.remove());
+    let box=boxes.at(-1)||null;const state=readOnboarding();
     if(state.dismissed){box?.remove();return}
     if(!box){box=document.createElement('section');box.id='v116-onboarding';box.className='v116-onboarding';const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',box)}
     const country=localStorage.getItem('scholark_country')||'',level=localStorage.getItem('scholark_learning_level')||'',signed=!!token();
@@ -99,7 +100,8 @@
 
   function sidebarActions(){
     const side=$('#v51-sidebar');if(!side)return;
-    let box=$('.v116-side-actions',side);if(box)return;
+    const boxes=$('.v116-side-actions',side);boxes.slice(0,-1).forEach(x=>x.remove());
+    let box=boxes.at(-1)||null;if(box)return;
     box=document.createElement('div');box.className='v116-side-actions';
     box.innerHTML='<button type="button" data-v116-feedback>Feedback</button><button type="button" data-v116-privacy>Privacy & data</button>';
     const anchor=$('.v51-quality',side)||side.lastElementChild;anchor?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
@@ -109,7 +111,8 @@
 
   function publicActions(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return;
-    let box=$('.v116-public-actions',actions);
+    const boxes=$('.v116-public-actions',actions);boxes.slice(0,-1).forEach(x=>x.remove());
+    let box=boxes.at(-1)||null;
     const onHome=!document.body.classList.contains('v51-workspace');
     if(!onHome){box?.remove();return}
     if(!box){
@@ -205,5 +208,5 @@
   const mo=new MutationObserver(()=>{clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,90)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
   addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>setTimeout(sourceBadge,80));addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('pageshow',()=>setTimeout(sync,80));
   installObservability();[120,600,1400].forEach(ms=>setTimeout(sync,ms));
-  window.__SCHOLARK_LAUNCH__={health,sources,feedback:openFeedback,privacy:openPrivacy,sync,release:'r201'};
+  window.__SCHOLARK_LAUNCH__={health,sources,feedback:openFeedback,privacy:openPrivacy,sync,release:'r202'};
 })();
