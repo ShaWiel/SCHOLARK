@@ -67,6 +67,7 @@
   }
   function repair(force=false){
     const now=Date.now();if(!force&&now-lastRepair<90)return;lastRepair=now;
+    if(document.documentElement.classList.contains('scholark-language-switching'))return;
     const scope=$("#v51-main")||document.body;ensureScroll();removeDuplicateControls();scrubQuality(scope);
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,40));idle(()=>secureLinks(scope),{timeout:180});
     if(document.body.classList.contains("v51-workspace")){
