@@ -170,7 +170,8 @@
     if(!one(':scope > .v51-shell')||!one('.v51-level-top')||!one('.v51-levels')||!one('.v51-head')||!one('.v51-head h1')||!one('.v51-grid'))return false;
     const grid=$('.v51-grid',dash);
     const ids=$('[data-v51-tool]',grid).map(x=>x.dataset.v51Tool).filter(Boolean);
-    return ids.length===new Set(ids).size&&ids.length===TOOLS.length+PRO.length+COMING.length;
+    const expected=new Set([...TOOLS,...PRO,...COMING].map(x=>x[0]).filter(x=>x!=='dashboard'));
+    return ids.length===new Set(ids).size&&ids.length===expected.size&&ids.every(id=>expected.has(id));
   }
   function rebuildDashboard(){
     if(!main?.isConnected)return false;
