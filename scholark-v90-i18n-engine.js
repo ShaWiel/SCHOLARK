@@ -793,8 +793,9 @@
       const current=[...sel.options].map(o=>[String(o.value),clean(o.textContent)]);
       const exact=current.length===expected.length&&expected.every(([v,n],i)=>current[i]?.[0]===v&&current[i]?.[1]===n);
       if(!exact)sel.innerHTML=options;
-      sel.dataset.v90='1';sel.onchange=null;
-      const val=code();if([...sel.options].some(o=>o.value===val))sel.value=val;
+      if(sel.dataset.v90!=='1')sel.dataset.v90='1';
+      if(sel.onchange)sel.onchange=null;
+      const val=code();if(sel.value!==val&&[...sel.options].some(o=>o.value===val))sel.value=val;
       return sel;
     };
     [$('#v55-language'),$('#v36-language'),$('#v89-lang')].filter(Boolean).forEach(normalize);
@@ -1009,7 +1010,12 @@
     const readyCoverage=visibleCoverage(560);
     window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic,coverage:readyCoverage,atomic:true}}));
     clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;
-    overlay.style.opacity='0';setTimeout(()=>{if(epoch===translationEpoch){overlay.classList.remove('open');overlay.style.removeProperty('opacity')}},120);
+    // changeLanguage() now resolves only after the visual transition is fully
+    // closed. This prevents a new locale switch from racing a stale overlay.
+    overlay.style.opacity='0';
+    await new Promise(r=>setTimeout(r,120));
+    if(epoch!==translationEpoch)return;
+    overlay.classList.remove('open');overlay.style.removeProperty('opacity');
     translating=false;
     if(target!=='en')scheduleLanguageCompletion(target,epoch,uiSignal);
   }
