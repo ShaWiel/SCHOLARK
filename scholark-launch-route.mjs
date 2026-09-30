@@ -9,11 +9,20 @@ const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE|
 const PADDLE_ENV=String(process.env.PADDLE_ENV||'sandbox').toLowerCase()==='production'?'production':'sandbox';
 const SUPPORT_EMAIL=String(process.env.SCHOLARK_SUPPORT_EMAIL||'').trim().slice(0,240);
 const LEGAL_NAME=String(process.env.SCHOLARK_LEGAL_NAME||'SCHOLARK').trim().slice(0,240)||'SCHOLARK';
+const PRODUCT_STAGE=cleanEnv(process.env.SCHOLARK_PRODUCT_STAGE||'beta',40)||'beta';
+const DEPLOY_TIER=cleanEnv(process.env.SCHOLARK_DEPLOY_TIER||'unknown',60)||'unknown';
+const CAPACITY_VALIDATED=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_CAPACITY_VALIDATED||''));
+const LIVE_API_KEY=String(process.env.PADDLE_API_KEY||'').trim();
+const LIVE_CLIENT_TOKEN=String(process.env.PADDLE_CLIENT_TOKEN||'').trim();
+const LIVE_WEBHOOK_SECRET=String(process.env.PADDLE_WEBHOOK_SECRET||'').trim();
+const LIVE_PLUS_PRICE=String(process.env.PADDLE_PLUS_PRICE_ID||'').trim();
+const LIVE_PRO_PRICE=String(process.env.PADDLE_PRO_PRICE_ID||'').trim();
 const STARTED_AT=Date.now();
 const feedbackBuffer=[];
 const feedbackRate=new Map();
 const json=(res,status,body,extra={})=>{if(res.headersSent)return;res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...extra});res.end(JSON.stringify(body))};
 const clean=(v,max=500)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+function cleanEnv(v,max=120){return String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''};
 const sameOrigin=req=>{const origin=String(req.headers?.origin||'').trim();if(!origin)return true;try{const a=new URL(origin).host.toLowerCase(),b=String(req.headers?.['x-forwarded-host']||req.headers?.host||'').split(',')[0].trim().toLowerCase();return !!b&&a===b}catch{return false}};
 const timeoutSignal=ms=>{try{return AbortSignal.timeout(ms)}catch{return undefined}};
@@ -98,21 +107,31 @@ async function deleteAuthUser(userId){
 function launchHealth(){
   const mem=process.memoryUsage?.()||{};
   const liveBilling=PADDLE_ENV==='production';
+  const liveCredentialShapes=/^pdl_live_apikey_/.test(LIVE_API_KEY)&&/^live_/.test(LIVE_CLIENT_TOKEN)&&!!LIVE_WEBHOOK_SECRET&&/^pri_[a-z\d]{26}$/.test(LIVE_PLUS_PRICE)&&/^pri_[a-z\d]{26}$/.test(LIVE_PRO_PRICE);
   const legalReady=!!SUPPORT_EMAIL;
+  const nodeProduction=String(process.env.NODE_ENV||'').toLowerCase()==='production';
+  const codeReady=nodeProduction&&!TEST_MODE;
+  const blockers={
+    testMode:TEST_MODE,
+    nodeProduction:!nodeProduction,
+    liveBillingEnvironment:!liveBilling,
+    liveBillingCredentials:!liveCredentialShapes,
+    supportContact:!legalReady,
+    productionCapacity:!CAPACITY_VALIDATED,
+    deployTier:DEPLOY_TIER==='unknown'||/free/i.test(DEPLOY_TIER),
+    leakedPasswordProtection:'verify-in-supabase-auth-settings'
+  };
+  const hardBlock=Object.entries(blockers).some(([k,v])=>k!=='leakedPasswordProtection'&&v===true);
   return {
-    ok:true,release:RELEASE,nodeEnv:String(process.env.NODE_ENV||''),testMode:TEST_MODE,uptimeSeconds:Math.round(process.uptime()),
+    ok:true,release:RELEASE,nodeEnv:String(process.env.NODE_ENV||''),testMode:TEST_MODE,productStage:PRODUCT_STAGE,uptimeSeconds:Math.round(process.uptime()),
     runtime:{rssMB:Math.round((mem.rss||0)/1048576),heapUsedMB:Math.round((mem.heapUsed||0)/1048576)},
-    foundation:{feedback:true,accountExport:true,accountDeletion:true,sourceProvenance:true,observability:true,serverCreditIdempotency:true},
-    infrastructure:{provider:'render',paidTierKnown:false,autoscalingConfigured:false,productionCapacityValidated:false},
-    billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling},
+    foundation:{feedback:true,accountExport:true,accountDeletion:true,sourceProvenance:true,observability:true,serverCreditIdempotency:true,accessibility:true,onboarding:true,languageQa:74},
+    infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED},
+    billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes},
     legal:{product:LEGAL_NAME,supportContactConfigured:legalReady},
-    blockers:{
-      liveBilling:!liveBilling,
-      leakedPasswordProtection:'check-supabase-auth-setting',
-      paidProductionCapacity:true,
-      legalContact:!legalReady
-    },
-    publicCommercialLaunchReady:liveBilling&&legalReady
+    readiness:{codeReady,commerciallyReady:!hardBlock},
+    blockers,
+    publicCommercialLaunchReady:!hardBlock
   };
 }
 
