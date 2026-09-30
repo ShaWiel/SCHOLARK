@@ -174,10 +174,11 @@
   function syncAuth(){syncTopbarCopy()}
 
   function openWorkspace(){
+    const alreadyDashboard=location.hash==='#dashboard';
+    if(!alreadyDashboard)location.hash='dashboard';
     window.__SCHOLARK_WORKSPACE__?.prepareEntry?.('home-cta');
     document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
-    if(location.hash!=='#dashboard') location.hash='dashboard';
-    else window.dispatchEvent(new HashChangeEvent('hashchange'));
+    if(alreadyDashboard)window.dispatchEvent(new HashChangeEvent('hashchange'));
     let tries=0;const timer=setInterval(()=>{
       tries++;
       if(location.hash!=='#dashboard'){clearInterval(timer);return}
