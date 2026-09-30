@@ -175,18 +175,11 @@
 
   function openWorkspace(){
     const ws=window.__SCHOLARK_WORKSPACE__;
-    // A returning Workspace already has V51 loaded. Give that central router
-    // exclusive ownership of the transition instead of combining hashchange,
-    // prepareEntry and a delayed synthetic Dashboard click.
-    if(ws?.openTool){
-      // One transaction, one owner: move the URL without a hashchange, mark
-      // the entry epoch, clear public ownership, then let V51 render once.
-      history.replaceState(null,'',location.pathname+location.search+'#dashboard');
-      ws.prepareEntry?.('home-cta');
-      document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
-      ws.openTool('dashboard');
-      return;
-    }
+    // V51 is the single transaction owner. openTool() is Home-safe and owns
+    // the route change, entry epoch, public-state cleanup and canonical render.
+    // Do not pre-call prepareEntry or mutate #dashboard here: doing both made
+    // repeated Home -> Workspace CTA cycles start overlapping entry epochs.
+    if(ws?.openTool){ws.openTool('dashboard');return}
     // First-ever entry: changing the hash is enough. The runtime loader will
     // load V51 and the Workspace shell will own the mount once it is ready.
     if(location.hash!=='#dashboard')location.hash='dashboard';
