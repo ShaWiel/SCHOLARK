@@ -174,9 +174,16 @@
   function syncAuth(){syncTopbarCopy()}
 
   function openWorkspace(){
+    window.__SCHOLARK_WORKSPACE__?.prepareEntry?.('home-cta');
+    document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
     if(location.hash!=='#dashboard') location.hash='dashboard';
     else window.dispatchEvent(new HashChangeEvent('hashchange'));
-    let tries=0;const timer=setInterval(()=>{tries++;const b=$('#v51-sidebar [data-v51-tool="dashboard"],#v51-main [data-v51-tool="dashboard"]');if(b){try{b.click()}catch{}clearInterval(timer)}else if(tries>=20)clearInterval(timer)},60);
+    let tries=0;const timer=setInterval(()=>{
+      tries++;
+      if(location.hash!=='#dashboard'){clearInterval(timer);return}
+      const b=$('#v51-sidebar [data-v51-tool="dashboard"],#v51-main [data-v51-tool="dashboard"]');
+      if(b){try{b.click()}catch{}clearInterval(timer)}else if(tries>=20)clearInterval(timer)
+    },60);
   }
 
   function ensureWorkspaceCTA(){
