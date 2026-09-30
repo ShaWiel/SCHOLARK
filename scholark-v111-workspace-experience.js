@@ -213,6 +213,7 @@
   addEventListener('scholark-runtime-ready',()=>schedule(false));
   addEventListener('scholark-workspace-core-ready',()=>schedule(true));
   addEventListener('scholark-workspace-change',()=>schedule(true));
+  addEventListener('scholark-tool-mounted',e=>{if(e?.detail?.tool===route())schedule(true)});
   addEventListener('scholark-country-change',()=>schedule(true));
   let observerTimer=0;
   const observer=new MutationObserver(()=>{
