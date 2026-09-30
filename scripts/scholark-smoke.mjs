@@ -188,7 +188,7 @@ if(!live){
     ['tutor',{mode:'tutor',prompt:'Explain gravity briefly.',level:'student',language:'English'}],
     ['exam',{mode:'exam',prompt:'Create a short mathematics practice exam.',subject:'Mathematics',count:3,language:'English'}],
     ['curriculum',{mode:'curriculum',prompt:'Build a short biology learning roadmap.',subject:'Biology',language:'English'}],
-    ['study_ahead',{mode:'study_ahead',prompt:'Prepare for computer science.',field:'Computer Science',language:'English'}],
+    ['study_ahead',{mode:'study_ahead',prompt:'Prepare for law.',field:'Law',horizon:'6 months',weeklyHours:'4',studyFocus:'balanced',language:'English'}],
     ['language_learning',{mode:'language_learning',prompt:'Teach beginner greetings.',targetLanguage:'Spanish',nativeLanguage:'English',proficiency:'A1',learningGoal:'conversation',language:'English'}],
   ];
   for(const [mode,body] of learningCases){
@@ -197,6 +197,20 @@ if(!live){
       if(mode==='general_ai'){
         check(typeof d.result.answer==='string'&&/4/.test(d.result.answer),'learning:general_ai returned no usable general answer');
         check(Array.isArray(d.result.suggestedFollowUps),'learning:general_ai returned no follow-up suggestions');
+      }
+      if(mode==='study_ahead'){
+        const r=d.result||{};
+        check(Array.isArray(r.branchMap)&&r.branchMap.length>=4,'learning:study_ahead returned no branch map');
+        check(r.branchMap.every(x=>x?.name&&x?.summary&&x?.whatYouDo&&Array.isArray(x?.typicalTasks)&&x.typicalTasks.length&&Array.isArray(x?.goodFitIf)&&x.goodFitIf.length),'learning:study_ahead branch detail is incomplete');
+        check(r.branchMap.some(x=>/Public Law/i.test(String(x?.name||'')))&&r.branchMap.some(x=>/Criminal Law/i.test(String(x?.name||''))),'learning:study_ahead Law branches are too generic');
+        check(Array.isArray(r.books)&&r.books.length>=4&&r.books.every(x=>x?.title&&x?.author),'learning:study_ahead reading path is incomplete');
+        check(Array.isArray(r.learningResources)&&r.learningResources.length>=2&&r.learningResources.every(x=>x?.name&&x?.purpose),'learning:study_ahead learning resources are empty');
+        check(Array.isArray(r.starterProjects)&&r.starterProjects.length>=2&&r.starterProjects.every(x=>x?.title&&x?.outcome),'learning:study_ahead starter projects are empty');
+        check(Array.isArray(r.firstYearPreview)&&r.firstYearPreview.length>=3&&r.firstYearPreview.every(x=>x?.topic&&x?.whyItMatters),'learning:study_ahead first-year preview is empty');
+        check(Array.isArray(r.questionsToExplore)&&r.questionsToExplore.length>=4,'learning:study_ahead exploration questions are empty');
+        check(Array.isArray(r.weeklyPlan)&&r.weeklyPlan.length>=3,'learning:study_ahead weekly plan is empty');
+        check(Array.isArray(r.roadmap)&&r.roadmap.length>=3&&r.roadmap.every(x=>x?.goal&&x?.milestone&&Array.isArray(x?.actions)&&x.actions.length),'learning:study_ahead roadmap is incomplete');
+        check(!/Testing mode is active/i.test(String(r.overview||'')),'learning:study_ahead exposes misleading testing-mode copy');
       }
     },45000);
   }
