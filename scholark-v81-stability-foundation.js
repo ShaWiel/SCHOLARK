@@ -150,6 +150,7 @@
   }
 
   function rescueBlankWorkspace(){
+    if(document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(window.__v81blank);window.__v81blank=setTimeout(rescueBlankWorkspace,180);return}
     if(!document.body.classList.contains('v51-workspace'))return;
     const h=hash();
     if(!/^#(dashboard|studio|ai|tutor|education|language|planner|focus|flashcards|assignments|progress|goal|project|files|schools|study|book)$/.test(h))return;
