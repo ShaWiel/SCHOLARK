@@ -294,7 +294,15 @@
     clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(false),150)
   });
   observer.observe(document.documentElement,{subtree:true,childList:true});
-  addEventListener('hashchange',()=>{if(readHandoff())showTransition(route());setTimeout(()=>refresh(true),55);scheduleConsume(65)});
+  addEventListener('hashchange',()=>{
+    const next=route();
+    // Route changes invalidate the previous connected-flow surface immediately.
+    // Do not leave an old bar alive while the new feature root is mounting.
+    document.querySelectorAll('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==next)x.remove()});
+    if(readHandoff())showTransition(next);
+    setTimeout(()=>refresh(true),55);scheduleConsume(65)
+  });
+  addEventListener('scholark-workspace-entry-ready',()=>setTimeout(()=>refresh(true),20));
   addEventListener('scholark-workspace-change',()=>setTimeout(()=>refresh(false),80));
   addEventListener('scholark-runtime-ready',()=>setTimeout(()=>{refresh(true);scheduleConsume(60)},70));
   addEventListener('scholark-language-ready',()=>setTimeout(()=>refresh(true),40));
