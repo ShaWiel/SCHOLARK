@@ -198,29 +198,40 @@
   }
   async function finishWorkspaceEntry(epoch){
     if(!epoch||epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
-    const waitUnlocked=async()=>{
+    let healthy=false,error='';
+    try{
       const started=performance.now();
       while(document.documentElement.classList.contains('scholark-language-switching')&&performance.now()-started<2200)await new Promise(r=>setTimeout(r,40));
-    };
-    await waitUnlocked();
-    if(epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
-    resetDashboardCanonical();
-    renderLevels();
-    syncWorkspaceLanguage(main,true);
-    window.__SCHOLARK_COUNTRY__?.apply?.();
-    try{if(document.fonts?.ready)await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,700))])}catch{}
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    if(epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
-    syncWorkspaceLanguage(main,true);
-    const dash=$('[data-v51-page="dashboard"]',main),h1=$('.v51-head h1',dash),grid=$('.v51-grid',dash);
-    if(h1&&grid){
-      const hr=h1.getBoundingClientRect(),gr=grid.getBoundingClientRect(),oversized=parseFloat(getComputedStyle(h1).fontSize||'0')>72;
-      if(oversized||hr.bottom>gr.top+2){resetDashboardCanonical();syncWorkspaceLanguage(main,true);void main.offsetHeight}
+      if(epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
+      resetDashboardCanonical();
+      renderLevels();
+      syncWorkspaceLanguage(main,true);
+      window.__SCHOLARK_COUNTRY__?.apply?.();
+      try{if(document.fonts?.ready)await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,700))])}catch{}
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      if(epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
+      syncWorkspaceLanguage(main,true);
+      const dash=$('[data-v51-page="dashboard"]',main),h1=$('.v51-head h1',dash),grid=$('.v51-grid',dash);
+      if(h1&&grid){
+        const hr=h1.getBoundingClientRect(),gr=grid.getBoundingClientRect(),oversized=parseFloat(getComputedStyle(h1).fontSize||'0')>72;
+        if(oversized||hr.bottom>gr.top+2){resetDashboardCanonical();syncWorkspaceLanguage(main,true);void main.offsetHeight}
+      }
+      healthy=true;
+      return true;
+    }catch(e){
+      error=String(e?.message||e||'workspace entry error').slice(0,300);
+      console.warn('[SCHOLARK] workspace entry settle:',error);
+      try{resetDashboardCanonical();renderLevels();syncWorkspaceLanguage(main,true)}catch{}
+      return false;
+    }finally{
+      if(epoch===workspaceEntryEpoch&&workspaceRoute()){
+        document.body.classList.add('v51-workspace');document.documentElement.classList.add('v51-workspace-root');
+        document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
+        document.documentElement.classList.remove('scholark-workspace-entering');
+        delete document.documentElement.dataset.scholarkWorkspaceEntry;
+        window.dispatchEvent(new CustomEvent('scholark-workspace-entry-ready',{detail:{epoch,route:route(),healthy,error}}));
+      }
     }
-    document.documentElement.classList.remove('scholark-workspace-entering');
-    delete document.documentElement.dataset.scholarkWorkspaceEntry;
-    window.dispatchEvent(new CustomEvent('scholark-workspace-entry-ready',{detail:{epoch,route:route()}}));
-    return true;
   }
   function scheduleWorkspaceEntryFinish(epoch){
     if(!epoch)return;
@@ -484,5 +495,5 @@
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
-  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,getActive:()=>state.active};
+  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,entryState:()=>({epoch:workspaceEntryEpoch,homeEpoch:homeTransitionEpoch,busy:workspaceEntryBusy(),route:route(),bodyWorkspace:document.body.classList.contains('v51-workspace'),bodyPublic:document.body.classList.contains('v55-public-home'),htmlPublic:document.documentElement.classList.contains('v55-public-home')}),getActive:()=>state.active};
 })();
