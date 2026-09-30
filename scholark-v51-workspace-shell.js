@@ -177,6 +177,7 @@
   }
   function workspaceEntryBusy(){return document.documentElement.classList.contains('scholark-workspace-entering')}
   function beginWorkspaceEntry(reason='route'){
+    if(!workspaceRoute())return 0;
     build();
     if(workspaceEntryBusy())return Number(document.documentElement.dataset.scholarkWorkspaceEntry||workspaceEntryEpoch)||workspaceEntryEpoch||1;
     const wasPublic=!document.body.classList.contains('v51-workspace')||document.body.classList.contains('v55-public-home')||document.documentElement.classList.contains('v55-public-home')||document.body.classList.contains('v81-home');
