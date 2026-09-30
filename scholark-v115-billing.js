@@ -52,9 +52,20 @@
     #v41-home-pricing .v115-card-status{margin-top:9px;padding:9px 10px;border-radius:10px;background:rgba(201,255,106,.11);border:1px solid rgba(201,255,106,.2);font:750 9px/1.4 Inter,system-ui;color:inherit}
     #v41-home-pricing .v115-card-status.error{background:#fff0ee;border-color:#f4b8af;color:#8b352f}
     #v41-home-pricing .plus .v115-card-status.error,#v41-home-pricing .pro .v115-card-status.error{background:rgba(255,102,92,.13);border-color:rgba(255,140,130,.26);color:#ffd8d2}
+    #v41-home-pricing .v115-env{display:inline-flex;margin:0 0 8px;padding:5px 7px;border-radius:999px;font:900 6.5px Inter;letter-spacing:.07em;background:#fff0c7;color:#6d5000;border:1px solid #ebd17a}
   `;document.head.appendChild(style);
 
-  async function getConfig(){if(config)return config;const r=await fetch('/api/billing/config',{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Could not load payment configuration');config=d;return d}
+  function showEnvironment(c){
+    for(const plan of ['plus','pro']){
+      const box=card(plan);if(!box)continue;
+      let badge=box.querySelector('.v115-env');
+      if(c?.environment==='sandbox'){
+        if(!badge){badge=document.createElement('div');badge.className='v115-env';const b=button(plan);(b?.parentElement||box).insertBefore(badge,b||null)}
+        badge.textContent='TEST CHECKOUT · NO REAL CHARGE';badge.title='Paddle sandbox is active. This checkout is for testing and does not create a live commercial subscription.';
+      }else badge?.remove();
+    }
+  }
+  async function getConfig(){if(config){showEnvironment(config);return config}const r=await fetch('/api/billing/config',{cache:'no-store'}),d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Could not load payment configuration');config=d;showEnvironment(d);return d}
   async function refresh(){
     const t=token();if(!t){state={plan:'free',subscription:null,wallet:null};return state}
     try{
@@ -152,6 +163,8 @@
       return;
     }
     setBusy(plan,true);message(plan,'Preparing secure checkout…');
+    const preview=await getConfig().catch(()=>null);
+    if(preview?.environment==='sandbox')message(plan,'TEST MODE · Paddle sandbox checkout. No real charge will be made.');
     try{
       const [c,P]=await Promise.all([getConfig(),initPaddle()]);
       const priceId=String(c?.priceIds?.[plan]||'');
