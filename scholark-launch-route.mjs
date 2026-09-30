@@ -59,7 +59,7 @@ const EXPORT_TABLES=[
   ['spaced_reviews','user_id'],['study_ahead','user_id'],['documents','user_id'],['presentations','user_id'],
   ['user_files','user_id'],['language_learning_progress','user_id'],['credit_wallets','user_id'],
   ['credit_ledger','user_id'],['usage_events','user_id'],['client_errors','user_id'],
-  ['feedback_submissions','user_id'],['billing_subscriptions','user_id'],['project_versions','user_id'],
+  ['feedback_submissions','user_id'],['billing_subscriptions','user_id'],['billing_events','user_id'],['project_versions','user_id'],
   ['project_comments','user_id'],['shared_artifacts','owner_user_id'],['published_webpages','owner_user_id'],
   ['project_invites','owner_user_id']
 ];
@@ -145,6 +145,7 @@ http.Server.prototype.emit=function(type,...args){
     }).catch(e=>json(res,e?.code==='REQUEST_TOO_LARGE'?413:400,{ok:false,code:e?.code||'FEEDBACK_FAILED'}));return true;
   }
   if(req.method==='GET'&&url.pathname==='/api/account/export'){
+    if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});
     currentUser(req).then(async user=>{
       if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});
       if(!SB||!SERVICE)return json(res,503,{ok:false,code:'EXPORT_UNAVAILABLE'});
