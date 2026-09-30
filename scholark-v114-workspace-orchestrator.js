@@ -270,9 +270,9 @@
     if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force),120);return}
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      $('.v108-context').forEach(x=>x.remove());
-      const root=rootFor(tool);if(!root){$('.v114-connect').forEach(x=>x.remove());return}
-      const candidates=$('.v114-connect'),inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
+      document.querySelectorAll('.v108-context').forEach(x=>x.remove());
+      const root=rootFor(tool);if(!root){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
+      const candidates=[...document.querySelectorAll('.v114-connect')],inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
       // Keep one connected-flow bar for exactly one active root. Older code
       // removed other routes but preserved same-route duplicates indefinitely.
       candidates.forEach(x=>{if(x!==existing)x.remove()});
