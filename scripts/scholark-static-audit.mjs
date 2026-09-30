@@ -167,11 +167,11 @@ ok(stabilityFoundation.includes('dashboard|studio|ai|tutor')&&foundationHealth.i
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
 ok(countryEducation.includes("kindergarten:{title:'Kleuterschool / Kleuteronderwijs'")&&countryEducation.includes("mbo:{title:'MBO'")&&countryEducation.includes("wo:{title:'WO / Universiteit'"),'Suriname country education tracks are incomplete');
-ok(i18n.includes("CACHE_VERSION='v9-global74-atomic-layout'")&&i18n.includes("'v5-global37','v4-seven-ui','v3-seven-ui'"),'global-74 i18n cache isolation/recovery is missing');
+ok(i18n.includes("CACHE_VERSION='v9-global74-resilient-atomic-layout'")&&i18n.includes("'v5-global37','v4-seven-ui','v3-seven-ui'"),'global-74 i18n cache isolation/recovery is missing');
 ok(i18n.includes("['Custom minutes (5–240)','Aangepaste minuten (5–240)'")&&i18n.includes("['Export cards','Kaarten exporteren'")&&i18n.includes("['Export progress snapshot','Voortgangsoverzicht exporteren'"),'Core workspace controls lost their static translations');
 ok(i18n.includes('rebuildReverseKnown')&&i18n.includes('reverseKnown.get(clean(value))'),'cross-language canonicalization is missing');
 ok((i18n.match(/protectedNode\(el\)/g)||[]).length>=2,'locale-owned form attributes are not protected from generic translation');
-ok(homeFoundation.includes('scholark_v90_i18n_v9-global74-atomic-layout_')&&!homeFoundation.includes("saved[source]=rows[lc]||source"),'Home foundation does not preserve dynamic-language caches correctly');
+ok(homeFoundation.includes('scholark_v90_i18n_v9-global74-resilient-atomic-layout_')&&!homeFoundation.includes("saved[source]=rows[lc]||source"),'Home foundation does not preserve dynamic-language caches correctly');
 ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("all:'Todos los niveles'")&&countryEducation.includes("studyField:'Studie/richting (optioneel)'"),'school locale dictionary is incomplete');
 ok(countryEducation.includes("[gc.basic,['kindergarten','primary']]")&&countryEducation.includes("[gc.voj,['mulo','lbo']]")&&countryEducation.includes("[gc.vos,['havo','vwo','mbo']]")&&countryEducation.includes("[gc.higher,['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
 ok(countryEducation.includes("$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
