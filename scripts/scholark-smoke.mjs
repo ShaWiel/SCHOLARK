@@ -131,16 +131,24 @@ try{
 
 const launchHealth=await get('/api/launch/health');
 const surinameSources=await get('/api/launch/sources?country=Suriname');
+const japanSources=await get('/api/launch/sources?country=Japan');
 if(launchHealth){
   check(launchHealth.foundation?.feedback===true&&launchHealth.foundation?.accountExport===true&&launchHealth.foundation?.accountDeletion===true,'Launch privacy/feedback foundation is incomplete');
-  check(launchHealth.foundation?.serverCreditIdempotency===true,'Server credit idempotency is not advertised by launch health');
+  check(launchHealth.foundation?.serverCreditIdempotency===true&&launchHealth.foundation?.accessibility===true&&launchHealth.foundation?.onboarding===true&&launchHealth.foundation?.languageQa===74,'Launch foundation readiness capabilities are incomplete');
   check(launchHealth.billing?.environment===billingHealth?.environment,'Launch health billing environment disagrees with billing health');
+  check(typeof launchHealth.readiness?.codeReady==='boolean'&&typeof launchHealth.readiness?.commerciallyReady==='boolean','Structured launch readiness verdict missing');
   check(typeof launchHealth.publicCommercialLaunchReady==='boolean','Launch readiness verdict missing');
+  check(typeof launchHealth.infrastructure?.productionCapacityValidated==='boolean'&&typeof launchHealth.infrastructure?.deployTier==='string','Infrastructure launch readiness status missing');
 }
 if(surinameSources){
+  check(surinameSources.verification==='national-official','Suriname education source should be nationally verified');
   check(Array.isArray(surinameSources.sources)&&surinameSources.sources.some(x=>/uis\.unesco\.org/i.test(String(x.url||''))),'UNESCO education source basis missing');
-  check(surinameSources.sources.some(x=>/gov\.sr\/ministeries\/ministerie-van-onderwijs/i.test(String(x.url||''))),'Official Suriname MinOWC source missing');
+  check(surinameSources.sources.some(x=>/gov\.sr\/ministeries\/ministerie-van-onderwijs/i.test(String(x.url||''))&&x.verification==='national-official'),'Official Suriname MinOWC source missing');
   check(/official institution/i.test(String(surinameSources.policy?.currentAdmissions||'')),'Official current-admissions source policy missing');
+}
+if(japanSources){
+  check(japanSources.verification==='framework-only','Countries without registered national sources must be labeled framework-only');
+  check(Array.isArray(japanSources.sources)&&japanSources.sources.some(x=>x.verification==='framework-only'),'Framework fallback source confidence missing');
 }
 try{
   const {r,data}=await request('/api/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({category:'bug',message:'CI launch feedback smoke',route:'#dashboard',locale:'en'})},15000);
