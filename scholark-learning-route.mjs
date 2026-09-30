@@ -1,6 +1,10 @@
 import http from 'node:http';
 
 const originalEmit = http.Server.prototype.emit;
+const SB=String(process.env.SUPABASE_URL||'').replace(/\/+$/,'');
+const PUB=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
+const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
+const CREDIT_MODE_FEATURE=Object.freeze({tutor:'tutor_message',general_ai:'general_ai',flashcards:'quiz',exam:'quiz',curriculum:'curriculum',study_ahead:'study_ahead',language_learning:'language_lesson'});
 console.log('[SCHOLARK] Learning AI route ready');
 const _polliPrefix=String(process.env.POLLINATIONS_API_KEY||'').startsWith('pk_')?'publishable':String(process.env.POLLINATIONS_API_KEY||'').startsWith('sk_')?'secret':'none';
 console.log('[SCHOLARK] Pollinations key type '+_polliPrefix+' · translation model '+String(process.env.POLLINATIONS_TRANSLATION_MODEL||'openai-fast'));
@@ -18,6 +22,28 @@ const readJson = req => new Promise((resolve,reject)=>{
 });
 
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
+const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''};
+const creditRequestId=req=>String(req.headers?.['x-scholark-request-id']||'').trim();
+async function chargeLearningCredits(req,mode,p,out){
+  if(TEST_MODE||mode==='translate_ui')return {ok:true,usage:{billingMode:TEST_MODE?'test':'free-system',serverCharged:false,feature:null,spent:0}};
+  const token=bearer(req);
+  if(!token)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'Sign in to use SCHOLARK AI features so credits and usage can be protected on your account.'};
+  const feature=CREDIT_MODE_FEATURE[mode];
+  if(!feature)return {ok:false,http:400,code:'CREDIT_FEATURE_UNKNOWN',error:'This learning feature is not connected to the SCHOLARK credit system.'};
+  const requestId=creditRequestId(req);
+  if(!/^[a-zA-Z0-9._:-]{8,120}$/.test(requestId))return {ok:false,http:400,code:'REQUEST_ID_REQUIRED',error:'A valid SCHOLARK request ID is required.'};
+  if(mode==='general_ai'&&String(out?.provider||'')==='scholark-local-fallback')return {ok:true,usage:{billingMode:'server',serverCharged:false,feature,spent:0,reason:'provider_unavailable'}};
+  if(!SB||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
+  const meta={mode,provider:String(out?.provider||'').slice(0,80),model:String(out?.model||'').slice(0,120),tier:String(out?.tier||'').slice(0,40)};
+  const r=await fetch(SB+'/rest/v1/rpc/consume_feature_credits_once',{method:'POST',headers:{apikey:PUB,authorization:'Bearer '+token,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:meta}),signal:AbortSignal.timeout?.(8000)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){
+    const status=r.status===401||r.status===403?401:503;
+    return {ok:false,http:status,code:status===401?'AUTH_REQUIRED':'CREDIT_SERVICE_UNAVAILABLE',error:status===401?'Your SCHOLARK session has expired. Sign in again.':'SCHOLARK could not verify credits for this request.'};
+  }
+  if(d?.ok===false)return {ok:false,http:402,code:String(d.code||'INSUFFICIENT_CREDITS').toUpperCase(),error:'Not enough SCHOLARK credits for this action.',balance:Number(d.balance)||0,needed:Number(d.needed)||0};
+  return {ok:true,usage:{billingMode:'server',serverCharged:true,feature,spent:Number(d?.spent)||0,balance:Number(d?.balance)||0,idempotent:!!d?.idempotent,requestId}};
+}
 const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
 const UI_LANGUAGE_CODES=new Set(["nl","en","es","fr","de","pt","it","ar","zh","hi","bn","ru","ja","ko","tr","pl","uk","ro","el","cs","sv","da","no","fi","hu","id","ms","vi","th","tl","sw","he","ur","fa","ta","te","pa","af","sq","am","hy","az","eu","be","bs","bg","ca","hr","et","ka","gu","is","ga","kk","km","lo","lv","lt","mk","ml","mr","mn","ne","ps","sr","sk","sl","so","si","uz","cy","yo","zu","ha"]);
 if(UI_LANGUAGE_CODES.size!==74||UI_LANGUAGE_CODES.has('srn'))throw new Error('SCHOLARK language registry integrity failure');
@@ -789,7 +815,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||'')),pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
+    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
@@ -843,7 +869,10 @@ http.Server.prototype.emit = function(event,...args){
         json(res,200,{ok:true,provider,model,result:{translations},cacheHits:strings.length-missing.length,translated:translatedCount,untranslated:strings.length-translatedCount});
         return;
       }
-      const out=await generate(mode,p); json(res,200,out);
+      const out=await generate(mode,p);
+      const charged=await chargeLearningCredits(req,mode,p,out);
+      if(!charged.ok)return json(res,charged.http||500,{ok:false,code:charged.code,error:charged.error,balance:charged.balance,needed:charged.needed});
+      json(res,200,{...out,usage:charged.usage});
     }catch(e){json(res,e.code==='AI_ENGINE_UNAVAILABLE'?503:500,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});}
   })();
   return true;
