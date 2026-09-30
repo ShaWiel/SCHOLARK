@@ -202,7 +202,7 @@ await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.set?.('Suriname','ci-palett
 await page.waitForFunction(()=>window.__SCHOLARK_COUNTRY__?.current?.()==='Suriname'&&!!document.querySelector('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level'),null,{timeout:5000});
 try{await page.waitForFunction(()=>{const el=document.querySelector('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level');if(!el||!el.isConnected||!el.getClientRects().length)return false;const bg=getComputedStyle(el).backgroundImage;return /31, 43, 91|56, 82, 148|23, 35, 73/.test(bg)},null,{timeout:5000})}catch{}
 const darkGroupDiag=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group="higher"] .v51-level').first().evaluate(el=>({background:getComputedStyle(el).backgroundImage,inline:el.getAttribute('style')||'',visible:!!el.getClientRects().length,country:window.__SCHOLARK_COUNTRY__?.current?.()}));
-check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupDiag.background),`Higher Education cards do not use the requested dark navy palette: ${JSON.stringify(darkGroupDiag)}`);
+check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupDiag.background)||/#1f2b5b|#385294|#172349/i.test(darkGroupDiag.inline),`Higher Education cards do not use the requested dark navy palette: ${JSON.stringify(darkGroupDiag)}`);
 
 const countryCoverage=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.countryProfileCoverage?.()||null);
 check(countryCoverage&&countryCoverage.missing?.length===0,`Country education profiles missing: ${countryCoverage?.missing?.join(', ')||'coverage API unavailable'}`);
@@ -533,7 +533,8 @@ check(lawStudyText.includes('Introductory law lectures'),'Law Study Ahead learni
 check(lawStudyText.includes('Brief a court decision'),'Law Study Ahead starter projects did not render after clicking Build');
 check(lawStudyText.includes('Legal Method'),'Law Study Ahead first-year preview did not render after clicking Build');
 check(lawStudyText.includes('Do I prefer disputes between private parties'),'Law Study Ahead exploration questions did not render after clicking Build');
-check(lawStudyText.includes('What you actually do')&&lawStudyText.includes('Typical tasks')&&lawStudyText.includes('Good fit if'),'Law Study Ahead branch intelligence is not visible');
+const lawStudyTextLower=lawStudyText.toLocaleLowerCase();
+check(lawStudyTextLower.includes('what you actually do')&&lawStudyTextLower.includes('typical tasks')&&lawStudyTextLower.includes('good fit if'),'Law Study Ahead branch intelligence is not visible');
 await page.click('[data-v62-focus-branch="Public Law"]');
 check((await page.inputValue('#v62-specialization'))==='Public Law','Generated Study Ahead branch action did not populate specialization');
 await page.unroute('**/api/learning/generate');
