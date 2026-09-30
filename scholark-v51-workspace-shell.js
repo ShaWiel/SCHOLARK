@@ -158,7 +158,7 @@
   function refreshLogo(){const host=$('.v51-logo',side);if(!host||host.dataset.ready)return;const mark=officialLogoNode();if(mark){host.innerHTML='';host.appendChild(mark);host.dataset.ready='1';return}host.innerHTML='<span style="font:950 11px Inter;color:#c9ff6a">SCHOLARK</span>';}
 
   function keepSingleton(selector,preferred){
-    const rows=$(selector),keep=preferred?.isConnected?preferred:(rows[0]||null);
+    const rows=document.querySelectorAll(selector),keep=preferred?.isConnected?preferred:(rows[0]||null);
     rows.forEach(x=>{if(x!==keep)x.remove()});
     return keep;
   }
@@ -166,7 +166,7 @@
     side=keepSingleton('#v51-sidebar',side);main=keepSingleton('#v51-main',main);home=keepSingleton('#v51-home',home);toggle=keepSingleton('#v51-side-toggle',toggle);
     if(side?.isConnected&&main?.isConnected){
       document.body.classList.remove('v53-emergency');
-      $('#v53-emergency').forEach(x=>x.remove());
+      document.querySelectorAll('#v53-emergency').forEach(x=>x.remove());
     }
     return {reason,sidebar:document.querySelectorAll('#v51-sidebar').length,main:document.querySelectorAll('#v51-main').length,home:document.querySelectorAll('#v51-home').length,toggle:document.querySelectorAll('#v51-side-toggle').length,emergency:document.querySelectorAll('#v53-emergency').length};
   }
