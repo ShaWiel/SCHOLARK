@@ -49,6 +49,10 @@ const visualSystem=read('scholark-v112-workspace-visual-system.js');
 const hardening=read('scholark-v113-foundation-hardening.js');
 const orchestrator=read('scholark-v114-workspace-orchestrator.js');
 const apiGuard=read('scholark-api-guard.mjs');
+const billingRoute=read('scholark-billing-route.mjs');
+const billingClient=read('scholark-v115-billing.js');
+const launchRoute=read('scholark-launch-route.mjs');
+const launchFoundation=read('scholark-v116-launch-foundation.js');
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
@@ -61,9 +65,16 @@ ok(docker.includes('__schLegacyNode')&&docker.includes('closest?.("#v55-topbar")
 ok(apiGuard.includes("content-security-policy")&&apiGuard.includes("permissions-policy")&&apiGuard.includes("strict-transport-security"),'API responses are missing hardened browser security headers');
 ok(apiGuard.includes('requestOriginAllowed')&&apiGuard.includes("site === 'cross-site'")&&apiGuard.includes("CROSS_ORIGIN_BLOCKED"),'Expensive API routes lack same-origin / cross-site protection');
 ok(apiGuard.includes('MAX_BUCKETS = 10000')&&apiGuard.includes('buckets.size >= MAX_BUCKETS'),'API rate-limit state lacks a bounded-memory guard');
+ok(apiGuard.includes("p==='/api/feedback'")&&apiGuard.includes("p==='/api/account/export'")&&apiGuard.includes("p==='/api/account'")&&apiGuard.includes("p==='/api/billing/portal'"),'Launch/account/billing endpoints are missing from central rate/body guard');
+ok(apiGuard.includes('if(!rule.expensive)return previousEmit.call(this,type,...args)'),'Cheap launch mutations unnecessarily consume expensive-request concurrency');
 ok(homeTopbar.includes('topbarCopyObserver')&&homeTopbar.includes("authButton.dataset.v55State!==state||text(authButton)!==expectedAuth")&&homeTopbar.includes("if(sel.getAttribute('aria-label')!=='Language')"),'Homepage topbar idempotent copy protection is incomplete');
 ok(docker.includes('scholark-api-guard.mjs'),'API guard is not shipped');
 ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not imported at runtime');
+ok(docker.includes('COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs')&&docker.includes('COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js'),'Launch foundation is not shipped in production image');
+ok(docker.includes('--import", "./scholark-launch-route.mjs"'),'Launch route is not imported at runtime');
+ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must be the outermost route wrapper');
+ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v115-billing.js','scholark-v116-launch-foundation.js'"),'Launch client foundation is not active across app routes');
+ok(/localhost\|127\\\.0\\\.0\\\.1/.test(runtime)&&runtime.includes('__SCHOLARK_TEST_MODE__'),'Browser test bypass is not restricted to local hosts');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
 ok(docker.includes('--import", "./scholark-gemini-primary.mjs"'),'Gemini primary adapter is not imported at runtime');
 ok(docker.includes('scholark-school-resilience.mjs'),'School resilience layer is not shipped');
@@ -181,6 +192,8 @@ ok(countryEducation.includes("all:'Alle niveaus'")&&countryEducation.includes("a
 ok(countryEducation.includes("[gc.basic,['kindergarten','primary']]")&&countryEducation.includes("[gc.voj,['mulo','lbo']]")&&countryEducation.includes("[gc.vos,['havo','vwo','mbo']]")&&countryEducation.includes("[gc.higher,['hbo','wo']]"),'Suriname Schools Near Me groups are incomplete');
 ok(countryEducation.includes("$('.v51-level[data-level]').forEach"),'Country education applyLevels must iterate all dashboard level cards safely');
 ok(countryEducation.includes('countryProfileCoverage')&&countryEducation.includes("Educación premedia · Educación Básica General")&&countryEducation.includes('Yōchien / Hoikuen')&&countryEducation.includes("Junior School · Grades 7–9"),'Global country education profile registry is incomplete');
+ok(countryEducation.includes('EDUCATION_SOURCE_GLOBAL')&&countryEducation.includes('uis.unesco.org/en/glossary-term/levels-education')&&countryEducation.includes('gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/'),'Education source provenance registry is incomplete');
+ok(countryEducation.includes('function validateProfiles()')&&countryEducation.includes('missing_source_url')&&countryEducation.includes('sourceBasis,validateProfiles'),'Country education profile/source validator is not exposed');
 ok(countryEducation.includes('NATIONAL_OVERRIDES')&&countryEducation.includes('NATIONAL_SCHEME_CODES')&&countryEducation.includes("if(override&&generated)return generated"),'Country-specific education profile precedence is not protected');
 ok(workspaceShell.includes('v51-levels-global')&&workspaceShell.includes('countryGroupLabel')&&workspaceShell.includes('Country-specific education levels for'), 'Global education grid/country labels are not protected against fallback layout regressions');
 ok(fastTools.includes("$$('[data-tutor-assignment]',h).forEach"),'AI Tutor Assignment Coach must iterate assignment buttons as a collection');
@@ -208,6 +221,11 @@ ok(learningRoute.includes("required:['title','overview','branchMap','recommended
 ok(learningRoute.includes('Give a comprehensive map of the major recognized branches/subfields')&&learningRoute.includes('what people in that branch actually study or do')&&learningRoute.includes('never invent a title or author')&&learningRoute.includes('starter projects or practical exercises'),'Study Ahead AI guidance is not comprehensive or grounded enough');
 ok(learningRoute.includes('function buildLocalStudyAhead')&&learningRoute.includes("local-study-v2")&&learningRoute.includes('completeStudyResult')&&learningRoute.includes("Public Law")&&learningRoute.includes("Cybersecurity"),'Study Ahead resilience engine is not field-specific or complete');
 ok(learningRoute.includes("fallbackVersion:'local-study-v2'")&&learningRoute.includes('cacheEntries:STUDY_CACHE.size')&&learningRoute.includes("cache:'hit'"),'Study Ahead cache/normalization health is incomplete');
+ok(learningRoute.includes('consume_feature_credits_once')&&learningRoute.includes("'x-scholark-request-id'")&&learningRoute.includes('serverCredits:true')&&learningRoute.includes('creditIdempotency:true'),'Learning AI lacks authenticated idempotent server-side credit enforcement');
+ok(learningRoute.includes("mode==='translate_ui'")&&learningRoute.includes("return {ok:true,usage:{billingMode:TEST_MODE?'test':'free-system'"),'System UI translation must remain outside user credit charging');
+ok(learningApi.includes("'x-scholark-request-id'")&&learningApi.includes("headers.authorization='Bearer '+session.access_token")&&!learningApi.includes("__SCHOLARK_CREDITS__?.consume?.(feature"),'Learning client still trusts client-side credit consumption');
+ok(languageLearner.includes("'x-scholark-request-id'")&&!languageLearner.includes("__SCHOLARK_CREDITS__?.consume?.('language_lesson'"),'Language Learner is not using server-side credit consumption');
+ok(generalAi.includes("'x-scholark-request-id'")&&generalAi.includes("authorize?.('general_ai')")&&generalAi.includes("headers.authorization='Bearer '+session.access_token"),'ARKI is not protected by authenticated server-side credits');
 ok(learningRoute.includes('translationMemory.set(key,value)')&&!learningRoute.includes('rememberTranslation(key,value);\n}'),'Translation memory still recurses instead of storing values');
 ok(learningApi.includes('What you actually do')&&learningApi.includes('Typical tasks')&&learningApi.includes('Good fit if')&&learningApi.includes('studyLegacyEmpty'),'Study Ahead branch details/legacy safety are incomplete');
 ok(studyAhead.includes('What you actually do')&&studyAhead.includes('Typical tasks')&&studyAhead.includes('Good fit if')&&studyAhead.includes('legacyEmpty'),'Saved Study Ahead branch details/legacy safety are incomplete');
@@ -246,15 +264,26 @@ ok(fastTools.includes('BEST FOR')&&fastTools.includes('Show me with my topic'),'
 ok(docker.includes('scholark-v102-language-quiz.js?v=20260918-language-choice-v3'),'Adaptive Language quiz version is not shipped');
 ok(docker.includes('scholark-v103-language-next-lesson.js?v=20260918-language-next-v2'),'Language next-lesson fix is not shipped at v2');
 
+ok(billingRoute.includes("'/customers/'+encodeURIComponent(row.paddle_customer_id)+'/portal-sessions'")&&billingRoute.includes("url.pathname==='/api/billing/portal'")&&billingRoute.includes('customerPortalSupported:true'),'Paddle customer self-service portal is incomplete');
+ok(billingClient.includes("async function manage(action='overview')")&&billingClient.includes("'/api/billing/portal'"),'Billing client does not expose secure subscription management');
+ok(launchRoute.includes("'/api/launch/health'")&&launchRoute.includes("'/api/launch/sources'")&&launchRoute.includes("'/api/feedback'")&&launchRoute.includes("'/api/account/export'")&&launchRoute.includes("'/api/account'"),'Launch health/source/feedback/account API is incomplete');
+ok(launchRoute.includes('ACTIVE_SUBSCRIPTION')&&launchRoute.includes('/auth/v1/admin/users/')&&launchRoute.includes('content-disposition'),'Account export/delete safeguards are incomplete');
+ok(launchRoute.includes('uis.unesco.org/en/glossary-term/levels-education')&&launchRoute.includes('gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/'),'Launch education source policy is incomplete');
+ok(launchFoundation.includes('prefers-reduced-motion')&&launchFoundation.includes('focus-visible')&&launchFoundation.includes('@media(pointer:coarse)'),'Accessibility/touch foundation is incomplete');
+ok(launchFoundation.includes('Your data stays under your control.')&&launchFoundation.includes('Product terms & responsible use')&&launchFoundation.includes('Export my data')&&launchFoundation.includes('Delete account'),'Privacy/terms/account-control surface is incomplete');
+ok(launchFoundation.includes("event:'client_performance'")&&launchFoundation.includes('/rest/v1/client_errors')&&launchFoundation.includes("data-v116-submit"),'Client observability/feedback foundation is incomplete');
+ok(launchFoundation.includes('Finish setting up SCHOLARK.')&&launchFoundation.includes("routeTo('#'+k)")&&launchFoundation.includes('Studio AI and Book Studio stay Coming Soon.'),'Launch onboarding flow is incomplete');
+ok(runtime.includes('studio:false,book:false'),'Studio AI and Book Studio must remain feature-gated in this release');
+
 const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||'';
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v116-launch-foundation.js','scholark-api-guard.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
   'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
-  'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs',
+  'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs',
   ...active
 ])];
 for(const file of syntaxTargets){
