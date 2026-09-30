@@ -202,9 +202,14 @@
     if(home){ensureWorkspaceCTA();suppressLegacyHeader();syncTopbarCopy()}else{suppressLegacyHeader();accountWrap?.classList.remove('open')}
   }
 
-  addEventListener('hashchange',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
-  addEventListener('popstate',()=>{setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
-  addEventListener('pageshow',()=>{setTimeout(sync,20);scheduleTopbarRepair(80)});
+  function prepareWorkspaceRoute(reason){
+    if(!workspace())return;
+    window.__SCHOLARK_WORKSPACE__?.prepareEntry?.(reason);
+    document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
+  }
+  addEventListener('hashchange',()=>{prepareWorkspaceRoute('hashchange');setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
+  addEventListener('popstate',()=>{prepareWorkspaceRoute('popstate');setTimeout(sync,20);setTimeout(sync,140);scheduleTopbarRepair(320)});
+  addEventListener('pageshow',()=>{prepareWorkspaceRoute('pageshow');setTimeout(sync,20);scheduleTopbarRepair(80)});
   addEventListener('scholark:auth-changed',()=>{setTimeout(syncAuth,20);window.__SCHOLARK_CREDITS__?.load?.()});
   addEventListener('scholark:billing-changed',()=>syncTopbarCopy());
   addEventListener('scholark-language-applied',e=>{const lang=ensureLanguageSelector(),current=localStorage.getItem('scholark_ui_language')||'nl';if(lang&&lang.value!==current)lang.value=current;syncTopbarCopy();localizeTopbar(e.detail?.code||current);scheduleTopbarRepair(20)});
