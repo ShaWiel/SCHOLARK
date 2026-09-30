@@ -53,11 +53,13 @@
   async function consume(feature,meta={}){
     if(window.__SCHOLARK_TEST_MODE__)return{ok:true,testMode:true,spent:0,balance:wallet?.balance??null};
     const x=await ctx();if(!x)return{ok:true,guest:true,spent:0,balance:null};
-    const r=await x.c.request('/rest/v1/rpc/consume_feature_credits',{method:'POST',body:JSON.stringify({p_feature:feature,p_meta:meta||{}})});
+    const requestId=(globalThis.crypto?.randomUUID?.()||('sch-credit-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
+    const safeMeta={...(meta||{}),client_request_id:requestId};
+    const r=await x.c.request('/rest/v1/rpc/consume_feature_credits_once',{method:'POST',body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:safeMeta})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){const e=new Error(d?.message||'Could not verify SCHOLARK credits');e.code='CREDIT_CHECK_FAILED';throw e}
     if(d?.ok===false){const e=new Error('Not enough SCHOLARK credits for this action.');e.code=d.code||'INSUFFICIENT_CREDITS';e.balance=d.balance;e.needed=d.needed;throw e}
-    await load();window.dispatchEvent(new CustomEvent('scholark:credits-changed',{detail:d}));return d;
+    await load();window.dispatchEvent(new CustomEvent('scholark:credits-changed',{detail:{...d,requestId}}));return {...d,requestId};
   }
   async function quote(feature){return{feature,credits:await cost(feature),wallet}}
   async function authorize(feature){
