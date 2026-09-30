@@ -174,17 +174,21 @@
   function syncAuth(){syncTopbarCopy()}
 
   function openWorkspace(){
-    const alreadyDashboard=location.hash==='#dashboard';
-    if(!alreadyDashboard)location.hash='dashboard';
-    window.__SCHOLARK_WORKSPACE__?.prepareEntry?.('home-cta');
-    document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
-    if(alreadyDashboard)window.dispatchEvent(new HashChangeEvent('hashchange'));
-    let tries=0;const timer=setInterval(()=>{
-      tries++;
-      if(location.hash!=='#dashboard'){clearInterval(timer);return}
-      const b=$('#v51-sidebar [data-v51-tool="dashboard"],#v51-main [data-v51-tool="dashboard"]');
-      if(b){try{b.click()}catch{}clearInterval(timer)}else if(tries>=20)clearInterval(timer)
-    },60);
+    const ws=window.__SCHOLARK_WORKSPACE__;
+    // A returning Workspace already has V51 loaded. Give that central router
+    // exclusive ownership of the transition instead of combining hashchange,
+    // prepareEntry and a delayed synthetic Dashboard click.
+    if(ws?.openTool){
+      history.replaceState(null,'',location.pathname+location.search+'#dashboard');
+      ws.prepareEntry?.('home-cta');
+      document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
+      ws.openTool('dashboard');
+      return;
+    }
+    // First-ever entry: changing the hash is enough. The runtime loader will
+    // load V51 and the Workspace shell will own the mount once it is ready.
+    if(location.hash!=='#dashboard')location.hash='dashboard';
+    else window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
 
   function ensureWorkspaceCTA(){
