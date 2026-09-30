@@ -501,9 +501,9 @@
     VA:P(['Early schooling follows Italian / international systems','Primary schooling via Italian / international institutions','Lower secondary via Italian / international institutions','Upper secondary via Italian / international institutions','Pontifical / higher education institutions'],{basic:'Schooling via external systems',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Pontifical Higher Education'},'Vocational pathways follow host-system provision')
   };
 
-  const EDUCATION_SOURCE_GLOBAL={name:'UNESCO Institute for Statistics · ISCED',url:'https://uis.unesco.org/en/glossary-term/levels-education',type:'international-framework'};
+  const EDUCATION_SOURCE_GLOBAL={name:'UNESCO Institute for Statistics · ISCED',url:'https://uis.unesco.org/en/glossary-term/levels-education',type:'international-framework',verification:'framework-only',official:true};
   const EDUCATION_SOURCES={
-    Suriname:{name:'Ministerie van Onderwijs, Wetenschap en Cultuur · Suriname',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/',type:'national-ministry'}
+    Suriname:{name:'Ministerie van Onderwijs, Wetenschap en Cultuur · Suriname',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/',type:'national-ministry',verification:'national-official',official:true}
   };
   const sourceBasis=country=>EDUCATION_SOURCES[normalizeCountry(country)]||EDUCATION_SOURCE_GLOBAL;
   const nationalProfile=(country)=>{
@@ -526,6 +526,8 @@
       vocational:profile.vocational||'',
       source:sourceBasis(country).name,
       sourceUrl:sourceBasis(country).url,
+      sourceType:sourceBasis(country).type,
+      sourceVerification:sourceBasis(country).verification,
       stages:ids.map((id,i)=>[id,icons[i],profile.titles[i],d[id]])
     };
   };
@@ -618,13 +620,13 @@
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
   function system(country=currentCountry()){
     const n=normalizeCountry(country);
-    if(n==='Suriname')return {...SYSTEMS.Suriname,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
+    if(n==='Suriname')return {...SYSTEMS.Suriname,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url,sourceType:sourceBasis(n).type,sourceVerification:sourceBasis(n).verification};
     const code=COUNTRY_CODES[n]||worldCodeByName.get(n)||'',override=NATIONAL_OVERRIDES[code]||null,explicit=SYSTEMS[n],prof=override||nationalProfile(n),generated=profileSystem(n,prof);
     if(override&&generated)return generated;
     if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source,sourceUrl:generated.sourceUrl};
     if(generated)return generated;
-    if(explicit)return {...explicit,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
-    return {...GENERIC,label:n||GENERIC.label,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
+    if(explicit)return {...explicit,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url,sourceType:sourceBasis(n).type,sourceVerification:sourceBasis(n).verification};
+    return {...GENERIC,label:n||GENERIC.label,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url,sourceType:sourceBasis(n).type,sourceVerification:sourceBasis(n).verification};
   }
   function validateProfiles(){
     const issues=[];
@@ -637,6 +639,7 @@
         if(!row||!clean(row?.[2]))issues.push({country,code:'missing_stage',stage:id});
       }
       if(!/^https:\/\//i.test(String(sys?.sourceUrl||'')))issues.push({country,code:'missing_source_url'});
+      if(!['national-official','framework-only'].includes(String(sys?.sourceVerification||'')))issues.push({country,code:'missing_source_verification'});
     }
     return {ok:issues.length===0,total:countryList.length,issues};
   }
