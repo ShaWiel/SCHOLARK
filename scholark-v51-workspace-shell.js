@@ -168,7 +168,7 @@
       document.body.classList.remove('v53-emergency');
       $('#v53-emergency').forEach(x=>x.remove());
     }
-    return {reason,sidebar:$('#v51-sidebar').length,main:$('#v51-main').length,home:$('#v51-home').length,toggle:$('#v51-side-toggle').length,emergency:$('#v53-emergency').length};
+    return {reason,sidebar:document.querySelectorAll('#v51-sidebar').length,main:document.querySelectorAll('#v51-main').length,home:document.querySelectorAll('#v51-home').length,toggle:document.querySelectorAll('#v51-side-toggle').length,emergency:document.querySelectorAll('#v53-emergency').length};
   }
 
   function build(){
