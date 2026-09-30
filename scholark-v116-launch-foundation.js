@@ -13,7 +13,8 @@
   const locale=()=>String(document.documentElement.lang||localStorage.getItem('scholark_ui_language')||'en').slice(0,20);
   const onboardingKey='scholark_launch_onboarding_v1';
   const telemetryKey='scholark_launch_telemetry_v1';
-  let launchHealth=null,sourceAbort=null,errorCount=0,dialogReturn=null,dialogEpoch=0,dialogFocusTimer=0;
+  let launchHealth=null,sourceAbort=null,sourceRequestCountry='',sourceRequestPromise=null,errorCount=0,dialogReturn=null,dialogEpoch=0,dialogFocusTimer=0;
+  const sourceCache=new Map();
 
   const style=document.createElement('style');style.id='scholark-v116-style';style.textContent=`
     :where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #6d5dfc!important;outline-offset:3px!important}
@@ -51,9 +52,20 @@
   }
   async function health(force=false){if(launchHealth&&!force)return launchHealth;launchHealth=await api('/api/launch/health',{method:'GET'}).catch(()=>null);return launchHealth}
   async function sources(country){
-    sourceAbort?.abort?.();sourceAbort=new AbortController();
-    const r=await fetch('/api/launch/sources?country='+encodeURIComponent(country||''),{cache:'no-store',signal:sourceAbort.signal}),d=await r.json().catch(()=>({}));
-    return r.ok&&d?.ok?d:null;
+    const key=clean(country,120)||'';
+    if(sourceCache.has(key))return sourceCache.get(key);
+    if(sourceRequestPromise&&sourceRequestCountry===key)return sourceRequestPromise;
+    sourceAbort?.abort?.();sourceAbort=new AbortController();sourceRequestCountry=key;
+    const controller=sourceAbort;
+    sourceRequestPromise=(async()=>{
+      const r=await fetch('/api/launch/sources?country='+encodeURIComponent(key),{cache:'no-store',signal:controller.signal}),d=await r.json().catch(()=>({}));
+      const out=r.ok&&d?.ok?d:null;
+      if(out)sourceCache.set(key,out);
+      return out;
+    })().finally(()=>{
+      if(sourceAbort===controller){sourceAbort=null;sourceRequestCountry='';sourceRequestPromise=null}
+    });
+    return sourceRequestPromise;
   }
   function routeTo(hash){if(location.hash!==hash)location.hash=hash;else dispatchEvent(new HashChangeEvent('hashchange'))}
   function readOnboarding(){try{return JSON.parse(localStorage.getItem(onboardingKey)||'{}')}catch{return{}}}
@@ -112,14 +124,25 @@
   async function sourceBadge(){
     const wrap=$('#v96-country-context');if(!wrap)return;
     let a=$('.v116-source',wrap);if(!a){a=document.createElement('a');a.className='v116-source';a.target='_blank';a.rel='noopener';a.textContent='Education source basis ↗';$('.v96-country-copy',wrap)?.appendChild(a)}
-    const country=localStorage.getItem('scholark_country')||'Suriname',d=await sources(country).catch(()=>null),best=d?.sources?.find(x=>x.type==='national-documents')||d?.sources?.find(x=>x.type==='national-ministry')||d?.sources?.[0];
-    if(best?.url){
+    const country=localStorage.getItem('scholark_country')||'Suriname';
+    const paint=(best,verification)=>{
+      if(!best?.url)return false;
+      const national=verification==='national-official';
       a.href=best.url;
-      const national=d?.verification==='national-official';
       a.textContent=(national?'National education source':'ISCED framework basis')+' ↗';
       a.title=(national?'National official source: ':'International framework fallback: ')+best.name;
       a.dataset.sourceVerification=national?'national-official':'framework-only';
-    }else{a.removeAttribute('href');a.textContent='Education source basis';a.title='Source information unavailable';delete a.dataset.sourceVerification}
+      return true;
+    };
+    // Paint the already-validated country provenance immediately so repeated
+    // MutationObserver syncs cannot temporarily downgrade or clear the badge.
+    const local=window.__SCHOLARK_COUNTRY__?.sourceBasis?.(country);
+    const localPainted=paint(local,local?.verification);
+    const d=await sources(country).catch(()=>null);
+    if((localStorage.getItem('scholark_country')||'Suriname')!==country||!a.isConnected)return;
+    const best=d?.sources?.find(x=>x.type==='national-documents')||d?.sources?.find(x=>x.type==='national-ministry')||d?.sources?.[0];
+    if(paint(best,d?.verification))return;
+    if(!localPainted){a.removeAttribute('href');a.textContent='Education source basis';a.title='Source information unavailable';delete a.dataset.sourceVerification}
   }
 
   function privacyHtml(){
