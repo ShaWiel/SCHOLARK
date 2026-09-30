@@ -303,7 +303,8 @@
     setTimeout(()=>refresh(true),55);scheduleConsume(65)
   });
   addEventListener('scholark-workspace-entry-ready',()=>setTimeout(()=>refresh(true),20));
-  addEventListener('scholark-workspace-change',()=>setTimeout(()=>refresh(false),80));
+  addEventListener('scholark-workspace-change',()=>setTimeout(()=>refresh(true),70));
+  addEventListener('scholark-experience-ready',e=>{if(e?.detail?.tool===route())setTimeout(()=>refresh(true),0)});
   addEventListener('scholark-runtime-ready',()=>setTimeout(()=>{refresh(true);scheduleConsume(60)},70));
   addEventListener('scholark-language-ready',()=>setTimeout(()=>refresh(true),40));
   addEventListener('scholark:focus-complete',()=>setTimeout(()=>{refresh(true);open('progress')},220));
