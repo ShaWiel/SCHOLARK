@@ -176,6 +176,12 @@
       }
     }
   }
+  async function manage(action='overview'){
+    const s=session();if(!s?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return false}
+    const r=await fetch('/api/billing/portal',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+s.access_token},body:JSON.stringify({action})}),d=await r.json().catch(()=>({}));
+    if(!r.ok||!d?.ok||!/^https:\/\//i.test(String(d.url||'')))throw new Error(d?.error||'Could not open subscription management.');
+    location.href=d.url;return true;
+  }
   function resumePending(){const plan=sessionStorage.getItem('scholark_pending_plan');if(!plan||!token())return;sessionStorage.removeItem('scholark_pending_plan');setTimeout(()=>choose(plan),120)}
   function paidButtonFrom(e){const b=e.target.closest?.('#v41-home-pricing [data-plan]');return b&&['plus','pro'].includes(String(b.dataset.plan||''))?b:null}
   function wire(){
@@ -187,5 +193,5 @@
   addEventListener('scholark:auth-changed',()=>{refresh().then(resumePending)});
   addEventListener('pageshow',()=>refresh());
   wire();setTimeout(()=>{refresh();getConfig().catch(()=>{})},450);
-  window.__SCHOLARK_BILLING__={choose,refresh,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),prewarm:()=>initPaddle(),release:'r187'};
+  window.__SCHOLARK_BILLING__={choose,refresh,manage,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),prewarm:()=>initPaddle(),release:'r201'};
 })();
