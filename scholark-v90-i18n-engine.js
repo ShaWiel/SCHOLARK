@@ -933,12 +933,13 @@
     // Always show the same transition state for every interface language.
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
     $('#v90-switch-copy').textContent='Adapting SCHOLARK to '+nativeName(target)+'…';
-    const transitionFailsafe=setTimeout(()=>{
+    activeTransitionFailsafe=setTimeout(()=>{
       if(epoch!==translationEpoch)return;
       document.documentElement.dataset.scholarkI18nReady=target;
       releaseHomeSurface();
       document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
-      try{activeUiAbort?.abort()}catch{}overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;
+      try{activeUiAbort?.abort()}catch{}overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;activeTransitionFailsafe=0;
+      window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:'failsafe',home,dynamic,coverage:visibleCoverage(560),degraded:true}}));
       console.warn('[SCHOLARK] language transition released by failsafe',target);
     },16000);
 
