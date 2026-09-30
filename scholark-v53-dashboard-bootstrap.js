@@ -36,7 +36,7 @@
 
     document.body.classList.add('v51-workspace');
     document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v53-emergency','v41-home');
-    $('#v53-emergency').forEach(x=>x.remove());
+    document.querySelectorAll('#v53-emergency').forEach(x=>x.remove());
     main.hidden=false;side.hidden=false;
     main.style.removeProperty('display');side.style.removeProperty('display');
     $$('.v51-page',main).forEach(p=>p.classList.toggle('active',p===page));
