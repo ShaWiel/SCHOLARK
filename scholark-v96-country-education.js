@@ -45,7 +45,11 @@
   }
   function scheduleApply(delay=80){
     clearTimeout(applyTimer);
-    applyTimer=setTimeout(()=>apply(),delay);
+    const run=()=>{
+      if(document.documentElement.classList.contains('scholark-language-switching')){applyTimer=setTimeout(run,120);return}
+      apply();
+    };
+    applyTimer=setTimeout(run,delay);
   }
   const GENERIC={
     label:'International / ISCED',
