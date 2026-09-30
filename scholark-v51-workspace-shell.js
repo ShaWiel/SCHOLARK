@@ -164,12 +164,12 @@
   }
   function dashboardStructureHealthy(){
     if(!main?.isConnected)return true;
-    const pages=$('[data-v51-page="dashboard"]',main),dash=pages[0];
+    const pages=Array.from(main.querySelectorAll('[data-v51-page="dashboard"]')),dash=pages[0];
     if(pages.length!==1||!dash)return false;
     const one=sel=>dash.querySelectorAll(sel).length===1;
     if(!one(':scope > .v51-shell')||!one('.v51-level-top')||!one('.v51-levels')||!one('.v51-head')||!one('.v51-head h1')||!one('.v51-grid'))return false;
     const grid=$('.v51-grid',dash);
-    const ids=$('[data-v51-tool]',grid).map(x=>x.dataset.v51Tool).filter(Boolean);
+    const ids=Array.from(grid.querySelectorAll('[data-v51-tool]')).map(x=>x.dataset.v51Tool).filter(Boolean);
     const expected=new Set([...TOOLS,...PRO,...COMING].map(x=>x[0]).filter(x=>x!=='dashboard'));
     return ids.length===new Set(ids).size&&ids.length===expected.size&&ids.every(id=>expected.has(id));
   }
@@ -179,14 +179,14 @@
     pages.slice(1).forEach(x=>x.remove());
     if(!dash)return false;
     dash.innerHTML=`<div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLARK SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLARK WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLARK should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI','AI Tutor','Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Keep learning projects, research, notes and ongoing work connected in one place.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div>`;
-    $('[data-v51-tool]',dash).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
+    Array.from(dash.querySelectorAll('[data-v51-tool]')).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
     renderLevels();resetDashboardCanonical();
     return true;
   }
   function sanitizeWorkspace(reason='auto'){
     side=keepSingleton('#v51-sidebar',side);main=keepSingleton('#v51-main',main);home=keepSingleton('#v51-home',home);toggle=keepSingleton('#v51-side-toggle',toggle);
     if(main?.isConnected){
-      $(':scope > [data-v51-page="fallback"]',main).slice(1).forEach(x=>x.remove());
+      Array.from(main.querySelectorAll(':scope > [data-v51-page="fallback"]')).slice(1).forEach(x=>x.remove());
       if(!dashboardStructureHealthy())rebuildDashboard();
     }
     if(side?.isConnected&&main?.isConnected){
