@@ -142,7 +142,7 @@ function launchHealth(){
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
     billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
-    legal:{product:LEGAL_NAME,supportContactConfigured:!!SUPPORT_EMAIL,legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
+    legal:{product:LEGAL_NAME,supportContactConfigured:!!SUPPORT_EMAIL,supportEmail:SUPPORT_EMAIL||null,legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
     readiness:{codeReady,commerciallyReady:!hardBlock},
     blockers,
     publicCommercialLaunchReady:!hardBlock
