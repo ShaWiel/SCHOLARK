@@ -188,14 +188,14 @@
   function refresh(force=false){
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       if(busy)return;const api=core();if(!api)return;const tool=route();const root=rootFor(tool);if(!root)return;
-      const owned=$('.v111-live[data-v111-owner]',root),old=owned[0]||$('.v111-live',root);
+      const owned=[...root.querySelectorAll('.v111-live[data-v111-owner]')],old=owned[0]||$('.v111-live',root);
       // A forced refresh used to remove only one panel. If two observers raced,
       // the second panel survived every later refresh and made the Workspace
       // look permanently duplicated. Collapse every SCHOLARK-owned panel first.
       owned.slice(1).forEach(x=>x.remove());
       if(old&&!force){if(old.dataset)old.dataset.v111Tool=tool;augmentTutorMessages();return}
       busy=true;try{
-        $('.v111-live[data-v111-owner]',root).forEach(x=>x.remove());
+        root.querySelectorAll('.v111-live[data-v111-owner]').forEach(x=>x.remove());
         const html=htmlFor(tool,api.compute());
         if(html){
           root.insertAdjacentHTML('afterbegin',html);
