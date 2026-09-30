@@ -113,7 +113,13 @@
     const wrap=$('#v96-country-context');if(!wrap)return;
     let a=$('.v116-source',wrap);if(!a){a=document.createElement('a');a.className='v116-source';a.target='_blank';a.rel='noopener';a.textContent='Education source basis ↗';$('.v96-country-copy',wrap)?.appendChild(a)}
     const country=localStorage.getItem('scholark_country')||'Suriname',d=await sources(country).catch(()=>null),best=d?.sources?.find(x=>x.type==='national-documents')||d?.sources?.find(x=>x.type==='national-ministry')||d?.sources?.[0];
-    if(best?.url){a.href=best.url;a.title='Source basis: '+best.name}else{a.removeAttribute('href');a.title='Official source information unavailable'}
+    if(best?.url){
+      a.href=best.url;
+      const national=d?.verification==='national-official';
+      a.textContent=(national?'National education source':'ISCED framework basis')+' ↗';
+      a.title=(national?'National official source: ':'International framework fallback: ')+best.name;
+      a.dataset.sourceVerification=national?'national-official':'framework-only';
+    }else{a.removeAttribute('href');a.textContent='Education source basis';a.title='Source information unavailable';delete a.dataset.sourceVerification}
   }
 
   function privacyHtml(){
