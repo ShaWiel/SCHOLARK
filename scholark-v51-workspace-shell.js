@@ -157,8 +157,27 @@
   }
   function refreshLogo(){const host=$('.v51-logo',side);if(!host||host.dataset.ready)return;const mark=officialLogoNode();if(mark){host.innerHTML='';host.appendChild(mark);host.dataset.ready='1';return}host.innerHTML='<span style="font:950 11px Inter;color:#c9ff6a">SCHOLARK</span>';}
 
+  function keepSingleton(selector,preferred){
+    const rows=$(selector),keep=preferred?.isConnected?preferred:(rows[0]||null);
+    rows.forEach(x=>{if(x!==keep)x.remove()});
+    return keep;
+  }
+  function sanitizeWorkspace(reason='auto'){
+    side=keepSingleton('#v51-sidebar',side);main=keepSingleton('#v51-main',main);home=keepSingleton('#v51-home',home);toggle=keepSingleton('#v51-side-toggle',toggle);
+    if(side?.isConnected&&main?.isConnected){
+      document.body.classList.remove('v53-emergency');
+      $('#v53-emergency').forEach(x=>x.remove());
+    }
+    return {reason,sidebar:$('#v51-sidebar').length,main:$('#v51-main').length,home:$('#v51-home').length,toggle:$('#v51-side-toggle').length,emergency:$('#v53-emergency').length};
+  }
+
   function build(){
-    if(side)return;
+    sanitizeWorkspace('build');
+    if(side?.isConnected&&main?.isConnected)return;
+    // A partial shell is more dangerous than rebuilding it: it lets legacy
+    // recovery layers create a second surface beside the remaining half.
+    [side,main,home,toggle].filter(x=>x?.isConnected).forEach(x=>x.remove());
+    side=main=home=toggle=null;
     side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><b>SCHOLARK</b><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${ic}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
     toggle=document.createElement('button');toggle.id='v51-side-toggle';toggle.type='button';toggle.onclick=()=>setCollapsed(!document.body.classList.contains('v51-collapsed'));document.body.appendChild(toggle);
     home=document.createElement('button');home.id='v51-home';home.innerHTML='<b>⌂</b> Return to homepage';home.onclick=goHome;document.body.appendChild(home);
@@ -232,6 +251,7 @@
         clearTimeout(workspaceEntryFailsafe);workspaceEntryFailsafe=0;
         document.documentElement.classList.remove('scholark-workspace-entering');
         delete document.documentElement.dataset.scholarkWorkspaceEntry;
+        sanitizeWorkspace('entry-ready');
         window.dispatchEvent(new CustomEvent('scholark-workspace-entry-ready',{detail:{epoch,route:route(),healthy,error}}));
       }
     }
@@ -479,7 +499,7 @@
   }
 
   function cleanConflicts(){
-    build();$('#v49-sidebar-toggle')?.setAttribute('hidden','');$('#v48-sidebar')?.setAttribute('hidden','');$('#v48-dashboard')?.setAttribute('hidden','');$('#v48-return-home')?.setAttribute('hidden','');$$('#v41-studio-workspace .v41-mode[data-mode="book"],#v29-home-layer .v29-type[data-mode="book"],#v29-home-layer .v29-tab[data-mode="book"]').forEach(x=>x.remove());
+    build();sanitizeWorkspace('route-cleanup');$('#v49-sidebar-toggle')?.setAttribute('hidden','');$('#v48-sidebar')?.setAttribute('hidden','');$('#v48-dashboard')?.setAttribute('hidden','');$('#v48-return-home')?.setAttribute('hidden','');$$('#v41-studio-workspace .v41-mode[data-mode="book"],#v29-home-layer .v29-type[data-mode="book"],#v29-home-layer .v29-tab[data-mode="book"]').forEach(x=>x.remove());
     const active=workspaceRoute();const entryEpoch=active?beginWorkspaceEntry('route-cleanup'):0;document.body.classList.toggle('v51-workspace',active);document.documentElement.classList.toggle('v51-workspace-root',active);if(!active){clearModes();document.documentElement.classList.remove('scholark-workspace-entering');return}
     document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
     if(entryEpoch)scheduleWorkspaceEntryFinish(entryEpoch);
@@ -498,5 +518,5 @@
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
-  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,entryState:()=>({epoch:workspaceEntryEpoch,homeEpoch:homeTransitionEpoch,busy:workspaceEntryBusy(),route:route(),bodyWorkspace:document.body.classList.contains('v51-workspace'),bodyPublic:document.body.classList.contains('v55-public-home'),htmlPublic:document.documentElement.classList.contains('v55-public-home')}),getActive:()=>state.active};
+  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,sanitize:reason=>sanitizeWorkspace(reason||'external'),prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,entryState:()=>({epoch:workspaceEntryEpoch,homeEpoch:homeTransitionEpoch,busy:workspaceEntryBusy(),route:route(),bodyWorkspace:document.body.classList.contains('v51-workspace'),bodyPublic:document.body.classList.contains('v55-public-home'),htmlPublic:document.documentElement.classList.contains('v55-public-home')}),getActive:()=>state.active};
 })();
