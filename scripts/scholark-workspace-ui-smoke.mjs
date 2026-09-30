@@ -194,8 +194,59 @@ for(const [code,expected] of Object.entries(localeExpect)){
   }
   check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher} | state=${JSON.stringify(localeState)}`);
 }
+
+// Atomic workspace-language switch: the visible workspace must be hidden until
+// the new language has been fully applied and the layout has settled.
+const atomicLanguageStart=await page.evaluate(()=>{
+  window.__SCHOLARK_I18N__?.changeLanguage?.('es');
+  const main=document.querySelector('#v51-main');
+  return {
+    switching:document.documentElement.classList.contains('scholark-language-switching'),
+    visibility:main?getComputedStyle(main).visibility:'',
+    overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open')===true
+  };
+});
+check(atomicLanguageStart.switching===true,'Workspace language switch did not enter atomic mode');
+check(atomicLanguageStart.visibility==='hidden','Workspace stayed visible during atomic language replacement');
+check(atomicLanguageStart.overlay===true,'Workspace language switch did not show transition overlay');
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.dataset.scholarkI18nReady==='es'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:6000});
+
+// Stress stale-translation cancellation by switching faster than a normal user.
+await page.evaluate(()=>{
+  const api=window.__SCHOLARK_I18N__;
+  const seq=['fr','de','pt','it','en','nl','fr','es'];
+  seq.forEach((lc,i)=>setTimeout(()=>api?.changeLanguage?.(lc),i*14));
+});
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.lang==='es'&&document.documentElement.dataset.scholarkI18nReady==='es'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:8000});
+await page.waitForTimeout(140);
+const languageLayout=await page.evaluate(()=>{
+  const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active');
+  const head=dash?.querySelector('.v51-head'),h1=head?.querySelector('h1'),grid=dash?.querySelector('.v51-grid'),main=document.querySelector('#v51-main');
+  const visibleHuge=dash?[...dash.querySelectorAll('*')].filter(el=>{
+    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+    return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'&&parseFloat(cs.fontSize||'0')>72;
+  }).map(el=>({tag:el.tagName,text:String(el.textContent||'').trim().slice(0,80),font:getComputedStyle(el).fontSize})):[];
+  const hr=h1?.getBoundingClientRect(),gr=grid?.getBoundingClientRect();
+  return {
+    title:String(h1?.textContent||'').replace(/\s+/g,' ').trim(),
+    h1Count:dash?.querySelectorAll('.v51-head h1').length||0,
+    titleBottom:hr?.bottom||0,
+    gridTop:gr?.top||0,
+    visibleHuge,
+    mainVisibility:main?getComputedStyle(main).visibility:'',
+    switching:document.documentElement.classList.contains('scholark-language-switching'),
+    ready:document.documentElement.dataset.scholarkI18nReady||'',
+    overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open')===true
+  };
+});
+check(languageLayout.title==='Tu espacio de aprendizaje y creación.',`Rapid language switching left wrong dashboard title: ${languageLayout.title}`);
+check(languageLayout.h1Count===1,`Dashboard headline duplicated after language stress: ${languageLayout.h1Count}`);
+check(languageLayout.visibleHuge.length===0,`Oversized workspace text appeared after language stress: ${JSON.stringify(languageLayout.visibleHuge)}`);
+check(languageLayout.titleBottom<=languageLayout.gridTop,`Translated dashboard headline overlaps tool grid: ${JSON.stringify(languageLayout)}`);
+check(languageLayout.mainVisibility!=='hidden'&&!languageLayout.switching&&!languageLayout.overlay&&languageLayout.ready==='es',`Workspace did not settle after language stress: ${JSON.stringify(languageLayout)}`);
+
 await page.selectOption('#v90-language','nl');
-await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl',{timeout:4000});
+await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl'&&document.documentElement.lang==='nl'&&document.documentElement.dataset.scholarkI18nReady==='nl'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:6000});
 await page.waitForTimeout(80);
 
 await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.set?.('Suriname','ci-palette'));
