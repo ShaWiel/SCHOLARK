@@ -542,7 +542,7 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLARK | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v9-global74-atomic-layout';
+  const CACHE_VERSION='v9-global74-resilient-atomic-layout';
   const LEGACY_CACHE_VERSIONS=['v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
