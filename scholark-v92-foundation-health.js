@@ -8,6 +8,7 @@
   let inflight=null,lastReport=null,lastRun=0,runtimeReady=false;
 
   function reconcile(){
+    if(document.documentElement.classList.contains('scholark-workspace-entering')){setTimeout(reconcile,140);return}
     const r=route();if(!modern.has(r))return;
     document.body.classList.add('v51-workspace');
     if(inactive.has(r)){document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');$('#v41-studio-workspace')?.setAttribute('hidden','');$('#v25-book')?.classList.remove('open');setTimeout(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.(r==='book'?'book':'studio'),0);return}
