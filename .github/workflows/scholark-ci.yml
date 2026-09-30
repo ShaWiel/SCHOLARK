@@ -46,6 +46,8 @@ jobs:
           exit 1
       - name: Run full local API smoke suite
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+      - name: Run concurrent launch load smoke
+        run: node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
       - name: Install browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
