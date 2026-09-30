@@ -106,12 +106,15 @@
   }
 
   async function call(payload){
-    await window.__SCHOLARK_CREDITS__?.authorize?.('language_lesson');
-    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),100000);
+    const test=!!window.__SCHOLARK_TEST_MODE__,session=window.__SCHOLARK_V72_CLOUD__?.currentSession?.();
+    if(!test&&!session?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');throw new Error('Sign in to build language lessons and protect your SCHOLARK credits.')}
+    if(!test)await window.__SCHOLARK_CREDITS__?.authorize?.('language_lesson');
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),100000),requestId=(globalThis.crypto?.randomUUID?.()||('sch-lang-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
+    const headers={'content-type':'application/json','x-scholark-request-id':requestId};if(session?.access_token)headers.authorization='Bearer '+session.access_token;
     try{
-      const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'language_learning',...payload}),signal:ctrl.signal});
+      const r=await fetch('/api/learning/generate',{method:'POST',headers,body:JSON.stringify({mode:'language_learning',...payload}),signal:ctrl.signal});
       const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok||!d.result)throw new Error(d?.error||'Language Learner AI is unavailable');
-      await window.__SCHOLARK_CREDITS__?.consume?.('language_lesson',{tier:d.tier||'',provider:d.provider||'',model:d.model||''});
+      if(d?.usage?.serverCharged||d?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
       return d;
     }finally{clearTimeout(timer)}
   }
