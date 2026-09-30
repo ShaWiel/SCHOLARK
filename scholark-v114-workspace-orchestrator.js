@@ -303,7 +303,7 @@
 
   function verify(){
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
-    const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=$('.v114-connect'),activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
+    const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=[...document.querySelectorAll('.v114-connect')],activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
     return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r202',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
