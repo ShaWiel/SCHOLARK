@@ -501,6 +501,11 @@
     VA:P(['Early schooling follows Italian / international systems','Primary schooling via Italian / international institutions','Lower secondary via Italian / international institutions','Upper secondary via Italian / international institutions','Pontifical / higher education institutions'],{basic:'Schooling via external systems',voj:'Lower Secondary',vos:'Upper Secondary',higher:'Pontifical Higher Education'},'Vocational pathways follow host-system provision')
   };
 
+  const EDUCATION_SOURCE_GLOBAL={name:'UNESCO Institute for Statistics · ISCED',url:'https://uis.unesco.org/en/glossary-term/levels-education',type:'international-framework'};
+  const EDUCATION_SOURCES={
+    Suriname:{name:'Ministerie van Onderwijs, Wetenschap en Cultuur · Suriname',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/',type:'national-ministry'}
+  };
+  const sourceBasis=country=>EDUCATION_SOURCES[normalizeCountry(country)]||EDUCATION_SOURCE_GLOBAL;
   const nationalProfile=(country)=>{
     const code=COUNTRY_CODES[country]||worldCodeByName.get(country)||'';
     return NATIONAL_OVERRIDES[code]||NATIONAL_SCHEMES[NATIONAL_SCHEME_CODES[code]]||null;
@@ -519,7 +524,8 @@
       label:country,
       groups:profile.groups||null,
       vocational:profile.vocational||'',
-      source:'UNESCO UIS ISCED / national terminology',
+      source:sourceBasis(country).name,
+      sourceUrl:sourceBasis(country).url,
       stages:ids.map((id,i)=>[id,icons[i],profile.titles[i],d[id]])
     };
   };
@@ -610,7 +616,30 @@
     return aliases[low]||countryList.find(c=>c.toLowerCase()===low)||localized||worldLocalized||x;
   }
   function currentCountry(){return normalizeCountry(localStorage.getItem(KEY)||'Suriname')||'Suriname'}
-  function system(country=currentCountry()){const n=normalizeCountry(country);if(n==='Suriname')return SYSTEMS.Suriname;const code=COUNTRY_CODES[n]||worldCodeByName.get(n)||'',override=NATIONAL_OVERRIDES[code]||null,explicit=SYSTEMS[n],prof=override||nationalProfile(n),generated=profileSystem(n,prof);if(override&&generated)return generated;if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source};return generated||explicit||{...GENERIC,label:n||GENERIC.label}}
+  function system(country=currentCountry()){
+    const n=normalizeCountry(country);
+    if(n==='Suriname')return {...SYSTEMS.Suriname,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
+    const code=COUNTRY_CODES[n]||worldCodeByName.get(n)||'',override=NATIONAL_OVERRIDES[code]||null,explicit=SYSTEMS[n],prof=override||nationalProfile(n),generated=profileSystem(n,prof);
+    if(override&&generated)return generated;
+    if(generated&&explicit)return {...explicit,groups:generated.groups,vocational:generated.vocational,source:generated.source,sourceUrl:generated.sourceUrl};
+    if(generated)return generated;
+    if(explicit)return {...explicit,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
+    return {...GENERIC,label:n||GENERIC.label,source:sourceBasis(n).name,sourceUrl:sourceBasis(n).url};
+  }
+  function validateProfiles(){
+    const issues=[];
+    for(const country of countryList){
+      const sys=system(country),stages=Array.isArray(sys?.stages)?sys.stages:[],ids=stages.map(x=>x?.[0]);
+      if(stages.length!==5)issues.push({country,code:'stage_count',count:stages.length});
+      if(new Set(ids).size!==5)issues.push({country,code:'duplicate_stage_ids'});
+      for(const id of ['young','primary','secondary','student','adult']){
+        const row=stages.find(x=>x?.[0]===id);
+        if(!row||!clean(row?.[2]))issues.push({country,code:'missing_stage',stage:id});
+      }
+      if(!/^https:\/\//i.test(String(sys?.sourceUrl||'')))issues.push({country,code:'missing_source_url'});
+    }
+    return {ok:issues.length===0,total:countryList.length,issues};
+  }
   function stage(id,country=currentCountry()){return system(country).stages.find(x=>x[0]===id)||GENERIC.stages.find(x=>x[0]===id)}
   function setCountry(value,source='ui'){
     const country=normalizeCountry(value);if(!country)return currentCountry();
@@ -765,5 +794,5 @@
   addEventListener('scholark-language-complete',()=>scheduleApply(160));
   [100,500].forEach(ms=>setTimeout(()=>scheduleApply(0),ms));
 
-  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,fromCode:countryFromCode,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,countryProfileCoverage:()=>({total:countryList.length,covered:countryList.filter(x=>x==='Suriname'||!!nationalProfile(x)||!!SYSTEMS[x]).length,missing:countryList.filter(x=>x!=='Suriname'&&!nationalProfile(x)&&!SYSTEMS[x])}),global:true};
+  window.__SCHOLARK_COUNTRY__={current:currentCountry,set:setCountry,system,stage,normalize:normalizeCountry,fromCode:countryFromCode,displayName:countryName,localizedStage,language:uiLang,systems:SYSTEMS,apply,surinameTracks:SURINAME_TRACKS,schoolLevelCopy:()=>LEVEL_COPY[uiLang()]||LEVEL_COPY.en,staticUiLanguages:[...STATIC_UI_LANGS],countries:[...countryList],countryCount:countryList.length,sourceBasis,validateProfiles,countryProfileCoverage:()=>({total:countryList.length,covered:countryList.filter(x=>x==='Suriname'||!!nationalProfile(x)||!!SYSTEMS[x]).length,missing:countryList.filter(x=>x!=='Suriname'&&!nationalProfile(x)&&!SYSTEMS[x])}),global:true};
 })();
