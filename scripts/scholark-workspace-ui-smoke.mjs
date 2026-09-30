@@ -144,6 +144,17 @@ const idleTopbarMutations=await page.evaluate(async()=>{
   await new Promise(r=>setTimeout(r,700));o.disconnect();return count;
 });
 check(idleTopbarMutations<=1,`Homepage topbar kept mutating while idle: ${idleTopbarMutations} mutations`);
+check(await visible('.v116-public-actions',5000),'Public privacy/feedback controls did not mount');
+await page.click('[data-v116-public-privacy]');
+check(await visible('#v116-dialog.open',3000),'Privacy & terms dialog did not open');
+check((await page.locator('#v116-dialog').getAttribute('role'))==='dialog'&&(await page.locator('#v116-dialog').getAttribute('aria-modal'))==='true','Privacy dialog accessibility semantics missing');
+const privacyText=(await page.locator('#v116-dialog').innerText()).toLowerCase();
+check(privacyText.includes('your data stays under your control')&&privacyText.includes('product terms')&&privacyText.includes('paddle'),'Privacy/product/billing notice is incomplete');
+await page.keyboard.press('Escape');
+check(await page.locator('#v116-dialog.open').count()===0,'Privacy dialog did not close with Escape');
+await page.click('[data-v116-public-feedback]');
+check(await visible('#v116-dialog.open .v116-feedback',3000),'Feedback dialog did not open');
+await page.keyboard.press('Escape');
 timings.push(['home-topbar-boot',topbarReadyMs]);
 
 const bootStarted=Date.now();
@@ -335,6 +346,15 @@ check(/31, 43, 91|56, 82, 148|23, 35, 73/.test(darkGroupDiag.background)||/#1f2b
 const countryCoverage=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.countryProfileCoverage?.()||null);
 check(countryCoverage&&countryCoverage.missing?.length===0,`Country education profiles missing: ${countryCoverage?.missing?.join(', ')||'coverage API unavailable'}`);
 check(Number(countryCoverage?.covered)===Number(countryCoverage?.total),`Country education coverage incomplete: ${countryCoverage?.covered}/${countryCoverage?.total}`);
+const profileValidation=await page.evaluate(()=>window.__SCHOLARK_COUNTRY__?.validateProfiles?.()||null);
+check(profileValidation?.ok===true&&profileValidation?.issues?.length===0,`Country profile validation failed: ${JSON.stringify(profileValidation?.issues?.slice(0,12)||profileValidation)}`);
+const sourceValidation=await page.evaluate(()=>{
+  const api=window.__SCHOLARK_COUNTRY__,bad=[];
+  for(const country of api?.countries||[]){const s=api?.sourceBasis?.(country);if(!s?.name||!/^https:\/\//i.test(String(s?.url||'')))bad.push(country)}
+  return bad;
+});
+check(sourceValidation.length===0,`Country source provenance missing: ${sourceValidation.slice(0,12).join(', ')}`);
+check(await page.locator('#v96-country-context .v116-source').count()===1,'Dashboard education source link missing');
 const countryIntegrity=await page.evaluate(()=>{
   const api=window.__SCHOLARK_COUNTRY__,bad=[];
   for(const country of api?.countries||[]){
@@ -724,6 +744,31 @@ check((await bookComing.innerText()).includes('COMING SOON'),'Book Studio featur
 await route('dashboard','#v51-main [data-v51-page="dashboard"].active');
 check(await visible('.v51-levels.v51-levels-suriname',5000),'Suriname groups disappeared after workspace route round-trip');
 
+// Full 74-language route/layout pass. Dynamic languages use the local deterministic
+// test translator in CI, while static languages also exercise their real translation maps.
+const languageMatrix=await page.evaluate(async()=>{
+  const api=window.__SCHOLARK_I18N__,langs=api?.langs||[],rtl=new Set(api?.rtlCodes||[]),issues=[];
+  for(const row of langs){
+    const code=row[0];
+    try{await api.changeLanguage(code)}catch(e){issues.push(code+': change failed '+String(e?.message||e));continue}
+    const dash=document.querySelector('#v51-main [data-v51-page="dashboard"].active'),h1=dash?.querySelector('.v51-head h1'),grid=dash?.querySelector('.v51-grid');
+    const hr=h1?.getBoundingClientRect(),gr=grid?.getBoundingClientRect(),font=parseFloat(h1?getComputedStyle(h1).fontSize:'0')||0;
+    if(document.documentElement.lang!==code)issues.push(code+': html lang='+document.documentElement.lang);
+    if((document.documentElement.dir==='rtl')!==rtl.has(code))issues.push(code+': dir='+document.documentElement.dir);
+    if(document.documentElement.classList.contains('scholark-language-switching'))issues.push(code+': switch lock remained');
+    if(document.querySelector('#v90-language-overlay')?.classList.contains('open'))issues.push(code+': overlay remained');
+    if(font>72)issues.push(code+': oversized title '+font);
+    if(hr&&gr&&hr.bottom>gr.top+2)issues.push(code+': title overlaps grid');
+    if((dash?.querySelectorAll('.v51-head h1').length||0)!==1)issues.push(code+': duplicate dashboard title');
+  }
+  await api.changeLanguage('nl');
+  return {count:langs.length,issues};
+});
+check(languageMatrix.count===74,`Language matrix expected 74 languages, got ${languageMatrix.count}`);
+check(languageMatrix.issues.length===0,`74-language layout pass failed: ${languageMatrix.issues.slice(0,15).join(' | ')}`);
+
+check(await page.locator('.v116-side-actions').count()===1,'Workspace privacy/feedback controls missing');
+check(await page.locator('#v116-onboarding').count()<=1,'Onboarding duplicated in Workspace');
 const runtimeErrors=await page.evaluate(()=>window.__SCHOLARK_RUNTIME__?.errors?.()||[]);
 check(runtimeErrors.length===0,'Runtime loader errors: '+runtimeErrors.join(', '));
 const duplicateIds=await page.evaluate(()=>{
@@ -731,6 +776,30 @@ const duplicateIds=await page.evaluate(()=>{
 });
 check(duplicateIds.length===0,'Duplicate DOM ids: '+duplicateIds.join(', '));
 if(pageErrors.length) failures.push('Browser errors: '+[...new Set(pageErrors)].slice(0,8).join(' | '));
+
+// Mobile/touch launch pass.
+const mobileContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+const mobile=await mobileContext.newPage();
+await mobile.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl');localStorage.setItem('scholark_country','Suriname');localStorage.setItem('scholark_learning_level','secondary')});
+try{
+  await mobile.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
+  await mobile.waitForSelector('#v55-topbar',{state:'visible',timeout:8000});
+  const homeMobile=await mobile.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,actions:document.querySelectorAll('.v116-public-actions button').length}));
+  check(homeMobile.sw<=homeMobile.w+4,`Mobile homepage has horizontal overflow: ${JSON.stringify(homeMobile)}`);
+  check(homeMobile.actions===2,'Mobile public privacy/feedback actions missing');
+  await mobile.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
+  await mobile.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
+  await mobile.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
+  const mobileState=await mobile.evaluate(()=>{
+    const visibleButtons=[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active button,.v116-side-actions button')].filter(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}).map(x=>({text:(x.textContent||'').trim().slice(0,40),h:x.getBoundingClientRect().height}));
+    const main=document.querySelector('#v51-main'),h1=document.querySelector('#v51-main [data-v51-page="dashboard"].active .v51-head h1');
+    return {sw:document.documentElement.scrollWidth,w:innerWidth,mainVisible:main?getComputedStyle(main).visibility:'',titleFont:h1?parseFloat(getComputedStyle(h1).fontSize):0,smallTargets:visibleButtons.filter(x=>x.h<42).slice(0,10)};
+  });
+  check(mobileState.sw<=mobileState.w+4,`Mobile Workspace has horizontal overflow: ${JSON.stringify(mobileState)}`);
+  check(mobileState.mainVisible!=='hidden'&&mobileState.titleFont<=60,'Mobile Workspace did not settle cleanly');
+  check(mobileState.smallTargets.length===0,`Touch targets below ~44px remain: ${JSON.stringify(mobileState.smallTargets)}`);
+  timings.push(['mobile-touch-pass',0]);
+}catch(e){failures.push('Mobile/touch QA threw '+String(e?.message||e))}finally{await mobileContext.close()}
 
 console.log('\nSCHOLARK WORKSPACE UI SMOKE');
 for(const [name,ms] of timings) console.log(` ✓ ${name}: ${ms}ms`);
