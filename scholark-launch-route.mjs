@@ -42,16 +42,16 @@ function safeMeta(input){
 }
 const SOURCE_BASE=Object.freeze({
   global:[
-    {name:'UNESCO Institute for Statistics · ISCED education levels',url:'https://uis.unesco.org/en/glossary-term/levels-education',type:'international-framework',official:true}
+    {name:'UNESCO Institute for Statistics · ISCED education levels',url:'https://uis.unesco.org/en/glossary-term/levels-education',type:'international-framework',official:true,verification:'framework-only'}
   ],
   Suriname:[
-    {name:'Ministerie van Onderwijs, Wetenschap en Cultuur · Suriname',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/',type:'national-ministry',official:true},
-    {name:'MinOWC · official documents and education policy',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/',type:'national-documents',official:true}
+    {name:'Ministerie van Onderwijs, Wetenschap en Cultuur · Suriname',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/',type:'national-ministry',official:true,verification:'national-official'},
+    {name:'MinOWC · official documents and education policy',url:'https://gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/',type:'national-documents',official:true,verification:'national-official'}
   ]
 });
 function educationSources(country){
-  const c=clean(country,120)||'';
-  return [...SOURCE_BASE.global,...(SOURCE_BASE[c]||[])];
+  const c=clean(country,120)||'',national=SOURCE_BASE[c]||[],verification=national.length?'national-official':'framework-only';
+  return {verification,sources:[...SOURCE_BASE.global,...national]};
 }
 const EXPORT_TABLES=[
   ['profiles','user_id'],['goals','user_id'],['planner_tasks','user_id'],['projects','user_id'],
@@ -123,7 +123,8 @@ http.Server.prototype.emit=function(type,...args){
   if(req.method==='GET'&&url.pathname==='/api/launch/health'){json(res,200,launchHealth());return true}
   if(req.method==='GET'&&url.pathname==='/api/launch/sources'){
     const country=clean(url.searchParams.get('country'),120);
-    json(res,200,{ok:true,country:country||null,sources:educationSources(country),policy:{
+    const src=educationSources(country);
+    json(res,200,{ok:true,country:country||null,verification:src.verification,sources:src.sources,policy:{
       currentAdmissions:'Use the current official institution or national education authority source before presenting admissions, tuition, deadlines or eligibility as current fact.',
       generatedGuidance:'AI-generated education guidance must be labeled as guidance and must not replace official admission requirements.',
       schoolNames:'School and institution names are preserved and never translated.'
