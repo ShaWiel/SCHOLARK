@@ -194,6 +194,7 @@
     repairing = true;
     try {
       releaseStaleSelectorLocks(false);
+      if(document.documentElement.classList.contains('scholark-language-switching')){state.lastRepairAt=Date.now();return}
       const info = routeInfo();
       const routeChanged = state.lastRoute !== info.raw;
       if (routeChanged) { state.lastRoute = info.raw; state.routeEpoch++; }
@@ -277,7 +278,7 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { releaseStaleSelectorLocks(false); schedule('visible',60,false); } });
 
   setInterval(() => {
-    if (document.hidden || document.documentElement.classList.contains('scholark-route-loading') || document.documentElement.classList.contains('scholark-home-language-adapting')) return;
+    if (document.hidden || document.documentElement.classList.contains('scholark-route-loading') || document.documentElement.classList.contains('scholark-home-language-adapting') || document.documentElement.classList.contains('scholark-language-switching')) return;
     const info = routeInfo();
     if (info.kind === 'home') {
       if (!homeSurfaceHealthy()) schedule('home-watchdog',0,true);
