@@ -3,7 +3,7 @@
   if (path !== '/' && path !== '/index.html') return;
   if (window.__SCHOLARK_RUNTIME_LOADER__) return;
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
-  window.__SCHOLARK_TEST_MODE__ = false;
+  window.__SCHOLARK_TEST_MODE__ = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname||''));
   const appPath = () => { const p=String(location.pathname||'/').replace(/\/+$/,'')||'/'; return p==='/'||p==='/index.html'; };
   const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const publicHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
