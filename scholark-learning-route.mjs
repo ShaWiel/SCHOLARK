@@ -1,7 +1,7 @@
 import http from 'node:http';
 
 const originalEmit = http.Server.prototype.emit;
-const SB=String(process.env.SUPABASE_URL||'').replace(/\/+$/,'');
+const SUPABASE_URL=String(process.env.SUPABASE_URL||'').replace(/\/+$/,'');
 const PUB=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
 const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
 const CREDIT_MODE_FEATURE=Object.freeze({tutor:'tutor_message',general_ai:'general_ai',flashcards:'quiz',exam:'quiz',curriculum:'curriculum',study_ahead:'study_ahead',language_learning:'language_lesson'});
@@ -33,9 +33,9 @@ async function chargeLearningCredits(req,mode,p,out){
   const requestId=creditRequestId(req);
   if(!/^[a-zA-Z0-9._:-]{8,120}$/.test(requestId))return {ok:false,http:400,code:'REQUEST_ID_REQUIRED',error:'A valid SCHOLARK request ID is required.'};
   if(mode==='general_ai'&&String(out?.provider||'')==='scholark-local-fallback')return {ok:true,usage:{billingMode:'server',serverCharged:false,feature,spent:0,reason:'provider_unavailable'}};
-  if(!SB||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
+  if(!SUPABASE_URL||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
   const meta={mode,provider:String(out?.provider||'').slice(0,80),model:String(out?.model||'').slice(0,120),tier:String(out?.tier||'').slice(0,40)};
-  const r=await fetch(SB+'/rest/v1/rpc/consume_feature_credits_once',{method:'POST',headers:{apikey:PUB,authorization:'Bearer '+token,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:meta}),signal:AbortSignal.timeout?.(8000)});
+  const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/consume_feature_credits_once',{method:'POST',headers:{apikey:PUB,authorization:'Bearer '+token,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:meta}),signal:AbortSignal.timeout?.(8000)});
   const d=await r.json().catch(()=>({}));
   if(!r.ok){
     const status=r.status===401||r.status===403?401:503;
