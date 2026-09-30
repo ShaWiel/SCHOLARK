@@ -86,8 +86,13 @@
     return inflight;
   }
 
-  addEventListener('hashchange',()=>{reconcile();setTimeout(reconcile,180);setTimeout(()=>selftest(false),900)});
-  addEventListener('popstate',()=>{reconcile();setTimeout(reconcile,180)});
+  function prepareRouteEntry(reason){
+    const r=route();if(!modern.has(r))return;
+    window.__SCHOLARK_WORKSPACE__?.prepareEntry?.('health-'+reason);
+  }
+  addEventListener('hashchange',()=>{prepareRouteEntry('hashchange');setTimeout(reconcile,0);setTimeout(reconcile,180);setTimeout(()=>selftest(false),900)});
+  addEventListener('popstate',()=>{prepareRouteEntry('popstate');setTimeout(reconcile,0);setTimeout(reconcile,180)});
+  addEventListener('pageshow',()=>{prepareRouteEntry('pageshow');setTimeout(reconcile,20)});
   addEventListener('online',()=>setTimeout(()=>selftest(true),500));
   addEventListener('scholark-runtime-ready',()=>{runtimeReady=true;setTimeout(()=>selftest(false),700)});
   setTimeout(reconcile,180);
