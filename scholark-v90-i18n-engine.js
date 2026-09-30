@@ -924,6 +924,7 @@
     if(!LANGS.some(x=>x[0]===target))return;
     if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();applyVisible();return}
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);completionQueued=false;
+    clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;
     try{activeUiAbort?.abort()}catch{}activeUiAbort=new AbortController();const uiSignal=activeUiAbort.signal;
     translating=true;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
