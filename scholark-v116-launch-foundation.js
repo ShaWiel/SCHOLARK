@@ -13,7 +13,7 @@
   const locale=()=>String(document.documentElement.lang||localStorage.getItem('scholark_ui_language')||'en').slice(0,20);
   const onboardingKey='scholark_launch_onboarding_v1';
   const telemetryKey='scholark_launch_telemetry_v1';
-  let launchHealth=null,sourceAbort=null,errorCount=0,dialogReturn=null;
+  let launchHealth=null,sourceAbort=null,errorCount=0,dialogReturn=null,dialogEpoch=0,dialogFocusTimer=0;
 
   const style=document.createElement('style');style.id='scholark-v116-style';style.textContent=`
     :where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #6d5dfc!important;outline-offset:3px!important}
@@ -28,8 +28,17 @@
   `;document.head.appendChild(style);
 
   const dialog=document.createElement('div');dialog.id='v116-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-hidden','true');dialog.innerHTML='<div class="v116-dialog-card"><div id="v116-dialog-body"></div></div>';document.body.appendChild(dialog);
-  function closeDialog(){dialog.classList.remove('open');dialog.setAttribute('aria-hidden','true');const r=dialogReturn;dialogReturn=null;r?.focus?.()}
-  function openDialog(html,returnEl=document.activeElement){dialogReturn=returnEl;$('#v116-dialog-body').innerHTML=html;dialog.classList.add('open');dialog.setAttribute('aria-hidden','false');setTimeout(()=>$('#v116-dialog-body button,#v116-dialog-body input,#v116-dialog-body textarea,#v116-dialog-body select')?.focus(),20)}
+  function closeDialog(){
+    dialogEpoch++;clearTimeout(dialogFocusTimer);dialogFocusTimer=0;
+    dialog.classList.remove('open');dialog.setAttribute('aria-hidden','true');dialog.style.pointerEvents='none';
+    const r=dialogReturn;dialogReturn=null;
+    requestAnimationFrame(()=>{if(!dialog.classList.contains('open'))dialog.style.removeProperty('pointer-events');r?.focus?.()});
+  }
+  function openDialog(html,returnEl=document.activeElement){
+    const epoch=++dialogEpoch;clearTimeout(dialogFocusTimer);
+    dialogReturn=returnEl;$('#v116-dialog-body').innerHTML=html;dialog.style.removeProperty('pointer-events');dialog.classList.add('open');dialog.setAttribute('aria-hidden','false');
+    dialogFocusTimer=setTimeout(()=>{if(epoch!==dialogEpoch||!dialog.classList.contains('open'))return;$('#v116-dialog-body button,#v116-dialog-body input,#v116-dialog-body textarea,#v116-dialog-body select')?.focus()},20);
+  }
   dialog.addEventListener('click',e=>{if(e.target===dialog||e.target.closest('[data-v116-close]'))closeDialog()});
   dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeDialog();return}if(e.key!=='Tab')return;const focus=$$('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',dialog).filter(x=>x.offsetParent!==null);if(!focus.length)return;const first=focus[0],last=focus[focus.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});
 
