@@ -36,6 +36,7 @@
 
     document.body.classList.add('v51-workspace');
     document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v53-emergency','v41-home');
+    $('#v53-emergency').forEach(x=>x.remove());
     main.hidden=false;side.hidden=false;
     main.style.removeProperty('display');side.style.removeProperty('display');
     $$('.v51-page',main).forEach(p=>p.classList.toggle('active',p===page));
@@ -53,7 +54,9 @@
   }
 
   function createEmergency(){
-    if($('#v53-emergency'))return;
+    // Never paint a second full Workspace over a primary shell that already
+    // exists or is still settling. Foundation recovery owns partial shells.
+    if($('#v51-main')||$('#v51-sidebar')||$('#v53-emergency'))return;
     const root=document.createElement('div');root.id='v53-emergency';
     root.innerHTML=`<aside class="v53-side"><div class="v53-brand">SCHOLARK<small>WORKSPACE</small></div><div class="v53-nav">
       <button class="active" data-v53-tool="dashboard">⌂ Dashboard</button><button data-v53-tool="studio">✦ Studio AI</button><button data-v53-tool="tutor">AI Tutor</button><button data-v53-tool="education">Education & Learning</button><button data-v53-tool="language">Language Learner</button><button data-v53-tool="planner">Planner</button><button data-v53-tool="focus">Focus Sessions</button><button data-v53-tool="flashcards">Flashcards</button><button data-v53-tool="assignments">Assignments</button><button data-v53-tool="progress">Progress</button><button data-v53-tool="goal">Goals</button><button data-v53-tool="project">My Projects</button><button data-v53-tool="schools">Schools Near Me</button><button data-v53-tool="study">Study Ahead</button><button data-v53-tool="book">Book Studio</button>
@@ -109,7 +112,12 @@
       if(revealPrimaryDashboard())return;
       setTimeout(()=>{
         if(!isDashboard()||revealPrimaryDashboard())return;
-        createEmergency();document.body.classList.add('v53-emergency');
+        const html=document.documentElement;
+        if(html.classList.contains('scholark-route-loading')||html.classList.contains('scholark-runtime-loading')||html.classList.contains('scholark-workspace-entering')){
+          setTimeout(sync,320);return;
+        }
+        createEmergency();
+        if($('#v53-emergency'))document.body.classList.add('v53-emergency');
         const home=$('#v29-home-layer');if(home)home.hidden=true;
       },500);
       return;
@@ -127,6 +135,8 @@
 
   addEventListener('hashchange',()=>setTimeout(sync,10));
   addEventListener('popstate',()=>setTimeout(sync,10));
+  addEventListener('scholark-runtime-ready',()=>setTimeout(sync,20));
+  addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,20));
   document.addEventListener('DOMContentLoaded',sync,{once:true});
   setTimeout(sync,60);
 })();
