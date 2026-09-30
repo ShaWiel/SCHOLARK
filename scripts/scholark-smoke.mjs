@@ -138,7 +138,12 @@ if(launchHealth){
   check(launchHealth.billing?.environment===billingHealth?.environment,'Launch health billing environment disagrees with billing health');
   check(typeof launchHealth.readiness?.codeReady==='boolean'&&typeof launchHealth.readiness?.commerciallyReady==='boolean','Structured launch readiness verdict missing');
   check(typeof launchHealth.publicCommercialLaunchReady==='boolean','Launch readiness verdict missing');
-  check(typeof launchHealth.infrastructure?.productionCapacityValidated==='boolean'&&typeof launchHealth.infrastructure?.deployTier==='string','Infrastructure launch readiness status missing');
+  check(typeof launchHealth.infrastructure?.productionCapacityValidated==='boolean'&&typeof launchHealth.infrastructure?.realDeviceQaValidated==='boolean'&&typeof launchHealth.infrastructure?.deployTier==='string','Infrastructure launch readiness status missing');
+  check(typeof launchHealth.billing?.liveEndToEndValidated==='boolean'&&typeof launchHealth.billing?.liveCredentialShapes==='boolean','Billing launch validation status missing');
+  check(typeof launchHealth.security?.leakedPasswordProtectionValidated==='boolean','Security launch validation status missing');
+  check(typeof launchHealth.legal?.supportContactConfigured==='boolean'&&typeof launchHealth.legal?.legalReviewValidated==='boolean','Legal launch validation status missing');
+  check(launchHealth.foundation?.transactionalDataDeletion===true&&launchHealth.foundation?.serverCreditPreflight===true,'Privacy/credit hardening is missing from launch health');
+  if(launchHealth.testMode)check(launchHealth.publicCommercialLaunchReady===false,'Test-mode container must never report commercial launch ready');
 }
 if(surinameSources){
   check(surinameSources.verification==='national-official','Suriname education source should be nationally verified');
