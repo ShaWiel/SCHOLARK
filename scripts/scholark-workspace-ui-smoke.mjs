@@ -531,6 +531,38 @@ check((await page.locator('#v107-state').innerText()).includes('ci-auth-refresh'
 await page.evaluate(()=>{const o=window.__schArkiOrig;window.__SCHOLARK_TEST_MODE__=o.test;window.__SCHOLARK_V72_CLOUD__=o.cloud;window.__SCHOLARK_CREDITS__=o.credits;delete window.__schArkiOrig;delete window.__schArkiRefreshes});
 await page.unroute('**/api/learning/generate');
 
+// Shared Workspace AI foundation must recover an expired session for every
+// connected learning feature, not only ARKI.
+let sharedAiCalls=0;
+await page.route('**/api/learning/generate',async route=>{
+  const req=route.request();let body={};try{body=JSON.parse(req.postData()||'{}')}catch{}
+  if(body.mode!=='tutor'){await route.continue();return}
+  sharedAiCalls++;
+  const auth=String(req.headers().authorization||'');
+  if(auth==='Bearer stale-shared-token'){
+    await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({ok:false,code:'AUTH_REQUIRED',error:'Expired'})});return;
+  }
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,provider:'ci-shared-auth',model:'shared-ai-test',result:{answer:'Shared AI foundation recovered.',summary:'',steps:[],examples:[],keyPoints:[],commonMistakes:[],checks:[],followUp:'',topic:'test'},usage:{billingMode:'server',serverCharged:false,spent:0}})});
+});
+const sharedResult=await page.evaluate(async()=>{
+  window.__schSharedOrig={test:window.__SCHOLARK_TEST_MODE__,cloud:window.__SCHOLARK_V72_CLOUD__,credits:window.__SCHOLARK_CREDITS__};
+  let token='stale-shared-token';window.__schSharedRefreshes=0;
+  window.__SCHOLARK_TEST_MODE__=false;
+  window.__SCHOLARK_V72_CLOUD__={
+    currentSession:()=>({access_token:token,user:{id:'ci-user'}}),
+    session:async()=>({access_token:token,user:{id:'ci-user'}}),
+    refreshSession:async()=>{window.__schSharedRefreshes++;token='fresh-shared-token';return{access_token:token,user:{id:'ci-user'}}},
+    openAuth:()=>{}
+  };
+  window.__SCHOLARK_CREDITS__={authorize:async()=>({ok:true,cost:1,balance:100}),load:()=>{}};
+  return window.__SCHOLARK_WORKSPACE_CORE__.ai.request('tutor',{prompt:'Shared auth test'},{timeoutMs:5000});
+});
+check(sharedResult?.result?.answer==='Shared AI foundation recovered.','Shared Workspace AI foundation did not return the retried response');
+check(sharedAiCalls===2,`Shared AI auth recovery should make exactly 2 calls, got ${sharedAiCalls}`);
+check((await page.evaluate(()=>window.__schSharedRefreshes))===1,'Shared Workspace AI foundation did not refresh exactly once');
+await page.evaluate(()=>{const o=window.__schSharedOrig;window.__SCHOLARK_TEST_MODE__=o.test;window.__SCHOLARK_V72_CLOUD__=o.cloud;window.__SCHOLARK_CREDITS__=o.credits;delete window.__schSharedOrig;delete window.__schSharedRefreshes});
+await page.unroute('**/api/learning/generate');
+
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
@@ -623,6 +655,12 @@ await page.click('[data-goal-next]');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.text||'').includes('Master biology'))}catch{return false}}),'Goal did not create a Planner next action');
 await route('files','#v51-fallback .v86');
 check(await page.locator('#v86-files').count()===1,'Files upload input missing');
+await page.locator('#v86-files').setInputFiles({name:'scholark-notes.txt',mimeType:'text/plain',buffer:Buffer.from('Photosynthesis converts light energy into chemical energy. Chlorophyll absorbs light and plants use carbon dioxide and water to make glucose and oxygen.')});
+await page.waitForFunction(()=>/readable file/i.test(document.querySelector('#v86-status')?.textContent||''),null,{timeout:5000});
+await page.click('[data-v86="summary"]');
+await page.waitForFunction(()=>{const t=document.querySelector('#v86-output')?.textContent||'';return !/Working/.test(t)&&t.trim().length>20},{timeout:8000});
+check((await page.locator('#v86-output').innerText()).trim().length>20,'Files & Notes AI result stayed empty');
+check((await page.evaluate(()=>window.__SCHOLARK_V86_FILES__?.getState?.().files?.length))===1,'Files & Notes did not retain exactly one uploaded smoke file');
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
