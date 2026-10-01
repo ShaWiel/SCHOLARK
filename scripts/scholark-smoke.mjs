@@ -134,7 +134,7 @@ const surinameSources=await get('/api/launch/sources?country=Suriname');
 const japanSources=await get('/api/launch/sources?country=Japan');
 if(launchHealth){
   check(launchHealth.foundation?.feedback===true&&launchHealth.foundation?.accountExport===true&&launchHealth.foundation?.accountDeletion===true,'Launch privacy/feedback foundation is incomplete');
-  check(launchHealth.foundation?.serverCreditIdempotency===true&&launchHealth.foundation?.accessibility===true&&launchHealth.foundation?.onboarding===true&&launchHealth.foundation?.languageQa===74,'Launch foundation readiness capabilities are incomplete');
+  check(launchHealth.foundation?.serverCreditIdempotency===true&&launchHealth.foundation?.sharedAiSessionRecovery===true&&launchHealth.foundation?.connectedWorkspaceContext===true&&launchHealth.foundation?.adaptiveSchoolRadiusKm===250&&launchHealth.foundation?.globalSchoolSampling===true&&Array.isArray(launchHealth.foundation?.crossBrowserCi)&&launchHealth.foundation.crossBrowserCi.includes('webkit')&&launchHealth.foundation?.accessibility===true&&launchHealth.foundation?.onboarding===true&&launchHealth.foundation?.languageQa===74,'Launch foundation readiness capabilities are incomplete');
   check(launchHealth.billing?.environment===billingHealth?.environment,'Launch health billing environment disagrees with billing health');
   check(typeof launchHealth.readiness?.codeReady==='boolean'&&typeof launchHealth.readiness?.commerciallyReady==='boolean','Structured launch readiness verdict missing');
   check(typeof launchHealth.publicCommercialLaunchReady==='boolean','Launch readiness verdict missing');
