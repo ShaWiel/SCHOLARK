@@ -266,8 +266,8 @@
   function barSignature(tool,actions){
     const s=core()?.compute?.()||{};return [tool,actions.map(x=>x.id+':'+x.disabled).join('|'),s.planner?.active?.length||0,s.mastery?.weak?.length||0,s.flashcards?.due?.length||0,s.assignments?.active?.length||0,s.goals?.active?.length||0].join('~')
   }
-  function refresh(force=false){
-    if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force),120);return}
+  function refresh(force=false,allowDuringLanguage=false){
+    if((!allowDuringLanguage&&document.documentElement.classList.contains('scholark-language-switching'))||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force,allowDuringLanguage),120);return}
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
       document.querySelectorAll('.v108-context').forEach(x=>x.remove());
@@ -304,7 +304,7 @@
   });
   addEventListener('scholark-workspace-entry-ready',()=>setTimeout(()=>refresh(true),20));
   addEventListener('scholark-workspace-change',()=>setTimeout(()=>refresh(true),70));
-  addEventListener('scholark-experience-ready',e=>{if(e?.detail?.tool===route())setTimeout(()=>refresh(true),0)});
+  addEventListener('scholark-experience-ready',e=>{if(e?.detail?.tool===route())requestAnimationFrame(()=>refresh(true,true))});
   addEventListener('scholark-runtime-ready',()=>setTimeout(()=>{refresh(true);scheduleConsume(60)},70));
   addEventListener('scholark-language-ready',()=>setTimeout(()=>refresh(true),40));
   addEventListener('scholark:focus-complete',()=>setTimeout(()=>{refresh(true);open('progress')},220));
