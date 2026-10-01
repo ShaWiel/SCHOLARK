@@ -964,6 +964,21 @@ for(const code of ['ar','zh','hi','sw','fr']){
   check(s.form===1&&s.field===1&&s.panels<=1,`Study Ahead controls/panels changed or duplicated in ${code}: ${JSON.stringify(s)}`);
   check(s.sw<=s.w+4,`Study Ahead overflowed after ${code} switch: ${JSON.stringify(s)}`);
 }
+// Dynamic-language re-entry regression: keep Arabic active while leaving and
+// immediately re-entering the Workspace. Locale ownership and singletons must
+// survive the full document route lifecycle.
+await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('ar'));
+await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&document.documentElement.dataset.scholarkI18nReady==='ar'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:8000});
+await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
+await page.waitForSelector('#v55-topbar',{state:'visible',timeout:10000});
+await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&document.documentElement.dataset.scholarkI18nReady==='ar',null,{timeout:9000});
+await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
+await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
+await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&document.documentElement.dataset.scholarkI18nReady==='ar'&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:10000});
+const rtlReentry=await singletonState();
+check(rtlReentry.idCounts['v51-main']===1&&rtlReentry.idCounts['v51-sidebar']===1&&rtlReentry.duplicateTools.length===0,`Arabic re-entry duplicated Workspace: ${JSON.stringify(rtlReentry)}`);
+check(await page.locator('#v90-language').inputValue()==='ar','Arabic language selector state was lost after Home/Workspace re-entry');
+
 await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('nl'));
 await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:7000});
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
