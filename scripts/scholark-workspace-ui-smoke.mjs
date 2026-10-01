@@ -492,6 +492,45 @@ check(await page.locator('[data-v107-copy]').count()>=1,'ARKI copy action missin
 await page.click('#v107-new');
 check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 
+// Production-like expired-session regression: the first ARKI request receives
+// 401, then the client must force-refresh Supabase auth and replay once with
+// the same idempotent request contract.
+let arkiAuthCalls=0;
+await page.route('**/api/learning/generate',async route=>{
+  const req=route.request();let body={};try{body=JSON.parse(req.postData()||'{}')}catch{}
+  if(body.mode!=='general_ai'){await route.continue();return}
+  arkiAuthCalls++;
+  const auth=String(req.headers().authorization||'');
+  if(auth==='Bearer stale-arki-token'){
+    await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({ok:false,code:'AUTH_REQUIRED',error:'Session expired'})});return;
+  }
+  if(auth==='Bearer fresh-arki-token'){
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,provider:'ci-auth-refresh',model:'arki-session-test',result:{title:'Refreshed',answer:'ARKI answered after refreshing the expired session.',suggestedFollowUps:['Continue']},usage:{billingMode:'server',serverCharged:false,spent:0}})});return;
+  }
+  await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({ok:false,error:'Unexpected auth token'})});
+});
+await page.evaluate(()=>{
+  window.__schArkiOrig={test:window.__SCHOLARK_TEST_MODE__,cloud:window.__SCHOLARK_V72_CLOUD__,credits:window.__SCHOLARK_CREDITS__};
+  let token='stale-arki-token';
+  window.__schArkiRefreshes=0;
+  window.__SCHOLARK_TEST_MODE__=false;
+  window.__SCHOLARK_V72_CLOUD__={
+    currentSession:()=>({access_token:token,user:{id:'ci-user'}}),
+    session:async()=>({access_token:token,user:{id:'ci-user'}}),
+    refreshSession:async()=>{window.__schArkiRefreshes++;token='fresh-arki-token';return{access_token:token,user:{id:'ci-user'}}},
+    openAuth:()=>{}
+  };
+  window.__SCHOLARK_CREDITS__={authorize:async()=>({ok:true,cost:1,balance:100}),load:()=>{}};
+});
+await page.fill('#v107-q','Test expired ARKI session');
+await page.click('#v107-send');
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),{timeout:5000});
+check(arkiAuthCalls===2,`ARKI expired-session recovery should make exactly 2 calls, got ${arkiAuthCalls}`);
+check((await page.evaluate(()=>window.__schArkiRefreshes))===1,'ARKI did not force-refresh the expired session exactly once');
+check((await page.locator('#v107-state').innerText()).includes('ci-auth-refresh'),'ARKI did not settle on the successful retry response');
+await page.evaluate(()=>{const o=window.__schArkiOrig;window.__SCHOLARK_TEST_MODE__=o.test;window.__SCHOLARK_V72_CLOUD__=o.cloud;window.__SCHOLARK_CREDITS__=o.credits;delete window.__schArkiOrig;delete window.__schArkiRefreshes});
+await page.unroute('**/api/learning/generate');
+
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
