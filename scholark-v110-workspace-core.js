@@ -207,7 +207,13 @@
     }
     const requestId=clean(opts.requestId)||(globalThis.crypto?.randomUUID?.()||uid('sch-ai')).replace(/[^a-zA-Z0-9._:-]/g,'');
     const timeoutMs=Math.max(5000,Math.min(120000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?115000:70000):90000)));
-    const body={mode:m,...payload};
+    const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';
+    const body={
+      mode:m,
+      level:localStorage.getItem('scholark_learning_level')||'student',
+      language:window.__SCHOLARK_I18N__?.languageName?.(code)||code||'English',
+      ...payload
+    };
     const once=async activeSession=>{
       const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
       try{
