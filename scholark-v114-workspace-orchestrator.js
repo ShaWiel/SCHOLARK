@@ -314,12 +314,12 @@
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=[...document.querySelectorAll('.v114-connect')],activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
-    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r202',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
+    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r203',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
     const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
     return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }
-  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20260930-r202',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
+  window.__SCHOLARK_V114_ORCHESTRATOR__={version:'20261001-r203',handoff,consume,refresh:()=>refresh(true),verify,selftest,actionsFor:(tool)=>actionsFor(tool).map(({id,label,disabled,primary})=>({id,label,disabled,primary}))};
 })();
