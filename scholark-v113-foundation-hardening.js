@@ -103,7 +103,7 @@
     const coverage=i18n?.coverage?.(620)||null;
     const result={
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools,
-      release:"r202",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
+      release:"r203",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
       languageControls:lang,countryControls:country,languageRegistry,languageResilience,selectorCounts,selectorsHealthy,globalCountryRegistry,globalSchools,countryCount:Number(countryApi?.countryCount||0),coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,experienceHealthy,experienceReport,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
     };
@@ -131,7 +131,7 @@
   addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20260930-r202",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20261001-r203",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_HARDENING__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
