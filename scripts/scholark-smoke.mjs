@@ -260,6 +260,7 @@ if(!live){
         check(Array.isArray(r.learningResources)&&r.learningResources.length>=2&&r.learningResources.every(x=>x?.name&&x?.purpose),'learning:study_ahead learning resources are empty');
         check(Array.isArray(r.starterProjects)&&r.starterProjects.length>=2&&r.starterProjects.every(x=>x?.title&&x?.outcome),'learning:study_ahead starter projects are empty');
         check(Array.isArray(r.firstYearPreview)&&r.firstYearPreview.length>=3&&r.firstYearPreview.every(x=>x?.topic&&x?.whyItMatters),'learning:study_ahead first-year preview is empty');
+        check(r.firstYearReview&&Array.isArray(r.firstYearReview.readinessAreas)&&r.firstYearReview.readinessAreas.length>=3&&Array.isArray(r.firstYearReview.selfCheck)&&r.firstYearReview.selfCheck.length>=3&&Array.isArray(r.firstYearReview.commonChallenges)&&r.firstYearReview.commonChallenges.length>=2&&Array.isArray(r.firstYearReview.beforeYouStart)&&r.firstYearReview.beforeYouStart.length>=3,'learning:study_ahead first-year readiness review is incomplete');
         check(Array.isArray(r.questionsToExplore)&&r.questionsToExplore.length>=4,'learning:study_ahead exploration questions are empty');
         check(Array.isArray(r.weeklyPlan)&&r.weeklyPlan.length>=3,'learning:study_ahead weekly plan is empty');
         check(Array.isArray(r.roadmap)&&r.roadmap.length>=3&&r.roadmap.every(x=>x?.goal&&x?.milestone&&Array.isArray(x?.actions)&&x.actions.length),'learning:study_ahead roadmap is incomplete');
