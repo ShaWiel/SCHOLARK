@@ -867,6 +867,31 @@ const languageMatrix=await page.evaluate(async()=>{
 check(languageMatrix.count===74,`Language matrix expected 74 languages, got ${languageMatrix.count}`);
 check(languageMatrix.issues.length===0,`74-language layout pass failed: ${languageMatrix.issues.slice(0,15).join(' | ')}`);
 
+// Representative route-language matrix: exercise changed surfaces under RTL, CJK,
+// Indic, African and static-European locales instead of validating Dashboard only.
+await page.click('#v51-sidebar [data-v51-tool="schools"]');
+await page.waitForSelector('#v50-school.open',{state:'visible',timeout:8000});
+for(const code of ['ar','zh','hi','sw','fr']){
+  await page.evaluate(async code=>window.__SCHOLARK_I18N__?.changeLanguage?.(code),code);
+  await page.waitForFunction(code=>document.documentElement.lang===code&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:7000});
+  const s=await page.evaluate(()=>({country:document.querySelectorAll('#v50-country').length,radius:document.querySelectorAll('#v50-radius').length,cross:document.querySelectorAll('#v50-crossborder').length,sw:document.documentElement.scrollWidth,w:innerWidth}));
+  check(s.country===1&&s.radius===1&&s.cross===1,`Schools Near Me controls changed/duplicated in ${code}: ${JSON.stringify(s)}`);
+  check(s.sw<=s.w+4,`Schools Near Me overflowed after ${code} switch: ${JSON.stringify(s)}`);
+}
+await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('study'));
+await page.waitForSelector('#v51-fallback .v62-study',{state:'visible',timeout:8000});
+for(const code of ['ar','zh','hi','sw','fr']){
+  await page.evaluate(async code=>window.__SCHOLARK_I18N__?.changeLanguage?.(code),code);
+  await page.waitForFunction(code=>document.documentElement.lang===code&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:7000});
+  const s=await page.evaluate(()=>({form:document.querySelectorAll('#v62-study-run').length,field:document.querySelectorAll('#v62-field').length,panels:document.querySelectorAll('.v111-live[data-v111-owner]').length,sw:document.documentElement.scrollWidth,w:innerWidth}));
+  check(s.form===1&&s.field===1&&s.panels<=1,`Study Ahead controls/panels changed or duplicated in ${code}: ${JSON.stringify(s)}`);
+  check(s.sw<=s.w+4,`Study Ahead overflowed after ${code} switch: ${JSON.stringify(s)}`);
+}
+await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('nl'));
+await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:7000});
+await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
+await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:8000});
+
 check(await page.locator('.v116-side-actions').count()===1,'Workspace privacy/feedback controls missing');
 check(await page.locator('#v116-onboarding').count()<=1,'Onboarding duplicated in Workspace');
 const runtimeErrors=await page.evaluate(()=>window.__SCHOLARK_RUNTIME__?.errors?.()||[]);
