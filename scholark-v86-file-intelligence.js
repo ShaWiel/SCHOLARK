@@ -65,7 +65,12 @@
       out.innerHTML='<h3>'+esc(title)+'</h3>'+esc(tutorText(data.result))+'<div class="v86-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div>';
     }catch(e){out.innerHTML='<h3>Could not finish</h3>'+esc(e?.name==='AbortError'?'The request timed out. Try again.':e?.message||e)}finally{btn.disabled=false}
   }
-  function render(){
+  function render(force=false){
+    if(!force&&location.hash.toLowerCase()==='#files'&&$('#v51-fallback .v86')){
+      $('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='files'));
+      window.dispatchEvent(new CustomEvent('scholark-tool-mounted',{detail:{tool:'files',source:'v86',reused:true}}));
+      return
+    }
     document.body.classList.remove('v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');document.body.classList.add('v51-workspace');
     $('#v50-school')?.classList.remove('open');$('#v25-study')?.classList.remove('open');$('#v25-book')?.classList.remove('open');$('#v41-studio-workspace')?.setAttribute('hidden','');
     const main=$('#v51-main');if(!main)return;main.style.setProperty('display','block','important');$$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.display='none'});let p=$('[data-v51-page="fallback"]',main);if(!p)return;p.classList.add('active');p.style.display='block';p.style.padding='0';const h=$('#v51-fallback',p);if(!h)return;
@@ -75,7 +80,7 @@
   }
   // V51 owns the Files & Notes sidebar route. This module only owns the
   // File Intelligence surface itself.
-  function sync(){if(location.hash.toLowerCase()==='#files')render()}
+  function sync(){if(location.hash.toLowerCase()==='#files')render(false)}
   addEventListener('hashchange',()=>setTimeout(sync,30));setTimeout(sync,180);
-  window.__SCHOLARK_V86_FILES__={open:render,refresh:render,getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20260921-r176'};
+  window.__SCHOLARK_V86_FILES__={open:()=>render(false),refresh:()=>render(true),getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20260930-r202'};
 })();
