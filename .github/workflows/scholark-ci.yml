@@ -57,7 +57,12 @@ jobs:
       - name: Install browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
-          npx playwright install --with-deps chromium firefox webkit
+          # GitHub's apt/browser mirrors can occasionally stall. Keep the release
+          # gate strict, but bound dependency installation so a runner cannot hang
+          # indefinitely. Browser launch tests below still fail if a required
+          # system dependency is actually missing.
+          timeout 240s npx playwright install-deps chromium firefox webkit || echo "::warning::Playwright dependency install timed out; validating existing runner dependencies through browser launch."
+          timeout 360s npx playwright install chromium firefox webkit
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
