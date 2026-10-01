@@ -51,8 +51,21 @@ for(const cfg of engines){
     await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000});
     await page.fill('#v107-q','What is 2 + 2?');
     await page.click('#v107-send');
-    await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/\b4\b/.test(x.textContent||'')),null,{timeout:8000});
-    check(await page.locator('#v107-send').isEnabled(),cfg.name+': ARKI send button stayed disabled');
+    try{
+      await page.waitForFunction(()=>document.querySelector('.v107-msg.assistant')&&!document.querySelector('#v107-thinking'),null,{timeout:15000});
+    }catch{}
+    const arki=await page.evaluate(()=>({
+      replies:[...document.querySelectorAll('.v107-msg.assistant')].map(x=>(x.textContent||'').trim()).slice(-3),
+      users:[...document.querySelectorAll('.v107-msg.user')].map(x=>(x.textContent||'').trim()).slice(-3),
+      state:document.querySelector('#v107-state')?.textContent||'',
+      sendDisabled:!!document.querySelector('#v107-send')?.disabled,
+      inputDisabled:!!document.querySelector('#v107-q')?.disabled,
+      thinking:!!document.querySelector('#v107-thinking'),
+      testMode:!!window.__SCHOLARK_TEST_MODE__,
+      runtimeErrors:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
+    }));
+    check(arki.replies.some(x=>/\b4\b/.test(x)),cfg.name+': ARKI did not return the expected test answer '+JSON.stringify(arki));
+    check(!arki.sendDisabled&&!arki.inputDisabled&&!arki.thinking,cfg.name+': ARKI did not settle its composer '+JSON.stringify(arki));
 
     const lang=page.locator('#v90-language');
     if(await lang.count()){
