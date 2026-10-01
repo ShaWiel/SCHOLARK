@@ -998,7 +998,7 @@ await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.do
 await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
 await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
 await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&document.documentElement.dataset.scholarkI18nReady==='ar'&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:10000});
-const rtlReentry=await singletonState();
+const rtlReentry=await checkWorkspaceSingletons('Arabic language re-entry');
 check(rtlReentry.idCounts['v51-main']===1&&rtlReentry.idCounts['v51-sidebar']===1&&rtlReentry.duplicateTools.length===0,`Arabic re-entry duplicated Workspace: ${JSON.stringify(rtlReentry)}`);
 check(await page.locator('#v90-language').inputValue()==='ar','Arabic language selector state was lost after Home/Workspace re-entry');
 
