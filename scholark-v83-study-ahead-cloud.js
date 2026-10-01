@@ -48,6 +48,16 @@
     if(!a.length)return '<div class="v62-study-table">'+legacyEmpty('Advanced detail')+'</div>';
     return '<div class="v62-study-table">'+a.map(x=>typeof x==='string'?'<div class="v62-study-line"><b>'+esc(x)+'</b><span>Rebuild the track for expanded guidance.</span></div>':'<div class="v62-study-line"><b>'+esc(x?.[titleKey]||'')+'</b><span>'+esc(x?.[detailKey]||'')+'</span></div>').join('')+'</div>'
   }
+  function firstYearReview(review){
+    const r=review&&typeof review==='object'?review:{},sections=[
+      ['Readiness areas',r.readinessAreas],
+      ['Self-check before you start',r.selfCheck],
+      ['Common first-year challenges',r.commonChallenges],
+      ['Before classes begin',r.beforeYouStart]
+    ];
+    if(!sections.some(([,items])=>Array.isArray(items)&&items.length))return '<div class="v62-study-table">'+legacyEmpty('First-year readiness review')+'</div>';
+    return '<div class="v62-study-grid">'+sections.map(([title,items])=>'<div><b>'+esc(title)+'</b>'+list(items)+'</div>').join('')+'</div>'
+  }
   function branches(items){
     const a=Array.isArray(items)?items:[];
     if(!a.length)return '<div class="v62-study-table">'+legacyEmpty('Branches & specializations')+'</div>';
@@ -65,6 +75,7 @@
         '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Reading path</h4>'+books(r.books)+'</div><div class="v62-answer-card"><h4>Learning resources</h4>'+rows(r.learningResources,'name','purpose')+'</div></div>'+
         '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Starter projects / practice</h4>'+rows(r.starterProjects,'title','outcome')+'</div><div class="v62-answer-card"><h4>Tools, software & methods</h4>'+rows(r.tools,'name','purpose')+'</div></div>'+
         '<div class="v62-study-grid"><div class="v62-answer-card"><h4>First-year preview</h4>'+rows(r.firstYearPreview,'topic','whyItMatters')+'</div><div class="v62-answer-card"><h4>University preparation</h4>'+list(r.universityPrep)+'</div></div>'+
+        '<div class="v62-answer-card"><h4>First-year readiness review</h4>'+firstYearReview(r.firstYearReview)+'</div>'+
         '<div class="v62-study-grid"><div class="v62-answer-card"><h4>Career directions</h4>'+list(r.careers)+'</div><div class="v62-answer-card"><h4>Questions to explore</h4>'+list(r.questionsToExplore)+'</div></div>'+
         '<div class="v62-answer-card"><h4>Weekly preparation plan</h4>'+(r.weeklyPlan||[]).map(x=>'<div class="v62-study-line"><b>'+esc(x.block||'Study block')+' · '+esc(x.minutes||0)+' min</b><span>'+esc(x.focus||'')+'</span></div>').join('')+'</div>'+
         '<div class="v62-answer-card"><h4>Your roadmap</h4>'+((r.roadmap||[]).map(x=>'<div class="v62-book"><strong>'+esc(x.phase||'Phase')+'</strong><small>'+esc(x.goal||'')+'</small>'+list(x.actions)+(x.milestone?'<p><b>Milestone:</b> '+esc(x.milestone)+'</p>':'')+'</div>').join(''))+'</div>'
