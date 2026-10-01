@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const VERSION='20261001-school-global-v13';
+const VERSION='20261001-school-global-v14';
 const previousEmit=http.Server.prototype.emit;
 const safeFetch=globalThis.fetch.bind(globalThis);
 const OVERPASS=[
@@ -239,17 +239,19 @@ async function resolveCenter(body,country,city){
   if(!expected){
     try{countryRoot=await geocode(country,'');expected=clean(countryRoot.countryCode).toUpperCase()}catch{}
   }
-  if(city){
-    const hit=await geocode(country,city),code=clean(hit.countryCode).toUpperCase();
-    if(expected&&code&&!sameCode(expected,code))throw new Error('The selected city/area is not in '+country);
-    return{...hit,countryCode:code||expected,mode:'city'};
-  }
+  // Exact user coordinates take precedence over the city label populated by
+  // reverse geocoding. This keeps "Use my current location" truly local.
   if(hasCoords){
     let actualCode=provided,reverse=null;
     if(!actualCode){try{reverse=await reverseGeocode(lat,lon);actualCode=clean(reverse.countryCode).toUpperCase()}catch{}}
     if(!expected||!actualCode||sameCode(actualCode,expected)){
-      return{lat,lon,country:reverse?.country||country,countryCode:actualCode||expected,display:reverse?.display||country,mode:'coordinates'};
+      return{lat,lon,country:reverse?.country||country,countryCode:actualCode||expected,display:reverse?.display||[city,country].filter(Boolean).join(', ')||country,mode:'coordinates'};
     }
+  }
+  if(city){
+    const hit=await geocode(country,city),code=clean(hit.countryCode).toUpperCase();
+    if(expected&&code&&!sameCode(expected,code))throw new Error('The selected city/area is not in '+country);
+    return{...hit,countryCode:code||expected,mode:'city'};
   }
   const root=countryRoot||await geocode(country,'');
   return{...root,countryCode:clean(root.countryCode||expected).toUpperCase(),mode:'country'};
@@ -573,12 +575,18 @@ async function discover(body){
   if(countryWide)rows=rows.map(x=>({...x,distance:null}));
   else rows=rows.filter(x=>x.distance==null||x.distance<=Math.min(MAX_NEARBY_RADIUS,radius)+1);
 
-  const officialAll=await officialPromiseForRequest,official=officialAll.filter(x=>officialLocationMatch(x,city));
+  const nearbySupplementMatch=row=>{
+    if(countryWide)return true;
+    if(city)return officialLocationMatch(row,city);
+    if(Number.isFinite(Number(row?.lat))&&Number.isFinite(Number(row?.lon)))return distance(center.lat,center.lon,Number(row.lat),Number(row.lon))<=Math.min(MAX_NEARBY_RADIUS,radius)+1;
+    return false;
+  };
+  const officialAll=await officialPromiseForRequest,official=officialAll.filter(nearbySupplementMatch);
   if(official.length){rows=mergeRows([...official,...rows]);provider='MinOWC official school list + '+provider;sourceStatus.unshift({source:'MinOWC official school list',ok:true,count:official.length})}
   else rows=mergeRows(rows);
 
   if(isSuriname){
-    const curated=curatedSurinameSchools().filter(x=>officialLocationMatch(x,city));
+    const curated=curatedSurinameSchools().filter(nearbySupplementMatch);
     rows=mergeRows([...curated,...rows]);
     if(curated.length)sourceStatus.unshift({source:'SCHOLARK verified current Suriname supplement',ok:true,count:curated.length});
   }
