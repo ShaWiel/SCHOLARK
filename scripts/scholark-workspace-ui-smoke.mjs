@@ -914,6 +914,29 @@ check((await page.locator('#v62-study-results').innerText()).includes('First-yea
 check((await page.locator('#v62-study-results').innerText()).includes('First-year readiness review'),'Advanced Study Ahead first-year readiness review missing');
 await page.click('[data-v83-focus-branch="Cybersecurity"]');
 check((await page.inputValue('#v62-specialization'))==='Cybersecurity','Study Ahead branch focus did not populate specialization');
+
+// Connected Workspace contract: ARKI must receive compact Files, Study Ahead
+// and project context when the user enables workspace context.
+await page.evaluate(()=>window.__SCHOLARK_WORKSPACE_CORE__?.actions?.createProject?.({title:'Cybersecurity preparation',subject:'Computer Science',type:'learning',sourceKey:'ci-connected-context'}));
+let arkiConnectedContext=null;
+await page.route('**/api/learning/generate',async route=>{
+  const req=route.request();let body={};try{body=JSON.parse(req.postData()||'{}')}catch{}
+  if(body.mode!=='general_ai'){await route.continue();return}
+  try{arkiConnectedContext=JSON.parse(body.context||'{}')}catch{arkiConnectedContext={parseError:true,raw:String(body.context||'').slice(0,300)}}
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,provider:'ci-connected-context',model:'arki-context-test',result:{title:'Connected',answer:'I can use your connected SCHOLARK workspace context.',suggestedFollowUps:[]},usage:{billingMode:'test',serverCharged:false,spent:0}})});
+});
+await route('ai','#v107-ai');
+if(!(await page.locator('#v107-context').isChecked()))await page.check('#v107-context');
+await page.fill('#v107-q','What should I work on next using my workspace context?');
+await page.click('#v107-send');
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/connected SCHOLARK workspace context/i.test(x.textContent||'')),null,{timeout:5000});
+check(!!arkiConnectedContext&&!arkiConnectedContext.parseError,'ARKI workspace context could not be parsed');
+check(Array.isArray(arkiConnectedContext?.files?.names)&&arkiConnectedContext.files.names.includes('scholark-notes.txt'),`ARKI did not receive Files context: ${JSON.stringify(arkiConnectedContext?.files)}`);
+check(arkiConnectedContext?.studyAhead?.field==='Computer Science'&&arkiConnectedContext?.studyAhead?.specialization==='Cybersecurity',`ARKI did not receive Study Ahead context: ${JSON.stringify(arkiConnectedContext?.studyAhead)}`);
+check(Array.isArray(arkiConnectedContext?.projects)&&arkiConnectedContext.projects.some(x=>x.title==='Cybersecurity preparation'),'ARKI did not receive connected project context');
+check(JSON.stringify(arkiConnectedContext).length<5000,'ARKI workspace context exceeded the compact backend context budget');
+await page.unroute('**/api/learning/generate');
+
 const bookComing=page.locator('#v51-sidebar [data-v51-tool="book"]');
 check(await bookComing.count()===1,'Book Studio Coming Soon entry missing');
 check((await bookComing.getAttribute('data-v51-inactive'))==='1','Book Studio should remain feature-gated in R194');
