@@ -138,7 +138,7 @@ function launchHealth(){
   return {
     ok:true,release:RELEASE,nodeEnv:String(process.env.NODE_ENV||''),testMode:TEST_MODE,productStage:PRODUCT_STAGE,uptimeSeconds:Math.round(process.uptime()),
     runtime:{rssMB:Math.round((mem.rss||0)/1048576),heapUsedMB:Math.round((mem.heapUsed||0)/1048576)},
-    foundation:{feedback:true,accountExport:true,accountDeletion:true,transactionalDataDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,accessibility:true,onboarding:true,languageQa:74},
+    foundation:{feedback:true,accountExport:true,accountDeletion:true,transactionalDataDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,sharedAiSessionRecovery:true,connectedWorkspaceContext:true,adaptiveSchoolRadiusKm:250,globalSchoolSampling:true,crossBrowserCi:['chromium','firefox','webkit'],accessibility:true,onboarding:true,languageQa:74},
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
     billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
