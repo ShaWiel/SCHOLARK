@@ -13,8 +13,9 @@
 
   async function ctx(){const c=cloud(),s=await c?.session?.();return c&&s?.user?.id?{c,s,uid:s.user.id}:null}
   async function ai(payload){
-    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);
-    try{const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'exam',level:level(),language:language(),...payload}),signal:ctrl.signal});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok||!d.result)throw new Error(d?.error||'Diagnostic generation failed');return d}finally{clearTimeout(timer)}
+    const request=window.__SCHOLARK_WORKSPACE_CORE__?.ai?.request;
+    if(!request)throw new Error('SCHOLARK AI foundation is not ready yet.');
+    return request('exam',{level:level(),language:language(),...payload},{timeoutMs:90000});
   }
   function examMarkup(data,detail){
     const r=data.result||{},host=$('#v52-edu-detail');if(!host)return;
