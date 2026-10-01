@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)$/)||[])[1]||'';
 const ROUTER='20260917-gemini-resilience-v3';
-const SCHOOL_STRICT='20261001-school-global-v13';
+const SCHOOL_STRICT='20261001-school-global-v14';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
@@ -91,6 +91,7 @@ ok(docker.indexOf('./scholark-school-route.mjs')<docker.indexOf('./scholark-scho
 ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route version is not current');
 ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
 ok(schoolStrict.includes('NEARBY_RADII=Object.freeze([25,50,100,150,250])')&&schoolStrict.includes('MAX_NEARBY_RADIUS=250')&&schoolStrict.includes('MIN_NEARBY_RESULTS=6'),'Adaptive nearby school radius contract is incomplete');
+ok(schoolStrict.includes('Exact user coordinates take precedence')&&schoolStrict.includes('const nearbySupplementMatch=row=>'),'Exact-location school search / supplement radius guard is incomplete');
 ok(schoolStrict.includes("includeNearbyCountries=body.includeNearbyCountries===true")&&schoolStrict.includes("nearbyCountriesOptIn:true")&&schoolStrict.includes("'crossborder':'same-country'"),'Schools Near Me same-country default / cross-border opt-in contract is incomplete');
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
 ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
