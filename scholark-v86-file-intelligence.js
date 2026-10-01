@@ -41,8 +41,9 @@
   function renderFiles(){const h=$('#v86-list');if(h)h.innerHTML=state.files.length?state.files.map(x=>'<div class="v86-file">'+esc(x.name)+'<small>'+esc(x.detail||x.type||'file')+'</small></div>').join(''):'<div class="v86-file">No files loaded yet.</div>'}
   function enableActions(){$$('#v86-actions button').forEach(b=>{b.disabled=!state.text})}
   async function ai(mode,payload){
-    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);
-    try{const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||localStorage.getItem('scholark_ui_language')||'English',...payload}),signal:ctrl.signal});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'AI request failed');return d}finally{clearTimeout(timer)}
+    const request=window.__SCHOLARK_WORKSPACE_CORE__?.ai?.request;
+    if(!request)throw new Error('SCHOLARK AI foundation is not ready yet.');
+    return request(mode,payload,{timeoutMs:90000});
   }
   function tutorText(r){return [r.answer,r.summary,(r.steps||[]).length?'\nStep by step:\n'+r.steps.map((x,i)=>(i+1)+'. '+x).join('\n'):'',(r.examples||[]).length?'\nWorked examples:\n'+r.examples.map((x,i)=>(i+1)+'. '+x.title+'\n'+x.setup+'\n'+x.walkthrough+'\nAnswer: '+x.answer).join('\n\n'):'',(r.keyPoints||[]).length?'\nKey points:\n- '+r.keyPoints.join('\n- '):'',(r.commonMistakes||[]).length?'\nCommon mistakes:\n- '+r.commonMistakes.join('\n- '):'',(r.checks||[]).length?'\nCheck yourself:\n- '+r.checks.join('\n- '):'',r.followUp?'\nNext: '+r.followUp:''].filter(Boolean).join('\n\n')}
   async function action(kind,btn){
@@ -82,5 +83,5 @@
   // File Intelligence surface itself.
   function sync(){if(location.hash.toLowerCase()==='#files')render(false)}
   addEventListener('hashchange',()=>setTimeout(sync,30));setTimeout(sync,180);
-  window.__SCHOLARK_V86_FILES__={open:()=>render(false),refresh:()=>render(true),getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20260930-r202'};
+  window.__SCHOLARK_V86_FILES__={open:()=>render(false),refresh:()=>render(true),getState:()=>({files:state.files.map(x=>({name:x.name,type:x.type,detail:x.detail,size:x.size,error:!!x.error})),text:state.text,busy:state.busy}),getOutput:()=>clean($('#v86-output')?.innerText||''),version:'20261001-r203'};
 })();
