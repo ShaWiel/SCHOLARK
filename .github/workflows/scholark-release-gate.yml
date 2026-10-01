@@ -1,0 +1,71 @@
+name: SCHOLARK Release Gate
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scholark-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gate:
+    if: contains(github.event.head_commit.message, '[release-gate]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static and syntax audit
+        run: |
+          node --check scholark-billing-route.mjs
+          node scripts/scholark-static-audit.mjs
+      - name: Build production image
+        run: docker build --pull -t scholark-release-gate .
+      - name: Start isolated production container
+        run: docker run -d --name scholark-release-gate-run -e PORT=10000 -e SCHOLARK_AI_LIVE=0 -e SCHOLARK_TEST_MODE=1 -p 10000:10000 scholark-release-gate
+      - name: Wait for SCHOLARK
+        run: |
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:10000/api/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs scholark-release-gate-run
+          exit 1
+      - name: Full API and global Schools QA
+        run: |
+          node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
+      - name: Install browser engines with bounded setup
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          timeout 240s npx playwright install-deps chromium firefox webkit || echo "::warning::Dependency setup timed out; browser launch will validate the runner."
+          timeout 360s npx playwright install chromium firefox webkit
+      - name: Chromium full Workspace regression
+        run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
+      - name: Firefox and WebKit critical regression
+        run: node scripts/scholark-cross-browser-smoke.mjs http://127.0.0.1:10000
+      - name: Homepage and runtime contract
+        run: |
+          curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
+          grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
+          grep -q '/scholark-logo.png' /tmp/scholark-home.html
+          VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
+          test -n "$VERSION"
+          grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html
+          if grep -Eqi 'Student[[:space:]]*OS' /tmp/scholark-home.html; then
+            echo 'Legacy StudentOS text leaked into served homepage'
+            exit 1
+          fi
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs scholark-release-gate-run || true
+      - name: Stop container
+        if: always()
+        run: docker rm -f scholark-release-gate-run || true
