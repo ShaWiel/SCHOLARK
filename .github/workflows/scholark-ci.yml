@@ -50,6 +50,8 @@ jobs:
           exit 1
       - name: Run full local API smoke suite
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+      - name: Run global Schools Near Me sampling
+        run: node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
       - name: Run concurrent launch load smoke
         run: node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
       - name: Install browser smoke dependency
