@@ -103,6 +103,7 @@
     $('#v93-target').onchange=()=>{const code=$('#v93-target').value;localStorage.setItem('scholark_v93_target',code);renderStats(code);loadCloudProgress(code)};
     $('#v93-build').onclick=buildLesson;renderStats(lastTarget);loadCloudProgress(lastTarget);renderHistory();
     window.__SCHOLARK_I18N__?.apply?.(host);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
+    window.dispatchEvent(new CustomEvent('scholark-tool-mounted',{detail:{tool:'language',source:'v93'}}));
   }
 
   async function call(payload){
