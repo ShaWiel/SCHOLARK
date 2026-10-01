@@ -151,5 +151,5 @@
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v51-tool="project"]'))setTimeout(()=>enhance(),140)},true);
   modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
   loadSession();setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true)},350);
-  window.__SCHOLARK_V72_CLOUD__={session,loadCloud,syncAllLocal,openAuth,signOut,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r184'};
+  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,loadCloud,syncAllLocal,openAuth,signOut,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r203'};
 })();
