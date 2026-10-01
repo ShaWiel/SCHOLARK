@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)$/)||[])[1]||'';
 const ROUTER='20260917-gemini-resilience-v3';
-const SCHOOL_STRICT='20260925-school-global-v12';
+const SCHOOL_STRICT='20261001-school-global-v13';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
@@ -90,6 +90,8 @@ ok(docker.includes('--import", "./scholark-school-strict.mjs"'),'Strict country 
 ok(docker.indexOf('./scholark-school-route.mjs')<docker.indexOf('./scholark-school-strict.mjs'),'Strict school route must load after base school route');
 ok(schoolStrict.includes(`VERSION='${SCHOOL_STRICT}'`),'Strict school route version is not current');
 ok(schoolStrict.includes('ISO3166-1')&&schoolStrict.includes('(area.country)'),'Strict school route lacks country-boundary filtering');
+ok(schoolStrict.includes('NEARBY_RADII=Object.freeze([25,50,100,150,250])')&&schoolStrict.includes('MAX_NEARBY_RADIUS=250')&&schoolStrict.includes('MIN_NEARBY_RESULTS=6'),'Adaptive nearby school radius contract is incomplete');
+ok(schoolStrict.includes("includeNearbyCountries=body.includeNearbyCountries===true")&&schoolStrict.includes("nearbyCountriesOptIn:true")&&schoolStrict.includes("'crossborder':'same-country'"),'Schools Near Me same-country default / cross-border opt-in contract is incomplete');
 ok(schoolStrict.includes('Lijst-met-Scholen-Suriname-1.xlsx')&&schoolStrict.includes('officialSurinameSchools'),'Strict school route lacks official Suriname roster enrichment');
 ok(schoolStrict.includes("name:'J.H.N. Polanenschool'")&&schoolStrict.includes('SURINAME_CURATED_RAW')&&schoolStrict.includes('curatedSurinameSchools'),'Verified current Suriname school supplement is missing J.H.N. Polanenschool');
 ok(schoolStrict.includes("name:'Prakiki Kleuterschool'")&&schoolStrict.includes("exact:['kindergarten']")&&schoolStrict.includes("phone:'+597 499317'"),'Prakiki Kleuterschool kindergarten record is incomplete');
@@ -205,6 +207,7 @@ ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
 ok(schoolFinder.includes('id="v50-name"')&&schoolFinder.includes("name:nameQuery")&&schoolFinder.includes('nameMatch(x,nameQuery)'),'Schools Near Me school-name search is incomplete');
 ok(schoolFinder.includes('id="v50-type"')&&schoolFinder.includes('id="v50-verified"')&&schoolFinder.includes('id="v50-compare-btn"')&&schoolFinder.includes('id="v50-saved-btn"'),'Expanded Schools Near Me filters/save/compare controls are missing');
+ok(schoolFinder.includes('id="v50-crossborder"')&&schoolFinder.includes('includeNearbyCountries')&&schoolFinder.includes('25 → 50 → 100 → 150 → 250 km'),'Schools Near Me adaptive radius / cross-border controls are missing');
 ok(schoolFinder.includes('match score measures fit with your search criteria')&&schoolFinder.includes('metricMarkup(x)'),'School match score/performance distinction is missing');
 ok(schoolFinder.includes('data-sch-school-name="1"')&&schoolFinder.includes('data-sch-school-name-text="1"'),'Rendered school names are not marked as immutable institution names');
 ok(i18n.includes('[data-sch-school-name="1"]')&&i18n.includes('[data-sch-school-name="1"] *'),'Language engine can still translate official school names');
