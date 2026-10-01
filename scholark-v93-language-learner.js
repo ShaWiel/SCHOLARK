@@ -96,8 +96,13 @@
     let host=$('#v51-fallback',page);if(!host){host=document.createElement('div');host.id='v51-fallback';page.appendChild(host)}return host;
   }
 
-  function open(){
-    const host=shell();if(!host)return;const support=uiCode(),p=loadProgress(),lastTarget=localStorage.getItem('scholark_v93_target')||'es',level=p[lastTarget]?.level||'A1';
+  function open(force=false){
+    const host=shell();if(!host)return;
+    if(!force&&location.hash.toLowerCase()==='#language'&&$('.v93',host)){
+      window.dispatchEvent(new CustomEvent('scholark-tool-mounted',{detail:{tool:'language',source:'v93',reused:true}}));
+      return
+    }
+    const support=uiCode(),p=loadProgress(),lastTarget=localStorage.getItem('scholark_v93_target')||'es',level=p[lastTarget]?.level||'A1';
     host.innerHTML='<div class="v93"><div class="v93-hero"><section class="v93-card v93-intro"><div class="v93-kicker">SCHOLARK · LANGUAGE LEARNER</div><h1>Learn a language by actually using it.</h1><p>Build adaptive lessons with vocabulary, grammar, pronunciation, real dialogue and practice. SCHOLARK adjusts the lesson to your level and keeps your progress.</p><div class="v93-progress-grid" id="v93-stats"></div></section><section class="v93-card"><div class="v93-form"><div class="v93-row"><div class="v93-field"><label>Target language</label><select id="v93-target">'+options(lastTarget)+'</select></div><div class="v93-field"><label>Support language</label><select id="v93-support">'+options(support)+'</select></div></div><div class="v93-row"><div class="v93-field"><label>Current level</label><select id="v93-level"><option value="A0">A0 · Beginner from zero</option><option value="A1">A1 · Beginner</option><option value="A2">A2 · Elementary</option><option value="B1">B1 · Intermediate</option><option value="B2">B2 · Upper intermediate</option><option value="C1">C1 · Advanced</option><option value="C2">C2 · Near-native</option></select></div><div class="v93-field"><label>Learning goal</label><select id="v93-goal"><option>Conversation</option><option>Travel</option><option>School</option><option>Work</option><option>Grammar</option><option>Vocabulary</option><option>Pronunciation</option><option>Exam preparation</option></select></div></div><div class="v93-field"><label>Topic or situation</label><textarea id="v93-topic" placeholder="Example: ordering food, introducing myself, school vocabulary, job interview, past tense…"></textarea></div><button class="v93-btn primary" id="v93-build">Build a language lesson</button><div class="v93-status" id="v93-status"></div></div></section></div><div class="v93-results" id="v93-results"></div><section class="v93-section"><h3>Recent language lessons</h3><div class="v93-history" id="v93-history"></div></section></div>';
     const ls=$('#v93-level');if(ls&&[...ls.options].some(o=>o.value===level))ls.value=level;
     $('#v93-target').onchange=()=>{const code=$('#v93-target').value;localStorage.setItem('scholark_v93_target',code);renderStats(code);loadCloudProgress(code)};
@@ -175,11 +180,11 @@
   addEventListener('scholark:language-choice',e=>{
     if(!current)return;const p=loadProgress(),code=current.targetCode,x=p[code]||{level:current.level||'A1'};x.attempts=(Number(x.attempts)||0)+1;if(e.detail?.correct)x.correct=(Number(x.correct)||0)+1;else{x.incorrect=(Number(x.incorrect)||0)+1;x.lastWeakTopic=current.topic||x.lastWeakTopic||''}p[code]=x;saveProgress(p);renderStats(code);pushCloudProgress(code);
   });
-  addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(open,40)});
-  setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open()},260);
+  addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(()=>open(false),40)});
+  setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open(false)},260);
   function selftest(){
     const rows=langs(),codes=rows.map(x=>x[0]),ok=rows.length===74&&new Set(codes).size===74&&!codes.includes('srn');
     return {ok,count:rows.length,unique:new Set(codes).size,noSranan:!codes.includes('srn')};
   }
-  window.__SCHOLARK_V93_LANGUAGE__={open,buildLesson,nextLesson,completeLesson:complete,getCurrent:()=>current,selftest,supportedCount:()=>langs().length};
+  window.__SCHOLARK_V93_LANGUAGE__={open:()=>open(false),refresh:()=>open(true),buildLesson,nextLesson,completeLesson:complete,getCurrent:()=>current,selftest,supportedCount:()=>langs().length};
 })();
