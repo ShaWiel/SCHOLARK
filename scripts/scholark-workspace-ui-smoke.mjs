@@ -901,6 +901,43 @@ try{
   timings.push(['mobile-touch-pass',0]);
 }catch(e){failures.push('Mobile/touch QA threw '+String(e?.message||e))}finally{await mobileContext.close()}
 
+// Responsive regression matrix for changed full-screen/workspace surfaces.
+for(const cfg of [
+  {name:'tablet',width:820,height:1180,touch:true},
+  {name:'compact-laptop',width:1280,height:720,touch:false}
+]){
+  const ctx=await browser.newContext({viewport:{width:cfg.width,height:cfg.height},hasTouch:cfg.touch});
+  const p=await ctx.newPage();
+  await p.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl');localStorage.setItem('scholark_country','Suriname');localStorage.setItem('scholark_learning_level','secondary')});
+  try{
+    await p.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
+    await p.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
+    await p.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
+    const baseLayout=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,main:document.querySelectorAll('#v51-main').length,sidebar:document.querySelectorAll('#v51-sidebar').length}));
+    check(baseLayout.sw<=baseLayout.w+4,`${cfg.name} dashboard has horizontal overflow: ${JSON.stringify(baseLayout)}`);
+    check(baseLayout.main===1&&baseLayout.sidebar===1,`${cfg.name} dashboard duplicated Workspace shell`);
+
+    await p.click('#v51-sidebar [data-v51-tool="schools"]');
+    await p.waitForSelector('#v50-school.open',{state:'visible',timeout:10000});
+    const schoolLayout=await p.evaluate(()=>{
+      const el=document.querySelector('#v50-school'),box=el?.querySelector('.v50-box'),r=box?.getBoundingClientRect();
+      return {doc:document.documentElement.scrollWidth,w:innerWidth,school:el?.scrollWidth||0,client:el?.clientWidth||0,boxRight:r?.right||0,cross:document.querySelectorAll('#v50-crossborder').length,radius:document.querySelectorAll('#v50-radius').length};
+    });
+    check(schoolLayout.doc<=schoolLayout.w+4&&schoolLayout.school<=schoolLayout.client+4&&schoolLayout.boxRight<=schoolLayout.w+4,`${cfg.name} Schools Near Me overflows: ${JSON.stringify(schoolLayout)}`);
+    check(schoolLayout.cross===1&&schoolLayout.radius===1,`${cfg.name} Schools Near Me controls duplicated or missing`);
+
+    await p.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('study'));
+    await p.waitForSelector('#v51-fallback .v62-study',{state:'visible',timeout:10000});
+    const studyLayout=await p.evaluate(()=>{
+      const el=document.querySelector('#v51-fallback .v62-study'),r=el?.getBoundingClientRect();
+      return {doc:document.documentElement.scrollWidth,w:innerWidth,right:r?.right||0,forms:document.querySelectorAll('#v62-study-run').length,experience:document.querySelectorAll('.v111-live[data-v111-owner]').length};
+    });
+    check(studyLayout.doc<=studyLayout.w+4&&studyLayout.right<=studyLayout.w+4,`${cfg.name} Study Ahead overflows: ${JSON.stringify(studyLayout)}`);
+    check(studyLayout.forms===1&&studyLayout.experience<=1,`${cfg.name} Study Ahead duplicated controls/panels: ${JSON.stringify(studyLayout)}`);
+    timings.push([cfg.name+'-responsive-pass',0]);
+  }catch(e){failures.push(cfg.name+' responsive QA threw '+String(e?.message||e))}finally{await ctx.close()}
+}
+
 console.log('\nSCHOLARK WORKSPACE UI SMOKE');
 for(const [name,ms] of timings) console.log(` ✓ ${name}: ${ms}ms`);
 if(failures.length){
