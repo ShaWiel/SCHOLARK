@@ -741,6 +741,7 @@ const lawStudyAheadResponse={
     tools:[{name:'Case brief template',purpose:'Structure facts, issue, rule, analysis and holding.',priority:'learn-now'}],
     universityPrep:['Practice academic reading','Learn basic citation habits'],
     firstYearPreview:[{topic:'Legal Method',whyItMatters:'Builds the reasoning method used across law subjects.'},{topic:'Constitutional Law',whyItMatters:'Introduces the structure and limits of public power.'},{topic:'Contract Law',whyItMatters:'Introduces enforceable agreements and obligations.'}],
+    firstYearReview:{readinessAreas:['Legal reading','Legal reasoning','Academic writing'],selfCheck:['Can I brief a short case?','Can I identify the issue and rule?','Can I compare two legal arguments?'],commonChallenges:['Heavy reading volume','Applying rules to unfamiliar facts'],beforeYouStart:['Brief three cases','Practice structured legal writing','Build a weekly reading routine']},
     careers:['Legal counsel','Attorney','Policy adviser'],
     weeklyPlan:[{block:'Reading',focus:'Read and brief one case',minutes:60},{block:'Writing',focus:'Write one structured legal argument',minutes:60},{block:'Exploration',focus:'Compare two branches of law',minutes:60}],
     roadmap:[{phase:'Foundation',goal:'Understand legal systems and reasoning',actions:['Learn sources of law','Practice case briefs'],milestone:'Brief a case independently'},{phase:'Skills',goal:'Build legal reading and writing',actions:['Write issue-rule-analysis conclusions'],milestone:'Complete three structured analyses'},{phase:'Preview',goal:'Prepare for first-year subjects',actions:['Preview constitutional and contract law'],milestone:'Explain the purpose of three first-year subjects'}],
@@ -776,6 +777,7 @@ check(lawStudyText.includes('Learning the Law'),'Law Study Ahead reading path di
 check(lawStudyText.includes('Introductory law lectures'),'Law Study Ahead learning resources did not render after clicking Build');
 check(lawStudyText.includes('Brief a court decision'),'Law Study Ahead starter projects did not render after clicking Build');
 check(lawStudyText.includes('Legal Method'),'Law Study Ahead first-year preview did not render after clicking Build');
+check(lawStudyText.includes('First-year readiness review')&&lawStudyText.includes('Can I brief a short case?'),'Law Study Ahead first-year readiness review did not render');
 check(lawStudyText.includes('Do I prefer disputes between private parties'),'Law Study Ahead exploration questions did not render after clicking Build');
 const lawStudyTextLower=lawStudyText.toLocaleLowerCase();
 check(lawStudyTextLower.includes('what you actually do')&&lawStudyTextLower.includes('typical tasks')&&lawStudyTextLower.includes('good fit if'),'Law Study Ahead branch intelligence is not visible');
@@ -819,6 +821,7 @@ await page.evaluate(()=>{
       tools:[{name:'Git',purpose:'Version control',priority:'learn-now'}],
       universityPrep:['Review discrete mathematics'],
       firstYearPreview:[{topic:'Discrete Mathematics',whyItMatters:'Supports algorithms and logic.'}],
+      firstYearReview:{readinessAreas:['Discrete mathematics','Programming','Computer systems'],selfCheck:['Can I trace a simple algorithm?','Can I debug a short program?','Can I explain binary and memory at a basic level?'],commonChallenges:['Abstract mathematical reasoning','Keeping up with programming practice'],beforeYouStart:['Review logic','Build one small program','Set up a weekly coding routine']},
       careers:['Security Engineer'],
       weeklyPlan:[{block:'Block 1',focus:'Networking foundations',minutes:60},{block:'Block 2',focus:'Linux practice',minutes:60},{block:'Block 3',focus:'Programming project',minutes:90}],
       roadmap:[{phase:'Foundation',goal:'Build core knowledge',actions:['Study networking'],milestone:'Explain TCP/IP clearly'},{phase:'Practice',goal:'Apply skills',actions:['Build a small project'],milestone:'Finish one project'},{phase:'Preview',goal:'Prepare for first year',actions:['Review discrete math'],milestone:'Complete a diagnostic'}],
@@ -831,6 +834,7 @@ check(await page.locator('#v62-study-results .v62-branch').count()===1,'Advanced
 check(await page.locator('#v83-actions [data-v83="reading"]').count()===1,'Study Ahead reading-plan action missing');
 check(await page.locator('#v83-actions [data-v83="projects"]').count()===1,'Study Ahead project-plan action missing');
 check((await page.locator('#v62-study-results').innerText()).includes('First-year preview'),'Advanced Study Ahead first-year preview missing');
+check((await page.locator('#v62-study-results').innerText()).includes('First-year readiness review'),'Advanced Study Ahead first-year readiness review missing');
 await page.click('[data-v83-focus-branch="Cybersecurity"]');
 check((await page.inputValue('#v62-specialization'))==='Cybersecurity','Study Ahead branch focus did not populate specialization');
 const bookComing=page.locator('#v51-sidebar [data-v51-tool="book"]');
