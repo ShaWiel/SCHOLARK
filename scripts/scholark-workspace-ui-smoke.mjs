@@ -588,6 +588,11 @@ await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
 check(await page.locator('#v50-name').count()===1,'School-name search field missing');
+check(await page.locator('#v50-crossborder').count()===1,'Nearby-country opt-in is missing');
+check((await page.locator('#v50-crossborder').isChecked())===false,'Nearby-country search must be opt-in, not default');
+const radiusOptions=await page.locator('#v50-radius option').evaluateAll(nodes=>nodes.map(n=>n.value));
+check(JSON.stringify(radiusOptions)===JSON.stringify(['auto','25','50','100','150','250']),`Schools Near Me radius options are not capped at 250 km: ${radiusOptions.join(',')}`);
+check((await page.inputValue('#v50-radius'))==='auto','Schools Near Me should default to adaptive nearby radius');
 await page.waitForTimeout(120);
 check((await page.locator('#v50-name').getAttribute('placeholder'))==='Schoolnaam (optioneel)','School-name search placeholder did not localize to Dutch');
 const polanenSearch=await page.evaluate(async()=>{
@@ -595,6 +600,13 @@ const polanenSearch=await page.evaluate(async()=>{
   return {status:r.status,data:await r.json().catch(()=>({}))};
 });
 check(polanenSearch.status===200&&polanenSearch.data?.ok===true,'J.H.N. Polanen API search failed');
+check(polanenSearch.data?.strictCountry===true&&polanenSearch.data?.includeNearbyCountries!==true,'Default nearby school search did not preserve the selected country boundary');
+const polanenCrossBorder=await page.evaluate(async()=>{
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'Paramaribo',name:'J.H.N. Polanen',level:'primary',radius:25,includeNearbyCountries:true})});
+  return {status:r.status,data:await r.json().catch(()=>({}))};
+});
+check(polanenCrossBorder.status===200&&polanenCrossBorder.data?.ok===true,'Cross-border opt-in API search failed');
+check(polanenCrossBorder.data?.strictCountry===false&&polanenCrossBorder.data?.includeNearbyCountries===true,'Cross-border opt-in was ignored by the school API');
 const polanenRows=Array.isArray(polanenSearch.data?.schools)?polanenSearch.data.schools:[];
 check(polanenRows.some(x=>/J\.H\.N\.?\s*Polanen/i.test(String(x.name||''))),'J.H.N. Polanenschool is still missing from primary-school search');
 check(polanenRows.every(x=>Array.isArray(x.levels)&&x.levels.includes('primary')),'J.H.N. Polanen name search leaked non-primary results');
@@ -626,7 +638,7 @@ for(const item of currentSchoolCases){
   check(rows.every(x=>Array.isArray(x.levels)&&x.levels.includes(item.level)),`${item.name} search leaked a wrong education level`);
 }
 const moengoMbo=await page.evaluate(async()=>{
-  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'',name:'Scholengemeenschap Moengotapoe',level:'mbo',radius:700})});
+  const r=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({country:'Suriname',city:'',name:'Scholengemeenschap Moengotapoe',level:'mbo',radius:250})});
   return {status:r.status,data:await r.json().catch(()=>({}))};
 });
 check(moengoMbo.status===200&&moengoMbo.data?.ok===true,'Scholengemeenschap Moengotapoe MBO search failed');
