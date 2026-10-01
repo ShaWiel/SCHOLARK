@@ -205,7 +205,13 @@
     publicActions();
     if(document.body.classList.contains('v51-workspace')){sidebarActions();renderOnboarding();sourceBadge()}
   }
-  const mo=new MutationObserver(()=>{clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,90)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
+  const launchMutationRelevant=muts=>muts.some(m=>[...m.addedNodes,...m.removedNodes].some(node=>{
+    if(node?.nodeType!==1)return false;
+    const el=node;
+    if(el.matches?.('#v55-topbar,#v51-main,#v51-sidebar,#v29-home-layer,#v116-onboarding,.v116-side-actions,.v116-public-actions,button,input,select,textarea,a[href]'))return true;
+    return !!el.querySelector?.('#v55-topbar,#v51-main,#v51-sidebar,#v29-home-layer,button,input,select,textarea,a[href]');
+  }));
+  const mo=new MutationObserver(muts=>{if(!launchMutationRelevant(muts))return;clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,110)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
   addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>setTimeout(sourceBadge,80));addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('pageshow',()=>setTimeout(sync,80));
   installObservability();[120,600,1400].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_LAUNCH__={health,sources,feedback:openFeedback,privacy:openPrivacy,sync,release:'r202'};
