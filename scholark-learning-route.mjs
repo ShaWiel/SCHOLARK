@@ -326,16 +326,16 @@ function learningModels(mode,p={}){
       ? [process.env.POLLINATIONS_FAST_MODEL||'openai-fast',process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra']
       : [process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra',process.env.POLLINATIONS_PREMIUM_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'],
     openai:tier==='light'?(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'):(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra'),
-    gemini:process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite'
+    gemini:process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash'
   };
 }
 async function pollinations(mode,p){
   const key=String(process.env.POLLINATIONS_API_KEY||'').trim();
   if(!isSecret(key)){const e=new Error('POLLINATIONS_API_KEY is not configured');e.code='POLLINATIONS_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),models=[...new Set(route.pollinations.map(String).filter(Boolean))],failures=[];
+  const route=learningModels(mode,p),models=[...new Set(route.pollinations.map(String).filter(Boolean))].slice(0,mode==='general_ai'?1:2),failures=[];
   for(const model of models){
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:JSON.stringify(userPayload(mode,p))}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+    const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
     try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
     const data=await response.json().catch(()=>({}));
     if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
@@ -353,7 +353,7 @@ async function openai(mode,p){
   if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e}
   const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
   const body={model,store:false,reasoning:{effort},text:{verbosity:(mode==='tutor'||mode==='language_learning')?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
-  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+  const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
@@ -362,7 +362,7 @@ async function openai(mode,p){
 async function gemini(mode,p){
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),model=route.gemini,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);let response;
+  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts:[{text:JSON.stringify(userPayload(mode,p))}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`Gemini HTTP ${response.status}`);e.code='GEMINI_ERROR';throw e}
@@ -860,7 +860,7 @@ http.Server.prototype.emit = function(event,...args){
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||'gemini-3.1-flash-lite')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
+    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:20000,deep:35000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
