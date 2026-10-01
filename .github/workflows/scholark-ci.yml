@@ -30,7 +30,7 @@ jobs:
 
   docker-build-and-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,9 +55,11 @@ jobs:
       - name: Install browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
+      - name: Exercise critical flows in Firefox and WebKit
+        run: node scripts/scholark-cross-browser-smoke.mjs http://127.0.0.1:10000
       - name: Verify homepage boot, loading guard and runtime scripts
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
