@@ -144,7 +144,26 @@
   }
 
   function context(){
-    const s=compute();
+    const s=compute(),fileApi=window.__SCHOLARK_V86_FILES__,studyApi=window.__SCHOLARK_V83_STUDY_AHEAD__;
+    let files=null,studyAhead=null;
+    try{
+      const fs=fileApi?.getState?.(),output=clean(fileApi?.getOutput?.()||'');
+      if(fs&&(fs.files?.length||fs.text||output))files={
+        names:(fs.files||[]).slice(0,8).map(x=>clean(x.name)).filter(Boolean),
+        extractedChars:String(fs.text||'').length,
+        textPreview:clean(String(fs.text||'').slice(0,900)),
+        lastOutput:output.slice(0,700)
+      };
+    }catch{}
+    try{
+      const st=studyApi?.getCurrent?.();
+      if(st?.field||st?.result)studyAhead={
+        field:clean(st.field),specialization:clean(st.specialization),
+        recommendedSpecialization:clean(st.result?.recommendedSpecialization?.name),
+        keySubjects:(st.result?.keySubjects||[]).slice(0,8).map(clean).filter(Boolean),
+        readinessAreas:(st.result?.firstYearReview?.readinessAreas||[]).slice(0,6).map(clean).filter(Boolean)
+      };
+    }catch{}
     return {
       country:window.__SCHOLARK_COUNTRY__?.current?.()||localStorage.getItem('scholark_country')||'',
       learningLevel:localStorage.getItem('scholark_learning_level')||'',
@@ -153,11 +172,63 @@
       weakTopics:s.mastery.weak.slice(0,8).map(x=>({id:x.id,subject:x.subject,topic:x.topic,mastery:x.mastery,nextReviewAt:x.nextReviewAt})),
       dueFlashcards:s.flashcards.due.slice(0,10).map(x=>({deck:x.deck,front:x.front})),
       assignments:s.assignments.active.slice(0,6).map(x=>({id:x.id,title:x.title,subject:x.subject,dueDate:x.dueDate,progress:x.progress,priority:x.priority})),
+      projects:s.projects.slice(0,6).map(x=>({id:x.id,title:clean(x.title),subject:clean(x.subject),type:clean(x.type),status:clean(x.status)})),
+      files,studyAhead,
       focusMinutes7d:s.focus.minutes7d,
       plannerCompletion:s.planner.completion,
       consistency:s.activity.consistency,
       nextBestAction:s.next
     };
+  }
+
+  const AI_FEATURES=Object.freeze({tutor:'tutor_message',general_ai:'general_ai',flashcards:'quiz',exam:'quiz',curriculum:'curriculum',study_ahead:'study_ahead',language_learning:'language_lesson'});
+  async function aiSession(force=false){
+    if(window.__SCHOLARK_TEST_MODE__)return null;
+    const cloud=window.__SCHOLARK_V72_CLOUD__;
+    try{
+      if(force&&cloud?.refreshSession)return await cloud.refreshSession();
+      if(cloud?.session)return await cloud.session();
+      return cloud?.currentSession?.()||null;
+    }catch{return null}
+  }
+  async function aiRequest(mode,payload={},opts={}){
+    const m=clean(mode).toLowerCase(),feature=AI_FEATURES[m];
+    if(!feature){const e=new Error('Unsupported SCHOLARK AI mode.');e.code='AI_MODE_UNSUPPORTED';throw e}
+    const test=!!window.__SCHOLARK_TEST_MODE__;
+    let session=test?null:await aiSession(false);
+    if(!test&&!session?.access_token){
+      if(opts.openAuth!==false)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
+      const e=new Error('Sign in to use SCHOLARK AI features and protect your credits.');e.code='AUTH_REQUIRED';throw e;
+    }
+    if(!test){
+      await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
+      session=await aiSession(false);
+      if(!session?.access_token){const e=new Error('Your SCHOLARK session expired. Sign in again.');e.code='AUTH_REQUIRED';throw e}
+    }
+    const requestId=clean(opts.requestId)||(globalThis.crypto?.randomUUID?.()||uid('sch-ai')).replace(/[^a-zA-Z0-9._:-]/g,'');
+    const timeoutMs=Math.max(5000,Math.min(120000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?115000:70000):90000)));
+    const body={mode:m,...payload};
+    const once=async activeSession=>{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+      try{
+        const headers={'content-type':'application/json','x-scholark-request-id':requestId};
+        if(activeSession?.access_token)headers.authorization='Bearer '+activeSession.access_token;
+        const response=await fetch('/api/learning/generate',{method:'POST',headers,body:JSON.stringify(body),signal:ctrl.signal});
+        const data=await response.json().catch(()=>({}));
+        return{response,data};
+      }finally{clearTimeout(timer)}
+    };
+    let attempt=await once(session);
+    if(!test&&attempt.response.status===401){
+      const fresh=await aiSession(true);
+      if(fresh?.access_token){session=fresh;attempt=await once(session)}
+    }
+    const {response,data}=attempt;
+    if(!response.ok||!data?.ok||!data?.result){
+      const e=new Error(data?.error||'SCHOLARK AI is temporarily unavailable.');e.code=data?.code||('HTTP_'+response.status);e.status=response.status;e.balance=data?.balance;e.needed=data?.needed;throw e;
+    }
+    if(data?.usage?.serverCharged||data?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
+    return data;
   }
 
   function record(tool,action,meta={}){
@@ -247,11 +318,12 @@
   }
 
   const api={
-    version:'20260921-r176',
+    version:'20261001-r203',
     keys:KEYS,
     read,array,write,
     data:{planner,goals,mastery,assignments,flashcards,focusHistory,activity,learningProjects},
     compute,context,record,
+    ai:{request:aiRequest,session:aiSession,features:AI_FEATURES},
     actions:{addPlan,updatePlan,completePlan,removePlan,addGoal,updateGoal,removeGoal,addAssignment,updateAssignment,removeAssignment,prepareFocus,upsertMastery,addFlashcards,createProject,updateProject,deleteProject,open}
   };
   window.__SCHOLARK_WORKSPACE_CORE__=api;
