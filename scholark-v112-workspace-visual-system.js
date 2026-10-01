@@ -64,7 +64,7 @@
     const top=$(".v111-top",live),first=top?.firstElementChild;
     if(first&&!$(".v112-mark",first))first.insertAdjacentHTML("afterbegin",'<span class="v112-mark" aria-hidden="true">'+esc(m[0])+"</span>");
     $$(".v112-showcase",live).forEach(x=>x.remove());scrub(live);
-    window.dispatchEvent(new CustomEvent("scholark-visual-ready",{detail:{release:"r176",tool,unified:true}}));
+    window.dispatchEvent(new CustomEvent("scholark-visual-ready",{detail:{release:"r203",tool,unified:true}}));
   }
   let raf=0,timer=0;
   const schedule=()=>{if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(timer);timer=setTimeout(schedule,120);return}cancelAnimationFrame(raf);raf=requestAnimationFrame(decorate)};
@@ -73,7 +73,7 @@
   addEventListener("hashchange",()=>setTimeout(schedule,45));addEventListener("scholark-workspace-entry-ready",()=>setTimeout(schedule,20));addEventListener("scholark-workspace-change",()=>setTimeout(schedule,35));addEventListener("scholark-experience-ready",e=>{if(e?.detail?.tool===route())decorate()});addEventListener("scholark-runtime-ready",()=>setTimeout(schedule,40));addEventListener("scholark-country-change",()=>setTimeout(schedule,40));
   document.addEventListener("visibilitychange",()=>document.documentElement.classList.toggle("v112-background",document.hidden));
   setTimeout(schedule,30);setTimeout(schedule,220);
-  window.__SCHOLARK_V112_VISUAL__={version:"20260930-r202",decorate,verify(){
+  window.__SCHOLARK_V112_VISUAL__={version:"20261001-r203",decorate,verify(){
     const tool=route(),w=workspaceRoutes.has(tool);
     const inspect=()=>{const candidates=Array.from(document.querySelectorAll(".v111-live[data-v111-owner]")),live=candidates.find(x=>x.dataset.v111Tool===tool&&x.getClientRects().length)||candidates.find(x=>x.dataset.v111Tool===tool)||null,root=live?.parentElement,bad=Array.from(document.querySelectorAll(".v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max")).some(x=>/QUALITY\s*[·•]?\s*MAX/i.test(clean(x.textContent))),showcases=live?live.querySelectorAll(".v112-showcase").length:0,unified=!w||!!(live?.classList.contains("v112-live")&&root?.classList.contains("v112-feature-shell")&&showcases===0);return{live,bad,showcases,unified}};
     let state=inspect();
