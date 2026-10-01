@@ -15,10 +15,19 @@ const json = (res, status, body) => {
 };
 
 const readJson = req => new Promise((resolve,reject)=>{
-  let raw='';
-  req.on('data',c=>{ raw+=c; if(raw.length>2_000_000){ reject(new Error('Payload too large')); req.destroy(); }});
-  req.on('end',()=>{ try{ resolve(raw?JSON.parse(raw):{}); } catch(e){ reject(e); } });
-  req.on('error',reject);
+  let raw='',settled=false;
+  const fail=(message,code)=>{if(settled)return;settled=true;const e=new Error(message);e.code=code;reject(e)};
+  req.on('data',chunk=>{
+    if(settled)return;
+    raw+=chunk;
+    if(Buffer.byteLength(raw,'utf8')>1024*1024){fail('Learning request is too large.','REQUEST_TOO_LARGE');req.destroy()}
+  });
+  req.on('end',()=>{
+    if(settled)return;
+    try{settled=true;resolve(raw?JSON.parse(raw):{})}
+    catch{fail('Invalid JSON request.','INVALID_JSON')}
+  });
+  req.on('error',e=>{if(!settled){settled=true;reject(e)}});
 });
 
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
@@ -920,7 +929,10 @@ http.Server.prototype.emit = function(event,...args){
       const charged=await chargeLearningCredits(req,mode,p,out);
       if(!charged.ok)return json(res,charged.http||500,{ok:false,code:charged.code,error:charged.error,balance:charged.balance,needed:charged.needed});
       json(res,200,{...out,usage:charged.usage});
-    }catch(e){json(res,e.code==='AI_ENGINE_UNAVAILABLE'?503:500,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});}
+    }catch(e){
+      const status=e.code==='AI_ENGINE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
+      json(res,status,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});
+    }
   })();
   return true;
 };
