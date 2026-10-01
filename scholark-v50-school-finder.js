@@ -111,9 +111,11 @@
   async function overpassQuery(q,ms=20000){
     let d=null;for(const e of OVERPASS_EPS){try{d=await json(e+encodeURIComponent(q),ms);if(d?.elements?.length)break}catch{}}return d?.elements||[];
   }
-  async function overpass(pos,radius){
-    const km=Math.max(1,Math.min(700,Number(radius)||50));
-    const q=`[out:json][timeout:28];(node["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});way["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon});relation["amenity"~"school|college|university|language_school"](around:${km*1000},${pos.lat},${pos.lon}););out center tags 1200;`;
+  async function overpass(pos,radius,countryCode='',countryName=''){
+    const km=Math.max(1,Math.min(250,Number(radius)||25)),iso=String(countryCode||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,2),name=String(countryName||'').replace(/["\\]/g,'');
+    const scope=iso?`area["ISO3166-1"="${iso}"]["admin_level"="2"]->.country;`:name?`area["name"="${name}"]["boundary"="administrative"]["admin_level"="2"]->.country;`:'';
+    const around=`(around:${km*1000},${pos.lat},${pos.lon})`,area=scope?'(area.country)':'';
+    const q=`[out:json][timeout:28];${scope}(node["amenity"~"school|college|university|language_school"]${area}${around};way["amenity"~"school|college|university|language_school"]${area}${around};relation["amenity"~"school|college|university|language_school"]${area}${around};);out center tags 1200;`;
     return overpassQuery(q,22000);
   }
   async function overpassCountry(countryCode='',countryName=''){
@@ -235,7 +237,7 @@
   function build(){
     if(root)return;root=document.createElement('div');root.id='v50-school';root.innerHTML=`<div class="v50-box"><div class="v50-head"><div><small>SCHOLARK · SCHOOLS NEAR ME</small><h2>Find the right schools around you.</h2><p>Find education worldwide, from early childhood and primary school through secondary, vocational, college and university. Country is required; city/area or your location gives the strongest nearby results.</p></div><button class="v50-x">×</button></div>
     <div class="v50-controls"><input id="v50-country" placeholder="Country you are in or going to"><input id="v50-city" placeholder="City / area (recommended)"><input id="v50-name" placeholder="School name (optional)"><select id="v50-level"><option value="all">Alle niveaus</option><optgroup label="Basisonderwijs"><option value="kindergarten">Kleuterschool / Kleuteronderwijs · Leerjaar 1–2 · 4–6 jaar</option><option value="primary">Lagere school / Basisschool · Leerjaar 3–8 · 6–12 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Junioren (VOJ)"><option value="mulo">MULO · 12–16 jaar</option><option value="lbo">LBO · 12–16 jaar</option></optgroup><optgroup label="Voortgezet Onderwijs Senioren (VOS)"><option value="havo">HAVO · 16–18 jaar</option><option value="vwo">VWO · 16–19 jaar</option><option value="mbo">MBO · NATIN, IMEAO, Kweekschool · 16–20+ jaar</option></optgroup><optgroup label="Hoger Onderwijs"><option value="hbo">HBO · 18/19+ jaar</option><option value="wo">WO / Universiteit · AdeKUS · 19+ jaar</option></optgroup></select><input id="v50-study" placeholder="Study / field (optional)"></div>
-    <div class="v50-controls2"><select id="v50-radius"><option value="10">Within 10 km</option><option value="25">Within 25 km</option><option value="50" selected>Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option><option value="400">Within 400 km</option><option value="550">Within 550 km</option><option value="700">Within 700 km</option></select><select id="v50-type"><option value="all">All school types</option><option value="public">Public</option><option value="private">Private</option><option value="special">Special / religious</option><option value="international">International</option></select><select id="v50-sort"><option value="best" selected>Best match first</option><option value="distance">Nearest first</option><option value="name">Name A–Z</option></select><label class="secondary" style="display:flex;align-items:center;justify-content:center;gap:7px"><input type="checkbox" id="v50-verified"> Verified only</label><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
+    <div class="v50-controls2"><select id="v50-radius"><option value="auto" selected>Auto nearby · 25 → 50 → 100 → 150 → 250 km</option><option value="25">Within 25 km</option><option value="50">Within 50 km</option><option value="100">Within 100 km</option><option value="150">Within 150 km</option><option value="250">Within 250 km</option></select><select id="v50-type"><option value="all">All school types</option><option value="public">Public</option><option value="private">Private</option><option value="special">Special / religious</option><option value="international">International</option></select><select id="v50-sort"><option value="best" selected>Best match first</option><option value="distance">Nearest first</option><option value="name">Name A–Z</option></select><label class="secondary" style="display:flex;align-items:center;justify-content:center;gap:7px"><input type="checkbox" id="v50-verified"> Verified only</label><button class="secondary" id="v50-location-btn">Use my current location</button><button class="v50-search" id="v50-go">Search with <span>SCHOLARK</span></button></div>
     <div class="v50-location" id="v50-location">Enter the country you are in or travelling to. Add a city/area for much better nearby results, or use your real location.</div>
     <div class="v50-info">The SCHOLARK <b>match score measures fit with your search criteria — it is not a school-quality grade or academic ranking</b>. Exact level, location, verified source coverage and optional study relevance influence the score. Country-only searches use a country-wide discovery pass; city/area or current-location searches prioritize nearby results. Where reliable performance data exists, SCHOLARK shows that separately as a factual metric.</div><div class="v50-toolbar"><strong id="v50-count">Ready to search</strong><div class="v50-toolbar-actions"><button id="v50-compare-btn">Compare (0)</button><button id="v50-saved-btn">Saved schools</button></div></div><div class="v50-compare-panel" id="v50-compare-panel"></div><div class="v50-results" id="v50-results"></div></div>`;
     document.body.appendChild(root);$('#v50-go').onclick=search;$('#v50-location-btn').onclick=useLocation;$('.v50-x',root).onclick=close;$('#v50-level').addEventListener('change',syncStudyField);
@@ -259,13 +261,13 @@
   }
 
   async function search(){
-    const country=$('#v50-country').value.trim(),city=$('#v50-city').value.trim(),nameQuery=$('#v50-name')?.value.trim()||'',level=$('#v50-level').value,study=STUDY_FIELD_LEVELS.has($('#v50-level').value)?$('#v50-study').value.trim():'',radius=Math.min(700,Math.max(1,+$('#v50-radius').value||50)),type=$('#v50-type')?.value||'all',verifiedOnly=!!$('#v50-verified')?.checked,sort=$('#v50-sort').value||'best',h=$('#v50-results'),loc=$('#v50-location');
+    const country=$('#v50-country').value.trim(),city=$('#v50-city').value.trim(),nameQuery=$('#v50-name')?.value.trim()||'',level=$('#v50-level').value,study=STUDY_FIELD_LEVELS.has($('#v50-level').value)?$('#v50-study').value.trim():'',radiusChoice=$('#v50-radius').value,autoRadius=radiusChoice==='auto',radius=autoRadius?25:Math.min(250,Math.max(25,+radiusChoice||25)),type=$('#v50-type')?.value||'all',verifiedOnly=!!$('#v50-verified')?.checked,sort=$('#v50-sort').value||'best',h=$('#v50-results'),loc=$('#v50-location');
     if(!country){h.innerHTML='<div class="v50-state err">Tell SCHOLARK which country you are in or going to first.</div>';return $('#v50-country').focus()}
     const epoch=++searchEpoch;try{searchController?.abort()}catch{}searchController=new AbortController();
     window.__SCHOLARK_COUNTRY__?.set?.(country,'schools');
     h.innerHTML='<div class="v50-state">Finding schools through SCHOLARK server-side public sources…</div>';
     try{
-      const payload={country,city,name:nameQuery,level,radius,lat:currentPos?.lat,lon:currentPos?.lon,countryCode:currentPos?.countryCode||''};
+      const payload={country,city,name:nameQuery,level,radius,autoRadius,lat:currentPos?.lat,lon:currentPos?.lon,countryCode:currentPos?.countryCode||''};
       const response=await fetch('/api/schools/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload),signal:searchController.signal});
       const live=await response.json().catch(()=>({}));if(epoch!==searchEpoch)return;
       if(!response.ok||!live?.ok)throw new Error(live?.error||'SCHOLARK school discovery route failed');
@@ -273,11 +275,11 @@
       const pos={lat:Number(live.center?.lat),lon:Number(live.center?.lon)},countryWide=!!live.countryWide;
       const db=await dbSchools(country,countryWide?'':city,level,study,pos).catch(()=>[]);if(epoch!==searchEpoch)return;
       const items=merge(db,Array.isArray(live.schools)?live.schools:[]).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
-      render(items,{country,city,nameQuery,level,study,radius:countryWide?700:radius,type,verifiedOnly,sort,countryWide,national:!!live.national});
+      const effectiveRadius=countryWide?250:Math.min(250,Number(live.radius)||radius);render(items,{country,city,nameQuery,level,study,radius:effectiveRadius,type,verifiedOnly,sort,countryWide,national:!!live.national});
       const sourceCount=(live.sourceStatus||[]).filter(x=>x.ok).reduce((n,x)=>n+(Number(x.count)||0),0);
       loc.textContent=countryWide
         ? 'Country-wide '+(live.resolvedCountry||country)+' search complete · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · provider: '+(live.provider||'public school sources')+(sourceCount?' · '+sourceCount+' source records scanned':'')
-        : 'School search complete around '+(live.center?.display||city||country)+' · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · within '+radius+' km.';
+        : 'School search complete around '+(live.center?.display||city||country)+' · '+items.length+' named education institutions'+(nameQuery?' matching “'+nameQuery+'”':'')+' · within '+effectiveRadius+' km.'+(live.autoRadius&&live.expandedRadius?' SCHOLARK expanded the nearby search automatically.':'');
       if(live.degraded)loc.textContent+=' · resilient fallback providers were used.';if(db.length)loc.textContent+=' · '+db.length+' curated SCHOLARK database matches merged.';
     }catch(serverError){
       if(serverError?.name==='AbortError'||epoch!==searchEpoch)return;
@@ -287,10 +289,10 @@
         if(!pos||city){geoResult=await geocode(country,city);pos={lat:geoResult.lat,lon:geoResult.lon,countryCode:geoResult.countryCode};countryCode=geoResult.countryCode}
         if(epoch!==searchEpoch)return;
         const countryWide=!city&&!currentPos;
-        const [db,raw,wiki]=await Promise.all([dbSchools(country,countryWide?'':city,level,study,pos),countryWide?overpassCountry(countryCode||'',country):overpass(pos,radius),countryWide?Promise.resolve([]):wikiGeo(pos,radius)]);
+        let fallbackRadius=radius,raw=[];if(!countryWide&&autoRadius){for(const step of [25,50,100,150,250]){fallbackRadius=step;raw=await overpass(pos,step,countryCode,country);if(raw.length>=6)break}}else raw=countryWide?await overpassCountry(countryCode||'',country):await overpass(pos,radius,countryCode,country);const [db,wiki]=await Promise.all([dbSchools(country,countryWide?'':city,level,study,pos),countryWide?Promise.resolve([]):wikiGeo(pos,fallbackRadius)]);
         if(epoch!==searchEpoch)return;
         const local=raw.map(e=>fromOsm(e,pos)).filter(Boolean).map(x=>countryWide?{...x,distance:null}:x),wikiItems=wiki.map(x=>({...x,level:'school'})),items=merge(db,local,wikiItems).filter(x=>x.level!=='early'&&nameMatch(x,nameQuery));
-        render(items,{country,city,nameQuery,level,study,radius:countryWide?700:radius,type,verifiedOnly,sort,countryWide,national:/^suriname$/i.test(country)&&countryWide});
+        render(items,{country,city,nameQuery,level,study,radius:countryWide?250:fallbackRadius,type,verifiedOnly,sort,countryWide,national:/^suriname$/i.test(country)&&countryWide});
         loc.textContent=(countryWide?'Country-wide browser fallback':'Nearby browser fallback')+' used · '+items.length+' named education institutions found.';
       }catch(e){
         if(epoch!==searchEpoch)return;
@@ -304,6 +306,6 @@
   function open(){build();root.classList.add('open');root.scrollTop=0;window.__SCHOLARK_COUNTRY__?.apply?.();syncStudyField();scheduleSchoolLocalization(true);history.replaceState(null,'',location.pathname+location.search+'#schools');requestAnimationFrame(()=>$('#v50-country')?.focus())}
   function close(){root?.classList.remove('open')}
   function selection(){return {country:$('#v50-country')?.value?.trim()||'',city:$('#v50-city')?.value?.trim()||'',name:$('#v50-name')?.value?.trim()||'',level:$('#v50-level')?.value||'all',study:$('#v50-study')?.value?.trim()||'',results:renderedItems.slice(0,25).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''})),compared:renderedItems.filter(x=>compareIds.has(schoolId(x))).slice(0,4).map(x=>({name:x.name,description:x.description||'',level:x.level||'',score:x.score||0,website:x.website||''}))}}
-  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20260925-r194',global:true};
+  window.__SCHOLARK_V50_SCHOOLS__={open,close,build,search,useLocation,syncStudyField,selection,studyFieldLevels:[...STUDY_FIELD_LEVELS],version:'20261001-r203',global:true};
   build();
 })();
