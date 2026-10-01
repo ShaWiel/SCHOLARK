@@ -67,7 +67,7 @@
   }
   function render(force=false){
     if(!force&&location.hash.toLowerCase()==='#files'&&$('#v51-fallback .v86')){
-      $('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='files'));
+      $$('#v51-sidebar [data-v51-tool]').forEach(b=>b.classList.toggle('active',b.dataset.v51Tool==='files'));
       window.dispatchEvent(new CustomEvent('scholark-tool-mounted',{detail:{tool:'files',source:'v86',reused:true}}));
       return
     }
