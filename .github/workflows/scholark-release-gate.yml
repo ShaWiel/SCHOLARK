@@ -42,6 +42,7 @@ jobs:
           node scripts/scholark-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-credit-resilience-smoke.mjs
       - name: Install browser engines with bounded setup
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
