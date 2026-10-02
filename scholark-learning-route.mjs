@@ -1,4 +1,7 @@
 import http from 'node:http';
+import dns from 'node:dns';
+
+try{dns.setDefaultResultOrder('ipv4first')}catch{}
 
 const originalEmit = http.Server.prototype.emit;
 const SUPABASE_URL=String(process.env.SUPABASE_URL||'').replace(/\/+$/,'');
@@ -33,6 +36,23 @@ const readJson = req => new Promise((resolve,reject)=>{
 const clean = s => String(s ?? '').replace(/\s+/g,' ').trim();
 const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''};
 const creditRequestId=req=>String(req.headers?.['x-scholark-request-id']||'').trim();
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const networkCode=e=>String(e?.cause?.code||e?.code||e?.name||'NETWORK_ERROR').slice(0,80);
+async function resilientCreditFetch(url,opts={},label='credit'){
+  let last=null;
+  for(let attempt=1;attempt<=3;attempt++){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6000);
+    try{
+      const r=await fetch(url,{...opts,signal:ctrl.signal});
+      return r
+    }catch(e){
+      last=e;
+      console.warn('[SCHOLARK] Credit service '+label+' network attempt '+attempt+'/3 failed · '+networkCode(e));
+      if(attempt<3)await wait(attempt===1?250:750)
+    }finally{clearTimeout(timer)}
+  }
+  const e=new Error('SCHOLARK could not reach account services. Please try again.');e.code='CREDIT_SERVICE_UNAVAILABLE';e.causeCode=networkCode(last);throw e
+}
 async function authorizeLearningCredits(req,mode){
   if(TEST_MODE||mode==='translate_ui')return {ok:true,feature:null,needed:0,balance:null};
   const token=bearer(req);
@@ -42,11 +62,16 @@ async function authorizeLearningCredits(req,mode){
   const requestId=creditRequestId(req);
   if(!/^[a-zA-Z0-9._:-]{8,120}$/.test(requestId))return {ok:false,http:400,code:'REQUEST_ID_REQUIRED',error:'A valid SCHOLARK request ID is required.'};
   if(!SUPABASE_URL||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
-  const headers={apikey:PUB,authorization:'Bearer '+token,accept:'application/json'},signal=AbortSignal.timeout?.(8000);
-  const [cr,wr]=await Promise.all([
-    fetch(SUPABASE_URL+'/rest/v1/ai_feature_costs?select=credits&feature=eq.'+encodeURIComponent(feature)+'&active=is.true&limit=1',{headers,signal}),
-    fetch(SUPABASE_URL+'/rest/v1/credit_wallets?select=balance,plan,monthly_allowance&limit=1',{headers,signal})
-  ]);
+  const headers={apikey:PUB,authorization:'Bearer '+token,accept:'application/json'};
+  let cr,wr;
+  try{
+    [cr,wr]=await Promise.all([
+      resilientCreditFetch(SUPABASE_URL+'/rest/v1/ai_feature_costs?select=credits&feature=eq.'+encodeURIComponent(feature)+'&active=is.true&limit=1',{headers},'feature-cost'),
+      resilientCreditFetch(SUPABASE_URL+'/rest/v1/credit_wallets?select=balance,plan,monthly_allowance&limit=1',{headers},'wallet')
+    ])
+  }catch(e){
+    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK is reconnecting to account services. Please try ARKI again in a moment.',detailCode:e.causeCode||networkCode(e)}
+  }
   if(cr.status===401||cr.status===403||wr.status===401||wr.status===403)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'Your SCHOLARK session has expired. Sign in again.'};
   if(!cr.ok||!wr.ok)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK could not verify your credit balance before this request.'};
   const cd=await cr.json().catch(()=>[]),wd=await wr.json().catch(()=>[]);
@@ -65,7 +90,12 @@ async function chargeLearningCredits(req,mode,p,out){
   if(mode==='general_ai'&&String(out?.provider||'')==='scholark-local-fallback')return {ok:true,usage:{billingMode:'server',serverCharged:false,feature,spent:0,reason:'provider_unavailable'}};
   if(!SUPABASE_URL||!PUB)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLARK credit verification is temporarily unavailable.'};
   const meta={mode,provider:String(out?.provider||'').slice(0,80),model:String(out?.model||'').slice(0,120),tier:String(out?.tier||'').slice(0,40)};
-  const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/consume_feature_credits_once',{method:'POST',headers:{apikey:PUB,authorization:'Bearer '+token,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:meta}),signal:AbortSignal.timeout?.(8000)});
+  let r;
+  try{
+    r=await resilientCreditFetch(SUPABASE_URL+'/rest/v1/rpc/consume_feature_credits_once',{method:'POST',headers:{apikey:PUB,authorization:'Bearer '+token,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_feature:feature,p_request_id:requestId,p_meta:meta})},'charge')
+  }catch(e){
+    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'ARKI answered, but SCHOLARK could not safely confirm the credit charge. Please retry your request.',detailCode:e.causeCode||networkCode(e)}
+  }
   const d=await r.json().catch(()=>({}));
   if(!r.ok){
     const status=r.status===401||r.status===403?401:503;
@@ -930,8 +960,9 @@ http.Server.prototype.emit = function(event,...args){
       if(!charged.ok)return json(res,charged.http||500,{ok:false,code:charged.code,error:charged.error,balance:charged.balance,needed:charged.needed});
       json(res,200,{...out,usage:charged.usage});
     }catch(e){
-      const status=e.code==='AI_ENGINE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
-      json(res,status,{ok:false,code:e.code||'LEARNING_ERROR',error:e.message,details:e.details||undefined});
+      const status=e.code==='AI_ENGINE_UNAVAILABLE'||e.code==='CREDIT_SERVICE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
+      if(mode==='general_ai')console.warn('[SCHOLARK] ARKI request failed · '+String(e.code||'LEARNING_ERROR')+' · '+networkCode(e));
+      json(res,status,{ok:false,code:e.code||'LEARNING_ERROR',error:e.code==='CREDIT_SERVICE_UNAVAILABLE'?'SCHOLARK is reconnecting to account services. Please try ARKI again in a moment.':e.message,details:e.details||undefined});
     }
   })();
   return true;
