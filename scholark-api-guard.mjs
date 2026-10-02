@@ -94,7 +94,7 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
@@ -112,12 +112,21 @@ http.Server.prototype.emit = function(type,...args) {
     return true;
   }
 
-  const rate = consume(clientKey(req),url.pathname,rule.limit);
-  res.setHeader('x-ratelimit-limit',String(rule.limit));
-  res.setHeader('x-ratelimit-remaining',String(rate.remaining));
-  if (!rate.allowed) {
-    json(res,429,{ok:false,code:'RATE_LIMITED',error:'Too many requests. Please wait and try again.'},{'retry-after':String(rate.retryAfter)});
-    return true;
+  if (testMode) {
+    // CI/test containers exercise many independent browser and translation flows
+    // through one loopback client. Keep every production protection below intact
+    // (origin guard, body limits and expensive-request concurrency), but do not
+    // let a synthetic single-IP test matrix exhaust the production rate bucket.
+    res.setHeader('x-ratelimit-limit','test-bypass');
+    res.setHeader('x-ratelimit-remaining','test-bypass');
+  } else {
+    const rate = consume(clientKey(req),url.pathname,rule.limit);
+    res.setHeader('x-ratelimit-limit',String(rule.limit));
+    res.setHeader('x-ratelimit-remaining',String(rate.remaining));
+    if (!rate.allowed) {
+      json(res,429,{ok:false,code:'RATE_LIMITED',error:'Too many requests. Please wait and try again.'},{'retry-after':String(rate.retryAfter)});
+      return true;
+    }
   }
   if (rule.expensive && activeExpensive >= MAX_CONCURRENT) {
     json(res,503,{ok:false,code:'SCHOLARK_BUSY',error:'SCHOLARK is handling many requests right now. Please retry shortly.'},{'retry-after':'3'});
