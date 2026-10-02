@@ -266,26 +266,27 @@
   function barSignature(tool,actions){
     const s=core()?.compute?.()||{};return [tool,actions.map(x=>x.id+':'+x.disabled).join('|'),s.planner?.active?.length||0,s.mastery?.weak?.length||0,s.flashcards?.due?.length||0,s.assignments?.active?.length||0,s.goals?.active?.length||0].join('~')
   }
+  function paint(force=false){
+    const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return false}
+    document.querySelectorAll('.v108-context').forEach(x=>x.remove());
+    const root=rootFor(tool);if(!root){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return false}
+    const candidates=[...document.querySelectorAll('.v114-connect')],inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
+    // Keep one connected-flow bar for exactly one active root. Older code
+    // removed other routes but preserved same-route duplicates indefinitely.
+    candidates.forEach(x=>{if(x!==existing)x.remove()});
+    const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions);
+    if(!force&&existing&&existing.dataset.v114Signature===sig)return true;
+    activeActions=new Map(actions.map(x=>[x.id,x]));
+    const bar=existing||document.createElement('section');bar.className='v114-connect';bar.dataset.v114Route=tool;bar.dataset.v114Signature=sig;
+    bar.innerHTML='<div class="v114-copy"><small>SCHOLARK · CONNECTED FLOW</small><b>Continue without starting over.</b><span>Your context can move with you.</span></div><div class="v114-actions">'+actions.map((a,i)=>'<button type="button" data-v114-action="'+esc(a.id)+'" class="'+(a.primary||i===0?'primary':'')+'" '+(a.disabled?'disabled':'')+'>'+esc(a.label)+'</button>').join('')+'</div>';
+    if(!existing){const anchor=$('.v111-live',root);if(anchor)anchor.insertAdjacentElement('afterend',bar);else root.prepend(bar)}
+    $('[data-v114-action]',bar).forEach(b=>b.onclick=()=>runAction(b.dataset.v114Action,b));
+    window.__SCHOLARK_I18N__?.apply?.(bar);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),80);
+    if(!readHandoff())hideTransition();consume();return true
+  }
   function refresh(force=false,allowDuringLanguage=false){
     if((!allowDuringLanguage&&document.documentElement.classList.contains('scholark-language-switching'))||document.documentElement.classList.contains('scholark-workspace-entering')){clearTimeout(mutationTimer);mutationTimer=setTimeout(()=>refresh(force,allowDuringLanguage),120);return}
-    cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
-      const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      document.querySelectorAll('.v108-context').forEach(x=>x.remove());
-      const root=rootFor(tool);if(!root){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return}
-      const candidates=[...document.querySelectorAll('.v114-connect')],inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
-      // Keep one connected-flow bar for exactly one active root. Older code
-      // removed other routes but preserved same-route duplicates indefinitely.
-      candidates.forEach(x=>{if(x!==existing)x.remove()});
-      const actions=actionsFor(tool).slice(0,4),sig=barSignature(tool,actions);
-      if(!force&&existing&&existing.dataset.v114Signature===sig)return;
-      activeActions=new Map(actions.map(x=>[x.id,x]));
-      const bar=existing||document.createElement('section');bar.className='v114-connect';bar.dataset.v114Route=tool;bar.dataset.v114Signature=sig;
-      bar.innerHTML='<div class="v114-copy"><small>SCHOLARK · CONNECTED FLOW</small><b>Continue without starting over.</b><span>Your context can move with you.</span></div><div class="v114-actions">'+actions.map((a,i)=>'<button type="button" data-v114-action="'+esc(a.id)+'" class="'+(a.primary||i===0?'primary':'')+'" '+(a.disabled?'disabled':'')+'>'+esc(a.label)+'</button>').join('')+'</div>';
-      if(!existing){const anchor=$('.v111-live',root);if(anchor)anchor.insertAdjacentElement('afterend',bar);else root.prepend(bar)}
-      $$('[data-v114-action]',bar).forEach(b=>b.onclick=()=>runAction(b.dataset.v114Action,b));
-      window.__SCHOLARK_I18N__?.apply?.(bar);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),80);
-      if(!readHandoff())hideTransition();consume();
-    })
+    cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>paint(force))
   }
 
   const observer=new MutationObserver(muts=>{
@@ -311,7 +312,15 @@
   setTimeout(()=>refresh(true),40);setTimeout(()=>refresh(true),220);
 
   function verify(){
-    const tool=route(),workspace=ROUTES.has(tool),row=readHandoff(),root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
+    const tool=route(),workspace=ROUTES.has(tool),row=readHandoff();
+    let root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
+    // Verification doubles as a last-resort repair boundary. A rapid language
+    // or Home→Workspace re-entry can legitimately settle between the route-ready
+    // event and the next animation frame. Paint synchronously once so health
+    // never depends on requestAnimationFrame timing.
+    if(workspace&&!!core()&&root&&!bar&&!document.documentElement.classList.contains('scholark-workspace-entering')){
+      paint(true);root=rootFor(tool);bar=root?.querySelector?.('.v114-connect')
+    }
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=[...document.querySelectorAll('.v114-connect')],activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
     return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r203',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
