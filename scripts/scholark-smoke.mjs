@@ -65,6 +65,7 @@ if(guardHealth){
   check(guardHealth.originGuard===true,'API origin guard is not active');
   check(guardHealth.securityHeaders===true,'API security-header guard is not active');
   check(Number(guardHealth.maxBuckets)===10000,'API rate-limit bucket bound mismatch');
+  check(guardHealth.rateLimitMode==='test-bypass','CI/test container did not expose test-only rate-limit bypass');
 }
 try{
   const {r:guardResponse}=await request('/api/guard/health',{},15000);
