@@ -26,14 +26,20 @@
   function host(){const main=$('#v51-main');if(!main)return null;main.style.removeProperty('display');$$('.v51-page',main).forEach(p=>{p.classList.remove('active');p.style.removeProperty('display')});let page=$('[data-v51-page="fallback"]',main);if(!page){page=document.createElement('section');page.className='v51-page';page.dataset.v51Page='fallback';main.appendChild(page)}page.classList.add('active');page.style.display='block';page.style.padding='0';let h=$('#v51-fallback',page);if(!h){h=document.createElement('div');h.id='v51-fallback';page.appendChild(h)}return h}
   function drawHistory(){const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();$('#v107-q')?.focus()});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread()})}
   function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Explain something clearly','Help me write something','Help me code or debug','Brainstorm ideas','Make me a plan'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div><div class="v107-meta">'+(m.role==='assistant'?esc(m.model||'ARKI')+' · ':'')+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+(m.role==='assistant'?'<button class="v107-copy" data-v107-copy="'+i+'">Copy</button>':'')+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-copy]',box).forEach(b=>b.onclick=async()=>{const m=current.messages[+b.dataset.v107Copy];if(!m)return;try{await navigator.clipboard.writeText(m.content);b.textContent='Copied'}catch{b.textContent='Copy failed'}});$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});box.scrollTop=box.scrollHeight}
+  const withTimeout=(promise,ms,label='request')=>Promise.race([
+    Promise.resolve(promise),
+    new Promise((_,reject)=>setTimeout(()=>{const e=new Error(label+' timed out');e.code='CLIENT_TIMEOUT';reject(e)},ms))
+  ]);
   async function resolvedSession(force=false){
     if(window.__SCHOLARK_TEST_MODE__)return null;
     const cloud=window.__SCHOLARK_V72_CLOUD__;
     try{
-      if(force&&cloud?.refreshSession)return await cloud.refreshSession();
-      if(cloud?.session)return await cloud.session();
-      return cloud?.currentSession?.()||null;
-    }catch{return null}
+      const current=cloud?.currentSession?.()||null;
+      if(!force&&current?.access_token)return current;
+      if(force&&cloud?.refreshSession)return await withTimeout(cloud.refreshSession(),8000,'Session refresh');
+      if(cloud?.session)return await withTimeout(cloud.session(),8000,'Session check');
+      return current;
+    }catch{return cloud?.currentSession?.()||null}
   }
   async function arkiFetch(payload,requestId,session,timeoutMs){
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
@@ -46,61 +52,72 @@
     }finally{clearTimeout(timer)}
   }
   async function send(){
-    if(busy)return;
     const input=$('#v107-q'),button=$('#v107-send'),state=$('#v107-state'),prompt=input?.value.trim();
     if(!prompt)return input?.focus();
+    if(busy){if(state)state.textContent='ARKI is already working on your previous message…';return}
+    busy=true;
+    if(button)button.disabled=true;if(input)input.disabled=true;
+    if(state)state.textContent='Preparing ARKI…';
     const test=!!window.__SCHOLARK_TEST_MODE__;
-    let session=test?null:await resolvedSession(false);
-    if(!test&&!session?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');state.textContent='Sign in to use ARKI and protect your credits.';return}
-    if(!test){
-      try{await window.__SCHOLARK_CREDITS__?.authorize?.('general_ai')}
-      catch(e){state.textContent=String(e?.message||'Not enough SCHOLARK credits for this request.');window.__SCHOLARK_CREDITS__?.load?.();return}
-      // Credit authorization can refresh an expiring Supabase token. Resolve the
-      // session again so the AI request never sends the stale token captured above.
-      session=await resolvedSession(false);
-      if(!session?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');state.textContent='Your session expired. Sign in again to continue with ARKI.';return}
-    }
-    busy=true;button.disabled=true;input.disabled=true;
-    const history=(current.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
-    current=update(current.id,x=>{if(!x.messages.length)x.title=prompt.slice(0,64);x.messages.push({role:'user',content:prompt,createdAt:new Date().toISOString()})})||current;
-    input.value='';drawHistory();drawThread();
-    const thinking=document.createElement('div');thinking.className='v107-msg assistant';thinking.id='v107-thinking';thinking.innerHTML='<span class="v107-thinking"><i></i><i></i><i></i></span>';$('#v107-thread').appendChild(thinking);
-    state.textContent='ARKI is thinking…';
+    let session=null;
     try{
+      session=test?null:await resolvedSession(false);
+      if(!test&&!session?.access_token){
+        if(state)state.textContent='Sign in to use ARKI.';
+        window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
+        return
+      }
+
+      // Credits are enforced authoritatively on /api/learning/generate. Do not
+      // block the Ask button on client-side wallet/billing lookups; those can
+      // be slow or temporarily unavailable and previously made ARKI appear dead.
+      // Refresh the HUD opportunistically after the server responds instead.
+      const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
+      current=update(current.id,x=>{if(!x.messages.length)x.title=prompt.slice(0,64);x.messages.push({role:'user',content:prompt,createdAt:new Date().toISOString()})})||current;
+      if(input)input.value='';drawHistory();drawThread();
+      const thread=$('#v107-thread');
+      if(thread){
+        const thinking=document.createElement('div');thinking.className='v107-msg assistant';thinking.id='v107-thinking';thinking.innerHTML='<span class="v107-thinking"><i></i><i></i><i></i></span>';thread.appendChild(thinking)
+      }
+      if(state)state.textContent='ARKI is thinking…';
+
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
       const payload={mode:'general_ai',prompt,history,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:$('#v107-context')?.checked?JSON.stringify(window.__SCHOLARK_WORKSPACE_CORE__?.context?.()||{}):''};
-      const timeoutMs=deep?115000:70000;
+      const timeoutMs=deep?55000:35000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
-      // A token may be revoked/rotated even when its local exp claim still looks valid.
-      // Refresh once and replay the same idempotent request ID; never loop.
+
       if(!test&&attempt.response.status===401){
         const fresh=await resolvedSession(true);
         if(fresh?.access_token){
           session=fresh;
-          state.textContent='Session refreshed · ARKI is retrying…';
-          attempt=await arkiFetch(payload,requestId,session,timeoutMs);
+          if(state)state.textContent='Session refreshed · ARKI is retrying…';
+          attempt=await arkiFetch(payload,requestId,session,timeoutMs)
         }
       }
+
       const r=attempt.response,d=attempt.data;
       if(!r.ok||!d?.ok){
         const e=new Error(d?.error||'ARKI is temporarily unavailable');e.code=d?.code||('HTTP_'+r.status);throw e
       }
       const answer=String(d.result?.answer||'').trim();if(!answer)throw new Error('ARKI returned an empty answer');
-      if(d?.usage?.serverCharged||d?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
       current=update(current.id,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),model:d.model||d.provider||'ARKI',followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}))||current;
-      state.textContent=(d.provider||'ARKI')+(d.model?' · '+d.model:'');
+      if(state)state.textContent=(d.provider||'ARKI')+(d.model?' · '+d.model:'');
+      window.__SCHOLARK_CREDITS__?.load?.();
       window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:current.id,context:!!$('#v107-context')?.checked})
     }catch(e){
-      const timed=e?.name==='AbortError';
-      const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again or use a shorter prompt.':String(e?.message||e);
-      current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
-      state.textContent=timed?'Request timed out — you can retry':'Request failed — you can retry'
+      const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT';
+      const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again.':String(e?.message||e);
+      if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
+      if(state)state.textContent=timed?'Request timed out — you can retry':'Request failed — you can retry'
     }finally{
-      busy=false;button.disabled=false;input.disabled=false;$('#v107-thinking')?.remove();drawHistory();drawThread();input.focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
+      busy=false;
+      const liveButton=$('#v107-send'),liveInput=$('#v107-q');
+      if(liveButton)liveButton.disabled=false;if(liveInput){liveInput.disabled=false;liveInput.focus()}
+      $('#v107-thinking')?.remove();drawHistory();drawThread();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
     }
   }
-  function open(){const h=host();if(!h)return;current=getCurrent();h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Ctrl/Cmd + Enter to send</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();$('#v107-q')?.focus()};$('#v107-send').onclick=send;$('#v107-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();send()}});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
+  function open(){const h=host();if(!h)return;current=getCurrent();h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Ctrl/Cmd + Enter to send</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();$('#v107-q')?.focus()};$('#v107-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();send()}});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
 
   function lastAssistant(){const chat=current||getCurrent(),m=[...(chat?.messages||[])].reverse().find(x=>x.role==='assistant');return m||null}
   function prefill(prompt,opt={}){
@@ -108,5 +125,6 @@
     if(opt.newChat){current=createChat()}else current=current||getCurrent();
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,version:'20261001-r203'};
+  document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b)return;e.preventDefault();send()});
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,send,version:'20261002-r204'};
 })();
