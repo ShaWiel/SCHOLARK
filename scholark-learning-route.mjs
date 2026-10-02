@@ -53,6 +53,15 @@ async function creditServiceHealth(){
     return {ok:false,configured:true,reachable:false,host,dnsRecords:0,code:networkCode(e),latencyMs:Date.now()-started}
   }
 }
+if(!TEST_MODE)setTimeout(async()=>{
+  try{
+    const h=await creditServiceHealth();
+    console.log('[SCHOLARK] Credit service startup self-test '+(h.ok?'PASS':'FAIL')+' · host '+String(h.host||'none')+' · dns '+String(h.dnsRecords||0)+' · http '+String(h.httpStatus||0)+' · '+String(h.latencyMs||0)+'ms'+(h.code?' · '+h.code:''));
+  }catch(e){
+    console.warn('[SCHOLARK] Credit service startup self-test ERROR · '+networkCode(e))
+  }
+},1800);
+
 async function resilientCreditFetch(url,opts={},label='credit'){
   let last=null;
   for(let attempt=1;attempt<=3;attempt++){
