@@ -280,7 +280,7 @@
     const bar=existing||document.createElement('section');bar.className='v114-connect';bar.dataset.v114Route=tool;bar.dataset.v114Signature=sig;
     bar.innerHTML='<div class="v114-copy"><small>SCHOLARK · CONNECTED FLOW</small><b>Continue without starting over.</b><span>Your context can move with you.</span></div><div class="v114-actions">'+actions.map((a,i)=>'<button type="button" data-v114-action="'+esc(a.id)+'" class="'+(a.primary||i===0?'primary':'')+'" '+(a.disabled?'disabled':'')+'>'+esc(a.label)+'</button>').join('')+'</div>';
     if(!existing){const anchor=$('.v111-live',root);if(anchor)anchor.insertAdjacentElement('afterend',bar);else root.prepend(bar)}
-    $('[data-v114-action]',bar).forEach(b=>b.onclick=()=>runAction(b.dataset.v114Action,b));
+    $$('[data-v114-action]',bar).forEach(b=>b.onclick=()=>runAction(b.dataset.v114Action,b));
     window.__SCHOLARK_I18N__?.apply?.(bar);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),80);
     if(!readHandoff())hideTransition();consume();return true
   }
