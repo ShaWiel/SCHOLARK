@@ -38,6 +38,21 @@ const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Beare
 const creditRequestId=req=>String(req.headers?.['x-scholark-request-id']||'').trim();
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const networkCode=e=>String(e?.cause?.code||e?.code||e?.name||'NETWORK_ERROR').slice(0,80);
+async function creditServiceHealth(){
+  const started=Date.now();
+  if(!SUPABASE_URL||!PUB)return {ok:false,configured:false,reachable:false,reason:'not-configured',latencyMs:Date.now()-started};
+  try{
+    const u=new URL(SUPABASE_URL),addresses=await dns.promises.lookup(u.hostname,{all:true});
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),5000);
+    try{
+      const r=await fetch(SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:PUB,accept:'application/json'},signal:ctrl.signal});
+      return {ok:r.ok,configured:true,reachable:true,host:u.hostname,dnsRecords:addresses.length,httpStatus:r.status,latencyMs:Date.now()-started}
+    }finally{clearTimeout(timer)}
+  }catch(e){
+    let host='';try{host=new URL(SUPABASE_URL).hostname}catch{}
+    return {ok:false,configured:true,reachable:false,host,dnsRecords:0,code:networkCode(e),latencyMs:Date.now()-started}
+  }
+}
 async function resilientCreditFetch(url,opts={},label='credit'){
   let last=null;
   for(let attempt=1;attempt<=3;attempt++){
@@ -898,6 +913,13 @@ http.Server.prototype.emit = function(event,...args){
   if(event!=='request') return originalEmit.call(this,event,...args);
   const [req,res]=args;
   let url; try{url=new URL(req.url,'http://localhost');}catch{return originalEmit.call(this,event,...args);}
+  if(url.pathname==='/api/learning/credit-health'){
+    (async()=>{
+      const health=await creditServiceHealth();
+      json(res,health.ok?200:503,{...health,service:'supabase-credit'});
+    })();
+    return true;
+  }
   if(url.pathname==='/api/learning/health'){
     json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:20000,deep:35000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
