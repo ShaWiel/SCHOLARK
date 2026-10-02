@@ -57,6 +57,7 @@ const credits=read('scholark-v85-credits-hud.js');
 const launchRoute=read('scholark-launch-route.mjs');
 const launchFoundation=read('scholark-v116-launch-foundation.js');
 const loadSmoke=read('scripts/scholark-load-smoke.mjs');
+const creditResilienceSmoke=read('scripts/scholark-credit-resilience-smoke.mjs');
 const ciWorkflow=read('.github/workflows/scholark-ci.yml');
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
@@ -72,6 +73,8 @@ ok(apiGuard.includes("content-security-policy")&&apiGuard.includes("permissions-
 ok(apiGuard.includes('requestOriginAllowed')&&apiGuard.includes("site === 'cross-site'")&&apiGuard.includes("CROSS_ORIGIN_BLOCKED"),'Expensive API routes lack same-origin / cross-site protection');
 ok(apiGuard.includes('MAX_BUCKETS = 10000')&&apiGuard.includes('buckets.size >= MAX_BUCKETS'),'API rate-limit state lacks a bounded-memory guard');
 ok(apiGuard.includes("rateLimitMode:testMode?'test-bypass':'enforced'")&&apiGuard.includes("if (testMode) {")&&apiGuard.includes("x-ratelimit-limit','test-bypass'")&&apiGuard.includes("const rate = consume(clientKey(req),url.pathname,rule.limit)"),'API guard must bypass only synthetic test buckets while preserving production rate enforcement');
+ok(learningRoute.includes('async function resilientCreditFetch')&&learningRoute.includes("setDefaultResultOrder('ipv4first')")&&learningRoute.includes("Credit service '+label+' network attempt")&&learningRoute.includes("SCHOLARK is reconnecting to account services"),'Learning AI credit-service network resilience is incomplete');
+ok(creditResilienceSmoke.includes("req.socket.destroy()")&&creditResilienceSmoke.includes("CREDIT RESILIENCE SMOKE PASS")&&ciWorkflow.includes('scholark-credit-resilience-smoke.mjs'),'Transient credit-network failure smoke is not wired into CI');
 ok(apiGuard.includes("p==='/api/feedback'")&&apiGuard.includes("p==='/api/account/export'")&&apiGuard.includes("p==='/api/account'")&&apiGuard.includes("p==='/api/billing/portal'"),'Launch/account/billing endpoints are missing from central rate/body guard');
 ok(apiGuard.includes('if(!rule.expensive)return previousEmit.call(this,type,...args)'),'Cheap launch mutations unnecessarily consume expensive-request concurrency');
 ok(homeTopbar.includes('topbarCopyObserver')&&homeTopbar.includes("authButton.dataset.v55State!==state||text(authButton)!==expectedAuth")&&homeTopbar.includes("if(sel.getAttribute('aria-label')!=='Language')"),'Homepage topbar idempotent copy protection is incomplete');
