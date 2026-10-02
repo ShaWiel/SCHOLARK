@@ -492,6 +492,45 @@ check(await page.locator('[data-v107-copy]').count()>=1,'ARKI copy action missin
 await page.click('#v107-new');
 check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 
+// Production-like dead-button regression: strip any element-local click handler by
+// replacing the Ask button with a clone, and make the old client credit authorize
+// call hang forever. ARKI must still send through delegated wiring and server-side
+// credit enforcement.
+let arkiDelegatedCalls=0;
+await page.route('**/api/learning/generate',async route=>{
+  const req=route.request();let body={};try{body=JSON.parse(req.postData()||'{}')}catch{}
+  if(body.mode!=='general_ai'){await route.continue();return}
+  arkiDelegatedCalls++;
+  await new Promise(r=>setTimeout(r,120));
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,provider:'ci-delegated-click',model:'arki-remount-test',result:{title:'Delegated',answer:'ARKI delegated click survived the remount.',suggestedFollowUps:['Continue']},usage:{billingMode:'server',serverCharged:false,spent:0}})});
+});
+await page.evaluate(()=>{
+  window.__schArkiDeadButtonOrig={test:window.__SCHOLARK_TEST_MODE__,cloud:window.__SCHOLARK_V72_CLOUD__,credits:window.__SCHOLARK_CREDITS__};
+  window.__SCHOLARK_TEST_MODE__=false;
+  window.__schArkiAuthorizeCalls=0;
+  window.__SCHOLARK_V72_CLOUD__={
+    currentSession:()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
+    session:async()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
+    refreshSession:async()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
+    openAuth:()=>{}
+  };
+  window.__SCHOLARK_CREDITS__={
+    authorize:async()=>{window.__schArkiAuthorizeCalls++;return new Promise(()=>{})},
+    load:()=>{}
+  };
+  const old=document.querySelector('#v107-send');
+  old.replaceWith(old.cloneNode(true));
+});
+await page.fill('#v107-q','Test remounted Ask ARKI button');
+await page.click('#v107-send');
+await page.waitForFunction(()=>document.querySelector('#v107-state')?.textContent?.includes('ARKI')||document.querySelector('#v107-thinking'),null,{timeout:1200});
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/delegated click survived/i.test(x.textContent||'')),null,{timeout:5000});
+check(arkiDelegatedCalls===1,`Remounted Ask ARKI button should make exactly one AI request, got ${arkiDelegatedCalls}`);
+check((await page.evaluate(()=>window.__schArkiAuthorizeCalls))===0,'ARKI still blocked on the legacy client-side credit authorize path');
+await page.evaluate(()=>{const o=window.__schArkiDeadButtonOrig;window.__SCHOLARK_TEST_MODE__=o.test;window.__SCHOLARK_V72_CLOUD__=o.cloud;window.__SCHOLARK_CREDITS__=o.credits;delete window.__schArkiDeadButtonOrig;delete window.__schArkiAuthorizeCalls});
+await page.unroute('**/api/learning/generate');
+await page.click('#v107-new');
+
 // Production-like expired-session regression: the first ARKI request receives
 // 401, then the client must force-refresh Supabase auth and replay once with
 // the same idempotent request contract.
@@ -520,7 +559,7 @@ await page.evaluate(()=>{
     refreshSession:async()=>{window.__schArkiRefreshes++;token='fresh-arki-token';return{access_token:token,user:{id:'ci-user'}}},
     openAuth:()=>{}
   };
-  window.__SCHOLARK_CREDITS__={authorize:async()=>({ok:true,cost:1,balance:100}),load:()=>{}};
+  window.__SCHOLARK_CREDITS__={authorize:async()=>{throw new Error('legacy authorize must not block ARKI')},load:()=>{}};
 });
 await page.fill('#v107-q','Test expired ARKI session');
 await page.click('#v107-send');
