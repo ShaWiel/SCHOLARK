@@ -31,6 +31,7 @@
   const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   const route=id=>history.replaceState(null,'',location.pathname+location.search+'#'+id);
   const PLAN_KEY='scholark_v51_planner',GOAL_KEY='scholark_v51_goals',eduKey='scholark_v52_mastery',ASSIGN_KEY='scholark_v106_assignments';
+  let tutorDraft='';
   const uid=prefix=>prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
   const today=()=>new Date().toISOString().slice(0,10);
   const toTime=x=>{if(!x?.date)return Number.MAX_SAFE_INTEGER;const t=new Date(x.date+'T'+(x.time||'23:59')+':00').getTime();return Number.isFinite(t)?t:Number.MAX_SAFE_INTEGER};
@@ -116,7 +117,12 @@
     const active=assignments().filter(x=>x.status!=='complete').sort((a,b)=>String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999'))).slice(0,6);
     const assignmentPanel=active.length?`<div class="v52-form" style="margin-bottom:12px"><h3 style="margin:0 0 5px">Assignment Coach</h3><p style="margin:0 0 10px">SCHOLARK can read the assignments saved in your Workspace, compare deadlines and progress, and tell you exactly what to work on next.</p><div class="v52-list">${active.map(x=>`<div class="v52-item v52-task"><div><div class="v52-task-title" data-v106-user="1">${esc(x.title)}</div><div class="v52-meta">${x.subject?'<span class="v52-badge" data-v106-user="1">'+esc(x.subject)+'</span>':''}<span class="v52-badge">${esc(assignmentDue(x))}</span><span class="v52-badge">${x.progress}% done</span></div></div><div class="v52-inline-actions"><button class="primary" data-tutor-assignment="${esc(x.id)}">What should I do?</button></div></div>`).join('')}</div><button class="v52-btn" id="v52-tutor-all-assignments" style="margin-top:10px">Prioritise all my assignments</button></div>`:''; 
     h.innerHTML=shell('AI Tutor','Ask, learn, practise, or let SCHOLARK coach you through your saved assignments at your selected learning level.',assignmentPanel+`<div class="v52-form"><textarea id="v52-tutor-q" placeholder="Ask SCHOLARK anything — or ask what you should do next for an assignment..."></textarea><button class="v52-btn" id="v52-tutor-send">Ask <span>ARKI</span></button><div class="v52-chat" id="v52-chat"><div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div></div></div>`);
-    const q=$('#v52-tutor-q'),chat=$('#v52-chat');$('#v52-tutor-send').onclick=()=>{const v=q.value.trim();if(!v)return q.focus();chat.insertAdjacentHTML('beforeend',`<div class="v52-msg user">${esc(v)}</div>`);q.value='';const level=localStorage.getItem('scholark_learning_level')||'secondary';chat.insertAdjacentHTML('beforeend',`<div class="v52-msg ai"><b>SCHOLARK Tutor request prepared at ${esc(level)} level.</b><br>Your question stays in this workspace and is ready for the Tutor AI backend.</div>`)};
+    const q=$('#v52-tutor-q'),chat=$('#v52-chat');
+    if(q){
+      q.value=tutorDraft;
+      q.addEventListener('input',()=>{tutorDraft=q.value},{passive:true});
+    }
+    $('#v52-tutor-send').onclick=()=>{const v=q.value.trim();if(!v)return q.focus();tutorDraft='';chat.insertAdjacentHTML('beforeend',`<div class="v52-msg user">${esc(v)}</div>`);q.value='';const level=localStorage.getItem('scholark_learning_level')||'secondary';chat.insertAdjacentHTML('beforeend',`<div class="v52-msg ai"><b>SCHOLARK Tutor request prepared at ${esc(level)} level.</b><br>Your question stays in this workspace and is ready for the Tutor AI backend.</div>`)};
     $$('[data-tutor-assignment]',h).forEach(b=>b.onclick=()=>{const x=active.find(a=>a.id===b.dataset.tutorAssignment);if(!x)return;try{sessionStorage.setItem('scholark_v62_assignment_id',x.id)}catch{}q.value='Tell me exactly what I should do next for this assignment. Prioritise the work, explain the task in simple terms, break it into concrete steps, and tell me what to do first today.';$('#v52-tutor-send').click()});
     $('#v52-tutor-all-assignments')?.addEventListener('click',()=>{try{sessionStorage.removeItem('scholark_v62_assignment_id')}catch{}q.value='Look at all my active assignments. Tell me which one I should work on first and why, then give me a realistic order and the next concrete action for each assignment.';$('#v52-tutor-send').click()});
     try{const pending=sessionStorage.getItem('scholark_v106_pending_tutor')||sessionStorage.getItem('scholark_v62_pending_tutor_prompt');if(pending){q.value=pending;sessionStorage.removeItem('scholark_v106_pending_tutor');sessionStorage.removeItem('scholark_v62_pending_tutor_prompt');setTimeout(()=>$('#v52-tutor-send')?.click(),40)}}catch{}
@@ -235,6 +241,7 @@
     const surface=$('.v52-tool');if(surface)surface.dataset.v52Tool=id;
   }
 
+  addEventListener('scholark:tutor-user',()=>{tutorDraft=''});
   // Sidebar navigation is owned by V51. V52 exposes the fast native views
   // without capture-phase interception, preventing stale overlays and route races.
   function syncRoute(){const id=String(location.hash||'').replace(/^#/,'').toLowerCase();if(FAST.includes(id))openDirect(id)}
