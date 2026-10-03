@@ -22,7 +22,7 @@
   style.id='scholark-v117-style';
   style.textContent=`
     .v117-store-nav{height:40px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(201,255,106,.72);border-radius:13px;padding:0 13px;background:linear-gradient(135deg,#d7ff88,#bdf45d);color:#101820;cursor:pointer;font:900 10px/1 Inter,system-ui;white-space:nowrap;box-shadow:0 8px 24px rgba(201,255,106,.13);transition:transform .16s ease,box-shadow .16s ease}.v117-store-nav:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(201,255,106,.2)}.v117-store-nav[aria-current="page"]{box-shadow:0 0 0 3px rgba(201,255,106,.14),0 10px 28px rgba(201,255,106,.16)}
-    html.v117-credit-store-route #v29-home-layer,html.v117-credit-store-route #v41-home-pricing,html.v117-credit-store-route #v55-workspace-cta{display:none!important;visibility:hidden!important;pointer-events:none!important}
+    html.v117-credit-store-route #v29-home-layer,html.v117-credit-store-route #v41-home-pricing,html.v117-credit-store-route #v55-workspace-cta{display:none!important;visibility:hidden!important;pointer-events:none!important}html.v117-credit-store-route #v117-credit-store-page{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
     #v117-credit-store-page{display:block;box-sizing:border-box;min-height:calc(100vh - 66px);margin-top:66px;padding:34px 24px 76px;background:radial-gradient(circle at 84% 0%,rgba(119,92,255,.24),transparent 29%),radial-gradient(circle at 13% 20%,rgba(201,255,106,.12),transparent 26%),linear-gradient(160deg,#0d1723 0%,#111d2d 46%,#17152b 100%);color:#fff;font-family:Inter,system-ui,sans-serif;overflow:hidden;position:relative}
     #v117-credit-store-page::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),transparent 72%);pointer-events:none}
     #v117-credit-store-page[hidden]{display:none!important}.v117-shell{position:relative;z-index:1;width:min(1220px,100%);margin:0 auto}
@@ -60,7 +60,8 @@
     document.documentElement.classList.remove('v51-workspace-root');
     document.body?.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
     page.hidden=false;
-    page.removeAttribute('aria-hidden');
+    page.removeAttribute('hidden');page.removeAttribute('aria-hidden');
+    ['display','visibility','opacity','pointer-events'].forEach(p=>page.style.removeProperty(p));
     button?.setAttribute('aria-current','page');
   }
 
@@ -154,7 +155,7 @@
   document.addEventListener('click',e=>{
     if(!isStore())return;
     const closesAuth=e.target?.closest?.('#v72-modal .v72-x')||e.target?.id==='v72-modal';
-    if(closesAuth){busyPack='';setTimeout(()=>{restoreStoreSurface();render()},0);setTimeout(restoreStoreSurface,80)}
+    if(closesAuth){busyPack='';[0,80,240].forEach((ms,i)=>setTimeout(()=>{syncRoute();restoreStoreSurface();if(i===0)render()},ms))}
   },true);
   if(document.body)syncRoute();else addEventListener('DOMContentLoaded',syncRoute,{once:true});
   [120,480].forEach(ms=>setTimeout(syncRoute,ms));
