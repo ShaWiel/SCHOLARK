@@ -332,7 +332,10 @@
     // or Home→Workspace re-entry can legitimately settle between the route-ready
     // event and the next animation frame. Paint synchronously once so health
     // never depends on requestAnimationFrame timing.
-    if(workspace&&!!core()&&root&&!bar&&!document.documentElement.classList.contains('scholark-workspace-entering')){
+    if(workspace&&!!core()&&root&&!bar){
+      // paint() is singleton-safe. If the route root is already available,
+      // health verification may complete the connected-flow mount even while
+      // the broader Workspace entry class is finishing its final frame.
       paint(true);root=rootFor(tool);bar=root?.querySelector?.('.v114-connect')
     }
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=[...document.querySelectorAll('.v114-connect')],activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
