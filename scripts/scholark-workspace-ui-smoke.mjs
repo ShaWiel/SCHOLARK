@@ -244,6 +244,56 @@ for(let cycle=1;cycle<=2;cycle++){
   await checkTransitionSingletons('workspace-home cycle '+cycle);
 }
 
+
+// Browser history + hard reload must not resurrect parked/duplicate Store or Workspace surfaces.
+check(await visible('#v117-credit-store-button',5000),'History stress: Credit Store button missing on Home');
+await page.click('#v117-credit-store-button');
+await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+check(await visible('#v117-credit-store-page',5000),'History stress: Credit Store did not open');
+await checkTransitionSingletons('history-store-open');
+
+await page.goBack();
+await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+check(await visible('#v29-home-layer',8000),'History stress: browser Back did not restore Home');
+const historyBack=await checkTransitionSingletons('history-store-back');
+check(!historyBack.storeClass,'History stress: browser Back left the Store route class active');
+
+await page.goForward();
+await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+check(await visible('#v117-credit-store-page',8000),'History stress: browser Forward did not restore Credit Store');
+await checkTransitionSingletons('history-store-forward');
+
+await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+check(await visible('#v117-credit-store-page',10000),'History stress: hard reload on Credit Store did not remount Store');
+await checkTransitionSingletons('history-store-reload');
+
+await page.click('#v117-store-return-workspace');
+await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
+check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'History stress: Store did not return to Dashboard after reload');
+await checkTransitionSingletons('history-workspace-after-store-reload');
+
+await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
+check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'History stress: hard reload on Dashboard did not remount Workspace');
+await checkWorkspaceSingletons('history-dashboard-reload');
+await checkTransitionSingletons('history-dashboard-reload-transition');
+
+await page.goBack();
+await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+check(await visible('#v117-credit-store-page',10000),'History stress: Back from reloaded Dashboard did not restore Credit Store');
+await checkTransitionSingletons('history-back-to-store');
+
+await page.goForward();
+await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
+check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'History stress: Forward from Store did not restore Dashboard');
+await checkWorkspaceSingletons('history-forward-dashboard');
+
+await page.evaluate(()=>{location.hash='home'});
+await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+check(await visible('#v29-home-layer',8000),'History stress: Home did not recover after browser history sequence');
+await checkTransitionSingletons('history-final-home');
+
 await page.evaluate(()=>{location.hash='pricing'});
 await page.waitForFunction(()=>location.hash==='#pricing',{timeout:3000});
 const plusCheckout='#v41-home-pricing .v41-plan.plus [data-plan="plus"]';
