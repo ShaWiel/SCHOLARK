@@ -70,7 +70,7 @@ ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is no
 ok(foundation.includes("raw==='credit-store'")&&foundation.includes("kind:'store'")&&foundation.includes("store-watchdog")&&foundation.includes('CRITICAL_SINGLETON_IDS')&&foundation.includes('CRITICAL_SINGLETON_SELECTORS')&&foundation.includes('duplicateCriticalSelectors')&&foundation.includes('repairCriticalSelectorDuplicates')&&foundation.includes('repairCriticalDuplicates')&&foundation.includes('watchdogTick')&&!foundation.includes('setInterval(() => {'),'Core foundation routing, duplicate repair or adaptive watchdog is incomplete');
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
-ok(launchFoundation.includes("release:'r206'"),'Launch client release is not R206');
+ok(launchFoundation.includes("release:'r207'"),'Launch client release is not R207');
 ok(launchFoundation.includes("inStore=document.documentElement.classList.contains('v117-credit-store-route')")&&launchFoundation.includes("'scholark:topbar-ready'"),'Public privacy/feedback Store exclusion or topbar-ready sync is missing');
 ok(homeTopbar.includes("new CustomEvent('scholark:topbar-ready')"),'Topbar-ready event is not emitted by the canonical topbar owner');
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
@@ -362,3 +362,5 @@ if(fail.length){
   process.exit(1);
 }
 console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · school ${SCHOOL_STRICT} · ${active.length} active runtime modules checked`);
+ok(billingRoute.includes('PADDLE_LIVE_API_KEY')&&billingRoute.includes('PADDLE_SANDBOX_API_KEY')&&billingRoute.includes('liveBillingPreflight')&&billingRoute.includes('productionCredentialsPreloaded'),'Paddle dual-environment preload safety is incomplete');
+ok(launchRoute.includes('IN_APP_SUPPORT=true')&&launchRoute.includes("'support'")&&launchRoute.includes("supportChannel:SUPPORT_EMAIL?'email':'in-app'")&&launchFoundation.includes('function openSupport(')&&launchFoundation.includes('PRIVACY NOTICE & PRODUCT TERMS · 3 OCT 2026'),'Support/legal launch foundation is incomplete');
