@@ -49,12 +49,48 @@
     const topup=w?.topup_balance==null?Math.max(0,total-monthly):Math.max(0,Number(w.topup_balance)||0);
     return{total,monthly,topup,plan:clean(w?.plan||window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase()};
   }
-  function routeHome(){location.hash='home';syncRoute()}
+  function topbarDuplicateKey(el){
+    if(!el)return'';
+    if(el.id)return'#'+el.id;
+    if(el.classList?.contains('v55-account-wrap'))return'.v55-account-wrap';
+    if(el.classList?.contains('v85-topbar-credit'))return'.v85-topbar-credit';
+    return'';
+  }
+  function dedupeStoreTransitionSurface(){
+    const bar=$('#v55-topbar'),actions=bar?.querySelector('.v55-actions');
+    if(actions){
+      const selectors=['#v55-language','#v117-store-return-home','#v117-store-return-workspace','#v117-credit-store-button','#v55-auth','.v55-account-wrap','.v85-topbar-credit'];
+      for(const sel of selectors){
+        const nodes=[...actions.querySelectorAll(sel)];
+        nodes.slice(1).forEach(el=>el.remove());
+      }
+    }
+    const pages=[...document.querySelectorAll('#v117-credit-store-page')];pages.slice(1).forEach(el=>el.remove());
+    window.__SCHOLARK_FOUNDATION__?.repairDuplicates?.();
+  }
+  function exitStoreSurface(target=''){
+    renderEpoch++;busyPack='';statusMessage='';statusError='';routeActive=false;
+    document.documentElement.classList.remove('v117-credit-store-route');
+    document.body?.classList.remove('v117-credit-store-route');
+    if(page?.isConnected){page.hidden=true;page.setAttribute('aria-hidden','true')}
+    restoreParkedTopbarControls();
+    dedupeStoreTransitionSurface();
+    if(target!=='store')button?.setAttribute('aria-current','false');
+    window.dispatchEvent(new CustomEvent('scholark:credit-store-exit',{detail:{target}}));
+  }
+  function routeHome(){
+    exitStoreSurface('home');
+    if(location.hash!=='#home')location.hash='home';
+    else window.dispatchEvent(new HashChangeEvent('hashchange'));
+    queueMicrotask(()=>{window.__SCHOLARK_V55_TOPBAR__?.sync?.();dedupeStoreTransitionSurface()});
+  }
   function routeWorkspace(){
+    exitStoreSurface('dashboard');
     const ws=window.__SCHOLARK_WORKSPACE__;
-    if(ws?.openTool){ws.openTool('dashboard');return}
+    if(ws?.openTool){ws.openTool('dashboard');queueMicrotask(dedupeStoreTransitionSurface);return}
     if(location.hash!=='#dashboard')location.hash='dashboard';
     else window.dispatchEvent(new HashChangeEvent('hashchange'));
+    queueMicrotask(dedupeStoreTransitionSurface);
   }
   function routeStore(){if(!isStore()){location.hash='credit-store';syncRoute()}else syncRoute()}
 
@@ -89,10 +125,22 @@
     parkedTopbarControls.push({el,marker});
   }
   function restoreParkedTopbarControls(){
+    const actions=$('#v55-topbar .v55-actions');
     while(parkedTopbarControls.length){
       const {el,marker}=parkedTopbarControls.shift();
-      try{marker?.parentNode?.replaceChild(el,marker)}catch{}
+      try{
+        const key=topbarDuplicateKey(el);
+        const existing=key&&actions?actions.querySelector(key):null;
+        if(existing&&existing!==el){marker?.remove();continue}
+        if(marker?.isConnected&&marker.parentNode===actions)marker.parentNode.replaceChild(el,marker);
+        else if(actions&&!el.isConnected){
+          const before=$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions);
+          before?actions.insertBefore(el,before):actions.appendChild(el);
+          marker?.remove();
+        }else marker?.remove();
+      }catch{}
     }
+    dedupeStoreTransitionSurface();
   }
   function syncStoreTopbar(){
     const topbar=$('#v55-topbar'),actions=topbar?.querySelector('.v55-actions');
@@ -201,7 +249,7 @@
           .then(()=>{if(isStore())render()})
           .catch(()=>{});
       }
-    }else{renderEpoch++;busyPack='';statusMessage='';statusError=false}
+    }else{exitStoreSurface('route-exit');ensureButton();window.__SCHOLARK_V55_TOPBAR__?.sync?.()}
   }
 
   addEventListener('hashchange',()=>setTimeout(syncRoute,10));
