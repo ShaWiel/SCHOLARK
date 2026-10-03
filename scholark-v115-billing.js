@@ -90,31 +90,38 @@
       document.head.appendChild(x);
     });
   }
+  function creditStoreStatus(detail){window.dispatchEvent(new CustomEvent('scholark:credit-store-status',{detail:detail||{}}))}
   async function finalize(transactionId,plan,attempt=0){
     const s=session();if(!s?.access_token||!transactionId)return false;
     const r=await fetch('/api/billing/finalize',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+s.access_token},body:JSON.stringify({transactionId})}),d=await r.json().catch(()=>({}));
     if(r.status===202&&d?.pending&&attempt<4){await new Promise(x=>setTimeout(x,650+attempt*350));return finalize(transactionId,plan,attempt+1)}
-    if(!r.ok||!d?.ok)throw new Error(d?.error||d?.code||'Payment succeeded but plan activation is still processing.');
+    if(!r.ok||!d?.ok)throw new Error(d?.error||d?.code||'Payment succeeded but activation is still processing.');
     await refresh();await window.__SCHOLARK_CREDITS__?.load?.();
+    if(d.purchaseType==='credit_pack'){
+      creditStoreStatus({state:'completed',pack:d.pack,creditsAdded:Number(d.creditsAdded||0),transactionId:d.transactionId||transactionId,wallet:d.wallet?.wallet||d.wallet||null});
+      return true;
+    }
     message(plan,'✓ '+String(plan).toUpperCase()+' is active. Your credits have been updated.');
     setBusy(plan,false);setTimeout(()=>message(plan,''),6500);
     return true;
   }
   async function handlePaddleEvent(e){
-    const name=String(e?.name||''),plan=active.plan;
+    const name=String(e?.name||''),plan=active.plan,isCredit=String(plan||'').startsWith('credit:'),pack=isCredit?String(plan).slice(7):'';
     if(!plan)return;
     if(name==='checkout.loaded'){
-      active.loaded=true;setBusy(plan,true,'Secure checkout open');message(plan,'Secure Paddle checkout opened.');
+      active.loaded=true;
+      if(isCredit)creditStoreStatus({state:'open',pack});else{setBusy(plan,true,'Secure checkout open');message(plan,'Secure Paddle checkout opened.')}
       return;
     }
-    if(name==='checkout.closed'){resetActive();return}
+    if(name==='checkout.closed'){if(isCredit)creditStoreStatus({state:'closed',pack});resetActive();return}
     if(name==='checkout.completed'){
       const txn=String(e?.data?.transaction_id||'');
-      message(plan,'Payment received. Activating your SCHOLARK plan…');
-      try{await finalize(txn,plan)}catch(err){setBusy(plan,false);message(plan,String(err?.message||err),true)}
+      if(isCredit)creditStoreStatus({state:'processing',pack,message:'Payment received. Adding your credits…'});else message(plan,'Payment received. Activating your SCHOLARK plan…');
+      try{await finalize(txn,plan);if(isCredit)resetActive()}catch(err){if(isCredit){creditStoreStatus({state:'error',pack,message:String(err?.message||err)});resetActive(true)}else{setBusy(plan,false);message(plan,String(err?.message||err),true)}}
       return;
     }
     if(name==='checkout.error'||name==='checkout.payment.failed'||name==='checkout.payment.error'){
+      if(isCredit){creditStoreStatus({state:'error',pack,message:'Paddle could not open or complete checkout. Please try again.'});resetActive(true);return}
       if(!active.loaded&&!active.fallbackTried&&active.P&&active.session){
         active.fallbackTried=true;
         message(plan,'Direct checkout could not open. Retrying securely…');
@@ -189,13 +196,33 @@
       }
     }
   }
+  async function buyCredits(pack){
+    pack=String(pack||'').toLowerCase();
+    if(active.plan){creditStoreStatus({state:'error',pack,message:'Another checkout is already open.'});return false}
+    const s=session();
+    if(!s?.access_token){
+      sessionStorage.setItem('scholark_pending_credit_pack',pack);
+      creditStoreStatus({state:'auth',pack,message:'Sign in or create your SCHOLARK account first.'});
+      window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin')||$('#v55-auth')?.click();
+      return false;
+    }
+    const c=await getConfig(),meta=c?.creditPacks?.[pack];
+    if(!c?.creditStoreConfigured||!meta)throw new Error('This credit pack is not available right now.');
+    const P=await initPaddle();
+    active={plan:'credit:'+pack,button:null,label:'',loaded:false,fallbackTried:true,method:'transaction',session:s,P};
+    creditStoreStatus({state:'preparing',pack,message:'Preparing secure credit checkout…'});
+    const r=await fetch('/api/billing/credits/checkout',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+s.access_token},body:JSON.stringify({pack})}),d=await r.json().catch(()=>({}));
+    if(!r.ok||!d?.transactionId){resetActive(true);throw new Error(d?.error||d?.code||'Could not create secure credit checkout.')}
+    P.Checkout.open({transactionId:d.transactionId,settings:{displayMode:'overlay',theme:'light',locale:paddleLocale(),variant:'multi-page',showAddTaxId:false,showAddDiscounts:false}});
+    return true;
+  }
   async function manage(action='overview'){
     const s=session();if(!s?.access_token){window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return false}
     const r=await fetch('/api/billing/portal',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+s.access_token},body:JSON.stringify({action})}),d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.ok||!/^https:\/\//i.test(String(d.url||'')))throw new Error(d?.error||'Could not open subscription management.');
     location.href=d.url;return true;
   }
-  function resumePending(){const plan=sessionStorage.getItem('scholark_pending_plan');if(!plan||!token())return;sessionStorage.removeItem('scholark_pending_plan');setTimeout(()=>choose(plan),120)}
+  function resumePending(){if(!token())return;const plan=sessionStorage.getItem('scholark_pending_plan'),pack=sessionStorage.getItem('scholark_pending_credit_pack');if(plan){sessionStorage.removeItem('scholark_pending_plan');setTimeout(()=>choose(plan),120);return}if(pack){sessionStorage.removeItem('scholark_pending_credit_pack');setTimeout(()=>buyCredits(pack).catch(e=>creditStoreStatus({state:'error',pack,message:String(e?.message||e)})),120)}}
   function paidButtonFrom(e){const b=e.target.closest?.('#v41-home-pricing [data-plan]');return b&&['plus','pro'].includes(String(b.dataset.plan||''))?b:null}
   function wire(){
     document.addEventListener('click',e=>{const b=paidButtonFrom(e);if(!b)return;e.preventDefault();e.stopPropagation();choose(b.dataset.plan)},true);
@@ -206,5 +233,5 @@
   addEventListener('scholark:auth-changed',()=>{refresh().then(resumePending)});
   addEventListener('pageshow',()=>refresh());
   wire();setTimeout(()=>{refresh();getConfig().catch(()=>{})},450);
-  window.__SCHOLARK_BILLING__={choose,refresh,manage,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),prewarm:()=>initPaddle(),release:'r201'};
+  window.__SCHOLARK_BILLING__={choose,buyCredits,refresh,manage,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),creditPacks:async()=>((await getConfig())?.creditPacks||{}),prewarm:()=>initPaddle(),release:'r205-credit-store'};
 })();
