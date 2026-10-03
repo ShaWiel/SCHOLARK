@@ -175,7 +175,22 @@ check(await visible('#v72-modal.open',3000),'Unauthenticated credit purchase did
 check(await page.evaluate(()=>sessionStorage.getItem('scholark_pending_credit_pack')==='mini'),'Pending credit pack was not preserved across authentication');
 await page.click('#v72-modal .v72-x');
 await page.evaluate(()=>sessionStorage.removeItem('scholark_pending_credit_pack'));
-await page.click('#v117-credit-store-page [data-v117-workspace]');
+const postAuthStoreState=await page.evaluate(()=>{
+  const snap=el=>{if(!el)return null;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{hidden:!!el.hidden,ariaHidden:el.getAttribute('aria-hidden'),display:cs.display,visibility:cs.visibility,opacity:cs.opacity,pointerEvents:cs.pointerEvents,width:r.width,height:r.height,top:r.top,bottom:r.bottom}};
+  return{
+    hash:location.hash,
+    htmlClass:document.documentElement.className,
+    bodyClass:document.body.className,
+    page:snap(document.querySelector('#v117-credit-store-page')),
+    shell:snap(document.querySelector('#v117-credit-store-page .v117-shell')),
+    nav:snap(document.querySelector('#v117-credit-store-page .v117-storebar')),
+    workspace:snap(document.querySelector('#v117-credit-store-page [data-v117-workspace]')),
+    modal:snap(document.querySelector('#v72-modal'))
+  };
+});
+console.log('CREDIT_STORE_POST_AUTH_STATE '+JSON.stringify(postAuthStoreState));
+if(!postAuthStoreState.workspace||postAuthStoreState.workspace.display==='none'||postAuthStoreState.workspace.visibility==='hidden'||postAuthStoreState.workspace.width<1||postAuthStoreState.workspace.height<1)throw new Error('Credit Store navigation hidden after auth modal '+JSON.stringify(postAuthStoreState));
+await page.click('#v117-credit-store-page [data-v117-workspace]',{timeout:5000});
 await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'Credit Store Workspace button did not enter the Workspace dashboard');
 await page.evaluate(()=>{location.hash='home'});
