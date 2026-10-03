@@ -22,6 +22,9 @@
   style.id='scholark-v117-style';
   style.textContent=`
     .v117-store-nav{height:40px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(201,255,106,.72);border-radius:13px;padding:0 13px;background:linear-gradient(135deg,#d7ff88,#bdf45d);color:#101820;cursor:pointer;font:900 10px/1 Inter,system-ui;white-space:nowrap;box-shadow:0 8px 24px rgba(201,255,106,.13);transition:transform .16s ease,box-shadow .16s ease}.v117-store-nav:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(201,255,106,.2)}.v117-store-nav[aria-current="page"]{box-shadow:0 0 0 3px rgba(201,255,106,.14),0 10px 28px rgba(201,255,106,.16)}
+    .v117-store-return{height:40px;display:none;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:0 12px;background:rgba(255,255,255,.065);color:#fff;cursor:pointer;font:850 9.5px/1 Inter,system-ui;white-space:nowrap;transition:transform .16s ease,background .16s ease,border-color .16s ease}.v117-store-return:hover{transform:translateY(-1px);background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.2)}.v117-store-return.primary{background:#c9ff6a;border-color:#c9ff6a;color:#101820}.v117-store-return.primary:hover{background:#d8ff91}
+    html.v117-credit-store-route #v117-credit-store-button,html.v117-credit-store-route #v55-topbar .v55-account-wrap,html.v117-credit-store-route #v55-topbar #v55-auth{display:none!important}
+    html.v117-credit-store-route #v117-store-return-home,html.v117-credit-store-route #v117-store-return-workspace{display:inline-flex!important}
     html.v117-credit-store-route #v29-home-layer,html.v117-credit-store-route #v41-home-pricing,html.v117-credit-store-route #v55-workspace-cta{display:none!important;visibility:hidden!important;pointer-events:none!important}html.v117-credit-store-route #v117-credit-store-page{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}html.v117-credit-store-route #v117-credit-store-page .v117-storebar{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
     #v117-credit-store-page{display:block;box-sizing:border-box;min-height:calc(100vh - 66px);margin-top:66px;padding:34px 24px 76px;background:radial-gradient(circle at 84% 0%,rgba(119,92,255,.24),transparent 29%),radial-gradient(circle at 13% 20%,rgba(201,255,106,.12),transparent 26%),linear-gradient(160deg,#0d1723 0%,#111d2d 46%,#17152b 100%);color:#fff;font-family:Inter,system-ui,sans-serif;overflow:visible;position:relative}
     #v117-credit-store-page::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),transparent 72%);pointer-events:none}
@@ -31,8 +34,8 @@
     .v117-wallet{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:240px;border:1px solid rgba(255,255,255,.12);border-radius:26px;padding:24px;background:linear-gradient(150deg,rgba(255,255,255,.11),rgba(255,255,255,.045));box-shadow:0 24px 70px rgba(0,0,0,.22);backdrop-filter:blur(20px)}.v117-wallet::after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-70px;top:-74px;background:radial-gradient(circle,rgba(201,255,106,.2),transparent 68%);pointer-events:none}.v117-wallet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.v117-wallet small{font:850 10px Inter;letter-spacing:.1em;color:#a9b5c3}.v117-plan-pill{padding:6px 9px;border-radius:999px;background:rgba(201,255,106,.1);color:#c9ff6a;font:900 9px Inter;border:1px solid rgba(201,255,106,.18)}.v117-total-label{margin-top:30px;color:#9faab8;font:750 10px Inter}.v117-total{display:block;margin-top:6px;font:950 48px/1 Inter;color:#fff;letter-spacing:-.05em}.v117-total-sub{margin-top:7px;color:#c9ff6a;font:800 10px Inter}.v117-split{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:20px}.v117-split div{padding:12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06)}.v117-split span{display:block;font:750 9px Inter;color:#97a3b2}.v117-split b{display:block;margin-top:5px;font:900 15px Inter}
     .v117-section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-top:42px;margin-bottom:14px}.v117-section-head h2{margin:0;font:950 24px/1 Inter;letter-spacing:-.035em}.v117-section-head p{margin:0;color:#98a5b5;font:700 10px/1.45 Inter;text-align:right}.v117-packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.v117-pack{position:relative;display:flex;flex-direction:column;min-height:286px;padding:20px;border:1px solid rgba(255,255,255,.09);border-radius:23px;background:linear-gradient(170deg,rgba(255,255,255,.09),rgba(255,255,255,.045));box-shadow:0 18px 44px rgba(0,0,0,.14);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;overflow:hidden}.v117-pack::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,rgba(201,255,106,.45),transparent);opacity:.45}.v117-pack:hover{transform:translateY(-4px);border-color:rgba(201,255,106,.24);box-shadow:0 25px 60px rgba(0,0,0,.2)}.v117-pack.featured{background:linear-gradient(155deg,rgba(201,255,106,.14),rgba(255,255,255,.06) 45%,rgba(101,89,199,.14));border-color:rgba(201,255,106,.28)}.v117-pack small{font:900 9px Inter;letter-spacing:.12em;color:#c9ff6a}.v117-pack h3{margin:14px 0 3px;font:950 39px/1 Inter;letter-spacing:-.05em}.v117-pack .credits{font:750 10px Inter;color:#9ca8b7}.v117-pack p{margin:16px 0 0;min-height:46px;font:650 11px/1.55 Inter;color:#b8c1cc}.v117-value{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding:9px 10px;border-radius:11px;background:rgba(0,0,0,.16);color:#aeb8c5;font:750 9px Inter}.v117-value b{color:#fff;font:900 9px Inter}.v117-price-row{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-top:auto;padding-top:19px}.v117-price{font:950 28px/1 Inter;letter-spacing:-.04em}.v117-price span{display:block;margin-top:5px;font:750 8px Inter;color:#8f9baa;letter-spacing:.06em}.v117-buy{margin-top:13px;border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:13px 14px;background:#fff;color:#101820;font:900 10px Inter;cursor:pointer;transition:transform .16s ease,background .16s ease,box-shadow .16s ease}.v117-buy:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.18)}.v117-pack.featured .v117-buy{background:#c9ff6a;border-color:#c9ff6a}.v117-buy:disabled{opacity:.55;cursor:progress;transform:none}.v117-badge{position:absolute;right:12px;top:12px;border-radius:999px;padding:7px 9px;background:#c9ff6a;color:#101820;font:950 8px Inter;letter-spacing:.07em}.v117-badge.alt{background:#7566dd;color:#fff}
     .v117-footer-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;margin-top:18px}.v117-note,.v117-status{padding:16px 17px;border-radius:16px;font:700 10px/1.6 Inter}.v117-note{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);color:#adb8c5}.v117-note b{color:#fff}.v117-status{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);color:#dce3e9}.v117-status.error{background:rgba(168,52,45,.15);border-color:rgba(240,120,110,.24);color:#ffc8c2}.v117-status.success{background:rgba(116,157,52,.16);border-color:rgba(201,255,106,.25);color:#dfffab}
-    #v117-store-dock{position:fixed;z-index:2147483100;right:22px;bottom:22px;display:none;align-items:center;gap:8px;padding:8px;border:1px solid rgba(255,255,255,.13);border-radius:16px;background:rgba(15,24,37,.94);backdrop-filter:blur(18px);box-shadow:0 18px 52px rgba(0,0,0,.3)}html.v117-credit-store-route #v117-store-dock{display:flex!important}.v117-dock-btn{height:40px;border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:0 13px;background:rgba(255,255,255,.07);color:#fff;font:850 10px Inter;cursor:pointer}.v117-dock-btn.primary{background:#c9ff6a;border-color:#c9ff6a;color:#101820}
-    @media(max-width:560px){#v117-store-dock{left:12px;right:12px;bottom:12px;display:none!important;grid-template-columns:1fr 1fr}html.v117-credit-store-route #v117-store-dock{display:grid!important}.v117-dock-btn{width:100%}}
+    @media(max-width:720px){.v117-store-return{padding:0 9px;font-size:8.5px}.v117-store-return .v117-return-prefix{display:none}}
+    @media(max-width:560px){html.v117-credit-store-route #v55-topbar{min-height:108px}.v117-store-return{flex:1;min-width:0;padding:0 7px}.v117-store-return-label{overflow:hidden;text-overflow:ellipsis}.v117-store-nav{display:none!important}}
     @media(max-width:900px){#v117-credit-store-page{margin-top:62px;padding:26px 16px 64px}.v117-hero{grid-template-columns:1fr}.v117-hero-copy{padding:24px 2px 8px}.v117-packs{grid-template-columns:repeat(2,minmax(0,1fr))}.v117-footer-grid{grid-template-columns:1fr}.v117-section-head{align-items:flex-start;flex-direction:column}.v117-section-head p{text-align:left}}
     @media(max-width:560px){#v117-credit-store-page{margin-top:108px;padding:18px 12px 88px;scroll-padding-top:132px}.v117-store-label{display:none}.v117-storebar{align-items:flex-start;flex-direction:column;padding:13px}.v117-nav-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.v117-route-btn{width:100%;padding:0 9px}.v117-hero-copy{padding-top:18px}.v117-hero h1{font-size:45px}.v117-hero p{font-size:12.5px}.v117-wallet{min-height:218px;padding:19px}.v117-total{font-size:42px}.v117-packs{grid-template-columns:1fr}.v117-pack{min-height:270px}.v117-footer-grid{margin-top:14px}}
   `;
@@ -53,9 +56,51 @@
     else window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
   function routeStore(){if(!isStore()){location.hash='credit-store';syncRoute()}else syncRoute()}
+
+  function ensureStoreReturnButtons(){
+    const actions=$('#v55-topbar .v55-actions');if(!actions)return;
+    let home=$('#v117-store-return-home',actions),workspace=$('#v117-store-return-workspace',actions);
+    if(!home){
+      home=document.createElement('button');home.id='v117-store-return-home';home.type='button';home.className='v117-store-return';
+      home.innerHTML='<span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span>';
+      home.setAttribute('aria-label','Return to Homepage');home.onclick=routeHome;
+    }
+    if(!workspace){
+      workspace=document.createElement('button');workspace.id='v117-store-return-workspace';workspace.type='button';workspace.className='v117-store-return primary';
+      workspace.innerHTML='<span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span>';
+      workspace.setAttribute('aria-label','Return to Workspace');workspace.onclick=routeWorkspace;
+    }
+    const storeButton=$('#v117-credit-store-button',actions);
+    if(storeButton){
+      actions.insertBefore(home,storeButton);
+      actions.insertBefore(workspace,storeButton);
+    }else{
+      const credit=$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions);
+      if(credit){actions.insertBefore(home,credit);actions.insertBefore(workspace,credit)}else{actions.append(home,workspace)}
+    }
+  }
+
+  function syncStoreTopbar(){
+    const topbar=$('#v55-topbar'),actions=topbar?.querySelector('.v55-actions');
+    if(!topbar||!actions)return;
+    ensureStoreReturnButtons();
+    const store=isStore();
+    for(const el of [...topbar.querySelectorAll('[data-v117-store-hidden="1"]')]){
+      if(!store){el.hidden=false;el.removeAttribute('aria-hidden');delete el.dataset.v117StoreHidden}
+    }
+    if(!store)return;
+    for(const el of [...actions.children]){
+      if(el.id==='v55-language'||el.id==='v117-store-return-home'||el.id==='v117-store-return-workspace'||el.classList.contains('v85-topbar-credit'))continue;
+      const t=clean(el.textContent).toLowerCase();
+      if(/^product$/.test(t))continue;
+      if(el.id==='v117-credit-store-button'||el.id==='v55-auth'||el.classList.contains('v55-account-wrap')||/^(account|sign out|log out|logout|feedback)$/.test(t)||/privacy/.test(t)&&/terms|voorwaarden|conditions/.test(t)){
+        el.dataset.v117StoreHidden='1';el.hidden=true;el.setAttribute('aria-hidden','true');
+      }
+    }
+  }
   function restoreStoreSurface(){
     if(!isStore())return;
-    ensureButton();ensurePage();
+    ensureButton();ensurePage();ensureStoreReturnButtons();syncStoreTopbar();
     routeActive=true;
     document.documentElement.classList.add('v117-credit-store-route','v55-public-home');
     document.body?.classList.add('v117-credit-store-route','v55-public-home');
@@ -87,13 +132,8 @@
     page=document.createElement('main');page.id='v117-credit-store-page';page.hidden=true;page.setAttribute('aria-label','SCHOLARK Credit Store');
     page.innerHTML='<div class="v117-shell"><nav class="v117-storebar" aria-label="Credit Store"><div class="v117-storebrand"><span class="v117-storemark">✦</span><div><strong>SCHOLARK Credit Store</strong><span>ONE-TIME CREDIT TOP-UPS</span></div></div></nav><div id="v117-store-content"></div></div>';
     document.body.appendChild(page);
-    let dock=$('#v117-store-dock');
-    if(!dock){
-      dock=document.createElement('div');dock.id='v117-store-dock';dock.setAttribute('aria-label','Credit Store navigation');
-      dock.innerHTML='<button type="button" class="v117-dock-btn primary" data-v117-workspace>← Workspace</button><button type="button" class="v117-dock-btn" data-v117-home>Homepage</button>';
-      document.body.appendChild(dock);
-      dock.addEventListener('click',e=>{const home=e.target.closest?.('[data-v117-home]');if(home){routeHome();return}const workspace=e.target.closest?.('[data-v117-workspace]');if(workspace)routeWorkspace()});
-    }
+    $('#v117-store-dock')?.remove();
+    ensureStoreReturnButtons();
     page.addEventListener('click',e=>{
       const buy=e.target.closest?.('[data-v117-pack]');if(!buy)return;
       const pack=clean(buy.dataset.v117Pack).toLowerCase();busyPack=pack;statusMessage='Preparing secure checkout…';statusError=false;render();
@@ -118,7 +158,7 @@
   }
 
   function syncRoute(){
-    ensureButton();ensurePage();
+    ensureButton();ensurePage();ensureStoreReturnButtons();
     const store=isStore(),entering=store&&!routeActive;
     routeActive=store;
     if(store&&document.body){
@@ -133,6 +173,7 @@
     document.body?.classList.toggle('v117-credit-store-route',store);
     page.hidden=!store;
     button?.setAttribute('aria-current',store?'page':'false');
+    syncStoreTopbar();
     if(store){
       render();
       if(entering){
@@ -148,9 +189,9 @@
   addEventListener('popstate',()=>setTimeout(syncRoute,10));
   addEventListener('pageshow',()=>setTimeout(syncRoute,30));
   addEventListener('scholark-runtime-ready',()=>{[20,160,600].forEach(ms=>setTimeout(syncRoute,ms))});
-  addEventListener('scholark:auth-changed',()=>setTimeout(()=>{if(isStore())render();else ensureButton()},70));
-  addEventListener('scholark:billing-changed',()=>setTimeout(()=>{if(isStore())render()},50));
-  addEventListener('scholark-language-ready',()=>setTimeout(()=>{ensureButton();if(isStore())render()},100));
+  addEventListener('scholark:auth-changed',()=>setTimeout(()=>{syncStoreTopbar();if(isStore())render();else ensureButton()},70));
+  addEventListener('scholark:billing-changed',()=>setTimeout(()=>{syncStoreTopbar();if(isStore())render()},50));
+  addEventListener('scholark-language-ready',()=>setTimeout(()=>{ensureButton();ensureStoreReturnButtons();syncStoreTopbar();if(isStore())render()},100));
   addEventListener('scholark:credit-store-status',e=>{
     const d=e.detail||{};
     if(d.state==='completed'){busyPack='';statusError=false;statusMessage='✓ '+Number(d.creditsAdded||0).toLocaleString()+' credits added to your account.';restoreStoreSurface();setTimeout(render,80)}
