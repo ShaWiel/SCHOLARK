@@ -37,8 +37,8 @@
     const topup=w?.topup_balance==null?Math.max(0,total-monthly):Math.max(0,Number(w.topup_balance)||0);
     return{total,monthly,topup,plan:clean(w?.plan||window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase()};
   }
-  function routeHome(){location.hash='home'}
-  function routeStore(){if(!isStore())location.hash='credit-store';else syncRoute()}
+  function routeHome(){location.hash='home';syncRoute()}
+  function routeStore(){if(!isStore()){location.hash='credit-store';syncRoute()}else syncRoute()}
 
   function ensureButton(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return null;
