@@ -233,5 +233,5 @@
   addEventListener('scholark:auth-changed',()=>{refresh().then(resumePending)});
   addEventListener('pageshow',()=>refresh());
   wire();setTimeout(()=>{refresh();getConfig().catch(()=>{})},450);
-  window.__SCHOLARK_BILLING__={choose,buyCredits,refresh,manage,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),creditPacks:async()=>((await getConfig())?.creditPacks||{}),prewarm:()=>initPaddle(),release:'r205-credit-store'};
+  window.__SCHOLARK_BILLING__={choose,buyCredits,refresh,manage,plan:()=>state.plan,status:()=>state,config:()=>getConfig(),creditPacks:async()=>((await getConfig())?.creditPacks||{}),prewarm:()=>initPaddle(),release:'r206-credit-store'};
 })();
