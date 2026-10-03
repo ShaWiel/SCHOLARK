@@ -176,9 +176,9 @@ if(launchHealth){
   check(typeof launchHealth.readiness?.codeReady==='boolean'&&typeof launchHealth.readiness?.commerciallyReady==='boolean','Structured launch readiness verdict missing');
   check(typeof launchHealth.publicCommercialLaunchReady==='boolean','Launch readiness verdict missing');
   check(typeof launchHealth.infrastructure?.productionCapacityValidated==='boolean'&&typeof launchHealth.infrastructure?.realDeviceQaValidated==='boolean'&&typeof launchHealth.infrastructure?.deployTier==='string','Infrastructure launch readiness status missing');
-  check(typeof launchHealth.billing?.liveEndToEndValidated==='boolean'&&typeof launchHealth.billing?.liveCredentialShapes==='boolean','Billing launch validation status missing');
+  check(typeof launchHealth.billing?.liveEndToEndValidated==='boolean'&&typeof launchHealth.billing?.liveCredentialShapes==='boolean'&&typeof launchHealth.billing?.liveCredentialsPreloaded==='boolean','Billing launch validation status missing');
   check(typeof launchHealth.security?.leakedPasswordProtectionValidated==='boolean','Security launch validation status missing');
-  check(typeof launchHealth.legal?.supportContactConfigured==='boolean'&&typeof launchHealth.legal?.legalReviewValidated==='boolean','Legal launch validation status missing');
+  check(launchHealth.legal?.supportContactConfigured===true&&['in-app','email'].includes(launchHealth.legal?.supportChannel)&&launchHealth.legal?.legalContentVersion==='2026-10-03'&&typeof launchHealth.legal?.legalReviewValidated==='boolean','Legal/support launch validation status missing');
   check(launchHealth.foundation?.transactionalDataDeletion===true&&launchHealth.foundation?.serverCreditPreflight===true,'Privacy/credit hardening is missing from launch health');
   if(launchHealth.testMode)check(launchHealth.publicCommercialLaunchReady===false,'Test-mode container must never report commercial launch ready');
   if(live&&launchHealth.blockers){const active=Object.entries(launchHealth.blockers).filter(([,v])=>v===true).map(([k])=>k);results.push(`live:launch-blockers ${active.length?active.join(','):'none'}`)}
@@ -198,6 +198,11 @@ try{
   check(r.status===201&&data?.ok===true,`Feedback smoke failed: HTTP ${r.status}`);
   results.push(`launch:feedback ${r.status}`);
 }catch(e){failures.push('Feedback smoke threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/feedback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({category:'support',message:'CI support request smoke',route:'#home',locale:'en',metadata:{replyEmail:null}})},15000);
+  check(r.status===201&&data?.ok===true,`Support request smoke failed: HTTP ${r.status}`);
+  results.push('launch:support 201');
+}catch(e){failures.push('Support request smoke threw '+(e?.message||e))}
 try{
   const {r,data}=await request('/api/feedback',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:JSON.stringify({category:'bug',message:'cross origin'})},15000);
   check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin feedback was not blocked: HTTP ${r.status}`);
