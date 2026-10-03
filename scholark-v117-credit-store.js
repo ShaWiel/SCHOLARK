@@ -126,6 +126,13 @@
 
   function ensureButton(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return null;
+    const parked=parkedTopbarControls.find(x=>x.el?.id==='v117-credit-store-button')?.el||null;
+    if(isStore()){
+      button=parked||$('#v117-credit-store-button',actions)||button;
+      // The Store entry belongs on public Home only. Never recreate it while
+      // the Store route is active; return navigation replaces it there.
+      return button||null;
+    }
     button=$('#v117-credit-store-button',actions);
     if(!button){
       button=document.createElement('button');button.id='v117-credit-store-button';button.type='button';button.className='v117-store-nav';
@@ -134,7 +141,7 @@
       const before=$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions);
       before?actions.insertBefore(button,before):actions.appendChild(button);
     }
-    button.setAttribute('aria-current',isStore()?'page':'false');
+    button.setAttribute('aria-current','false');
     return button;
   }
 
