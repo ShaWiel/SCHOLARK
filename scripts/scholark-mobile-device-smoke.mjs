@@ -162,10 +162,10 @@ for(const profile of profiles){
 
     await context.grantPermissions(['geolocation'],{origin:base});
     await context.setGeolocation({latitude:5.852,longitude:-55.203});
-    const allowed=await geolocationOutcome(page);
-    check(allowed?.ok===true,profile.name+': geolocation permission grant did not work');
     await page.reload({waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForTimeout(900);
+    const allowed=await geolocationOutcome(page);
+    check(allowed?.ok===true,profile.name+': geolocation permission grant did not work after permission-state reload');
     check(await page.locator('#v51-main').count()<=1,profile.name+': reload after GPS grant duplicated Workspace');
     await checkViewport(page,profile.name+' schools-gps');
 
