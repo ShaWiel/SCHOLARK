@@ -162,8 +162,9 @@ await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:3000});
 check(await visible('#v117-credit-store-page',3000),'Dedicated Credit Store page did not open from the homepage topbar');
 check(await visible('#v55-topbar',3000),'Homepage topbar disappeared on the Credit Store page');
 check(await page.locator('#v117-credit-store-page [data-v117-pack]').count()===6,'Credit Store should expose exactly six top-up packs');
-check(await page.locator('#v117-credit-store-page [data-v117-workspace]').count()===1,'Credit Store Workspace navigation is missing');
-check(await page.locator('#v117-credit-store-page [data-v117-home]').count()===1,'Credit Store Homepage navigation is missing');
+check(await page.locator('#v117-store-dock').count()===1,'Credit Store navigation dock is duplicated or missing');
+check(await page.locator('#v117-store-dock [data-v117-workspace]').count()===1,'Credit Store Workspace navigation is missing');
+check(await page.locator('#v117-store-dock [data-v117-home]').count()===1,'Credit Store Homepage navigation is missing');
 check(await page.locator('#v117-credit-store-page .v117-trust span').count()===3,'Credit Store trust/value strip is incomplete');
 const storeText=(await page.locator('#v117-credit-store-page').innerText()).replace(/\s+/g,' ');
 check(storeText.includes('100')&&storeText.includes('$2.99')&&storeText.includes('250')&&storeText.includes('$6.99')&&storeText.includes('750')&&storeText.includes('$16.99')&&storeText.includes('1,500')&&storeText.includes('$29.99')&&storeText.includes('3,000')&&storeText.includes('$49.99')&&storeText.includes('7,500')&&storeText.includes('$99.99'),'Credit Store pack amounts/prices are incomplete');
@@ -175,22 +176,8 @@ check(await visible('#v72-modal.open',3000),'Unauthenticated credit purchase did
 check(await page.evaluate(()=>sessionStorage.getItem('scholark_pending_credit_pack')==='mini'),'Pending credit pack was not preserved across authentication');
 await page.click('#v72-modal .v72-x');
 await page.evaluate(()=>sessionStorage.removeItem('scholark_pending_credit_pack'));
-const postAuthStoreState=await page.evaluate(()=>{
-  const snap=el=>{if(!el)return null;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{hidden:!!el.hidden,ariaHidden:el.getAttribute('aria-hidden'),display:cs.display,visibility:cs.visibility,opacity:cs.opacity,pointerEvents:cs.pointerEvents,width:r.width,height:r.height,top:r.top,bottom:r.bottom}};
-  return{
-    hash:location.hash,
-    htmlClass:document.documentElement.className,
-    bodyClass:document.body.className,
-    page:snap(document.querySelector('#v117-credit-store-page')),
-    shell:snap(document.querySelector('#v117-credit-store-page .v117-shell')),
-    nav:snap(document.querySelector('#v117-credit-store-page .v117-storebar')),
-    workspace:snap(document.querySelector('#v117-credit-store-page [data-v117-workspace]')),
-    modal:snap(document.querySelector('#v72-modal'))
-  };
-});
-console.log('CREDIT_STORE_POST_AUTH_STATE '+JSON.stringify(postAuthStoreState));
-if(!postAuthStoreState.workspace||postAuthStoreState.workspace.display==='none'||postAuthStoreState.workspace.visibility==='hidden'||postAuthStoreState.workspace.width<1||postAuthStoreState.workspace.height<1)throw new Error('Credit Store navigation hidden after auth modal '+JSON.stringify(postAuthStoreState));
-await page.click('#v117-credit-store-page [data-v117-workspace]',{timeout:5000});
+check(await visible('#v117-store-dock [data-v117-workspace]',5000),'Credit Store navigation dock disappeared after auth modal');
+await page.click('#v117-store-dock [data-v117-workspace]',{timeout:5000});
 await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'Credit Store Workspace button did not enter the Workspace dashboard');
 await page.evaluate(()=>{location.hash='home'});
@@ -200,7 +187,7 @@ check(await visible('#v117-credit-store-button',5000),'Credit Store topbar actio
 await page.click('#v117-credit-store-button');
 await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
 check(await visible('#v117-credit-store-page',8000),'Credit Store did not reopen from the homepage after Workspace');
-await page.click('#v117-credit-store-page [data-v117-home]');
+await page.click('#v117-store-dock [data-v117-home]');
 await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 check(await page.locator('#v117-credit-store-page').evaluate(el=>el.hidden),'Credit Store page did not leave cleanly');
 check(await visible('#v29-home-layer',5000),'Homepage did not recover after leaving Credit Store');
