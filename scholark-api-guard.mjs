@@ -48,9 +48,8 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
     if (!res.hasHeader('origin-agent-cluster')) res.setHeader('origin-agent-cluster','?1');
-    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests");
+    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'");
     if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains; preload');
-    if (!res.hasHeader('x-robots-tag')) res.setHeader('x-robots-tag','noindex, nofollow, noarchive');
   } catch {}
 }
 
