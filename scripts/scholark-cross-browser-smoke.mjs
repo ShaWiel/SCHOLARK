@@ -43,11 +43,12 @@ for(const cfg of engines){
     await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
     await page.waitForSelector('#v117-credit-store-page',{state:'visible',timeout:8000});
     check(await page.locator('#v117-credit-store-page [data-v117-pack]').count()===6,cfg.name+': Credit Store pack grid incomplete');
-    check(await page.locator('#v117-store-dock').count()===1&&await page.locator('#v117-store-dock [data-v117-workspace]').count()===1&&await page.locator('#v117-store-dock [data-v117-home]').count()===1,cfg.name+': Credit Store dual navigation dock missing/duplicated');
-    const storeLayout=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,home:getComputedStyle(document.querySelector('#v29-home-layer')).display,dock:getComputedStyle(document.querySelector('#v117-store-dock')).display}));
+    check(await page.locator('#v117-store-dock').count()===0,cfg.name+': legacy Credit Store dock still exists');
+    check(await page.locator('#v117-store-return-workspace').count()===1&&await page.locator('#v117-store-return-home').count()===1,cfg.name+': Credit Store return topbar actions missing/duplicated');
+    const storeLayout=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,home:getComputedStyle(document.querySelector('#v29-home-layer')).display,retHome:getComputedStyle(document.querySelector('#v117-store-return-home')).display,retWorkspace:getComputedStyle(document.querySelector('#v117-store-return-workspace')).display,storeButton:getComputedStyle(document.querySelector('#v117-credit-store-button')).display,account:getComputedStyle(document.querySelector('#v55-account').closest('.v55-account-wrap')).display,auth:getComputedStyle(document.querySelector('#v55-auth')).display}));
     check(storeLayout.sw<=storeLayout.w+2,cfg.name+': Credit Store creates horizontal overflow '+JSON.stringify(storeLayout));
-    check(storeLayout.topbar!=='none'&&storeLayout.home==='none'&&storeLayout.dock!=='none',cfg.name+': Credit Store route layering is incorrect '+JSON.stringify(storeLayout));
-    await page.click('#v117-store-dock [data-v117-home]');
+    check(storeLayout.topbar!=='none'&&storeLayout.home==='none'&&storeLayout.retHome!=='none'&&storeLayout.retWorkspace!=='none'&&storeLayout.storeButton==='none'&&storeLayout.account==='none'&&storeLayout.auth==='none',cfg.name+': Credit Store topbar layering is incorrect '+JSON.stringify(storeLayout));
+    await page.click('#v117-store-return-home');
     await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 
     await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
