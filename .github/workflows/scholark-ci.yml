@@ -69,6 +69,8 @@ jobs:
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
         run: node scripts/scholark-cross-browser-smoke.mjs http://127.0.0.1:10000
+      - name: Run mobile device launch QA
+        run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Verify homepage boot, loading guard and runtime scripts
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
