@@ -6,6 +6,7 @@
 
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
   const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
+  const creditStore=()=>window.__SCHOLARK_ROUTES__?.isCreditStore?.()??String(location.hash||'').toLowerCase().startsWith('#credit-store');
   const retiredSelectors=[
     '#sv24-explainer','#sv24-launch','#sv24-home',
     '#v25-ad-studio','#v25-ad-future','#v25-pricing',
@@ -50,14 +51,14 @@
     if(!publicHome()){releaseQuarantine();return}
     document.body?.classList.add('v55-public-home');
     document.documentElement.classList.add('v55-public-home');
-    window.__SCHOLARK_V29_HOME__?.sync?.();
-    window.__SCHOLARK_V30_DEMO__?.sync?.();
+    const store=creditStore();
+    if(!store){window.__SCHOLARK_V29_HOME__?.sync?.();window.__SCHOLARK_V30_DEMO__?.sync?.()}
     quarantineLegacy(document.body||document);
     retiredSelectors.forEach(sel=>$$(sel).forEach(el=>{if(el.closest('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;el.remove()}));
     const homes=$$('#v29-home-layer');
     homes.slice(1).forEach(el=>el.remove());
     const home=homes[0]||$('#v29-home-layer');
-    if(home){home.hidden=false;home.removeAttribute('aria-hidden');home.classList.add('v30-native-home')}
+    if(home){home.classList.add('v30-native-home');if(store){home.hidden=true;home.setAttribute('aria-hidden','true');home.style.setProperty('display','none','important')}else{home.hidden=false;home.removeAttribute('aria-hidden');home.style.removeProperty('display')}}
     $$('[data-v30-legacy-home="1"]').forEach(el=>{
       if(el===home||el.closest('#v29-home-layer'))return;
       el.setAttribute('aria-hidden','true');
@@ -77,7 +78,8 @@
       return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2;
     });
     const quarantinedVisible=$$('[data-v109-quarantined="1"]').some(el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.01&&r.width>2&&r.height>2});
-    return {ok:canonicalCount===1&&!!current&&!current.hidden&&!retiredVisible&&!legacyVisible&&!quarantinedVisible,home:true,current:!!current,canonicalCount,retiredVisible,legacyVisible,quarantinedVisible,owner:window.__SCHOLARK_HOME_OWNER_LOCK__};
+    const store=creditStore(),currentVisibilityOk=store?!!current&&current.hidden:!!current&&!current.hidden;
+    return {ok:canonicalCount===1&&currentVisibilityOk&&!retiredVisible&&!legacyVisible&&!quarantinedVisible,home:true,creditStore:store,current:!!current,canonicalCount,retiredVisible,legacyVisible,quarantinedVisible,owner:window.__SCHOLARK_HOME_OWNER_LOCK__};
   }
 
   let guardTimer=0;const schedule=()=>[0,60,180,500,1200].forEach(ms=>setTimeout(prune,ms));
