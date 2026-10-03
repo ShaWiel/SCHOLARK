@@ -71,7 +71,8 @@ if(guardHealth){
   check(guardHealth.ipHashedRateKeys===true&&guardHealth.bearerRotationSafe===true,'Rate-limit identity hardening is not active');
   check(guardHealth.sensitiveQueryGuard===true,'Sensitive-query credential guard is not active');
   check(Number(guardHealth.maxBuckets)===10000,'API rate-limit bucket bound mismatch');
-  check(guardHealth.rateLimitMode==='test-bypass','CI/test container did not expose test-only rate-limit bypass');
+  if(live)check(guardHealth.rateLimitMode==='enforced','Live API guard is not enforcing production rate limits');
+  else check(guardHealth.rateLimitMode==='test-bypass','CI/test container did not expose test-only rate-limit bypass');
 }
 try{
   const {r:guardResponse}=await request('/api/guard/health',{},15000);
@@ -363,7 +364,7 @@ if(!live){
     const shell=String(shellRes.data?.raw||''),filter=String(filterRes.data?.raw||''),home=String(homeRes.data?.raw||'');
     check(shellRes.r.ok&&shell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&shell.includes("['mulo','🎒','MULO'")&&shell.includes("['havo','🎓','HAVO'")&&shell.includes("['mbo','🧰','MBO'")&&shell.includes("['hbo','🏫','HBO'")&&shell.includes("['wo','🏛️','WO / Universiteit'"),'live Workspace dashboard is missing exact Suriname levels');
     check(shell.includes("{id:'basic',label:'Basisonderwijs',tone:'green'}")&&shell.includes("{id:'voj',label:'VOJ',tone:'dark'}")&&shell.includes("{id:'vos',label:'VOS',tone:'green'}")&&shell.includes("{id:'higher',label:'Hoger Onderwijs',tone:'dark'}"),'live Suriname group labels/colors are wrong');
-    check(shell.includes('v51-levels-suriname')&&shell.includes('overflow-x:auto')&&shell.includes('data-v51-level-scroll="-1"')&&shell.includes("host.scrollBy({left:"),'live Suriname level strip is not horizontally scrollable');
+    check(shell.includes('v51-levels-suriname')&&shell.includes('overflow-x:auto')&&shell.includes("host.addEventListener('keydown'")&&shell.includes("host.scrollBy({left:"),'live Suriname level strip is not horizontally scrollable');
     check(shell.includes("$('[data-level]',host).forEach"),'live dashboard level button wiring is not collection-safe');
     check(shell.includes('SURINAME_AI_LEVEL')&&shell.includes("localStorage.setItem('scholark_education_track',id)"),'live Suriname dashboard selection wiring is incomplete');
     check(filterRes.r.ok&&filter.includes("20260918-school-filter-v4"),'live school filter guard is stale');
@@ -378,10 +379,10 @@ if(!live){
       request('/scholark-v50-school-finder.js?smoke='+bust,{},30000)
     ]);
     const i18n=String(i18nRes.data?.raw||''),country=String(countryRes.data?.raw||''),school=String(schoolRes.data?.raw||'');
-    check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v4-seven-ui'"),'live i18n cache version is stale');
+    check(i18nRes.r.ok&&i18n.includes("CACHE_VERSION='v9-global74-resilient-atomic-layout'")&&i18n.includes("'v4-seven-ui'"),'live i18n cache version is stale');
     check(i18n.includes('rebuildReverseKnown')&&i18n.includes('reverseKnown.get(clean(value))'),'live i18n canonicalization guard is missing');
     check(countryRes.r.ok&&country.includes("all:'Alle niveaus'")&&country.includes("all:'Todos los niveles'"),'live school language dictionary is incomplete');
-    check(country.includes("studyField:'Studie/richting (optioneel)'")&&country.includes("['Basisonderwijs',['kindergarten','primary']]")&&country.includes("['Voortgezet Onderwijs Senioren (VOS)',['havo','vwo','mbo']]")&&country.includes("['Hoger Onderwijs',['hbo','wo']]"),'live Suriname school level owner is incomplete');
+    check(country.includes("studyField:'Studie/richting (optioneel)'")&&country.includes("[gc.basic,['kindergarten','primary']]")&&country.includes("[gc.voj,['mulo','lbo']]")&&country.includes("[gc.vos,['havo','vwo','mbo']]")&&country.includes("[gc.higher,['hbo','wo']]"),'live Suriname school level owner is incomplete');
     check(schoolRes.r.ok&&school.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','wo','upper_secondary','vocational','higher','adult'])"),'live study-field level rule is missing');
     check(school.includes("study.hidden=!visible")&&school.includes("study.disabled=!visible"),'live study-field visibility logic is missing');
     results.push(`live:language_study_foundation ${i18nRes.r.status}/${countryRes.r.status}/${schoolRes.r.status}`);
@@ -406,7 +407,7 @@ if(!live){
     check(examRes.r.ok&&exam.includes('saveLocalMastery(groups)')&&exam.includes('saved locally to Progress + Mastery'),'live diagnostic local mastery persistence is missing');
     check(reviewRes.r.ok&&review.includes('localReviewRows')&&review.includes('renderLocalQueue'),'live local spaced review is missing');
     check(studyRes.r.ok&&study.includes('data-v83="goal"')&&study.includes("scholark_v51_planner")&&study.includes("scholark_v52_mastery"),'live Study Ahead integration is incomplete');
-    check(learnRes.r.ok&&learn.includes('const depthInstruction=')&&learn.includes("depth,prompt:'Prepare me to study '"),'live Study Ahead depth is not functional');
+    check(learnRes.r.ok&&learn.includes('const depthInstruction=')&&learn.includes('specialization,context,depth,horizon,weeklyHours,studyFocus')&&learn.includes("prompt:'Prepare me to study '"),'live Study Ahead depth is not functional');
     check(learn.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learn.includes('restoreStudyDraft();bindStudyDraft();return live'),'live Study Ahead draft preservation is missing');
     check(learn.includes("const live=$('.v62-study',h)")&&learn.includes("if(live&&$('#v62-field',live))"),'live Study Ahead idempotent mount is missing');
     check(tools.includes('Assignment Coach')&&tools.includes('Prioritise all my assignments')&&tools.includes('data-tutor-assignment'),'live AI Tutor Assignment Coach UI is missing');
@@ -429,7 +430,7 @@ if(!live){
       request('/',{},30000)
     ]);
     const power=String(powerRes.data?.raw||''),shell=String(shellRes.data?.raw||''),runtime=String(runtimeRes.data?.raw||''),home=String(prepaintRes.data?.raw||'');
-    check(powerRes.r.ok&&power.includes("version:'20260918-workspace-power-v2'"),'live workspace power tools are missing/stale');
+    check(powerRes.r.ok&&power.includes("version:'20260921-r176'"),'live workspace power tools are missing/stale');
     check(power.includes("FOCUS_KEY='scholark_v106_focus'")&&power.includes('setInterval(syncFocusView,1000)')&&power.includes('clearInterval(focusTicker)'),'live Focus Sessions lifecycle is incomplete');
     check(power.includes('scheduleCard(card,rating)')&&power.includes("rating==='again'")&&power.includes("rating==='easy'"),'live Flashcards spaced scheduling is incomplete');
     check(power.includes('Break into Planner')&&power.includes('What should I do next?')&&power.includes("id='assignment-'"),'live Assignments integration is incomplete');
