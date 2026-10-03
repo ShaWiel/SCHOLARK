@@ -439,8 +439,24 @@
     if(id==='schools'){let t=$('[data-v50-school]');if(t){try{t.click()}catch{}}else{const old=$('[data-v48-tool="schools"]');try{old?.click()}catch{}}setTimeout(()=>{if(route()!=='#schools')return;const x=$('#v50-school');x?.classList.add('open');window.__SCHOLARK_I18N__?.apply?.(x)},35);return}
     if(id==='study'){
       $('#v25-study')?.classList.remove('open');
-      const api=window.__SCHOLARK_V62_LEARNING_API__;if(api?.openStudyAhead){api.openStudyAhead();setTimeout(()=>{if(route()==='#study')window.__SCHOLARK_I18N__?.apply?.($('#v25-study'))},20);return}
-      setTimeout(()=>{if(route()!=='#study')return;window.__SCHOLARK_V62_LEARNING_API__?.openStudyAhead?.();window.__SCHOLARK_I18N__?.apply?.($('#v25-study'))},60);return;
+      let settled=false;
+      const mountStudy=()=>{
+        if(route()!=='#study')return false;
+        const api=window.__SCHOLARK_V62_LEARNING_API__;
+        if(!api?.openStudyAhead)return false;
+        const mounted=api.openStudyAhead();
+        const ok=!!mounted||!!$('#v51-fallback .v62-study');
+        if(ok){
+          settled=true;
+          syncWorkspaceLanguage($('#v51-fallback'));
+          window.__SCHOLARK_I18N__?.apply?.($('#v51-fallback'));
+        }
+        return ok;
+      };
+      if(mountStudy())return;
+      window.__SCHOLARK_RUNTIME__?.ensure?.('study')?.then(()=>{if(!settled)mountStudy()}).catch(()=>{});
+      [60,180,420,900,1800].forEach(ms=>setTimeout(()=>{if(!settled)mountStudy()},ms));
+      return;
     }
     if(id==='book'){
       $('#v25-book')?.classList.remove('open');
