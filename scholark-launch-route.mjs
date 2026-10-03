@@ -17,11 +17,11 @@ const LEAKED_PASSWORD_PROTECTION_VALIDATED=/^(1|true|yes|on)$/i.test(String(proc
 const LIVE_BILLING_VALIDATED=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_LIVE_BILLING_VALIDATED||''));
 const LEGAL_REVIEW_VALIDATED=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_LEGAL_REVIEW_VALIDATED||''));
 const REAL_DEVICE_QA_VALIDATED=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_REAL_DEVICE_QA_VALIDATED||''));
-const LIVE_API_KEY=String(process.env.PADDLE_API_KEY||'').trim();
-const LIVE_CLIENT_TOKEN=String(process.env.PADDLE_CLIENT_TOKEN||'').trim();
-const LIVE_WEBHOOK_SECRET=String(process.env.PADDLE_WEBHOOK_SECRET||'').trim();
-const LIVE_PLUS_PRICE=String(process.env.PADDLE_PLUS_PRICE_ID||'').trim();
-const LIVE_PRO_PRICE=String(process.env.PADDLE_PRO_PRICE_ID||'').trim();
+const LIVE_API_KEY=String(process.env.PADDLE_LIVE_API_KEY||(PADDLE_ENV==='production'?process.env.PADDLE_API_KEY:'')||'').trim();
+const LIVE_CLIENT_TOKEN=String(process.env.PADDLE_LIVE_CLIENT_TOKEN||(PADDLE_ENV==='production'?process.env.PADDLE_CLIENT_TOKEN:'')||'').trim();
+const LIVE_WEBHOOK_SECRET=String(process.env.PADDLE_LIVE_WEBHOOK_SECRET||(PADDLE_ENV==='production'?process.env.PADDLE_WEBHOOK_SECRET:'')||'').trim();
+const LIVE_PLUS_PRICE=String(process.env.PADDLE_LIVE_PLUS_PRICE_ID||(PADDLE_ENV==='production'?process.env.PADDLE_PLUS_PRICE_ID:'')||'').trim();
+const LIVE_PRO_PRICE=String(process.env.PADDLE_LIVE_PRO_PRICE_ID||(PADDLE_ENV==='production'?process.env.PADDLE_PRO_PRICE_ID:'')||'').trim();
 const STARTED_AT=Date.now();
 const feedbackBuffer=[];
 const feedbackRate=new Map();
@@ -142,7 +142,7 @@ function launchHealth(){
     runtime:{rssMB:Math.round((mem.rss||0)/1048576),heapUsedMB:Math.round((mem.heapUsed||0)/1048576)},
     foundation:{feedback:true,accountExport:true,accountDeletion:true,transactionalDataDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,sharedAiSessionRecovery:true,connectedWorkspaceContext:true,adaptiveSchoolRadiusKm:250,globalSchoolSampling:true,crossBrowserCi:['chromium','firefox','webkit'],accessibility:true,onboarding:true,languageQa:74},
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
-    billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
+    billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveCredentialsPreloaded:liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
     legal:{product:LEGAL_NAME,supportContactConfigured:supportReady,supportChannel:SUPPORT_EMAIL?'email':'in-app',supportEmail:SUPPORT_EMAIL||null,legalContentVersion:'2026-10-03',legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
     readiness:{codeReady,commerciallyReady:!hardBlock},
