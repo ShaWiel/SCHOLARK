@@ -64,6 +64,8 @@ const guardHealth=await get('/api/guard/health');
 if(guardHealth){
   check(guardHealth.originGuard===true,'API origin guard is not active');
   check(guardHealth.securityHeaders===true,'API security-header guard is not active');
+  check(guardHealth.ipHashedRateKeys===true&&guardHealth.bearerRotationSafe===true,'Rate-limit identity hardening is not active');
+  check(guardHealth.sensitiveQueryGuard===true,'Sensitive-query credential guard is not active');
   check(Number(guardHealth.maxBuckets)===10000,'API rate-limit bucket bound mismatch');
   check(guardHealth.rateLimitMode==='test-bypass','CI/test container did not expose test-only rate-limit bypass');
 }
@@ -79,6 +81,11 @@ try{
   check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin expensive API request was not blocked: HTTP ${r.status}`);
   results.push(`cross-origin-guard ${r.status}`);
 }catch(e){failures.push('Cross-origin guard verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/credits/checkout?access_token=should-never-be-in-url',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({pack:'mini'})},15000);
+  check(r.status===400&&data?.code==='SENSITIVE_QUERY_BLOCKED',`Sensitive query credential was not blocked: HTTP ${r.status}`);
+  results.push(`sensitive-query-guard ${r.status}`);
+}catch(e){failures.push('Sensitive query guard verification threw '+(e?.message||e))}
 const billingHealth=await get('/api/billing/health');
 const billingConfig=await get('/api/billing/config');
 if(billingHealth&&billingConfig){
