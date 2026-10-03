@@ -181,6 +181,7 @@ if(launchHealth){
   check(typeof launchHealth.legal?.supportContactConfigured==='boolean'&&typeof launchHealth.legal?.legalReviewValidated==='boolean','Legal launch validation status missing');
   check(launchHealth.foundation?.transactionalDataDeletion===true&&launchHealth.foundation?.serverCreditPreflight===true,'Privacy/credit hardening is missing from launch health');
   if(launchHealth.testMode)check(launchHealth.publicCommercialLaunchReady===false,'Test-mode container must never report commercial launch ready');
+  if(live&&launchHealth.blockers){const active=Object.entries(launchHealth.blockers).filter(([,v])=>v===true).map(([k])=>k);results.push(`live:launch-blockers ${active.length?active.join(','):'none'}`)}
 }
 if(surinameSources){
   check(surinameSources.verification==='national-official','Suriname education source should be nationally verified');
