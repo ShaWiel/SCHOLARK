@@ -336,4 +336,4 @@ http.Server.prototype.emit = function(type, ...args) {
   return context.run(store, () => previousEmit.call(this, type, ...args));
 };
 
-console.log(`[SCHOLARK] Gemini router ${ROUTER_VERSION} · primary ${primaryModel} · fallbacks ${fallbackModels.join(' -> ') || 'none'} · emergency Pollinations ${pollinationsConfigured ? pollinationsModel : 'off'} · key ${geminiConfigured ? 'configured' : 'missing'}`);
+console.log(`[SCHOLARK] Gemini router ${ROUTER_VERSION} · primary ${primaryModel} · fallbacks ${fallbackModels.join(' -> ') || 'none'} · backup Pollinations ${pollinationsConfigured ? pollinationsModel : 'off'} · key ${geminiConfigured ? 'configured' : 'missing'}`);
