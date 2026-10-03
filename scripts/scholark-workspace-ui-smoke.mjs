@@ -172,6 +172,8 @@ check(await page.locator('#v72-modal input[type="password"]').count()===1,'Auth 
 await page.click('#v72-modal [data-tab="signup"]');
 check(await page.locator('#v72-modal [data-tab="signup"]').evaluate(el=>el.classList.contains('active')),'Create-account tab did not activate');
 check((await page.locator('#v72-modal input[type="password"]').getAttribute('autocomplete'))==='new-password','Create-account password field is not configured as a new password');
+check(await page.locator('#v72-modal [data-v72-terms]').count()===1,'Create-account terms consent is missing');
+check((await page.locator('#v72-modal').innerText()).includes('Privacy Notice & Product Terms'),'Create-account legal notice is missing');
 await page.click('#v72-modal .v72-x');
 check(await page.locator('#v72-modal').evaluate(el=>!el.classList.contains('open')),'Auth modal did not close cleanly');
 check(await visible('#v117-credit-store-button',3000),'Credit Store action is missing from the homepage topbar');
