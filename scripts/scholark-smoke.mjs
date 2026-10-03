@@ -407,7 +407,7 @@ if(!live){
     check(tools.includes('Next review')&&tools.includes("data-m-tutor")&&tools.includes('Add this study session to Planner'),'live Education & Learning actions are incomplete');
     check(examRes.r.ok&&exam.includes('saveLocalMastery(groups)')&&exam.includes('saved locally to Progress + Mastery'),'live diagnostic local mastery persistence is missing');
     check(reviewRes.r.ok&&review.includes('localReviewRows')&&review.includes('renderLocalQueue'),'live local spaced review is missing');
-    check(studyRes.r.ok&&study.includes('data-v83="goal"')&&study.includes("scholark_v51_planner")&&study.includes("scholark_v52_mastery"),'live Study Ahead integration is incomplete');
+    check(studyRes.r.ok&&study.includes('data-v83="goal"')&&study.includes('api?.data?.planner?.()')&&study.includes('api?.data?.mastery?.()')&&study.includes('api?.data?.goals?.()'),'live Study Ahead integration is incomplete');
     check(learnRes.r.ok&&learn.includes('const depthInstruction=')&&learn.includes('specialization,context,depth,horizon,weeklyHours,studyFocus')&&learn.includes("prompt:'Prepare me to study '"),'live Study Ahead depth is not functional');
     check(learn.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learn.includes('restoreStudyDraft();bindStudyDraft();return live'),'live Study Ahead draft preservation is missing');
     check(learn.includes("const live=$('.v62-study',h)")&&learn.includes("if(live&&$('#v62-field',live))"),'live Study Ahead idempotent mount is missing');
