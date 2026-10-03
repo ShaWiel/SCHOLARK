@@ -8,6 +8,7 @@ const RELEASE=String(process.env.SCHOLARK_RELEASE||'dev');
 const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
 const PADDLE_ENV=String(process.env.PADDLE_ENV||'sandbox').toLowerCase()==='production'?'production':'sandbox';
 const SUPPORT_EMAIL=String(process.env.SCHOLARK_SUPPORT_EMAIL||'').trim().slice(0,240);
+const IN_APP_SUPPORT=true;
 const LEGAL_NAME=String(process.env.SCHOLARK_LEGAL_NAME||'SCHOLARK').trim().slice(0,240)||'SCHOLARK';
 const PRODUCT_STAGE=cleanEnv(process.env.SCHOLARK_PRODUCT_STAGE||'beta',40)||'beta';
 const DEPLOY_TIER=cleanEnv(process.env.SCHOLARK_DEPLOY_TIER||'unknown',60)||'unknown';
@@ -118,7 +119,8 @@ function launchHealth(){
   const mem=process.memoryUsage?.()||{};
   const liveBilling=PADDLE_ENV==='production';
   const liveCredentialShapes=/^pdl_live_apikey_/.test(LIVE_API_KEY)&&/^live_/.test(LIVE_CLIENT_TOKEN)&&!!LIVE_WEBHOOK_SECRET&&/^pri_[a-z\d]{26}$/.test(LIVE_PLUS_PRICE)&&/^pri_[a-z\d]{26}$/.test(LIVE_PRO_PRICE);
-  const legalReady=!!SUPPORT_EMAIL&&LEGAL_REVIEW_VALIDATED;
+  const supportReady=!!SUPPORT_EMAIL||IN_APP_SUPPORT;
+  const legalReady=supportReady&&LEGAL_REVIEW_VALIDATED;
   const nodeProduction=String(process.env.NODE_ENV||'').toLowerCase()==='production';
   const codeReady=nodeProduction&&!TEST_MODE;
   const blockers={
@@ -127,7 +129,7 @@ function launchHealth(){
     liveBillingEnvironment:!liveBilling,
     liveBillingCredentials:!liveCredentialShapes,
     liveBillingEndToEnd:!LIVE_BILLING_VALIDATED,
-    supportContact:!SUPPORT_EMAIL,
+    supportContact:!supportReady,
     legalReview:!LEGAL_REVIEW_VALIDATED,
     productionCapacity:!CAPACITY_VALIDATED,
     realDeviceQa:!REAL_DEVICE_QA_VALIDATED,
@@ -142,7 +144,7 @@ function launchHealth(){
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
     billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
-    legal:{product:LEGAL_NAME,supportContactConfigured:!!SUPPORT_EMAIL,supportEmail:SUPPORT_EMAIL||null,legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
+    legal:{product:LEGAL_NAME,supportContactConfigured:supportReady,supportChannel:SUPPORT_EMAIL?'email':'in-app',supportEmail:SUPPORT_EMAIL||null,legalContentVersion:'2026-10-03',legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
     readiness:{codeReady,commerciallyReady:!hardBlock},
     blockers,
     publicCommercialLaunchReady:!hardBlock
@@ -167,7 +169,7 @@ http.Server.prototype.emit=function(type,...args){
     if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});
     if(!takeFeedback(req))return json(res,429,{ok:false,code:'RATE_LIMITED',error:'Too much feedback was submitted in a short time.'},{'retry-after':'300'});
     Promise.all([currentUser(req),readJson(req,12*1024)]).then(async([user,body])=>{
-      const category=clean(body?.category,40).toLowerCase(),allowed=new Set(['general','bug','billing','schools','language','accessibility','privacy','other']);
+      const category=clean(body?.category,40).toLowerCase(),allowed=new Set(['general','support','bug','billing','schools','language','accessibility','privacy','other']);
       const message=clean(body?.message,2000);
       if(!allowed.has(category)||message.length<3)return json(res,400,{ok:false,code:'INVALID_FEEDBACK'});
       const row={user_id:user?.id||null,category,message,route:clean(body?.route,240)||null,release:clean(body?.release,80)||RELEASE,locale:clean(body?.locale,40)||null,metadata:safeMeta(body?.metadata)};
