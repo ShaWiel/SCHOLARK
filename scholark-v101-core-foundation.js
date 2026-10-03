@@ -16,6 +16,7 @@
 
   function routeInfo() {
     const raw = String(location.hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0].replace(/^\/+|\/+$/g,'');
+    if(raw==='credit-store')return {raw,base:'credit-store',kind:'store'};
     const base = raw.split(/[\/-]/)[0] || 'home';
     if (!raw || ['home','pricing','start'].includes(base)) return { raw: raw || 'home', base, kind:'home' };
     if (INACTIVE.has(base)) return { raw, base, kind:'inactive' };
@@ -136,6 +137,7 @@
 
   function surfaceHealthy(info) {
     if (info.kind === 'home') return homeSurfaceHealthy();
+    if (info.kind === 'store') return isVisible($('#v117-credit-store-page:not([hidden])'),240,180)&&isVisible($('#v55-topbar'),240,40);
     if (info.kind === 'inactive') return isVisible($('.v51-coming-soon'),180,120) || isVisible($('#v51-main'),180,120);
     if (info.kind === 'studio') {
       return isVisible($('#v41-studio-workspace:not([hidden])'),180,140) ||
@@ -207,6 +209,11 @@
         if (force || routeChanged || !homeSurfaceHealthy()) restoreHome(info, routeChanged);
         else if (!previewHealthy()) window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
         if (info.base === 'pricing') scrollPricing();
+      } else if(info.kind==='store'){
+        document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
+        document.documentElement.classList.remove('v51-workspace-root');
+        document.body.classList.add('v55-public-home');document.documentElement.classList.add('v55-public-home');
+        window.__SCHOLARK_V55_TOPBAR__?.sync?.();window.__SCHOLARK_CREDIT_STORE__?.sync?.();
       } else {
         syncWorkspace(info);
         if (info.base === 'schools') stabilizeSchools();
@@ -230,6 +237,7 @@
     const info = routeInfo();
     const runtimeErrors = window.__SCHOLARK_RUNTIME__?.errors?.() || [];
     const i18nReport=window.__SCHOLARK_I18N__?.selftest?.()||null,countryApi=window.__SCHOLARK_COUNTRY__,schoolsApi=window.__SCHOLARK_V50_SCHOOLS__;
+    const publicSurface=info.kind==='home'||info.kind==='store';
     const report = {
       release:RELEASE,
       route:info.raw,
@@ -237,21 +245,21 @@
       runtimeVersion:window.__SCHOLARK_RUNTIME__?.version || '',
       runtimeErrors,
       surfaceHealthy:surfaceHealthy(info),
-      connectedCore:info.kind==='home'||!!window.__SCHOLARK_WORKSPACE_CORE__,
-      connectedExperience:info.kind==='home'||!!window.__SCHOLARK_V111_EXPERIENCE__,
-      workspaceRootLocked:info.kind==='home'||document.documentElement.classList.contains('v51-workspace-root'),
-      localeControls:info.kind==='home'||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
+      connectedCore:publicSurface||!!window.__SCHOLARK_WORKSPACE_CORE__,
+      connectedExperience:publicSurface||!!window.__SCHOLARK_V111_EXPERIENCE__,
+      workspaceRootLocked:publicSurface||document.documentElement.classList.contains('v51-workspace-root'),
+      localeControls:publicSurface||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
       language74:window.__SCHOLARK_I18N__?.count===74&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
       languageResilience:i18nReport?.abortable===true&&i18nReport?.retryReady===true,
       languageCoverage:window.__SCHOLARK_I18N__?.coverage?.(620)||null,
       globalCountryRegistry:countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195,
       globalSchools:info.base!=='schools'||(schoolsApi?.global===true&&countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195),
-      countryLevels:info.kind==='home'||document.querySelectorAll('#v51-main .v51-levels [data-education-group]').length>0,
-      visualSystem:info.kind==='home'||!!window.__SCHOLARK_V112_VISUAL__,
-      visualHealthy:info.kind==='home'||info.kind==='dashboard'||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true,
-      orchestrator:info.kind==='home'||!!window.__SCHOLARK_V114_ORCHESTRATOR__,
-      orchestratorHealthy:info.kind==='home'||window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok===true,
-      orchestratorSelftest:info.kind==='home'||window.__SCHOLARK_V114_ORCHESTRATOR__?.selftest?.().ok===true,
+      countryLevels:publicSurface||document.querySelectorAll('#v51-main .v51-levels [data-education-group]').length>0,
+      visualSystem:publicSurface||!!window.__SCHOLARK_V112_VISUAL__,
+      visualHealthy:publicSurface||info.kind==='dashboard'||window.__SCHOLARK_V112_VISUAL__?.verify?.().ok===true,
+      orchestrator:publicSurface||!!window.__SCHOLARK_V114_ORCHESTRATOR__,
+      orchestratorHealthy:publicSurface||window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok===true,
+      orchestratorSelftest:publicSurface||window.__SCHOLARK_V114_ORCHESTRATOR__?.selftest?.().ok===true,
       hardening:!!(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__),
       hardeningHealthy:(window.__SCHOLARK_HARDENING__||window.__SCHOLARK_FOUNDATION_R176__||window.__SCHOLARK_FOUNDATION_R175__||window.__SCHOLARK_FOUNDATION_R174__||window.__SCHOLARK_FOUNDATION_R173__||window.__SCHOLARK_FOUNDATION_R172__)?.verify?.().ok!==false,
       qualityMaxGone:!Array.from(document.querySelectorAll('.v52-pill,.v107-pill,[data-ai-quality],[data-quality-badge],.ai-quality-max')).some(el=>/QUALITY\s*[·•]?\s*MAX/i.test(String(el.textContent||''))),
@@ -283,6 +291,8 @@
     if (info.kind === 'home') {
       if (!homeSurfaceHealthy()) schedule('home-watchdog',0,true);
       else if (!previewHealthy()) window.__SCHOLARK_HOME_CINEMATICS__?.repair?.();
+    } else if(info.kind==='store'){
+      if(!surfaceHealthy(info))schedule('store-watchdog',0,true);
     } else if (!surfaceHealthy(info)) schedule('workspace-watchdog',0,false);
   }, 7000);
 
