@@ -6,7 +6,7 @@
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const text=e=>(e?.textContent||'').replace(/\s+/g,' ').trim();
   const lower=e=>text(e).toLowerCase();
-  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
+  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
   const workspace=()=>!publicHome();
 
   const FALLBACK_LANGS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
