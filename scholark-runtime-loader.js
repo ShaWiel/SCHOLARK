@@ -116,7 +116,8 @@
     l.dataset.scholarkPreload = file;
     document.head.appendChild(l);
   }
-  function preloadFiles(files) { files.forEach(preloadOne); }
+  const uniqueFiles=files=>[...new Set((files||[]).filter(Boolean))];
+  function preloadFiles(files) { uniqueFiles(files).forEach(preloadOne); }
 
   function oneAttempt(file, attempt) {
     return new Promise(resolve => {
@@ -162,6 +163,7 @@
   }
 
   function ensureFiles(files, indicator=false, background=false) {
+    files=uniqueFiles(files);
     const run = async () => {
       let allOk = true;
       if (indicator) { busy++; html.classList.add('scholark-route-loading'); }
