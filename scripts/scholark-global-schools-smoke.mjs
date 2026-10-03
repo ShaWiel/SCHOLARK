@@ -53,6 +53,10 @@ for(const x of cases){
   if(data?.ok){
     check(data.searchMode==='coordinates','GPS did not take precedence over populated city field');
     check(Number(data.radius)<=250,'Suriname exact-location radius exceeded 250 km');
+    const repeat=await request('/api/schools/search',{country:'Suriname',countryCode:'SR',city:'Paramaribo',lat:5.8520,lon:-55.2038,level:'all',radius:25,autoRadius:true,includeNearbyCountries:false});
+    check(repeat.status===200&&repeat.data?.ok===true,'Repeated exact-location cache request failed');
+    check(repeat.data?.cached===true,'Discovery cache did not serve repeated exact-location request');
+    check(Number(repeat.data?.count)===Number(data.count),'Cached exact-location request changed the result count');
   }
 }
 
