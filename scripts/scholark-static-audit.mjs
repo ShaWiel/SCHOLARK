@@ -66,7 +66,7 @@ ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
-ok(launchFoundation.includes("release:'r204'"),'Launch client release is not R204');
+ok(launchFoundation.includes("release:'r205'"),'Launch client release is not R205');
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
 ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
@@ -88,7 +88,7 @@ ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not im
 ok(docker.includes('COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs')&&docker.includes('COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js'),'Launch foundation is not shipped in production image');
 ok(docker.includes('--import", "./scholark-launch-route.mjs"'),'Launch route is not imported at runtime');
 ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must be the outermost route wrapper');
-ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("'credit-store'")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
+ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("isCreditStore:creditStore")&&runtime.includes("isLanding:landingHome")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
 ok(/localhost\|127\\\.0\\\.0\\\.1/.test(runtime)&&runtime.includes('__SCHOLARK_TEST_MODE__'),'Browser test bypass is not restricted to local hosts');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
 ok(docker.includes('--import", "./scholark-gemini-primary.mjs"'),'Gemini primary adapter is not imported at runtime');
