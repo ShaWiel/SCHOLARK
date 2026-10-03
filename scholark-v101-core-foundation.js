@@ -74,7 +74,7 @@
         if(el.isConnected)score+=100;
         if(!el.hidden&&el.getAttribute('aria-hidden')!=='true'&&cs.display!=='none'&&cs.visibility!=='hidden')score+=30;
         if(r.width>1&&r.height>1)score+=10;
-        if(info.kind==='store'&&(id==='v117-credit-store-page'||id==='v117-store-button'||id==='v117-store-dock'))score+=15;
+        if(info.kind==='store'&&(id==='v117-credit-store-page'||id==='v117-credit-store-button'||id==='v117-store-dock'))score+=15;
         if((info.kind==='home'||info.kind==='store')&&(id==='v55-topbar'||id==='v29-home-layer'))score+=12;
         if(info.kind!=='home'&&info.kind!=='store'&&(id==='v51-sidebar'||id==='v51-main'))score+=12;
         if(score>best){best=score;keep=el}
