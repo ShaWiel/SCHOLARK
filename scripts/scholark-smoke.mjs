@@ -59,7 +59,11 @@ async function postTransient(path,body,label,validator,timeout=90000,attempts=3)
   return lastData;
 }
 
-await get('/api/health');
+const renderHealth=await get('/api/health');
+if(renderHealth){
+  check(renderHealth.healthSource==='api-guard','Render health endpoint is not served by the early API guard');
+  check(renderHealth.service==='scholark','Render health endpoint service marker is missing');
+}
 const guardHealth=await get('/api/guard/health');
 if(guardHealth){
   check(guardHealth.originGuard===true,'API origin guard is not active');
