@@ -7,7 +7,7 @@
   const text=e=>(e?.textContent||'').trim();
   const lower=e=>text(e).toLowerCase();
   const h=()=>String(location.hash||'').toLowerCase();
-  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',x=h().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(x)})();
+  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',x=h().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(x)})();
   const workspace=()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/';if(!(p==='/'||p==='/index.html')||publicHome())return false;const x=(window.__SCHOLARK_ROUTES__?.hash?.()||h().replace(/^#/,'').split(/[?&]/)[0]).split(/[\/-]/)[0];return new Set(['dashboard','studio','presentation','document','report','poster','ai','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','book','schools','study','files','webpage','graphic','social']).has(x)};
 
   const style=document.createElement('style');
