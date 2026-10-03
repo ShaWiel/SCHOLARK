@@ -52,6 +52,8 @@ function safeMeta(input){
   for(const key of ['viewport','online','connection','module','kind','browser','platform','screen','source']){
     if(m[key]!=null)out[key]=clean(typeof m[key]==='string'?m[key]:JSON.stringify(m[key]),240);
   }
+  const replyEmail=clean(m.replyEmail,240).toLowerCase();
+  if(replyEmail&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyEmail))out.replyEmail=replyEmail;
   return out;
 }
 const SOURCE_BASE=Object.freeze({
