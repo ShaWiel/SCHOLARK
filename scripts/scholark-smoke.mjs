@@ -88,6 +88,10 @@ if(billingHealth&&billingConfig){
   check(typeof billingHealth.credentialEnvironmentMatches==='boolean','Paddle credential/environment check missing');
   check(!Object.prototype.hasOwnProperty.call(billingConfig,'apiKey'),'Billing config leaked Paddle API key');
   check(!Object.prototype.hasOwnProperty.call(billingConfig,'webhookSecret'),'Billing config leaked webhook secret');
+  check(billingConfig.creditStoreConfigured===billingConfig.configured,'Credit Store readiness diverges from checkout readiness');
+  check(Number(billingConfig.creditPacks?.boost?.credits)===250&&Number(billingConfig.creditPacks?.boost?.price)===4.99,'Boost credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.power?.credits)===750&&Number(billingConfig.creditPacks?.power?.price)===11.99,'Power credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.max?.credits)===2000&&Number(billingConfig.creditPacks?.max?.price)===24.99,'Max credit pack config is invalid');
   if(live){
     check(billingHealth.checkoutConfigured===true,'Live Paddle checkout is not configured');
     check(billingHealth.webhookConfigured===true,'Live Paddle webhook is not configured');
@@ -114,6 +118,16 @@ try{
   check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated checkout was not blocked: HTTP ${r.status}`);
   results.push(`billing:checkout-auth ${r.status}`);
 }catch(e){failures.push('Billing checkout auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/credits/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({pack:'boost'})},15000);
+  check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated credit checkout was not blocked: HTTP ${r.status}`);
+  results.push(`billing:credits-auth ${r.status}`);
+}catch(e){failures.push('Credit checkout auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/credits/checkout',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:JSON.stringify({pack:'boost'})},15000);
+  check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin credit checkout was not blocked: HTTP ${r.status}`);
+  results.push(`billing:credits-origin ${r.status}`);
+}catch(e){failures.push('Credit checkout origin verification threw '+(e?.message||e))}
 try{
   const {r,data}=await request('/api/billing/checkout',{method:'POST',headers:{'content-type':'application/json','origin':'https://cross-origin.invalid','sec-fetch-site':'cross-site'},body:JSON.stringify({plan:'plus'})},15000);
   check(r.status===403&&data?.code==='CROSS_ORIGIN_BLOCKED',`Cross-origin billing checkout was not blocked: HTTP ${r.status}`);
