@@ -51,6 +51,18 @@
     else window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
   function routeStore(){if(!isStore()){location.hash='credit-store';syncRoute()}else syncRoute()}
+  function restoreStoreSurface(){
+    if(!isStore())return;
+    ensureButton();ensurePage();
+    routeActive=true;
+    document.documentElement.classList.add('v117-credit-store-route','v55-public-home');
+    document.body?.classList.add('v117-credit-store-route','v55-public-home');
+    document.documentElement.classList.remove('v51-workspace-root');
+    document.body?.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
+    page.hidden=false;
+    page.removeAttribute('aria-hidden');
+    button?.setAttribute('aria-current','page');
+  }
 
   function ensureButton(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return null;
@@ -122,12 +134,18 @@
   addEventListener('scholark-language-ready',()=>setTimeout(()=>{ensureButton();if(isStore())render()},100));
   addEventListener('scholark:credit-store-status',e=>{
     const d=e.detail||{};
-    if(d.state==='completed'){busyPack='';statusError=false;statusMessage='✓ '+Number(d.creditsAdded||0).toLocaleString()+' credits added to your account.';setTimeout(render,80)}
-    else if(d.state==='error'){busyPack='';statusError=true;statusMessage=String(d.message||'Checkout failed. Please try again.');render()}
-    else if(d.state==='closed'){busyPack='';statusError=false;statusMessage='';render()}
-    else if(d.message){statusMessage=String(d.message);statusError=false;render()}
+    if(d.state==='completed'){busyPack='';statusError=false;statusMessage='✓ '+Number(d.creditsAdded||0).toLocaleString()+' credits added to your account.';restoreStoreSurface();setTimeout(render,80)}
+    else if(d.state==='error'){busyPack='';statusError=true;statusMessage=String(d.message||'Checkout failed. Please try again.');restoreStoreSurface();render()}
+    else if(d.state==='closed'){busyPack='';statusError=false;statusMessage='';restoreStoreSurface();render()}
+    else if(d.state==='auth'){busyPack='';statusError=false;statusMessage=String(d.message||'Sign in or create your SCHOLARK account first.');restoreStoreSurface();render()}
+    else if(d.message){statusMessage=String(d.message);statusError=false;restoreStoreSurface();render()}
   });
+  document.addEventListener('click',e=>{
+    if(!isStore())return;
+    const closesAuth=e.target?.closest?.('#v72-modal .v72-x')||e.target?.id==='v72-modal';
+    if(closesAuth){busyPack='';setTimeout(()=>{restoreStoreSurface();render()},0);setTimeout(restoreStoreSurface,80)}
+  },true);
   if(document.body)syncRoute();else addEventListener('DOMContentLoaded',syncRoute,{once:true});
   [120,480].forEach(ms=>setTimeout(syncRoute,ms));
-  window.__SCHOLARK_CREDIT_STORE__={open:routeStore,close:routeHome,workspace:routeWorkspace,render,sync:syncRoute,isOpen:isStore,release:'r206'};
+  window.__SCHOLARK_CREDIT_STORE__={open:routeStore,close:routeHome,workspace:routeWorkspace,render,sync:syncRoute,restore:restoreStoreSurface,isOpen:isStore,release:'r206'};
 })();
