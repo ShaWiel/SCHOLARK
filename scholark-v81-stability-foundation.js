@@ -74,14 +74,16 @@
 
   function forceNewHome(){
     const home=window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=hash().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
-    document.body.classList.toggle('v81-home',home);
+    const store=window.__SCHOLARK_ROUTES__?.isCreditStore?.()??hash().startsWith('#credit-store');
+    document.body.classList.toggle('v81-home',home&&!store);
     if(!home) return;
     closeLegacyOverlays();
     document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open');
     const layer=$('#v29-home-layer');
     if(layer){
-      layer.hidden=false;layer.removeAttribute('aria-hidden');layer.classList.add('v30-native-home');layer.scrollTop=0;
-      ['display','visibility','opacity','pointer-events'].forEach(p=>layer.style.removeProperty(p));
+      layer.classList.add('v30-native-home');layer.scrollTop=0;
+      if(store){layer.hidden=true;layer.setAttribute('aria-hidden','true');layer.style.setProperty('display','none','important')}
+      else{layer.hidden=false;layer.removeAttribute('aria-hidden');['display','visibility','opacity','pointer-events'].forEach(p=>layer.style.removeProperty(p))}
     }
     $$('[data-v30-legacy-home="1"]').forEach(el=>el.style.setProperty('display','none','important'));
     document.body.classList.add('v55-public-home');
