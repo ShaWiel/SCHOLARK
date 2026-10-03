@@ -94,6 +94,7 @@ for(const profile of profiles){
       check(await page.locator('#v72-modal [data-tab="signup"]').count()===1,profile.name+': sign-up tab missing');
       await page.click('#v72-modal [data-tab="signup"]');
       check(await page.locator('#v72-modal [data-tab="signup"]').evaluate(el=>el.classList.contains('active')).catch(()=>false),profile.name+': sign-up tab did not activate');
+      check(await page.locator('#v72-modal [data-v72-terms]').count()===1,profile.name+': terms consent missing on mobile signup');
       await page.click('#v72-modal .v72-x');
     }
 
