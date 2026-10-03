@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V99_HOME_FOUNDATION__)return;
   window.__SCHOLARK_V99_HOME_FOUNDATION__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const home=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
+  const home=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
   const route=()=>String(location.hash||'#home').toLowerCase();
   const UI_LANGUAGE_OPTIONS=window.__SCHOLARK_I18N__?.langs||[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
   const code=()=>{const v=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'nl';return UI_LANGUAGE_OPTIONS.some(([x])=>x===v)?v:'nl'};
