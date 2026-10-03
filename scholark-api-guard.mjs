@@ -23,16 +23,21 @@ const rules = [
   { match:(m,p)=>m==='POST' && p==='/api/billing/finalize', limit:testMode?80:20, maxBytes:16*1024, expensive:false }
 ];
 
-function clientKey(req) {
-  const auth=String(req.headers?.authorization||'').trim();
-  if(/^Bearer\s+\S+/i.test(auth)){
-    try{return 'auth:'+createHash('sha256').update(auth).digest('hex').slice(0,32)}catch{}
-  }
+function sourceIp(req) {
   const cf = String(req.headers?.['cf-connecting-ip'] || '').trim();
-  if (cf) return 'ip:'+cf.slice(0,120);
+  if (cf) return cf.slice(0,120);
+  const real = String(req.headers?.['x-real-ip'] || '').trim();
+  if (real) return real.slice(0,120);
   const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
-  if (forwarded) return 'ip:'+forwarded.slice(0,120);
-  return 'ip:'+String(req.socket?.remoteAddress || 'unknown').slice(0,120);
+  if (forwarded) return forwarded.slice(0,120);
+  return String(req.socket?.remoteAddress || 'unknown').slice(0,120);
+}
+
+function clientKey(req) {
+  // Rate limiting must never trust an unverified Bearer string. Hash only the
+  // network source so rotating fake tokens cannot create fresh abuse buckets.
+  try{return 'ip:'+createHash('sha256').update(sourceIp(req)).digest('hex').slice(0,32)}
+  catch{return 'ip:unknown'}
 }
 
 function securityHeaders(res) {
@@ -100,7 +105,7 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,jsonMutationGuard:true,tokenHashedRateKeys:true,frameEmbeddingBlocked:true,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,jsonMutationGuard:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
@@ -111,6 +116,13 @@ http.Server.prototype.emit = function(type,...args) {
 
   const rule = rules.find(r => r.match(req.method,url.pathname));
   if (!rule) return previousEmit.call(this,type,...args);
+
+  for (const key of url.searchParams.keys()) {
+    if (/^(access_token|refresh_token|token|authorization|api_?key|apikey|password|secret)$/i.test(String(key))) {
+      json(res,400,{ok:false,code:'SENSITIVE_QUERY_BLOCKED',error:'Sensitive credentials must not be sent in the URL.'});
+      return true;
+    }
+  }
 
   if (['POST','PUT','PATCH','DELETE'].includes(String(req.method||'').toUpperCase())) {
     const type=String(req.headers?.['content-type']||'').toLowerCase();
