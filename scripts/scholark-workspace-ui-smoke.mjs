@@ -1225,7 +1225,7 @@ await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.d
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
 await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:8000});
 
-check(await page.locator('.v116-side-actions').count()===1,'Workspace privacy/feedback controls missing');
+check(await page.locator('.v116-side-actions').count()===1,'Workspace support/privacy/feedback controls missing');
 check(await page.locator('#v116-onboarding').count()<=1,'Onboarding duplicated in Workspace');
 const runtimeErrors=await page.evaluate(()=>window.__SCHOLARK_RUNTIME__?.errors?.()||[]);
 check(runtimeErrors.length===0,'Runtime loader errors: '+runtimeErrors.join(', '));
@@ -1242,10 +1242,10 @@ await mobile.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl'
 try{
   await mobile.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.waitForSelector('#v55-topbar',{state:'visible',timeout:8000});
-  await mobile.waitForFunction(()=>document.querySelectorAll('.v116-public-actions button').length===2,null,{timeout:5000});
+  await mobile.waitForFunction(()=>document.querySelectorAll('.v116-public-actions button').length===3,null,{timeout:5000});
   const homeMobile=await mobile.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,actions:document.querySelectorAll('.v116-public-actions button').length}));
   check(homeMobile.sw<=homeMobile.w+4,`Mobile homepage has horizontal overflow: ${JSON.stringify(homeMobile)}`);
-  check(homeMobile.actions===2,'Mobile public privacy/feedback actions missing');
+  check(homeMobile.actions===3,'Mobile public support/privacy/feedback actions missing');
   await mobile.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
   await mobile.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
