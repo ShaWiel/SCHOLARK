@@ -6,8 +6,10 @@
   window.__SCHOLARK_TEST_MODE__ = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname||''));
   const appPath = () => { const p=String(location.pathname||'/').replace(/\/+$/,'')||'/'; return p==='/'||p==='/index.html'; };
   const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
-  const publicHome = () => appPath() && ['', 'home', 'pricing', 'start', 'credit-store'].includes(routeHash());
-  window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
+  const creditStore = () => appPath() && routeHash()==='credit-store';
+  const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
+  const publicHome = () => landingHome() || creditStore();
+  window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r204'});
 
   const VERSION = '20261003-r204';
