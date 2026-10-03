@@ -50,6 +50,23 @@ for(const cfg of engines){
     check(storeLayout.topbar!=='none'&&storeLayout.home==='none'&&storeLayout.retHome!=='none'&&storeLayout.retWorkspace!=='none'&&!storeLayout.storeButton&&!storeLayout.account&&!storeLayout.auth,cfg.name+': Credit Store topbar layering is incorrect '+JSON.stringify(storeLayout));
     await page.click('#v117-store-return-home');
     await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+    await page.click('#v117-credit-store-button');
+    await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+    await page.click('#v117-store-return-home');
+    await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+    const repeatState=await page.evaluate(()=>({
+      topbars:document.querySelectorAll('#v55-topbar').length,
+      languages:document.querySelectorAll('#v55-language').length,
+      stores:document.querySelectorAll('#v117-credit-store-button').length,
+      returnsHome:document.querySelectorAll('#v117-store-return-home').length,
+      returnsWorkspace:document.querySelectorAll('#v117-store-return-workspace').length,
+      accounts:document.querySelectorAll('#v55-topbar .v55-account-wrap').length,
+      auth:document.querySelectorAll('#v55-auth').length,
+      credits:document.querySelectorAll('#v55-topbar .v85-topbar-credit').length,
+      storePages:document.querySelectorAll('#v117-credit-store-page').length,
+      staleStoreClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
+    }));
+    check(Object.entries(repeatState).filter(([k])=>k!=='staleStoreClass').every(([,v])=>v<=1)&&!repeatState.staleStoreClass,cfg.name+': repeated Store/Home transition duplicated UI '+JSON.stringify(repeatState));
 
     await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:12000});
