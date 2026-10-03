@@ -43,9 +43,10 @@ for(const cfg of engines){
     await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
     await page.waitForSelector('#v117-credit-store-page',{state:'visible',timeout:8000});
     check(await page.locator('#v117-credit-store-page [data-v117-pack]').count()===6,cfg.name+': Credit Store pack grid incomplete');
-    const storeLayout=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,home:getComputedStyle(document.querySelector('#v29-home-layer')).display}));
+    check(await page.locator('#v117-credit-store-page [data-v117-workspace]').count()===1&&await page.locator('#v117-credit-store-page [data-v117-home]').count()===1,cfg.name+': Credit Store dual navigation missing');
+    const storeLayout=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,home:getComputedStyle(document.querySelector('#v29-home-layer')).display,storebar:getComputedStyle(document.querySelector('.v117-storebar')).display}));
     check(storeLayout.sw<=storeLayout.w+2,cfg.name+': Credit Store creates horizontal overflow '+JSON.stringify(storeLayout));
-    check(storeLayout.topbar!=='none'&&storeLayout.home==='none',cfg.name+': Credit Store route layering is incorrect '+JSON.stringify(storeLayout));
+    check(storeLayout.topbar!=='none'&&storeLayout.home==='none'&&storeLayout.storebar!=='none',cfg.name+': Credit Store route layering is incorrect '+JSON.stringify(storeLayout));
     await page.click('#v117-credit-store-page [data-v117-home]');
     await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 
