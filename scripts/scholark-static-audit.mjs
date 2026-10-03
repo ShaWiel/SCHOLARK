@@ -64,6 +64,7 @@ const ciWorkflow=read('.github/workflows/scholark-ci.yml');
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
+ok(foundation.includes("raw==='credit-store'")&&foundation.includes("kind:'store'")&&foundation.includes("store-watchdog"),'Core foundation can misclassify Credit Store as a Workspace route');
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
 ok(launchFoundation.includes("release:'r205'"),'Launch client release is not R205');
