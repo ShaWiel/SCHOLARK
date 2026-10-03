@@ -73,7 +73,7 @@
   }
 
   function forceNewHome(){
-    const home=window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=hash().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
+    const home=window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=hash().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
     document.body.classList.toggle('v81-home',home);
     if(!home) return;
     closeLegacyOverlays();
@@ -94,7 +94,7 @@
     // classes during Home -> Workspace re-entry, which previously let two
     // recovery paths race and re-mount visible surfaces.
     if(window.__SCHOLARK_WORKSPACE__){
-      if(h==='#home'||h===''||h==='#pricing'||h==='#start')forceNewHome();
+      if(h==='#home'||h===''||h==='#pricing'||h==='#start'||h==='#credit-store')forceNewHome();
       else closeLegacyOverlays(h==='#study'?'study':h==='#schools'?'schools':h==='#book'?'book':h==='#studio'?'studio':'');
       return;
     }
