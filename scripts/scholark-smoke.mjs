@@ -69,7 +69,8 @@ if(guardHealth){
 }
 try{
   const {r:guardResponse}=await request('/api/guard/health',{},15000);
-  check(/base-uri 'self'/.test(String(guardResponse.headers.get('content-security-policy')||'')),'CSP security header missing');
+  check(/base-uri 'self'/.test(String(guardResponse.headers.get('content-security-policy')||''))&&/frame-ancestors 'none'/.test(String(guardResponse.headers.get('content-security-policy')||'')),'CSP security header missing/hardening incomplete');
+  check(String(guardResponse.headers.get('x-frame-options')||'').toUpperCase()==='DENY','X-Frame-Options is not DENY');
   check(/geolocation=\(self\)/.test(String(guardResponse.headers.get('permissions-policy')||'')),'Permissions-Policy security header missing');
   check(String(guardResponse.headers.get('x-content-type-options')||'').toLowerCase()==='nosniff','X-Content-Type-Options missing');
 }catch(e){failures.push('Security-header verification threw '+(e?.message||e))}
@@ -89,9 +90,13 @@ if(billingHealth&&billingConfig){
   check(!Object.prototype.hasOwnProperty.call(billingConfig,'apiKey'),'Billing config leaked Paddle API key');
   check(!Object.prototype.hasOwnProperty.call(billingConfig,'webhookSecret'),'Billing config leaked webhook secret');
   check(billingConfig.creditStoreConfigured===billingConfig.configured,'Credit Store readiness diverges from checkout readiness');
-  check(Number(billingConfig.creditPacks?.boost?.credits)===250&&Number(billingConfig.creditPacks?.boost?.price)===4.99,'Boost credit pack config is invalid');
-  check(Number(billingConfig.creditPacks?.power?.credits)===750&&Number(billingConfig.creditPacks?.power?.price)===11.99,'Power credit pack config is invalid');
-  check(Number(billingConfig.creditPacks?.max?.credits)===2000&&Number(billingConfig.creditPacks?.max?.price)===24.99,'Max credit pack config is invalid');
+  check(Object.keys(billingConfig.creditPacks||{}).length===6,'Credit Store should expose six packs');
+  check(Number(billingConfig.creditPacks?.mini?.credits)===100&&Number(billingConfig.creditPacks?.mini?.price)===2.99,'Mini credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.starter?.credits)===250&&Number(billingConfig.creditPacks?.starter?.price)===6.99,'Starter credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.boost?.credits)===750&&Number(billingConfig.creditPacks?.boost?.price)===16.99,'Boost credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.power?.credits)===1500&&Number(billingConfig.creditPacks?.power?.price)===29.99,'Power credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.max?.credits)===3000&&Number(billingConfig.creditPacks?.max?.price)===49.99,'Max credit pack config is invalid');
+  check(Number(billingConfig.creditPacks?.ultra?.credits)===7500&&Number(billingConfig.creditPacks?.ultra?.price)===99.99,'Ultra credit pack config is invalid');
   if(live){
     check(billingHealth.checkoutConfigured===true,'Live Paddle checkout is not configured');
     check(billingHealth.webhookConfigured===true,'Live Paddle webhook is not configured');
@@ -118,6 +123,11 @@ try{
   check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated checkout was not blocked: HTTP ${r.status}`);
   results.push(`billing:checkout-auth ${r.status}`);
 }catch(e){failures.push('Billing checkout auth verification threw '+(e?.message||e))}
+try{
+  const {r,data}=await request('/api/billing/credits/checkout',{method:'POST',headers:{'content-type':'text/plain'},body:'mini'},15000);
+  check(r.status===415&&data?.code==='UNSUPPORTED_MEDIA_TYPE',`Non-JSON credit checkout was not rejected: HTTP ${r.status}`);
+  results.push(`billing:credits-content-type ${r.status}`);
+}catch(e){failures.push('Credit checkout content-type verification threw '+(e?.message||e))}
 try{
   const {r,data}=await request('/api/billing/credits/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({pack:'boost'})},15000);
   check(r.status===401&&data?.code==='AUTH_REQUIRED',`Unauthenticated credit checkout was not blocked: HTTP ${r.status}`);
