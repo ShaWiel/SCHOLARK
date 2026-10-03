@@ -63,13 +63,14 @@
     if(!home){
       home=document.createElement('button');home.id='v117-store-return-home';home.type='button';home.className='v117-store-return';
       home.innerHTML='<span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span>';
-      home.setAttribute('aria-label','Return to Homepage');home.onclick=routeHome;
+      home.setAttribute('aria-label','Return to Homepage');
     }
     if(!workspace){
       workspace=document.createElement('button');workspace.id='v117-store-return-workspace';workspace.type='button';workspace.className='v117-store-return primary';
       workspace.innerHTML='<span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span>';
-      workspace.setAttribute('aria-label','Return to Workspace');workspace.onclick=routeWorkspace;
+      workspace.setAttribute('aria-label','Return to Workspace');
     }
+    home.onclick=routeHome;workspace.onclick=routeWorkspace;
     const storeButton=$('#v117-credit-store-button',actions);
     if(storeButton){
       actions.insertBefore(home,storeButton);
