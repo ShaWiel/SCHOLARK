@@ -166,9 +166,9 @@ check(await page.locator('#v117-store-dock').count()===0,'Legacy Credit Store bo
 check(await page.locator('#v117-store-return-workspace').count()===1,'Credit Store Workspace return action is missing from the topbar');
 check(await page.locator('#v117-store-return-home').count()===1,'Credit Store Homepage return action is missing from the topbar');
 check(await visible('#v117-store-return-workspace',3000)&&await visible('#v117-store-return-home',3000),'Credit Store return actions are not visible');
-check(await page.locator('#v117-credit-store-button').evaluate(el=>getComputedStyle(el).display==='none'),'Credit Store button should be replaced by return actions while inside the store');
-check(await page.locator('#v55-account').evaluate(el=>getComputedStyle(el.closest('.v55-account-wrap')).display==='none'),'Account menu should be hidden in the Credit Store topbar');
-check(await page.locator('#v55-auth').evaluate(el=>getComputedStyle(el).display==='none'),'Sign out/auth action should be hidden in the Credit Store topbar');
+check(await page.locator('#v55-topbar #v117-credit-store-button').count()===0,'Credit Store button should be removed from the store topbar');
+check(await page.locator('#v55-topbar #v55-account').count()===0,'Account menu should be removed from the Credit Store topbar');
+check(await page.locator('#v55-topbar #v55-auth').count()===0,'Sign out/auth action should be removed from the Credit Store topbar');
 const storeTopbarText=(await page.locator('#v55-topbar').innerText()).replace(/\s+/g,' ');
 check(!/\bAccount\b|Sign out|Log out|Feedback|Privacy\s*&?\s*Terms/i.test(storeTopbarText),'Credit Store topbar still exposes account/sign-out/feedback/privacy controls');
 check(await page.locator('#v117-credit-store-page .v117-trust span').count()===3,'Credit Store trust/value strip is incomplete');
