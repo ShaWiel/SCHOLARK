@@ -82,16 +82,47 @@
   function closeStore(){storeModal?.classList.remove('open')}
   async function openStore(){
     if(!storeModal){
-      storeModal=document.createElement('div');storeModal.id='v85-store';storeModal.setAttribute('role','dialog');storeModal.setAttribute('aria-modal','true');document.body.appendChild(storeModal);
-      storeModal.addEventListener('click',e=>{if(e.target===storeModal||e.target.closest?.('.v85-store-x'))closeStore();const b=e.target.closest?.('[data-v85-pack]');if(!b)return;const pack=b.dataset.v85Pack;b.disabled=true;const st=$('.v85-store-status',storeModal);if(st){st.textContent='Preparing secure checkout…';st.classList.remove('error')}Promise.resolve(window.__SCHOLARK_BILLING__?.buyCredits?.(pack)).catch(err=>{b.disabled=false;if(st){st.textContent=String(err?.message||err);st.classList.add('error')}})});
+      storeModal=document.createElement('div');
+      storeModal.id='v85-store';
+      storeModal.setAttribute('role','dialog');
+      storeModal.setAttribute('aria-modal','true');
+      document.body.appendChild(storeModal);
+      storeModal.addEventListener('click',e=>{
+        if(e.target===storeModal||e.target.closest?.('.v85-store-x'))closeStore();
+        const b=e.target.closest?.('[data-v85-pack]');
+        if(!b)return;
+        const pack=b.dataset.v85Pack;
+        b.disabled=true;
+        const st=$('.v85-store-status',storeModal);
+        if(st){st.textContent='Preparing secure checkout…';st.classList.remove('error')}
+        Promise.resolve(window.__SCHOLARK_BILLING__?.buyCredits?.(pack)).catch(err=>{
+          b.disabled=false;
+          if(st){st.textContent=String(err?.message||err);st.classList.add('error')}
+        });
+      });
     }
-    let cfg={};try{cfg=await window.__SCHOLARK_BILLING__?.config?.()||{}}catch{}
-    const packs=cfg.creditPacks||{boost:{credits:250,price:4.99,label:'Boost'},power:{credits:750,price:11.99,label:'Power'},max:{credits:2000,price:24.99,label:'Max'}},w=walletParts(),entries=Object.entries(packs);
-    storeModal.innerHTML='<div class="v85-store-card"><div class="v85-store-head"><div><small>SCHOLARK CREDIT STORE</small><h2>Keep creating. Top up anytime.</h2><p>Used your monthly credits early? Buy extra credits without changing your plan. Monthly credits are used first; purchased credits stay on your account until you use them.</p></div><button class="v85-store-x" aria-label="Close">×</button></div><div class="v85-store-balance"><div class="v85-store-stat"><small>TOTAL AVAILABLE</small><b>'+(signed()?w.total.toLocaleString():'—')+'</b></div><div class="v85-store-stat"><small>MONTHLY CREDITS</small><b>'+(signed()?w.monthly.toLocaleString():'—')+'</b></div><div class="v85-store-stat"><small>EXTRA CREDITS</small><b>'+(signed()?w.topup.toLocaleString():'—')+'</b></div></div><div class="v85-store-packs">'+entries.map(([key,p],i)=>'<article class="v85-pack '+(key==='power'?'featured':'')+'">'+(key==='power'?'<span class="v85-pack-tag">POPULAR</span>':key==='max'?'<span class="v85-pack-tag">BEST VALUE</span>':'')+'<small>'+clean(p.label||key).toUpperCase()+'</small><h3>'+Number(p.credits||0).toLocaleString()+'</h3><p>SCHOLARK credits · one-time top-up</p><div class="v85-price">
+    let cfg={};
+    try{cfg=await window.__SCHOLARK_BILLING__?.config?.()||{}}catch{}
+    const packs=cfg.creditPacks||{
+      boost:{credits:250,price:4.99,label:'Boost'},
+      power:{credits:750,price:11.99,label:'Power'},
+      max:{credits:2000,price:24.99,label:'Max'}
+    },w=walletParts(),entries=Object.entries(packs);
+    storeModal.innerHTML='<div class="v85-store-card"><div class="v85-store-head"><div><small>SCHOLARK CREDIT STORE</small><h2>Keep creating. Top up anytime.</h2><p>Used your monthly credits early? Buy extra credits without changing your plan. Monthly credits are used first; purchased credits stay on your account until you use them.</p></div><button class="v85-store-x" aria-label="Close">×</button></div><div class="v85-store-balance"><div class="v85-store-stat"><small>TOTAL AVAILABLE</small><b>'+(signed()?w.total.toLocaleString():'—')+'</b></div><div class="v85-store-stat"><small>MONTHLY CREDITS</small><b>'+(signed()?w.monthly.toLocaleString():'—')+'</b></div><div class="v85-store-stat"><small>EXTRA CREDITS</small><b>'+(signed()?w.topup.toLocaleString():'—')+'</b></div></div><div class="v85-store-packs">'+entries.map(([key,p])=>'<article class="v85-pack '+(key==='power'?'featured':'')+'">'+(key==='power'?'<span class="v85-pack-tag">POPULAR</span>':key==='max'?'<span class="v85-pack-tag">BEST VALUE</span>':'')+'<small>'+clean(p.label||key).toUpperCase()+'</small><h3>'+Number(p.credits||0).toLocaleString()+'</h3><p>SCHOLARK credits · one-time top-up</p><div class="v85-price">$'+Number(p.price||0).toFixed(2)+' <span>USD</span></div><button type="button" data-v85-pack="'+key+'">Buy '+Number(p.credits||0).toLocaleString()+' credits</button></article>').join('')+'</div><div class="v85-store-note">One-time purchase. Your subscription stays unchanged. Purchased credits are separate from the monthly refill and do not disappear at the end of your billing month.</div><div class="v85-store-status" role="status">'+(cfg.environment==='sandbox'?'TEST MODE · Paddle sandbox checkout. No real charge will be made.':'')+'</div></div>';
+    storeModal.classList.add('open');
+    window.__SCHOLARK_I18N__?.apply?.(storeModal);
+    setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),50);
+  }
   function renderTopbar(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return;
     let store=$('#v85-credit-store-button',actions);
-    if(!store){store=document.createElement('button');store.id='v85-credit-store-button';store.type='button';store.className='v85-store-btn';store.innerHTML='<span aria-hidden="true">✦</span><span class="v85-store-label">Credit Store</span>';store.title='Buy extra SCHOLARK credits';store.onclick=openStore;const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);if(account)actions.insertBefore(store,account);else actions.appendChild(store)}
+    if(!store){
+      store=document.createElement('button');store.id='v85-credit-store-button';store.type='button';store.className='v85-store-btn';
+      store.innerHTML='<span aria-hidden="true">✦</span><span class="v85-store-label">Credit Store</span>';
+      store.title='Buy extra SCHOLARK credits';store.onclick=openStore;
+      const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);
+      if(account)actions.insertBefore(store,account);else actions.appendChild(store);
+    }
     let chip=$('.v85-topbar-credit',actions);
     if(!chip){
       chip=document.createElement('button');chip.type='button';chip.className='v85-topbar-credit';chip.dataset.schI18nOwned='1';chip.onclick=openStore;
@@ -140,70 +171,22 @@
   addEventListener('scholark:auth-changed',()=>setTimeout(load,40));
   addEventListener('scholark:credits-changed',()=>setTimeout(load,40));
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
-  addEventListener('scholark:credit-store-status',e=>{const d=e.detail||{},st=storeModal&&$('.v85-store-status',storeModal);if(st){st.classList.toggle('error',d.state==='error');st.textContent=d.state==='completed'?'✓ '+Number(d.creditsAdded||0).toLocaleString()+' credits added to your account.':d.message||({preparing:'Preparing secure checkout…',open:'Secure Paddle checkout opened.',processing:'Payment received. Adding your credits…',auth:'Sign in to continue.',closed:''}[d.state]||'');storeModal.querySelectorAll('[data-v85-pack]').forEach(b=>b.disabled=['preparing','open','processing'].includes(d.state))}if(d.state==='completed'){load().then(()=>{if(storeModal?.classList.contains('open'))openStore()});window.dispatchEvent(new CustomEvent('scholark:credits-changed',{detail:{creditStore:true}}))}});
+  addEventListener('scholark:credit-store-status',e=>{
+    const d=e.detail||{},st=storeModal&&$('.v85-store-status',storeModal);
+    if(st){
+      st.classList.toggle('error',d.state==='error');
+      st.textContent=d.state==='completed'?'✓ '+Number(d.creditsAdded||0).toLocaleString()+' credits added to your account.':d.message||({preparing:'Preparing secure checkout…',open:'Secure Paddle checkout opened.',processing:'Payment received. Adding your credits…',auth:'Sign in to continue.',closed:''}[d.state]||'');
+      storeModal.querySelectorAll('[data-v85-pack]').forEach(b=>b.disabled=['preparing','open','processing'].includes(d.state));
+    }
+    if(d.state==='completed'){
+      load().then(()=>{if(storeModal?.classList.contains('open'))openStore()});
+      window.dispatchEvent(new CustomEvent('scholark:credits-changed',{detail:{creditStore:true}}));
+    }
+  });
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession()});
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
   window.__SCHOLARK_CREDITS__={load,render,openStore,wallet:()=>wallet,balance:()=>wallet?.balance??null,monthlyBalance:()=>walletParts().monthly,topupBalance:()=>walletParts().topup,consume,authorize,quote,cost,release:'r205-credit-store'};
-})();+Number(p.price||0).toFixed(2)+' <span>USD</span></div><button type="button" data-v85-pack="'+key+'">Buy '+Number(p.credits||0).toLocaleString()+' credits</button></article>').join('')+'</div><div class="v85-store-note">One-time purchase. Your subscription stays unchanged. Purchased credits are separate from the monthly refill and do not disappear at the end of your billing month.</div><div class="v85-store-status" role="status">'+(cfg.environment==='sandbox'?'TEST MODE · Paddle sandbox checkout. No real charge will be made.':'')+'</div></div>';
-    storeModal.classList.add('open');window.__SCHOLARK_I18N__?.apply?.(storeModal);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),50);
-  }
-  function renderTopbar(){
-    const actions=$('#v55-topbar .v55-actions');if(!actions)return;
-    let chip=$('.v85-topbar-credit',actions);
-    if(!chip){
-      chip=document.createElement('button');chip.type='button';chip.className='v85-topbar-credit';chip.dataset.schI18nOwned='1';chip.onclick=()=>{if(signed())pricing();else window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin')};
-      const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);if(account)actions.insertBefore(chip,account);else actions.appendChild(chip);
-    }
-    const on=signed();
-    chip.hidden=false;
-    if(!on&&!window.__SCHOLARK_TEST_MODE__){chip.innerHTML='<span class="v85-star" aria-hidden="true">✦</span><b>—</b><em>FREE</em>';chip.title='Sign in to see your SCHOLARK credit balance';chip.setAttribute('aria-label',chip.title);return}
-    if(window.__SCHOLARK_TEST_MODE__){chip.innerHTML='<span class="v85-star">✦</span><b>∞</b><em>TEST</em>';chip.title='SCHOLARK test credits';return}
-    const bal=wallet?Math.max(0,Number(wallet.balance)||0):null,plan=clean(wallet?.plan||window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase();
-    chip.innerHTML='<span class="v85-star" aria-hidden="true">✦</span><b>'+(bal==null?'…':bal.toLocaleString())+'</b><em>'+plan+'</em>';
-    chip.title=(bal==null?'Loading':bal.toLocaleString())+' SCHOLARK credits · '+plan;
-    chip.setAttribute('aria-label',chip.title);
-  }
-  function render(){
-    renderTopbar();
-    const side=$('#v51-sidebar');if(side){
-      let box=$('.v85-wallet',side);
-      if(!box){
-        box=document.createElement('div');box.className='v85-wallet';
-        const anchor=$('.v51-quality',side)||$('.v90-langbox',side)||side.lastElementChild;
-        if(anchor)anchor.insertAdjacentElement('beforebegin',box);else side.appendChild(box);
-      }
-      if(box){
-        if(window.__SCHOLARK_TEST_MODE__)box.innerHTML='<small>SCHOLARK TEST MODE</small><b>∞</b><span>AI credits are not deducted while product test mode is active.</span>';
-        else if(!signed())box.innerHTML='<small>SCHOLARK CREDITS</small><b>—</b><span>Sign in to see and sync your credit balance.</span>';
-        else if(wallet){
-          const bal=Math.max(0,Number(wallet.balance)||0),allowance=Math.max(0,Number(wallet.monthly_allowance)||0),low=bal<10,pct=allowance?Math.max(0,Math.min(100,bal/allowance*100)):0,plan=clean(wallet.plan||'free').toUpperCase();
-          box.innerHTML='<small>SCHOLARK CREDITS · '+plan+'</small><b class="'+(low?'v85-low':'')+'">'+bal.toLocaleString()+(allowance?' / '+allowance.toLocaleString():'')+'</b><span>'+(low?'Low balance — heavy AI actions may be limited.':'Available credit balance')+'</span>'+(allowance?'<div class="v85-meter" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%"></i></div>':'')+'<button type="button">Plans & limits</button>';
-          box.querySelector('button').onclick=pricing;
-        }else{box.innerHTML='<small>SCHOLARK CREDITS</small><b>…</b><span>Loading your credit balance.</span><button type="button">Plans & limits</button>';box.querySelector('button').onclick=pricing}
-      }
-    }
-    const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(dash){
-      let el=$('.v85-dash',dash);if(!el){el=document.createElement('div');el.className='v85-dash';$('.v51-head',dash)?.insertAdjacentElement('beforebegin',el)}
-      if(el){const on=signed(),bal=wallet?Math.max(0,Number(wallet.balance)||0):null;el.innerHTML=window.__SCHOLARK_TEST_MODE__?'<div><b>Testing foundation</b><span>Zero-credit test mode is active.</span></div><i>FREE TESTING</i>':'<div><b>Usage foundation</b><span>'+(on?(wallet?'Cloud wallet active · fair-use limits stay tied to your account.':'Signed in · wallet activation pending.'):'Sign in to keep usage, chats, projects and learning data attached to you.')+'</span></div><i>'+(bal==null?'—':bal.toLocaleString()+' credits')+'</i>'}
-    }
-  }
-  function sync(){render();if(cloud())loadCosts();load()}
-  function checkSession(){const token=currentSession()?.access_token||'';if(token!==lastToken){lastToken=token;load()}}
-
-  addEventListener('hashchange',()=>{setTimeout(render,80);setTimeout(load,220)});
-  addEventListener('pageshow',()=>setTimeout(load,80));
-  addEventListener('focus',()=>setTimeout(load,80));
-  addEventListener('scholark-runtime-ready',()=>setTimeout(sync,60));
-  addEventListener('scholark:auth-changed',()=>setTimeout(load,40));
-  addEventListener('scholark:credits-changed',()=>setTimeout(load,40));
-  addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
-  addEventListener('scholark-language-ready',()=>setTimeout(render,80));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession()});
-  setInterval(()=>{if(!document.hidden)checkSession()},10000);
-  setTimeout(sync,500);
-
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r181'};
 })();
