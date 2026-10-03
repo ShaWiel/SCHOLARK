@@ -32,7 +32,8 @@
   preconnect('https://yhafbwdnnpvuedycdkll.supabase.co');
 
   const activeRoot=()=>{
-    const h=String(location.hash||'').toLowerCase(),publicRoute=h===''||h==='#home'||h==='#pricing';
+    const h=String(location.hash||'').toLowerCase(),storeRoute=h.startsWith('#credit-store'),publicRoute=h===''||h==='#home'||h==='#pricing'||h==='#start'||storeRoute;
+    if(storeRoute&&!document.body.classList.contains('v51-workspace'))return document.querySelector('#v117-credit-store-page:not([hidden])')||document.body;
     if(publicRoute&&!document.body.classList.contains('v51-workspace'))return document.querySelector('#v29-home-layer:not([hidden])')||document.body;
     return document.querySelector('#v58-suite.open,#v57-deck.open,#v57-present.open,.v41-studio-workspace:not([hidden]),#v51-main')||document.body;
   };
