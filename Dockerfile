@@ -36,6 +36,7 @@ COPY scholark-v113-foundation-hardening.js /tmp/scholark-v113-foundation-hardeni
 COPY scholark-v114-workspace-orchestrator.js /tmp/scholark-v114-workspace-orchestrator.js
 COPY scholark-v115-billing.js /tmp/scholark-v115-billing.js
 COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js
+COPY scholark-v117-credit-store.js /tmp/scholark-v117-credit-store.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
