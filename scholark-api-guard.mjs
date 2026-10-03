@@ -8,6 +8,8 @@ const WINDOW_MS = 5 * 60 * 1000;
 const MAX_CONCURRENT = 18;
 const MAX_BUCKETS = 10000;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
+const HEALTH_STARTED_AT = Date.now();
+const HEALTH_RELEASE = String(process.env.SCHOLARK_RELEASE || 'dev');
 
 const rules = [
   { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30, maxBytes:3*1024*1024, expensive:true },
@@ -103,6 +105,14 @@ http.Server.prototype.emit = function(type,...args) {
   let url;
   try { url = new URL(req.url || '/','http://localhost'); }
   catch { return previousEmit.call(this,type,...args); }
+
+  // Render needs a dependency-free liveness signal as soon as the Node server
+  // accepts requests. Keep this endpoint intentionally local: no Supabase,
+  // Paddle, AI provider, geocoder or startup self-test may delay/degrade it.
+  if (req.method === 'GET' && url.pathname === '/api/health') {
+    json(res,200,{ok:true,service:'scholark',release:HEALTH_RELEASE,healthSource:'api-guard',uptimeSeconds:Math.max(0,Math.round((Date.now()-HEALTH_STARTED_AT)/1000))});
+    return true;
+  }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
     json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,jsonMutationGuard:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,rateLimitMode:testMode?'test-bypass':'enforced'});
