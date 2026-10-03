@@ -1105,6 +1105,7 @@ await mobile.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl'
 try{
   await mobile.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.waitForSelector('#v55-topbar',{state:'visible',timeout:8000});
+  await mobile.waitForFunction(()=>document.querySelectorAll('.v116-public-actions button').length===2,null,{timeout:5000});
   const homeMobile=await mobile.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,actions:document.querySelectorAll('.v116-public-actions button').length}));
   check(homeMobile.sw<=homeMobile.w+4,`Mobile homepage has horizontal overflow: ${JSON.stringify(homeMobile)}`);
   check(homeMobile.actions===2,'Mobile public privacy/feedback actions missing');
