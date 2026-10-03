@@ -8,6 +8,8 @@
   const lower=e=>text(e).toLowerCase();
   const h=()=>String(location.hash||'').toLowerCase();
   const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',x=h().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(x)})();
+  const creditStore=()=>window.__SCHOLARK_ROUTES__?.isCreditStore?.()??h().startsWith('#credit-store');
+  const landing=()=>publicHome()&&!creditStore();
   const workspace=()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/';if(!(p==='/'||p==='/index.html')||publicHome())return false;const x=(window.__SCHOLARK_ROUTES__?.hash?.()||h().replace(/^#/,'').split(/[?&]/)[0]).split(/[\/-]/)[0];return new Set(['dashboard','studio','presentation','document','report','poster','ai','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','book','schools','study','files','webpage','graphic','social']).has(x)};
 
   const style=document.createElement('style');
@@ -119,7 +121,7 @@
     </ul><button data-plan="pro">Start Pro free trial</button></article></div><div class="v41-coming-note"><b>COMING SOON:</b> Studio AI and Book Studio.</div>`;}
   let priceTimer=null;
   function ensurePricing(){
-    if(!publicHome())return;
+    if(!landing())return;
     const layer=$('#v29-home-layer');if(!layer)return;
     let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$$('[data-plan]',p).forEach(b=>{const plan=b.dataset.plan;if(plan==='free'){b.onclick=()=>{history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'))}}else{b.onclick=null;b.dataset.billingOwner='v115';}});}
     if(p){p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity');const shell=$('.v29-shell',layer)||layer,final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);if(final&&p.nextElementSibling!==final)shell.insertBefore(p,final)}
@@ -130,7 +132,7 @@
     if(document.documentElement.dataset.v41PricingNav)return;
     document.documentElement.dataset.v41PricingNav='1';
     document.addEventListener('click',e=>{
-      if(!publicHome())return;
+      if(!landing())return;
       const el=e.target.closest('a,button,[role="button"],span');if(!el)return;
       if(/^(prijzen|pricing)$/i.test(text(el))){e.preventDefault();e.stopPropagation();ensurePricing();$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'});}
     },true);
@@ -146,7 +148,11 @@
   }
   function sync(){
     ensureDashboardButton();
-    if(publicHome()){setHomeVisible(true);$('#v41-workspace-home')?.remove();$('#v41-sidebar-toggle')?.remove();document.body.classList.remove('v41-sidebar-closed');ensurePricing();}
+    if(publicHome()){
+      setHomeVisible(landing());
+      $('#v41-workspace-home')?.remove();$('#v41-sidebar-toggle')?.remove();document.body.classList.remove('v41-sidebar-closed');
+      if(landing())ensurePricing();else{$('#v41-home-pricing')?.setAttribute('hidden','');$('#v41-home-pricing')?.style.setProperty('display','none','important')}
+    }
     else if(workspace()){ensureWorkspaceChrome();}
   }
 
@@ -154,6 +160,6 @@
   addEventListener('hashchange',()=>{setTimeout(sync,50);setTimeout(sync,220)});
   addEventListener('popstate',()=>{setTimeout(sync,50);setTimeout(sync,220)});
   addEventListener('pageshow',()=>{setTimeout(sync,25);setTimeout(sync,160)});
-  addEventListener('resize',()=>setTimeout(()=>{syncSidebarButton();if(publicHome())ensurePricing()},120),{passive:true});
+  addEventListener('resize',()=>setTimeout(()=>{syncSidebarButton();if(landing())ensurePricing()},120),{passive:true});
   [70,420,1000].forEach(ms=>setTimeout(sync,ms));
 })();
