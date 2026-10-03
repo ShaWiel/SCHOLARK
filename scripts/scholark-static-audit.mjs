@@ -60,6 +60,7 @@ const creditStore=read('scholark-v117-credit-store.js');
 const creditSecurityMigration=read('supabase/migrations/20261003_credit_store_expansion_security.sql');
 const futureSecurityMigration=read('supabase/migrations/20261003_future_object_security_hardening.sql');
 const loadSmoke=read('scripts/scholark-load-smoke.mjs');
+const apiSmoke=read('scripts/scholark-smoke.mjs');
 const creditResilienceSmoke=read('scripts/scholark-credit-resilience-smoke.mjs');
 const ciWorkflow=read('.github/workflows/scholark-ci.yml');
 ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
@@ -86,6 +87,7 @@ ok(learningRoute.includes("url.pathname==='/api/learning/credit-health'")&&learn
 ok(learningRoute.includes('Credit service startup self-test')&&learningRoute.includes('dnsRecords')&&learningRoute.includes('httpStatus'),'Production credit-service startup probe is missing');
 ok(learningRoute.includes("let mode=''")&&learningRoute.includes("mode=clean(p.mode||'tutor').toLowerCase()")&&!learningRoute.includes("const p=await readJson(req); const mode="),'ARKI request error handler can lose access to mode and leave failures unhandled');
 ok(creditResilienceSmoke.includes("req.socket.destroy()")&&creditResilienceSmoke.includes("CREDIT RESILIENCE SMOKE PASS")&&ciWorkflow.includes('scholark-credit-resilience-smoke.mjs'),'Transient credit-network failure smoke is not wired into CI');
+ok(apiSmoke.includes("if(live)check(guardHealth.rateLimitMode==='enforced'")&&apiSmoke.includes("CACHE_VERSION='v9-global74-resilient-atomic-layout'")&&apiSmoke.includes("[gc.basic,['kindergarten','primary']]")&&apiSmoke.includes("study.includes('api?.data?.planner?.()')")&&apiSmoke.includes("study.includes('api?.data?.mastery?.()')")&&apiSmoke.includes("study.includes('api?.data?.goals?.()')")&&apiSmoke.includes("version:'20260921-r176'"),'Production live-smoke contract drift detected');
 ok(apiGuard.includes("p==='/api/feedback'")&&apiGuard.includes("p==='/api/account/export'")&&apiGuard.includes("p==='/api/account'")&&apiGuard.includes("p==='/api/billing/portal'")&&apiGuard.includes("p==='/api/billing/credits/checkout'"),'Launch/account/billing endpoints are missing from central rate/body guard');
 ok(apiGuard.includes('if(!rule.expensive)return previousEmit.call(this,type,...args)'),'Cheap launch mutations unnecessarily consume expensive-request concurrency');
 ok(homeTopbar.includes('topbarCopyObserver')&&homeTopbar.includes("authButton.dataset.v55State!==state||text(authButton)!==expectedAuth")&&homeTopbar.includes("if(sel.getAttribute('aria-label')!=='Language')"),'Homepage topbar idempotent copy protection is incomplete');
