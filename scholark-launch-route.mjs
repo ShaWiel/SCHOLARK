@@ -71,7 +71,7 @@ const EXPORT_TABLES=[
   ['ai_chats','user_id'],['ai_messages','user_id'],['quiz_results','user_id'],['mastery_topics','user_id'],
   ['spaced_reviews','user_id'],['study_ahead','user_id'],['documents','user_id'],['presentations','user_id'],
   ['user_files','user_id'],['language_learning_progress','user_id'],['credit_wallets','user_id'],
-  ['credit_ledger','user_id'],['usage_events','user_id'],['client_errors','user_id'],
+  ['credit_purchases','user_id'],['credit_ledger','user_id'],['usage_events','user_id'],['client_errors','user_id'],
   ['feedback_submissions','user_id'],['billing_subscriptions','user_id'],['billing_events','user_id'],['project_versions','user_id'],
   ['project_comments','user_id'],['shared_artifacts','owner_user_id'],['published_webpages','owner_user_id'],
   ['project_invites','owner_user_id']
