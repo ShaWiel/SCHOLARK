@@ -56,6 +56,8 @@ const billingClient=read('scholark-v115-billing.js');
 const credits=read('scholark-v85-credits-hud.js');
 const launchRoute=read('scholark-launch-route.mjs');
 const launchFoundation=read('scholark-v116-launch-foundation.js');
+const creditStore=read('scholark-v117-credit-store.js');
+const creditSecurityMigration=read('supabase/migrations/20261003_credit_store_expansion_security.sql');
 const loadSmoke=read('scripts/scholark-load-smoke.mjs');
 const creditResilienceSmoke=read('scripts/scholark-credit-resilience-smoke.mjs');
 const ciWorkflow=read('.github/workflows/scholark-ci.yml');
@@ -69,7 +71,7 @@ ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 c
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
 ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
 ok(docker.includes('__schLegacyNode')&&docker.includes('closest?.("#v55-topbar")'),'Legacy i18n can still rewrite the homepage topbar');
-ok(apiGuard.includes("content-security-policy")&&apiGuard.includes("permissions-policy")&&apiGuard.includes("strict-transport-security"),'API responses are missing hardened browser security headers');
+ok(apiGuard.includes("content-security-policy")&&apiGuard.includes("frame-ancestors 'none'")&&apiGuard.includes("x-frame-options','DENY")&&apiGuard.includes("strict-transport-security")&&apiGuard.includes("createHash('sha256')")&&apiGuard.includes('UNSUPPORTED_MEDIA_TYPE'),'API/browser security hardening is incomplete');
 ok(apiGuard.includes('requestOriginAllowed')&&apiGuard.includes("site === 'cross-site'")&&apiGuard.includes("CROSS_ORIGIN_BLOCKED"),'Expensive API routes lack same-origin / cross-site protection');
 ok(apiGuard.includes('MAX_BUCKETS = 10000')&&apiGuard.includes('buckets.size >= MAX_BUCKETS'),'API rate-limit state lacks a bounded-memory guard');
 ok(apiGuard.includes("rateLimitMode:testMode?'test-bypass':'enforced'")&&apiGuard.includes("if (testMode) {")&&apiGuard.includes("x-ratelimit-limit','test-bypass'")&&apiGuard.includes("const rate = consume(clientKey(req),url.pathname,rule.limit)"),'API guard must bypass only synthetic test buckets while preserving production rate enforcement');
@@ -86,7 +88,7 @@ ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not im
 ok(docker.includes('COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs')&&docker.includes('COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js'),'Launch foundation is not shipped in production image');
 ok(docker.includes('--import", "./scholark-launch-route.mjs"'),'Launch route is not imported at runtime');
 ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must be the outermost route wrapper');
-ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v115-billing.js','scholark-v116-launch-foundation.js'"),'Launch client foundation is not active across app routes');
+ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("'credit-store'")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
 ok(/localhost\|127\\\.0\\\.0\\\.1/.test(runtime)&&runtime.includes('__SCHOLARK_TEST_MODE__'),'Browser test bypass is not restricted to local hosts');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
 ok(docker.includes('--import", "./scholark-gemini-primary.mjs"'),'Gemini primary adapter is not imported at runtime');
@@ -296,10 +298,12 @@ ok(docker.includes('scholark-v103-language-next-lesson.js?v=20260918-language-ne
 ok(billingRoute.includes("'/customers/'+encodeURIComponent(row.paddle_customer_id)+'/portal-sessions'")&&billingRoute.includes("url.pathname==='/api/billing/portal'")&&billingRoute.includes('customerPortalSupported:true'),'Paddle customer self-service portal is incomplete');
 ok(billingClient.includes("async function manage(action='overview')")&&billingClient.includes("'/api/billing/portal'"),'Billing client does not expose secure subscription management');
 ok(billingClient.includes('TEST CHECKOUT · NO REAL CHARGE')&&billingClient.includes("c?.environment==='sandbox'"),'Sandbox checkout is not clearly disclosed to users');
-ok(billingRoute.includes("CREDIT_PACKS=Object.freeze({boost:{credits:250,amountCents:499")&&billingRoute.includes("url.pathname==='/api/billing/credits/checkout'")&&billingRoute.includes("apply_credit_topup")&&billingRoute.includes("'transaction.completed'")&&billingRoute.includes("!['completed','paid','billed'].includes(status)"),'Credit Store backend / Paddle fulfillment contract is incomplete');
+ok(billingRoute.includes("mini:{credits:100,amountCents:299")&&billingRoute.includes("starter:{credits:250,amountCents:699")&&billingRoute.includes("ultra:{credits:7500,amountCents:9999")&&billingRoute.includes("url.pathname==='/api/billing/credits/checkout'")&&billingRoute.includes("apply_credit_topup")&&billingRoute.includes("'transaction.completed'")&&billingRoute.includes("!['completed','paid','billed'].includes(status)"),'Credit Store backend / Paddle fulfillment contract is incomplete');
 ok(billingClient.includes("async function buyCredits(pack)")&&billingClient.includes("'/api/billing/credits/checkout'")&&billingClient.includes("scholark:credit-store-status"),'Credit Store checkout client is incomplete');
-ok(credits.includes('id=\'v85-credit-store-button\'')||credits.includes("store.id='v85-credit-store-button'"),'Homepage topbar Credit Store entry is missing');
-ok(credits.includes('MONTHLY CREDITS')&&credits.includes('EXTRA CREDITS')&&credits.includes('Purchased credits are separate from the monthly refill'),'Credit Store balance separation / persistence copy is incomplete');
+ok(credits.includes("location.hash='credit-store'")&&!credits.includes('v85-store-card'),'Credit HUD still owns the old modal instead of routing to the dedicated store');
+ok(creditStore.includes("id='v117-credit-store-button'")||creditStore.includes("button.id='v117-credit-store-button'"),'Homepage topbar Credit Store entry is missing');
+ok(creditStore.includes("page.id='v117-credit-store-page'")&&creditStore.includes('data-v117-pack')&&creditStore.includes('MONTHLY')&&creditStore.includes('EXTRA')&&creditStore.includes('Purchased credits are kept separately'),'Dedicated Credit Store page is incomplete');
+ok(creditSecurityMigration.includes('revoke all privileges on all tables in schema public from anon')&&creditSecurityMigration.includes("set search_path = ''")&&creditSecurityMigration.includes("p_pack='ultra' and p_credits=7500"),'Supabase least-privilege / Credit Store migration is incomplete');
 ok(launchRoute.includes("'/api/launch/health'")&&launchRoute.includes("'/api/launch/sources'")&&launchRoute.includes("'/api/feedback'")&&launchRoute.includes("'/api/account/export'")&&launchRoute.includes("'/api/account'"),'Launch health/source/feedback/account API is incomplete');
 ok(launchRoute.includes('ACTIVE_SUBSCRIPTION')&&launchRoute.includes('/auth/v1/admin/users/')&&launchRoute.includes('content-disposition'),'Account export/delete safeguards are incomplete');
 ok(launchRoute.includes('uis.unesco.org/en/glossary-term/levels-education')&&launchRoute.includes('gov.sr/ministeries/ministerie-van-onderwijs-wetenschapen-cultuur/documenten/'),'Launch education source policy is incomplete');
@@ -324,10 +328,10 @@ const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v116-launch-foundation.js','scholark-api-guard.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs',
   ...active
 ])];
