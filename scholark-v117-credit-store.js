@@ -7,7 +7,7 @@
   const isStore=()=>window.__SCHOLARK_ROUTES__?.hash?.()==='credit-store'||String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0]==='credit-store';
   const session=()=>{try{return window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')}catch{return null}};
   const signed=()=>!!session()?.access_token;
-  let page=null,button=null,busyPack='',statusMessage='',statusError=false,renderEpoch=0;
+  let page=null,button=null,busyPack='',statusMessage='',statusError=false,renderEpoch=0,routeActive=false;
 
   const PACK_COPY={
     mini:{eyebrow:'SMALL TOP-UP',note:'For a few extra AI actions.'},
@@ -72,11 +72,7 @@
     const epoch=++renderEpoch;
     ensureButton();ensurePage();
     let cfg={};
-    try{
-      await window.__SCHOLARK_BILLING__?.refresh?.();
-      await window.__SCHOLARK_CREDITS__?.load?.();
-      cfg=await window.__SCHOLARK_BILLING__?.config?.()||{};
-    }catch{}
+    try{cfg=await window.__SCHOLARK_BILLING__?.config?.()||{}}catch{}
     if(epoch!==renderEpoch||!isStore())return;
     const packs=cfg.creditPacks||{},entries=Object.entries(packs),w=wallet();
     const signedIn=signed();
@@ -86,12 +82,21 @@
 
   function syncRoute(){
     ensureButton();ensurePage();
-    const store=isStore();
+    const store=isStore(),entering=store&&!routeActive;
+    routeActive=store;
     document.documentElement.classList.toggle('v117-credit-store-route',store);
     document.body?.classList.toggle('v117-credit-store-route',store);
     page.hidden=!store;
     button?.setAttribute('aria-current',store?'page':'false');
-    if(store)render();else{renderEpoch++;busyPack='';statusMessage='';statusError=false}
+    if(store){
+      render();
+      if(entering){
+        Promise.resolve(window.__SCHOLARK_BILLING__?.refresh?.())
+          .then(()=>window.__SCHOLARK_CREDITS__?.load?.())
+          .then(()=>{if(isStore())render()})
+          .catch(()=>{});
+      }
+    }else{renderEpoch++;busyPack='';statusMessage='';statusError=false}
   }
 
   addEventListener('hashchange',()=>setTimeout(syncRoute,10));
