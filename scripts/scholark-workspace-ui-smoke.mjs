@@ -845,6 +845,33 @@ check((await page.locator('#v86-output').innerText()).trim().length>20,'Files & 
 check((await page.evaluate(()=>window.__SCHOLARK_V86_FILES__?.getState?.().files?.length))===1,'Files & Notes did not retain exactly one uploaded smoke file');
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
+// Schools Near Me real-location contract: permission allowed must populate a
+// usable country/city, while permission denied must fail soft and preserve the
+// manual country + city fallback.
+await page.context().grantPermissions(['geolocation'],{origin:base});
+await page.context().setGeolocation({latitude:5.8520,longitude:-55.2038});
+await page.route('**/api/schools/location',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,display:'Paramaribo, Suriname',country:'Suriname',countryCode:'SR',city:'Paramaribo'})});
+});
+await page.click('#v50-location-btn');
+await page.waitForFunction(()=>/Current location ready/i.test(document.querySelector('#v50-location')?.textContent||''),null,{timeout:5000});
+check((await page.inputValue('#v50-country'))==='Suriname','GPS permission allow path did not populate Suriname');
+check((await page.inputValue('#v50-city'))==='Paramaribo','GPS permission allow path did not populate Paramaribo');
+await page.unroute('**/api/schools/location');
+await page.context().clearPermissions();
+await page.evaluate(()=>{
+  const geo=navigator.geolocation;
+  window.__schGeoOriginal=geo?.getCurrentPosition?.bind(geo);
+  if(geo)geo.getCurrentPosition=(ok,err)=>queueMicrotask(()=>err?.({code:1,message:'Permission denied'}));
+});
+await page.click('#v50-location-btn');
+await page.waitForFunction(()=>/could not be read/i.test(document.querySelector('#v50-location')?.textContent||''),null,{timeout:3000});
+check((await page.locator('#v50-location').innerText()).includes('Enter country + city/area manually.'),'GPS denial did not expose the manual location fallback');
+await page.fill('#v50-country','Suriname');
+await page.fill('#v50-city','Paramaribo');
+check((await page.inputValue('#v50-country'))==='Suriname'&&(await page.inputValue('#v50-city'))==='Paramaribo','Manual location fallback is not usable after GPS denial');
+await page.evaluate(()=>{if(window.__schGeoOriginal&&navigator.geolocation)navigator.geolocation.getCurrentPosition=window.__schGeoOriginal;delete window.__schGeoOriginal});
+
 check(await page.locator('#v50-level').count()===1,'School level selector missing');
 check(await page.locator('#v50-name').count()===1,'School-name search field missing');
 check(await page.locator('#v50-crossborder').count()===1,'Nearby-country opt-in is missing');
