@@ -18,6 +18,7 @@ const rules = [
   { match:(m,p)=>m==='DELETE' && p==='/api/account', limit:testMode?20:3, maxBytes:8*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:12, maxBytes:8*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/checkout', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/credits/checkout', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/finalize', limit:testMode?80:20, maxBytes:16*1024, expensive:false }
 ];
 
