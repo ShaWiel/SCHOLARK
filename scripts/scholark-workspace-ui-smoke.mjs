@@ -76,6 +76,25 @@ async function checkWorkspaceSingletons(label){
   check(state.hardening?.ok!==false&&state.orchestration?.ok!==false&&state.experience?.ok!==false,`${label}: singleton health check failed: ${JSON.stringify(state)}`);
   return state;
 }
+async function checkTransitionSingletons(label){
+  const state=await page.evaluate(()=>{
+    const counts=sel=>document.querySelectorAll(sel).length;
+    return {
+      topbar:counts('#v55-topbar'),language:counts('#v55-language'),storeButton:counts('#v117-credit-store-button'),
+      storeHome:counts('#v117-store-return-home'),storeWorkspace:counts('#v117-store-return-workspace'),
+      auth:counts('#v55-auth'),account:counts('#v55-topbar .v55-account-wrap'),creditChip:counts('#v55-topbar .v85-topbar-credit'),
+      storePage:counts('#v117-credit-store-page'),workspaceMain:counts('#v51-main'),workspaceSidebar:counts('#v51-sidebar'),
+      wallet:counts('#v51-sidebar .v85-wallet'),dashCredit:counts('#v51-main [data-v51-page="dashboard"] .v85-dash'),
+      langbox:counts('#v51-sidebar .v90-langbox'),country:counts('#v51-sidebar #v96-side-country'),
+      sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
+      connected:counts('.v114-connect'),storeClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
+    };
+  });
+  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','sideActions','onboarding','connected'];
+  check(maxOne.every(k=>state[k]<=1),label+': duplicate transition surfaces '+JSON.stringify(state));
+  return state;
+}
+
 async function route(id,selector){
   const button=`#v51-sidebar [data-v51-tool="${id}"]`;
   check(await visible(button,5000),`Sidebar button missing: ${id}`);
@@ -197,6 +216,33 @@ await page.click('#v117-store-return-home');
 await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 check(await page.locator('#v117-credit-store-page').evaluate(el=>el.hidden),'Credit Store page did not leave cleanly');
 check(await visible('#v29-home-layer',5000),'Homepage did not recover after leaving Credit Store');
+await checkTransitionSingletons('store-return-home initial');
+
+for(let cycle=1;cycle<=3;cycle++){
+  check(await visible('#v117-credit-store-button',5000),'Cycle '+cycle+': Credit Store button missing on Home');
+  await page.click('#v117-credit-store-button');
+  await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+  check(await visible('#v117-credit-store-page',5000),'Cycle '+cycle+': Credit Store did not open');
+  await checkTransitionSingletons('store-open cycle '+cycle);
+  await page.click('#v117-store-return-home');
+  await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+  check(await visible('#v29-home-layer',5000),'Cycle '+cycle+': Home did not recover');
+  const homeCycle=await checkTransitionSingletons('store-home cycle '+cycle);
+  check(!homeCycle.storeClass,'Cycle '+cycle+': stale Credit Store route class remained on Home');
+}
+for(let cycle=1;cycle<=2;cycle++){
+  await page.click('#v117-credit-store-button');
+  await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+  await page.click('#v117-store-return-workspace');
+  await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
+  check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Workspace return cycle '+cycle+' did not settle on Dashboard');
+  const wsCycle=await checkTransitionSingletons('store-workspace cycle '+cycle);
+  check(!wsCycle.storeClass,'Workspace return cycle '+cycle+': stale Credit Store route class remained');
+  await page.evaluate(()=>{location.hash='home'});
+  await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+  check(await visible('#v29-home-layer',8000),'Workspace return cycle '+cycle+': Home did not recover');
+  await checkTransitionSingletons('workspace-home cycle '+cycle);
+}
 
 await page.evaluate(()=>{location.hash='pricing'});
 await page.waitForFunction(()=>location.hash==='#pricing',{timeout:3000});
