@@ -38,6 +38,16 @@ for(const cfg of engines){
     await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForSelector('#v55-topbar',{state:'visible',timeout:10000});
     check(await page.locator('#v55-topbar').count()===1,cfg.name+': homepage topbar duplicated');
+    check(await page.locator('#v117-credit-store-button').count()===1,cfg.name+': Credit Store topbar button missing');
+    await page.click('#v117-credit-store-button');
+    await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
+    await page.waitForSelector('#v117-credit-store-page',{state:'visible',timeout:8000});
+    check(await page.locator('#v117-credit-store-page [data-v117-pack]').count()===6,cfg.name+': Credit Store pack grid incomplete');
+    const storeLayout=await page.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,home:getComputedStyle(document.querySelector('#v29-home-layer')).display}));
+    check(storeLayout.sw<=storeLayout.w+2,cfg.name+': Credit Store creates horizontal overflow '+JSON.stringify(storeLayout));
+    check(storeLayout.topbar!=='none'&&storeLayout.home==='none',cfg.name+': Credit Store route layering is incorrect '+JSON.stringify(storeLayout));
+    await page.click('#v117-credit-store-page [data-v117-home]');
+    await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 
     await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:12000});
