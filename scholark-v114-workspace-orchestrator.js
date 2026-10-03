@@ -289,6 +289,18 @@
     cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>paint(force))
   }
 
+  function settleRoute(expected=route()){
+    // Browser history can expose the destination root before the rest of the
+    // Workspace lifecycle has finished remounting. Re-check a few bounded
+    // times so the connected-flow singleton settles with the route instead
+    // of relying on one hashchange frame.
+    [20,80,180,360,720].forEach(ms=>setTimeout(()=>{
+      if(route()!==expected)return;
+      refresh(true);
+      if(ms>=180)scheduleConsume(30);
+    },ms));
+  }
+
   const observer=new MutationObserver(muts=>{
     if(!document.body.classList.contains('v51-workspace')&&!$('#v50-school.open'))return;
     if(!muts.some(m=>m.addedNodes.length||m.removedNodes.length))return;
@@ -301,10 +313,12 @@
     // Do not leave an old bar alive while the new feature root is mounting.
     document.querySelectorAll('.v114-connect').forEach(x=>{if(x.dataset.v114Route!==next)x.remove()});
     if(readHandoff())showTransition(next);
-    setTimeout(()=>refresh(true),55);scheduleConsume(65)
+    settleRoute(next);scheduleConsume(65)
   });
-  addEventListener('scholark-workspace-entry-ready',()=>setTimeout(()=>refresh(true),20));
-  addEventListener('scholark-workspace-change',()=>setTimeout(()=>refresh(true),70));
+  addEventListener('popstate',()=>settleRoute(route()));
+  addEventListener('pageshow',e=>{if(e.persisted)settleRoute(route())});
+  addEventListener('scholark-workspace-entry-ready',()=>settleRoute(route()));
+  addEventListener('scholark-workspace-change',()=>settleRoute(route()));
   addEventListener('scholark-experience-ready',e=>{if(e?.detail?.tool===route())requestAnimationFrame(()=>refresh(true,true))});
   addEventListener('scholark-runtime-ready',()=>setTimeout(()=>{refresh(true);scheduleConsume(60)},70));
   addEventListener('scholark-language-ready',()=>setTimeout(()=>refresh(true),40));
