@@ -56,6 +56,7 @@ const billingClient=read('scholark-v115-billing.js');
 const credits=read('scholark-v85-credits-hud.js');
 const launchRoute=read('scholark-launch-route.mjs');
 const launchFoundation=read('scholark-v116-launch-foundation.js');
+const cloudProjects=read('scholark-v72-cloud-projects.js');
 const creditStore=read('scholark-v117-credit-store.js');
 const creditSecurityMigration=read('supabase/migrations/20261003_credit_store_expansion_security.sql');
 const futureSecurityMigration=read('supabase/migrations/20261003_future_object_security_hardening.sql');
@@ -364,3 +365,4 @@ if(fail.length){
 console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · school ${SCHOOL_STRICT} · ${active.length} active runtime modules checked`);
 ok(billingRoute.includes('PADDLE_LIVE_API_KEY')&&billingRoute.includes('PADDLE_SANDBOX_API_KEY')&&billingRoute.includes('liveBillingPreflight')&&billingRoute.includes('productionCredentialsPreloaded'),'Paddle dual-environment preload safety is incomplete');
 ok(launchRoute.includes('IN_APP_SUPPORT=true')&&launchRoute.includes("'support'")&&launchRoute.includes("supportChannel:SUPPORT_EMAIL?'email':'in-app'")&&launchFoundation.includes('function openSupport(')&&launchFoundation.includes('PRIVACY NOTICE & PRODUCT TERMS · 3 OCT 2026'),'Support/legal launch foundation is incomplete');
+ok(cloudProjects.includes("data-v72-terms")&&cloudProjects.includes("terms_version:'2026-10-03'")&&cloudProjects.includes('terms_accepted_at:new Date().toISOString()')&&cloudProjects.includes('View Privacy & Terms'),'Signup legal consent is missing');
