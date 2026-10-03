@@ -267,6 +267,7 @@ ok(learningApi.includes('What you actually do')&&learningApi.includes('Typical t
 ok(studyAhead.includes('What you actually do')&&studyAhead.includes('Typical tasks')&&studyAhead.includes('Good fit if')&&studyAhead.includes('legacyEmpty'),'Saved Study Ahead branch details/legacy safety are incomplete');
 ok(learningApi.includes("STUDY_DRAFT_KEY='scholark_v62_study_draft'")&&learningApi.includes('sessionStorage.setItem(STUDY_DRAFT_KEY')&&learningApi.includes('restoreStudyDraft();bindStudyDraft();return live'),'Study Ahead does not preserve typed form data across remounts');
 ok(learningApi.includes("const live=$('.v62-study',h)")&&learningApi.includes("if(live&&$('#v62-field',live))"),'Study Ahead mount is not idempotent');
+ok(workspaceShell.includes("window.__SCHOLARK_RUNTIME__?.ensure?.('study')")&&workspaceShell.includes('mountStudy')&&workspaceShell.includes('[60,180,420,900,1800]'),'Study Ahead Workspace route lacks slow-browser runtime recovery');
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(foundation.includes("Date.now()-state.lastRepairAt<900")&&foundation.includes("scholark-home-language-adapting"),'Core foundation lacks low-churn fast path or language-transition coordination');
 ok(performance.includes("now-state.lastLayout<240")&&performance.includes("scholark-language-ready"),'Performance foundation does not suppress redundant layout work or retune after locale changes');
