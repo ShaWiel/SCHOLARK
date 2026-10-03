@@ -114,15 +114,17 @@ http.Server.prototype.emit = function(type,...args) {
     return true;
   }
 
-  const rule = rules.find(r => r.match(req.method,url.pathname));
-  if (!rule) return previousEmit.call(this,type,...args);
-
-  for (const key of url.searchParams.keys()) {
-    if (/^(access_token|refresh_token|token|authorization|api_?key|apikey|password|secret)$/i.test(String(key))) {
-      json(res,400,{ok:false,code:'SENSITIVE_QUERY_BLOCKED',error:'Sensitive credentials must not be sent in the URL.'});
-      return true;
+  if (url.pathname.startsWith('/api/')) {
+    for (const key of url.searchParams.keys()) {
+      if (/^(access_token|refresh_token|token|authorization|api_?key|apikey|password|secret)$/i.test(String(key))) {
+        json(res,400,{ok:false,code:'SENSITIVE_QUERY_BLOCKED',error:'Sensitive credentials must not be sent in the URL.'});
+        return true;
+      }
     }
   }
+
+  const rule = rules.find(r => r.match(req.method,url.pathname));
+  if (!rule) return previousEmit.call(this,type,...args);
 
   if (['POST','PUT','PATCH','DELETE'].includes(String(req.method||'').toUpperCase())) {
     const type=String(req.headers?.['content-type']||'').toLowerCase();
