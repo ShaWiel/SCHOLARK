@@ -936,8 +936,9 @@ http.Server.prototype.emit = function(event,...args){
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
   if(req.method!=='POST'){json(res,405,{ok:false,error:'Method not allowed'});return true;}
   (async()=>{
+    let mode='';
     try{
-      const p=await readJson(req); const mode=clean(p.mode||'tutor').toLowerCase();
+      const p=await readJson(req); mode=clean(p.mode||'tutor').toLowerCase();
       if(!['tutor','general_ai','flashcards','exam','curriculum','study_ahead','translate_ui','language_learning'].includes(mode)) return json(res,400,{ok:false,error:'Unsupported learning mode'});
       if((mode==='tutor'||mode==='general_ai')&&!clean(p.prompt)) return json(res,400,{ok:false,error:'Prompt required'});
       if(mode==='study_ahead'&&!clean(p.field)) return json(res,400,{ok:false,code:'FIELD_REQUIRED',error:'Field of study is required'});
