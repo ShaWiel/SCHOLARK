@@ -178,9 +178,13 @@ await page.evaluate(()=>sessionStorage.removeItem('scholark_pending_credit_pack'
 await page.click('#v117-credit-store-page [data-v117-workspace]');
 await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'Credit Store Workspace button did not enter the Workspace dashboard');
-await page.evaluate(()=>{location.hash='credit-store'});
+await page.evaluate(()=>{location.hash='home'});
+await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+check(await visible('#v29-home-layer',8000),'Homepage did not recover after leaving Workspace');
+check(await visible('#v117-credit-store-button',5000),'Credit Store topbar action did not recover after Workspace');
+await page.click('#v117-credit-store-button');
 await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
-check(await visible('#v117-credit-store-page',8000),'Credit Store did not recover after returning from Workspace');
+check(await visible('#v117-credit-store-page',8000),'Credit Store did not reopen from the homepage after Workspace');
 await page.click('#v117-credit-store-page [data-v117-home]');
 await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 check(await page.locator('#v117-credit-store-page').evaluate(el=>el.hidden),'Credit Store page did not leave cleanly');
