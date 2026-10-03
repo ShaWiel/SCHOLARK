@@ -113,6 +113,14 @@
     ensureButton();ensurePage();
     const store=isStore(),entering=store&&!routeActive;
     routeActive=store;
+    if(store&&document.body){
+      // Store is a public surface. Clear any delayed Workspace ownership from
+      // a previous dashboard visit before revealing the store again.
+      document.body.classList.remove('v51-workspace','v51-collapsed','v51-native','v51-studio','v51-pro','v51-schools','v51-study','v51-book','v41-studio-open','v81-home');
+      document.documentElement.classList.remove('v51-workspace-root','scholark-workspace-entering');
+      document.body.classList.add('v55-public-home');
+      document.documentElement.classList.add('v55-public-home');
+    }
     document.documentElement.classList.toggle('v117-credit-store-route',store);
     document.body?.classList.toggle('v117-credit-store-route',store);
     page.hidden=!store;
