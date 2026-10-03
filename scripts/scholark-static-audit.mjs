@@ -92,6 +92,7 @@ ok(docker.includes('COPY scholark-launch-route.mjs /app/scholark-launch-route.mj
 ok(docker.includes('--import", "./scholark-launch-route.mjs"'),'Launch route is not imported at runtime');
 ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must be the outermost route wrapper');
 ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("isCreditStore:creditStore")&&runtime.includes("isLanding:landingHome")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
+ok(runtime.includes('const uniqueFiles=files=>[...new Set')&&runtime.includes('files=uniqueFiles(files)'),'Runtime loader does not deduplicate preload/load batches');
 ok(/localhost\|127\\\.0\\\.0\\\.1/.test(runtime)&&runtime.includes('__SCHOLARK_TEST_MODE__'),'Browser test bypass is not restricted to local hosts');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
 ok(docker.includes('--import", "./scholark-gemini-primary.mjs"'),'Gemini primary adapter is not imported at runtime');
