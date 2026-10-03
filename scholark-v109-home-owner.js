@@ -5,7 +5,7 @@
   window.__SCHOLARK_HOME_V29_ONLY__=true;
 
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})();
+  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
   const retiredSelectors=[
     '#sv24-explainer','#sv24-launch','#sv24-home',
     '#v25-ad-studio','#v25-ad-future','#v25-pricing',
