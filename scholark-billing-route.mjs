@@ -8,13 +8,26 @@ const SERVICE=String(process.env.SUPABASE_SERVICE_ROLE_KEY||'').trim();
 const ENV=String(process.env.PADDLE_ENV||'sandbox').toLowerCase()==='production'?'production':'sandbox';
 const API_BASE=ENV==='sandbox'?'https://sandbox-api.paddle.com':'https://api.paddle.com';
 function cleanSecret(value,key=''){let v=String(value||'').trim();if(key&&v.startsWith(key+'='))v=v.slice(key.length+1).trim();if((v.startsWith('"')&&v.endsWith('"'))||(v.startsWith("'")&&v.endsWith("'")))v=v.slice(1,-1).trim();return v}
-const CLIENT_TOKEN=cleanSecret(process.env.PADDLE_CLIENT_TOKEN,'PADDLE_CLIENT_TOKEN');
-const API_KEY=cleanSecret(process.env.PADDLE_API_KEY,'PADDLE_API_KEY');
-let WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_WEBHOOK_SECRET,'PADDLE_WEBHOOK_SECRET');
-const PRICES={plus:String(process.env.PADDLE_PLUS_PRICE_ID||'').trim(),pro:String(process.env.PADDLE_PRO_PRICE_ID||'').trim()};
+const SHARED_CLIENT_TOKEN=cleanSecret(process.env.PADDLE_CLIENT_TOKEN,'PADDLE_CLIENT_TOKEN');
+const SHARED_API_KEY=cleanSecret(process.env.PADDLE_API_KEY,'PADDLE_API_KEY');
+const SHARED_WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_WEBHOOK_SECRET,'PADDLE_WEBHOOK_SECRET');
+const SHARED_PRICES={plus:String(process.env.PADDLE_PLUS_PRICE_ID||'').trim(),pro:String(process.env.PADDLE_PRO_PRICE_ID||'').trim()};
+const SANDBOX_CLIENT_TOKEN=cleanSecret(process.env.PADDLE_SANDBOX_CLIENT_TOKEN||(ENV==='sandbox'?SHARED_CLIENT_TOKEN:''),'PADDLE_SANDBOX_CLIENT_TOKEN');
+const SANDBOX_API_KEY=cleanSecret(process.env.PADDLE_SANDBOX_API_KEY||(ENV==='sandbox'?SHARED_API_KEY:''),'PADDLE_SANDBOX_API_KEY');
+const SANDBOX_WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_SANDBOX_WEBHOOK_SECRET||(ENV==='sandbox'?SHARED_WEBHOOK_SECRET:''),'PADDLE_SANDBOX_WEBHOOK_SECRET');
+const SANDBOX_PRICES={plus:String(process.env.PADDLE_SANDBOX_PLUS_PRICE_ID||(ENV==='sandbox'?SHARED_PRICES.plus:'')).trim(),pro:String(process.env.PADDLE_SANDBOX_PRO_PRICE_ID||(ENV==='sandbox'?SHARED_PRICES.pro:'')).trim()};
+const LIVE_CLIENT_TOKEN=cleanSecret(process.env.PADDLE_LIVE_CLIENT_TOKEN||(ENV==='production'?SHARED_CLIENT_TOKEN:''),'PADDLE_LIVE_CLIENT_TOKEN');
+const LIVE_API_KEY=cleanSecret(process.env.PADDLE_LIVE_API_KEY||(ENV==='production'?SHARED_API_KEY:''),'PADDLE_LIVE_API_KEY');
+const LIVE_WEBHOOK_SECRET=cleanSecret(process.env.PADDLE_LIVE_WEBHOOK_SECRET||(ENV==='production'?SHARED_WEBHOOK_SECRET:''),'PADDLE_LIVE_WEBHOOK_SECRET');
+const LIVE_PRICES={plus:String(process.env.PADDLE_LIVE_PLUS_PRICE_ID||(ENV==='production'?SHARED_PRICES.plus:'')).trim(),pro:String(process.env.PADDLE_LIVE_PRO_PRICE_ID||(ENV==='production'?SHARED_PRICES.pro:'')).trim()};
+const CLIENT_TOKEN=ENV==='production'?LIVE_CLIENT_TOKEN:SANDBOX_CLIENT_TOKEN;
+const API_KEY=ENV==='production'?LIVE_API_KEY:SANDBOX_API_KEY;
+let WEBHOOK_SECRET=ENV==='production'?LIVE_WEBHOOK_SECRET:SANDBOX_WEBHOOK_SECRET;
+const PRICES=ENV==='production'?LIVE_PRICES:SANDBOX_PRICES;
 const CREDIT_PACKS=Object.freeze({mini:{credits:100,amountCents:299,label:'Mini'},starter:{credits:250,amountCents:699,label:'Starter'},boost:{credits:750,amountCents:1699,label:'Boost'},power:{credits:1500,amountCents:2999,label:'Power'},max:{credits:3000,amountCents:4999,label:'Max'},ultra:{credits:7500,amountCents:9999,label:'Ultra'}});
 const WEBHOOK_URL=String(process.env.PADDLE_WEBHOOK_URL||'https://scholark-app-shawiel.onrender.com/api/billing/webhook').trim();
 let catalogHealth={checked:false,ok:false,environment:ENV};
+let livePreflightHealth={checked:false,ok:false,environment:'production',reason:'live_credentials_not_preloaded'};
 const keyKind=/^pdl_sdbx_apikey_/.test(API_KEY)?'sandbox':/^pdl_live_apikey_/.test(API_KEY)?'live':'unknown';
 const tokenKind=/^test_/.test(CLIENT_TOKEN)?'sandbox':/^live_/.test(CLIENT_TOKEN)?'live':'unknown';
 const credentialEnvironmentMatches=()=>ENV==='production'?keyKind==='live'&&tokenKind==='live':keyKind==='sandbox'&&tokenKind==='sandbox';
@@ -34,6 +47,23 @@ function serviceHeaders(extra={}){return {apikey:SERVICE,authorization:'Bearer '
 function timeoutSignal(ms=10000){try{return AbortSignal.timeout(ms)}catch{return undefined}}
 async function sb(path,opts={}){return fetch(SB+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{...serviceHeaders(),...(opts.headers||{})}})}
 async function paddle(path,opts={}){return fetch(API_BASE+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{authorization:'Bearer '+API_KEY,'content-type':'application/json',accept:'application/json',...(opts.headers||{})}})}
+async function livePaddle(path,opts={}){return fetch('https://api.paddle.com'+path,{...opts,signal:opts.signal||timeoutSignal(10000),headers:{authorization:'Bearer '+LIVE_API_KEY,'content-type':'application/json',accept:'application/json',...(opts.headers||{})}})}
+function liveCredentialShapes(){return /^pdl_live_apikey_/.test(LIVE_API_KEY)&&/^live_/.test(LIVE_CLIENT_TOKEN)&&!!LIVE_WEBHOOK_SECRET&&/^pri_[a-z\\d]{26}$/.test(LIVE_PRICES.plus)&&/^pri_[a-z\\d]{26}$/.test(LIVE_PRICES.pro)}
+async function verifyLiveCatalogPrice(plan,id,expectedAmount){
+  const r=await livePaddle('/prices/'+encodeURIComponent(id)+'?include=product',{method:'GET'}),d=await r.json().catch(()=>({}));
+  if(!r.ok)return {ok:false,plan,http:r.status,reason:d?.error?.code||d?.error?.type||'price_read_failed'};
+  const p=d?.data||{},product=p?.product||{},monthly=p?.billing_cycle?.interval==='month'&&Number(p?.billing_cycle?.frequency)===1,trial7=p?.trial_period?.interval==='day'&&Number(p?.trial_period?.frequency)===7,amount=String(p?.unit_price?.amount||''),currency=String(p?.unit_price?.currency_code||''),active=p?.status==='active',legacyBrand=/student\\s*os|studentos/i.test([p?.name,product?.name,product?.description].join(' '));
+  return {ok:active&&monthly&&trial7&&amount===String(expectedAmount)&&currency==='USD'&&!legacyBrand,plan,id:p?.id||id,productId:product?.id||p?.product_id||'',amount,currency,monthly,trial7,active,legacyBrand};
+}
+async function liveBillingPreflight(){
+  if(!liveCredentialShapes()){livePreflightHealth={checked:true,ok:false,environment:'production',credentialShapes:false,reason:'live_credentials_not_preloaded'};return livePreflightHealth}
+  try{
+    const eventTypes=await livePaddle('/event-types',{method:'GET'}),eventData=await eventTypes.json().catch(()=>({}));
+    const [plus,pro]=await Promise.all([verifyLiveCatalogPrice('plus',LIVE_PRICES.plus,1499),verifyLiveCatalogPrice('pro',LIVE_PRICES.pro,1999)]);
+    livePreflightHealth={checked:true,ok:eventTypes.ok&&plus.ok&&pro.ok,environment:'production',credentialShapes:true,apiReachable:eventTypes.ok,plus,pro,reason:eventTypes.ok&&plus.ok&&pro.ok?'ready_for_environment_switch':'live_catalog_or_api_check_failed',checkedAt:new Date().toISOString()};
+  }catch(e){livePreflightHealth={checked:true,ok:false,environment:'production',credentialShapes:true,reason:String(e?.message||e),checkedAt:new Date().toISOString()}}
+  return livePreflightHealth;
+}
 async function verifyCatalogPrice(plan,id,expectedAmount){
   let brandAudit='ok',r=await paddle('/prices/'+encodeURIComponent(id)+'?include=product',{method:'GET'}),d=await r.json().catch(()=>({}));
   if(!r.ok&&(r.status===401||r.status===403)){
@@ -192,7 +222,7 @@ async function customerPortal(user,action='overview'){
 
 http.Server.prototype.emit=function(type,...args){if(type!=='request')return previousEmit.call(this,type,...args);const [req,res]=args;let url;try{url=new URL(req.url||'/','http://localhost')}catch{return previousEmit.call(this,type,...args)}
   if(req.method==='GET'&&url.pathname==='/api/billing/config'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:checkoutConfigured(),webhookConfigured:webhookConfigured(),clientToken:checkoutConfigured()?CLIENT_TOKEN:'',priceIds:checkoutConfigured()?{plus:PRICES.plus,pro:PRICES.pro}:{},plans:{plus:14.99,pro:19.99},creditPacks:Object.fromEntries(Object.entries(CREDIT_PACKS).map(([k,v])=>[k,{credits:v.credits,price:v.amountCents/100,label:v.label}])),creditStoreConfigured:checkoutConfigured(),currency:'USD'});return true}
-  if(req.method==='GET'&&url.pathname==='/api/billing/health'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:checkoutConfigured(),checkoutConfigured:checkoutConfigured(),webhookConfigured:webhookConfigured(),prices:{plus:!!PRICES.plus,pro:!!PRICES.pro},webhookSecret:!!WEBHOOK_SECRET,apiKey:!!API_KEY,clientToken:!!CLIENT_TOKEN,credentialEnvironmentMatches:credentialEnvironmentMatches(),customerPortalSupported:true,creditStoreConfigured:checkoutConfigured(),creditPacks:Object.keys(CREDIT_PACKS).length,productionReady:ENV==='production'&&checkoutConfigured()&&webhookConfigured()&&catalogHealth?.ok===true,catalog:catalogHealth});return true}
+  if(req.method==='GET'&&url.pathname==='/api/billing/health'){json(res,200,{ok:true,provider:'paddle',environment:ENV,configured:checkoutConfigured(),checkoutConfigured:checkoutConfigured(),webhookConfigured:webhookConfigured(),prices:{plus:!!PRICES.plus,pro:!!PRICES.pro},webhookSecret:!!WEBHOOK_SECRET,apiKey:!!API_KEY,clientToken:!!CLIENT_TOKEN,credentialEnvironmentMatches:credentialEnvironmentMatches(),customerPortalSupported:true,creditStoreConfigured:checkoutConfigured(),creditPacks:Object.keys(CREDIT_PACKS).length,productionCredentialsPreloaded:liveCredentialShapes(),livePreflight:livePreflightHealth,productionReady:ENV==='production'&&checkoutConfigured()&&webhookConfigured()&&catalogHealth?.ok===true,catalog:catalogHealth});return true}
   if(req.method==='GET'&&url.pathname==='/api/billing/status'){currentUser(req).then(async user=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});json(res,200,await billingStatus(user))}).catch(e=>json(res,500,{ok:false,code:'BILLING_STATUS_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/portal'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});const action=String(body?.action||'overview').toLowerCase();const result=await customerPortal(user,action);json(res,result.http||500,result)}).catch(e=>json(res,400,{ok:false,code:'PORTAL_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/finalize'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});const result=await finalizeTransaction(user,String(body?.transactionId||''));console.log('[SCHOLARK] Paddle checkout finalize · '+(result.ok?'OK':result.code));json(res,result.http||500,result)}).catch(e=>json(res,400,{ok:false,code:'FINALIZE_FAILED',error:String(e.message||e)}));return true}
@@ -202,4 +232,4 @@ http.Server.prototype.emit=function(type,...args){if(type!=='request')return pre
   return previousEmit.call(this,type,...args)
 };
 
-setTimeout(()=>billingSelftest().catch(()=>{}),1200).unref?.();
+setTimeout(()=>{billingSelftest().catch(()=>{});liveBillingPreflight().catch(()=>{})},1200).unref?.();
