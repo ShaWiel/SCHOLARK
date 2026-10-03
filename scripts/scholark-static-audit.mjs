@@ -69,6 +69,8 @@ ok(foundation.includes("raw==='credit-store'")&&foundation.includes("kind:'store
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
 ok(launchFoundation.includes("release:'r206'"),'Launch client release is not R206');
+ok(launchFoundation.includes("inStore=document.documentElement.classList.contains('v117-credit-store-route')")&&launchFoundation.includes("'scholark:topbar-ready'"),'Public privacy/feedback Store exclusion or topbar-ready sync is missing');
+ok(homeTopbar.includes("new CustomEvent('scholark:topbar-ready')"),'Topbar-ready event is not emitted by the canonical topbar owner');
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
 ok(!docker.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still copied');
 ok(docker.includes('SCHOLARK_MODERN_WORKSPACE_I18N')&&docker.includes('classList?.contains("v51-workspace")'),'Legacy i18n is not fenced off from the modern workspace');
