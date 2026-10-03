@@ -31,19 +31,20 @@
   function status(t,err=false){const x=$('.v72-status');if(x){x.textContent=t||'';x.style.color=err?'#a13d3d':'#5c50cb'}}
 
   async function signIn(email,password){const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.access_token){const raw=d?.error_description||d?.msg||d?.message||'Could not sign in';const msg=/invalid login credentials/i.test(raw)?'Sign-in failed. If you have not created a SCHOLARK Cloud account yet, choose Create account first.':raw;throw new Error(msg)}d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);return d}
-  async function signUp(email,password){const r=await fetch(SB+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d?.error_description||d?.msg||d?.message||'Could not create account');if(d?.access_token){d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d)}return d}
+  async function signUp(email,password){const r=await fetch(SB+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({email,password,data:{terms_version:'2026-10-03',terms_accepted_at:new Date().toISOString()}})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d?.error_description||d?.msg||d?.message||'Could not create account');if(d?.access_token){d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d)}return d}
   async function resetPassword(email){const r=await fetch(SB+'/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+'/#home'),{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({email})});if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d?.error_description||d?.msg||d?.message||'Could not send password reset email')}return true}
   async function signOut(){const s=await session();if(s)fetch(SB+'/auth/v1/logout',{method:'POST',headers:authHeaders(s.access_token)}).catch(()=>{});saveSession(null);state.cloud=[];enhance(true)}
 
   function openAuth(tab='signin'){
     const signingIn=tab==='signin';
-    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · 6+ characters" minlength="6" required><button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
+    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · 6+ characters" minlength="6" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice & Product Terms (3 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
     modal.classList.add('open');
     window.__SCHOLARK_I18N__?.apply?.(modal);
     setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
     $('.v72-x',modal).onclick=closeModal;
     $$('[data-tab]',modal).forEach(b=>{b.type='button';b.onclick=()=>openAuth(b.dataset.tab)});
     const form=$('.v72-form',modal),emailInput=$('input[type="email"]',form),st=$('.v72-modal-status',modal);
+    $('.v72-view-terms',modal)?.addEventListener('click',e=>window.__SCHOLARK_LAUNCH__?.privacy?.(e.currentTarget));
     $('.v72-forgot',modal)?.addEventListener('click',async()=>{
       const email=clean(emailInput?.value);
       if(!email){st.textContent='Enter your email address first.';st.style.color='#a13d3d';emailInput?.focus();return}
@@ -52,7 +53,8 @@
     });
     form.onsubmit=async e=>{
       e.preventDefault();
-      const inputs=$$('input',form),email=clean(inputs[0]?.value),pass=inputs[1]?.value||'',mode=tab;
+      const inputs=$('input',form),email=clean(inputs[0]?.value),pass=inputs[1]?.value||'',mode=tab,terms=$('[data-v72-terms]',form);
+      if(mode==='signup'&&!terms?.checked){st.textContent='Agree to the Privacy Notice & Product Terms before creating an account.';st.style.color='#a13d3d';terms?.focus();return}
       st.textContent=mode==='signin'?'Signing in…':'Creating account…';st.style.color='#6559c9';
       try{
         const d=mode==='signin'?await signIn(email,pass):await signUp(email,pass);
