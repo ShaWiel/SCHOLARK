@@ -155,6 +155,20 @@ check(await page.locator('#v72-modal [data-tab="signup"]').evaluate(el=>el.class
 check((await page.locator('#v72-modal input[type="password"]').getAttribute('autocomplete'))==='new-password','Create-account password field is not configured as a new password');
 await page.click('#v72-modal .v72-x');
 check(await page.locator('#v72-modal').evaluate(el=>!el.classList.contains('open')),'Auth modal did not close cleanly');
+check(await visible('#v85-credit-store-button',3000),'Credit Store action is missing from the homepage topbar');
+await page.click('#v85-credit-store-button');
+check(await visible('#v85-store.open',3000),'Credit Store did not open from the homepage topbar');
+check(await page.locator('#v85-store [data-v85-pack]').count()===3,'Credit Store should expose exactly three top-up packs');
+const storeText=(await page.locator('#v85-store').innerText()).replace(/\s+/g,' ');
+check(storeText.includes('250')&&storeText.includes('$4.99')&&storeText.includes('750')&&storeText.includes('$11.99')&&storeText.includes('2,000')&&storeText.includes('$24.99'),'Credit Store pack amounts/prices are incomplete');
+check(/subscription stays unchanged/i.test(storeText)&&/do not disappear/i.test(storeText),'Credit Store does not explain persistent one-time top-ups');
+await page.click('#v85-store [data-v85-pack="boost"]');
+check(await visible('#v72-modal.open',3000),'Unauthenticated credit purchase did not route to account authentication');
+check(await page.evaluate(()=>sessionStorage.getItem('scholark_pending_credit_pack')==='boost'),'Pending credit pack was not preserved across authentication');
+await page.click('#v72-modal .v72-x');
+await page.evaluate(()=>sessionStorage.removeItem('scholark_pending_credit_pack'));
+await page.click('#v85-store .v85-store-x');
+check(await page.locator('#v85-store').evaluate(el=>!el.classList.contains('open')),'Credit Store did not close cleanly');
 
 await page.evaluate(()=>{location.hash='pricing'});
 await page.waitForFunction(()=>location.hash==='#pricing',{timeout:3000});
