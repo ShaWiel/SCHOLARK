@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {createHash} from 'node:crypto';
 
 const previousEmit = http.Server.prototype.emit;
 const buckets = new Map();
@@ -16,18 +17,22 @@ const rules = [
   { match:(m,p)=>m==='POST' && p==='/api/feedback', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
   { match:(m,p)=>m==='GET' && p==='/api/account/export', limit:testMode?30:3, maxBytes:1024, expensive:true },
   { match:(m,p)=>m==='DELETE' && p==='/api/account', limit:testMode?20:3, maxBytes:8*1024, expensive:false },
-  { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:12, maxBytes:8*1024, expensive:false },
-  { match:(m,p)=>m==='POST' && p==='/api/billing/checkout', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
-  { match:(m,p)=>m==='POST' && p==='/api/billing/credits/checkout', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:8, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/checkout', limit:testMode?80:8, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/billing/credits/checkout', limit:testMode?80:8, maxBytes:16*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/finalize', limit:testMode?80:20, maxBytes:16*1024, expensive:false }
 ];
 
 function clientKey(req) {
+  const auth=String(req.headers?.authorization||'').trim();
+  if(/^Bearer\s+\S+/i.test(auth)){
+    try{return 'auth:'+createHash('sha256').update(auth).digest('hex').slice(0,32)}catch{}
+  }
   const cf = String(req.headers?.['cf-connecting-ip'] || '').trim();
-  if (cf) return cf.slice(0,120);
+  if (cf) return 'ip:'+cf.slice(0,120);
   const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
-  if (forwarded) return forwarded.slice(0,120);
-  return String(req.socket?.remoteAddress || 'unknown').slice(0,120);
+  if (forwarded) return 'ip:'+forwarded.slice(0,120);
+  return 'ip:'+String(req.socket?.remoteAddress || 'unknown').slice(0,120);
 }
 
 function securityHeaders(res) {
@@ -35,7 +40,7 @@ function securityHeaders(res) {
   try {
     if (!res.hasHeader('x-content-type-options')) res.setHeader('x-content-type-options','nosniff');
     if (!res.hasHeader('referrer-policy')) res.setHeader('referrer-policy','strict-origin-when-cross-origin');
-    if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','SAMEORIGIN');
+    if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','DENY');
     if (!res.hasHeader('cross-origin-opener-policy')) res.setHeader('cross-origin-opener-policy','same-origin-allow-popups');
     if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
     if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), usb=()');
@@ -43,8 +48,9 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
     if (!res.hasHeader('origin-agent-cluster')) res.setHeader('origin-agent-cluster','?1');
-    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'");
-    if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=15552000; includeSubDomains');
+    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests");
+    if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains; preload');
+    if (!res.hasHeader('x-robots-tag')) res.setHeader('x-robots-tag','noindex, nofollow, noarchive');
   } catch {}
 }
 
@@ -95,12 +101,25 @@ http.Server.prototype.emit = function(type,...args) {
   catch { return previousEmit.call(this,type,...args); }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,jsonMutationGuard:true,tokenHashedRateKeys:true,frameEmbeddingBlocked:true,rateLimitMode:testMode?'test-bypass':'enforced'});
+    return true;
+  }
+
+  if (String(req.url||'').length > 4096) {
+    json(res,414,{ok:false,code:'URI_TOO_LONG',error:'Request URI is too long.'});
     return true;
   }
 
   const rule = rules.find(r => r.match(req.method,url.pathname));
   if (!rule) return previousEmit.call(this,type,...args);
+
+  if (['POST','PUT','PATCH','DELETE'].includes(String(req.method||'').toUpperCase())) {
+    const type=String(req.headers?.['content-type']||'').toLowerCase();
+    if (!type.startsWith('application/json')) {
+      json(res,415,{ok:false,code:'UNSUPPORTED_MEDIA_TYPE',error:'SCHOLARK API mutations require application/json.'});
+      return true;
+    }
+  }
 
   if (!requestOriginAllowed(req)) {
     json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED',error:'Cross-origin request blocked.'});
