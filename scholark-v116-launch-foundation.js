@@ -170,6 +170,15 @@
     if(!localPainted){a.removeAttribute('href');a.textContent='Education source basis';a.title='Source information unavailable';delete a.dataset.sourceVerification}
   }
 
+  let sourceBadgeGeneration=0;
+  function scheduleSourceBadge(){
+    const generation=++sourceBadgeGeneration;
+    [0,40,120,280,600].forEach(ms=>setTimeout(()=>{
+      if(generation!==sourceBadgeGeneration||!document.body.classList.contains('v51-workspace'))return;
+      sourceBadge().catch(()=>{});
+    },ms));
+  }
+
   function privacyHtml(){
     const s=session(),signed=!!s?.access_token,billingEnv=clean(launchHealth?.billing?.environment||'sandbox',30),support=clean(launchHealth?.legal?.supportEmail||'',240),sandbox=billingEnv!=='production',reviewed=!!launchHealth?.legal?.legalReviewValidated;
     const supportCopy=support?'<p><b>Support email:</b> '+esc(support)+'</p>':'<p><b>Support:</b> use the in-app Support form. Add an email address there only if you want a reply outside SCHOLARK.</p>';
@@ -251,7 +260,7 @@
     return !!el.querySelector?.('#v55-topbar,#v51-main,#v51-sidebar,#v51-top-actions,#v29-home-layer,button,input,select,textarea,a[href]');
   }));
   const mo=new MutationObserver(muts=>{if(!launchMutationRelevant(muts))return;clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,110)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
-  addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>setTimeout(sourceBadge,80));addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('scholark:topbar-ready',()=>sync());addEventListener('pageshow',()=>setTimeout(sync,80));
+  addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>scheduleSourceBadge());addEventListener('scholark-country-context-ready',()=>scheduleSourceBadge());addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('scholark:topbar-ready',()=>sync());addEventListener('pageshow',()=>setTimeout(sync,80));
   document.addEventListener('click',e=>{if(!e.target.closest?.('#v116-workspace-help')){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});
   installObservability();[120,600,1400].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_LAUNCH__={health,sources,help:toggleWorkspaceHelp,support:openSupport,feedback:openFeedback,privacy:openPrivacy,service:openService,sync,release:'r208'};
