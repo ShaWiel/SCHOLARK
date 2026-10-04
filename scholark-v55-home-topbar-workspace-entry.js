@@ -45,7 +45,7 @@
     body.v55-public-home #v55-language,html.v55-public-home #v55-language{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
     body.v55-public-home #v29-home-layer,html.v55-public-home #v29-home-layer{top:66px!important;padding-top:0!important}
     .v55-brand{display:flex;align-items:center;gap:10px;font:950 14px/1 Inter;letter-spacing:-.02em;color:#fff}.v55-brand-logo{display:block;width:42px;height:42px;object-fit:contain;flex:0 0 42px}.v55-brand small{display:block;font:800 7px/1 Inter;color:#a9b1bd;letter-spacing:.12em;margin-top:4px}
-    .v55-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}#v117-store-return-home,#v117-store-return-workspace{display:none}.v55-select,.v55-btn{height:38px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:0 12px;font:850 9.5px Inter;cursor:pointer;outline:0}.v55-select option{background:#fff;color:#17191f}.v55-select{padding-right:30px;min-width:150px;max-width:220px}.v55-btn.dark{background:#c9ff6a;color:#17191f;border-color:#c9ff6a}.v55-btn.dark b{color:#17191f}.v55-account-wrap{position:relative}.v55-menu{position:absolute;right:0;top:46px;width:245px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:18px;padding:10px;box-shadow:0 24px 70px rgba(25,20,55,.16);display:none}.v55-account-wrap.open .v55-menu{display:block}.v55-menu-head{padding:9px 10px 12px;border-bottom:1px solid rgba(23,25,31,.08);margin-bottom:7px}.v55-menu-head b{font:900 11px Inter}.v55-menu-head span{display:block;margin-top:4px;font:650 8.5px Inter;color:#777}.v55-menu button{width:100%;border:0;background:transparent;text-align:left;border-radius:10px;padding:10px;font:800 9px Inter;cursor:pointer;color:#292631}.v55-menu button:hover{background:#f3f1fa}.v55-menu button.danger{color:#8b342d}
+    .v55-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}#v117-store-return-home,#v117-store-return-workspace{display:none}.v55-select,.v55-btn{height:38px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:0 12px;font:850 9.5px Inter;cursor:pointer;outline:0}.v55-select option{background:#fff;color:#17191f}.v55-select{padding-right:30px;min-width:150px;max-width:220px}.v55-btn.dark{background:#c9ff6a;color:#17191f;border-color:#c9ff6a}.v55-btn.dark b{color:#17191f}#v55-auth[hidden]{display:none!important}.v55-account-wrap{position:relative}.v55-menu{position:absolute;right:0;top:46px;width:245px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:18px;padding:10px;box-shadow:0 24px 70px rgba(25,20,55,.16);display:none}.v55-account-wrap.open .v55-menu{display:block}.v55-menu-head{padding:9px 10px 12px;border-bottom:1px solid rgba(23,25,31,.08);margin-bottom:7px}.v55-menu-head b{font:900 11px Inter}.v55-menu-head span{display:block;margin-top:4px;font:650 8.5px Inter;color:#777}.v55-menu button{width:100%;border:0;background:transparent;text-align:left;border-radius:10px;padding:10px;font:800 9px Inter;cursor:pointer;color:#292631}.v55-menu button:hover{background:#f3f1fa}.v55-menu button.danger{color:#8b342d}
     #v55-workspace-cta{max-width:1240px;margin:24px auto 88px;padding:0 28px;box-sizing:border-box}.v55-entry{width:100%;border:0;border-radius:28px;padding:28px 30px;background:linear-gradient(118deg,#17191f,#2a2450 62%,#4939a5);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px;text-align:left;cursor:pointer;box-shadow:0 26px 80px rgba(42,32,104,.18);transition:transform .22s ease,box-shadow .22s ease}.v55-entry:hover{transform:translateY(-3px);box-shadow:0 34px 95px rgba(42,32,104,.27)}.v55-entry small{display:block;color:#c9ff6a;font:950 8px/1 Inter;letter-spacing:.15em;margin-bottom:8px}.v55-entry strong{display:block;font:950 clamp(28px,4vw,46px)/.95 Inter;letter-spacing:-.045em}.v55-entry>div{min-width:0}.v55-entry p{margin:9px 0 0;color:#d2cfda;font:650 10.5px/1.5 Inter;max-width:900px}.v55-entry-arrow{width:58px;height:58px;border-radius:18px;background:#c9ff6a;color:#17191f;display:grid;place-items:center;flex:0 0 58px;font:950 28px/1 Inter}
     @media(max-width:900px){#v55-topbar{min-height:62px;padding:9px 12px;align-items:flex-start}.v55-brand small{display:none}.v55-actions{gap:5px;max-width:70%}.v55-select{min-width:125px;max-width:170px}.v55-btn{padding:0 9px}.v55-account-label{display:none}body.v55-public-home #v29-home-layer,html.v55-public-home #v29-home-layer{top:62px!important;padding-top:0!important}#v55-workspace-cta{padding:0 12px;margin-bottom:64px}.v55-entry{padding:22px 20px;border-radius:22px;align-items:flex-start}.v55-entry strong{font-size:clamp(26px,7vw,40px)}.v55-entry-arrow{width:48px;height:48px;flex-basis:48px}}@media(max-width:560px){#v55-topbar{flex-wrap:wrap}body.v55-public-home #v29-home-layer,html.v55-public-home #v29-home-layer{top:108px!important}.v55-brand{width:100%}.v55-actions{width:100%;max-width:none;justify-content:stretch}.v55-select{flex:1;max-width:none}.v55-entry{display:grid;grid-template-columns:minmax(0,1fr) auto}.v55-entry p{font-size:9.5px}}
   `;
@@ -83,17 +83,30 @@
     return `<div class="v55-menu-head"><b>SCHOLARK Account</b><span>${on?t.signedIn:t.signedOut} · ${plan} plan</span></div><button data-v55-account="manage">${t.manage}</button><button data-v55-account="plans">${t.plans}</button>${on?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`;
   }
 
+  function pruneTopbarDuplicates(){
+    const bars=[...document.querySelectorAll('#v55-topbar')];
+    let keep=topbar?.isConnected?topbar:(bars[0]||null);
+    for(const bar of bars){if(bar!==keep)bar.remove()}
+    if(keep&&keep.isConnected)topbar=keep;
+    return keep;
+  }
+  function removePublicTopbar(){
+    document.querySelectorAll('#v55-topbar').forEach(el=>el.remove());
+    document.querySelectorAll('.v116-public-actions').forEach(el=>el.remove());
+    topbar=accountWrap=authButton=null;
+  }
   function buildTopbar(){
+    pruneTopbarDuplicates();
     if(topbar?.isConnected)return;
     topbar=$('#v55-topbar');
     if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);authButton=$('#v55-auth',topbar);return}
     topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholark-logo.png" alt="SCHOLARK logo"><div>SCHOLARK<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><button type="button" class="v117-store-return" id="v117-store-return-home" aria-label="Return to Homepage"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span></button><button type="button" class="v117-store-return primary" id="v117-store-return-workspace" aria-label="Return to Workspace"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span></button><div class="v55-account-wrap"><button class="v55-btn" id="v55-account" data-sch-i18n-owned="1"><span class="v55-account-label"></span> ▾</button><div class="v55-menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
-    document.body.appendChild(topbar);
+    document.body.appendChild(topbar);pruneTopbarDuplicates();
     queueMicrotask(()=>window.dispatchEvent(new CustomEvent('scholark:topbar-ready')));
     const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=languageRows().some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
     accountWrap=$('.v55-account-wrap',topbar);$('#v55-account',topbar).onclick=e=>{e.stopPropagation();accountWrap.classList.toggle('open');$('.v55-menu',topbar).innerHTML=accountMenu()};
     $('.v55-menu',topbar).addEventListener('click',e=>{const b=e.target.closest('[data-v55-account]');if(!b)return;const a=b.dataset.v55Account;if(a==='manage'){if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){const t=topbarCopy(),langName=languageRows().find(x=>x[0]===topbarCode())?.[1]||topbarCode();$('.v55-menu',topbar).innerHTML=`<div class="v55-menu-head"><b>${t.settings||TOPBAR_SOURCE.settings}</b><span>${t.plan||TOPBAR_SOURCE.plan}: ${(window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase()} · ${t.language||TOPBAR_SOURCE.language}: ${langName}</span></div><button data-v55-account="plans">${t.plans}</button>${signedIn()?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>'}`}}else if(a==='plans'){accountWrap.classList.remove('open');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}else if(a==='signin'){accountWrap.classList.remove('open');openAuth('signin')}else if(a==='signout'){accountWrap.classList.remove('open');doSignOut();setTimeout(syncAuth,80)}});
-    authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(signedIn())doSignOut();else openAuth('signin');setTimeout(syncAuth,80)};
+    authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(!signedIn())openAuth('signin');setTimeout(syncAuth,80)};
     if(!window.__SCHOLARK_V55_DOC_CLICK_BOUND__){
       window.__SCHOLARK_V55_DOC_CLICK_BOUND__=true;
       document.addEventListener('click',e=>{if(accountWrap&&!accountWrap.contains(e.target))accountWrap.classList.remove('open')});
@@ -132,8 +145,8 @@
   function scheduleTopbarRepair(delay=40){
     clearTimeout(topbarRepairTimer);
     topbarRepairTimer=setTimeout(()=>{
-      if(!publicHome())return;
-      buildTopbar();ensureLanguageSelector();bindCopyObserver();
+      if(!publicHome()){removePublicTopbar();return}
+      buildTopbar();ensureLanguageSelector();bindCopyObserver();pruneTopbarDuplicates();
       const bar=$('#v55-topbar');if(bar){if(bar.style.visibility)bar.style.removeProperty('visibility');if(bar.style.opacity)bar.style.removeProperty('opacity')}
     },delay);
   }
@@ -162,11 +175,15 @@
     if(!topbar?.isConnected)return;
     const t=topbarCopy(),on=signedIn(),accountLabel=$('.v55-account-label',topbar),state=(on?'in:':'out:')+(localStorage.getItem('scholark_ui_language')||'nl');
     if(accountLabel&&accountLabel.textContent!==t.account)accountLabel.textContent=t.account;
-    const expectedAuth=on?t.signout:t.signin;
-    if(authButton&&(authButton.dataset.v55State!==state||text(authButton)!==expectedAuth)){
-      authButton.dataset.v55State=state;
-      authButton.innerHTML=on?t.signout:'<b>'+t.signin+'</b>';
-      authButton.title=expectedAuth+' · SCHOLARK';
+    const expectedAuth=t.signin;
+    if(authButton){
+      authButton.hidden=on;
+      authButton.setAttribute('aria-hidden',on?'true':'false');
+      if(!on&&(authButton.dataset.v55State!==state||text(authButton)!==expectedAuth)){
+        authButton.dataset.v55State=state;
+        authButton.innerHTML='<b>'+t.signin+'</b>';
+        authButton.title=expectedAuth+' · SCHOLARK';
+      }
     }
     if(accountWrap?.classList.contains('open')){
       const menu=$('.v55-menu',topbar),html=accountMenu();if(menu&&menu.innerHTML!==html)menu.innerHTML=html;
@@ -196,11 +213,21 @@
   }
 
   function sync(){
+    const home=publicHome();
+    document.body.classList.toggle('v55-public-home',home);document.documentElement.classList.toggle('v55-public-home',home);
+    $('#v41-dashboard-entry')?.remove();
+    if(!home){
+      accountWrap?.classList.remove('open');
+      removePublicTopbar();
+      suppressLegacyHeader();
+      return;
+    }
+    document.querySelectorAll('#v51-top-actions,#v116-workspace-help').forEach(el=>el.remove());
     buildTopbar();
     ensureLanguageSelector();
-    $('#v41-dashboard-entry')?.remove();
-    const home=publicHome();document.body.classList.toggle('v55-public-home',home);document.documentElement.classList.toggle('v55-public-home',home);
-    if(home){ensureWorkspaceCTA();suppressLegacyHeader();syncTopbarCopy()}else{suppressLegacyHeader();accountWrap?.classList.remove('open')}
+    const store=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0]==='credit-store';
+    if(!store)ensureWorkspaceCTA();
+    suppressLegacyHeader();syncTopbarCopy();pruneTopbarDuplicates();
   }
 
   function prepareWorkspaceRoute(reason){
