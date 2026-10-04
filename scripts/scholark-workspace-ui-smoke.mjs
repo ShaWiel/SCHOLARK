@@ -88,12 +88,15 @@ async function checkTransitionSingletons(label){
       storePage:counts('#v117-credit-store-page'),workspaceMain:counts('#v51-main'),workspaceSidebar:counts('#v51-sidebar'),
       wallet:counts('#v51-sidebar .v85-wallet'),dashCredit:counts('#v51-main [data-v51-page="dashboard"] .v85-dash'),
       langbox:counts('#v51-sidebar .v90-langbox'),country:counts('#v51-sidebar #v96-side-country'),
-      topActions:counts('#v51-top-actions'),workspaceHelp:counts('#v51-top-actions #v116-workspace-help'),sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
+      topActions:counts('#v51-top-actions'),workspaceHelp:counts('#v51-top-actions #v116-workspace-help'),publicHelp:counts('#v55-topbar .v116-public-actions'),storeBar:counts('#v117-credit-store-page .v117-storebar'),sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
+      visibleTopbarSurfaces:[...document.querySelectorAll('#v55-topbar,#v51-top-actions,.v117-storebar')].filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0}).length,
       connected:counts('.v114-connect'),storeClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
     };
   });
-  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','topActions','workspaceHelp','onboarding','connected'];
+  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','topActions','workspaceHelp','publicHelp','onboarding','connected'];
   check(state.sideActions===0,label+': legacy Workspace sidebar help actions returned '+JSON.stringify(state));
+  check(state.storeBar===0,label+': duplicate internal Credit Store bar returned '+JSON.stringify(state));
+  check(state.visibleTopbarSurfaces<=1,label+': more than one topbar surface is visible '+JSON.stringify(state));
   check(maxOne.every(k=>state[k]<=1),label+': duplicate transition surfaces '+JSON.stringify(state));
   return state;
 }
@@ -187,6 +190,8 @@ check(await visible('#v117-credit-store-page',3000),'Dedicated Credit Store page
 check(await visible('#v55-topbar',3000),'Homepage topbar disappeared on the Credit Store page');
 check(await page.locator('#v117-credit-store-page [data-v117-pack]').count()===6,'Credit Store should expose exactly six top-up packs');
 check(await page.locator('#v117-store-dock').count()===0,'Legacy Credit Store bottom navigation dock still exists');
+check(await page.locator('#v117-credit-store-page .v117-storebar').count()===0,'Duplicate internal Credit Store navigation bar still exists');
+check(await page.locator('#v51-top-actions').count()===0,'Workspace topbar leaked into Credit Store');
 check(await page.locator('#v117-store-return-workspace').count()===1,'Credit Store Workspace return action is missing from the topbar');
 check(await page.locator('#v117-store-return-home').count()===1,'Credit Store Homepage return action is missing from the topbar');
 check(await visible('#v117-store-return-workspace',3000)&&await visible('#v117-store-return-home',3000),'Credit Store return actions are not visible');
@@ -322,32 +327,51 @@ check((await page.locator('#v90-switch-copy').innerText()).includes('Dutch'),'Du
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='nl',{timeout:4000});
 await page.waitForFunction(()=>!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:4000});
 check((await page.locator('#v55-auth').innerText()).trim()==='Inloggen','Homepage auth action did not return cleanly to Dutch');
+await page.evaluate(()=>{localStorage.setItem('scholark_supabase_session_v2',JSON.stringify({access_token:'ci-signed-in'}));window.__SCHOLARK_V55_TOPBAR__?.syncTopbarCopy?.()});
+check(await page.locator('#v55-auth').evaluate(el=>el.hidden===true),'Signed-in top-level auth button should be hidden');
+await page.click('#v55-account');
+check(/Sign out|Uitloggen/i.test(await page.locator('#v55-topbar .v55-menu').innerText()),'Account menu does not own Sign out while signed in');
+check(!/^(Sign out|Uitloggen)$/i.test((await page.locator('#v55-topbar > .v55-actions').innerText()).trim()),'Standalone top-level Sign out remains visible');
+await page.evaluate(()=>{localStorage.removeItem('scholark_supabase_session_v2');window.__SCHOLARK_V55_TOPBAR__?.syncTopbarCopy?.()});
+await page.keyboard.press('Escape');
 const idleTopbarMutations=await page.evaluate(async()=>{
   const bar=document.querySelector('#v55-topbar');if(!bar)return 999;
   let count=0;const o=new MutationObserver(m=>count+=m.length);o.observe(bar,{subtree:true,childList:true,characterData:true,attributes:true});
   await new Promise(r=>setTimeout(r,700));o.disconnect();return count;
 });
 check(idleTopbarMutations<=1,`Homepage topbar kept mutating while idle: ${idleTopbarMutations} mutations`);
-check(await visible('.v116-public-actions',5000),'Public support/privacy/feedback controls did not mount');
-check(await page.locator('[data-v116-public-support]').count()===1,'Public Support action did not mount');
+check(await visible('.v116-public-actions',5000),'Public Help & Support control did not mount');
+check(await page.locator('.v116-public-help-toggle').count()===1,'Public Help & Support toggle should be a singleton');
+check(await page.locator('[data-v116-public-support],[data-v116-public-feedback],[data-v116-public-privacy]').count()===0,'Legacy standalone public support/privacy/feedback actions remain');
+await page.click('.v116-public-help-toggle');
+check(await page.locator('.v116-public-help-menu [data-v116-public-help]').count()===4,'Public Help & Support menu should contain four actions');
+const publicHelpText=(await page.locator('.v116-public-help-menu').innerText()).replace(/\s+/g,' ');
+check(/Support/i.test(publicHelpText)&&/Feedback/i.test(publicHelpText)&&/Privacy\s*&\s*Terms/i.test(publicHelpText)&&/Service status/i.test(publicHelpText),'Public Help & Support menu content is incomplete');
 await page.waitForTimeout(120);
 check(await page.locator('#v41-home-pricing .v115-env').count()>=2,'Sandbox checkout disclosure badges did not mount on paid plans');
 check((await page.locator('#v41-home-pricing .v115-env').first().innerText()).includes('NO REAL CHARGE'),'Sandbox checkout disclosure is unclear');
-await page.click('[data-v116-public-privacy]');
-check(await visible('#v116-dialog.open',3000),'Privacy & terms dialog did not open');
+await page.click('[data-v116-public-help="privacy"]');
+check(await visible('#v116-dialog.open',3000),'Privacy & terms dialog did not open from Help & Support');
 check((await page.locator('#v116-dialog').getAttribute('role'))==='dialog'&&(await page.locator('#v116-dialog').getAttribute('aria-modal'))==='true','Privacy dialog accessibility semantics missing');
 const privacyText=(await page.locator('#v116-dialog').innerText()).toLowerCase();
 check(privacyText.includes('your data stays under your control')&&privacyText.includes('privacy notice')&&privacyText.includes('service providers & ai')&&privacyText.includes('retention, export & deletion')&&privacyText.includes('product terms')&&privacyText.includes('legal review status')&&privacyText.includes('paddle'),'Privacy/product/billing notice is incomplete');
 await page.keyboard.press('Escape');
 check(await page.locator('#v116-dialog.open').count()===0,'Privacy dialog did not close with Escape');
-await page.click('[data-v116-public-support]');
-check(await visible('#v116-dialog.open .v116-feedback',3000),'Support dialog did not open');
+await page.click('.v116-public-help-toggle');
+await page.click('[data-v116-public-help="support"]');
+check(await visible('#v116-dialog.open .v116-feedback',3000),'Support dialog did not open from Help & Support');
 check(await page.locator('#v116-dialog input[type="email"]').count()===1,'Support reply-email field missing');
 await page.locator('#v116-dialog textarea').fill('CI support flow check');
 await page.click('[data-v116-support-submit]');
 await page.waitForFunction(()=>!document.querySelector('#v116-dialog')?.classList.contains('open'),{timeout:4000});
-await page.click('[data-v116-public-feedback]');
-check(await visible('#v116-dialog.open .v116-feedback',3000),'Feedback dialog did not open');
+await page.click('.v116-public-help-toggle');
+await page.click('[data-v116-public-help="feedback"]');
+check(await visible('#v116-dialog.open .v116-feedback',3000),'Feedback dialog did not open from Help & Support');
+await page.keyboard.press('Escape');
+await page.click('.v116-public-help-toggle');
+await page.click('[data-v116-public-help="service"]');
+check(await visible('#v116-dialog.open',3000),'Service status did not open from Help & Support');
+check(/service status|operational/i.test(await page.locator('#v116-dialog').innerText()),'Service status dialog content missing');
 await page.keyboard.press('Escape');
 timings.push(['home-topbar-boot',topbarReadyMs]);
 
@@ -1239,6 +1263,7 @@ await page.waitForFunction(()=>!!document.querySelector('#v51-top-actions #v116-
 await page.waitForTimeout(140);
 
 check(await page.locator('#v51-top-actions').count()===1,'Workspace topbar actions missing');
+check(await page.locator('#v55-topbar').count()===0,'Public/Home topbar leaked into Workspace');
 check(await page.locator('#v51-top-actions #v51-help').count()===1,'Workspace Help & Support action missing');
 check(await page.locator('#v51-top-actions #v51-account').count()===1,'Workspace Account action missing');
 check(await page.locator('#v51-top-actions #v51-home').count()===1,'Workspace Return to homepage action missing');
@@ -1269,10 +1294,11 @@ await mobile.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl'
 try{
   await mobile.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.waitForSelector('#v55-topbar',{state:'visible',timeout:8000});
-  await mobile.waitForFunction(()=>document.querySelectorAll('.v116-public-actions button').length===3,null,{timeout:5000});
-  const homeMobile=await mobile.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,actions:document.querySelectorAll('.v116-public-actions button').length}));
+  await mobile.waitForFunction(()=>document.querySelectorAll('.v116-public-help-toggle').length===1,null,{timeout:5000});
+  const homeMobile=await mobile.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,topLevelHelp:document.querySelectorAll('.v116-public-help-toggle').length,helpItems:document.querySelectorAll('.v116-public-help-menu [data-v116-public-help]').length,topbars:[...document.querySelectorAll('#v55-topbar,#v51-top-actions,.v117-storebar')].filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'}).length}));
   check(homeMobile.sw<=homeMobile.w+4,`Mobile homepage has horizontal overflow: ${JSON.stringify(homeMobile)}`);
-  check(homeMobile.actions===3,'Mobile public support/privacy/feedback actions missing');
+  check(homeMobile.topLevelHelp===1&&homeMobile.helpItems===4,'Mobile Help & Support grouping is incomplete');
+  check(homeMobile.topbars===1,'Mobile Home shows multiple topbar surfaces');
   await mobile.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
   await mobile.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
