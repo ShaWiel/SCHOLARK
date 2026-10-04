@@ -125,7 +125,7 @@
     const ls=$('#v93-level');if(ls&&[...ls.options].some(o=>o.value===level))ls.value=level;
     $('#v93-target').onchange=()=>{const code=$('#v93-target').value;localStorage.setItem('scholark_v93_target',code);syncHeroLanguage();renderStats(code);loadCloudProgress(code)};
     $('#v93-level').onchange=syncHeroLanguage;
-    $('[data-v93-preset]').forEach(b=>b.onclick=()=>{const topic=$('#v93-topic');if(!topic)return;topic.value=b.dataset.v93Preset||'';topic.focus();topic.dispatchEvent(new Event('input',{bubbles:true}))});
+    $$('[data-v93-preset]').forEach(b=>b.onclick=()=>{const topic=$('#v93-topic');if(!topic)return;topic.value=b.dataset.v93Preset||'';topic.focus();topic.dispatchEvent(new Event('input',{bubbles:true}))});
     $('#v93-swap').onclick=()=>{const target=$('#v93-target'),supportSel=$('#v93-support'),a=target.value,b=supportSel.value;if([...target.options].some(o=>o.value===b)&&[...supportSel.options].some(o=>o.value===a)){target.value=b;supportSel.value=a;target.dispatchEvent(new Event('change',{bubbles:true}))}};
     $('#v93-build').onclick=buildLesson;syncHeroLanguage();renderStats(lastTarget);loadCloudProgress(lastTarget);renderHistory();
     window.__SCHOLARK_I18N__?.apply?.(host);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
