@@ -1228,6 +1228,16 @@ await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.d
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
 await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:8000});
 
+// Deliberately remove the Help action once. V51 must repair only the canonical
+// topbar, then V116 must re-wrap Help & Support without duplicating Workspace.
+await page.evaluate(()=>document.querySelector('#v51-help')?.remove());
+await page.waitForFunction(()=>{
+  const top=document.querySelector('#v51-top-actions');
+  return top?.dataset.v51TopActionsReady==='1'&&!!top.querySelector('#v51-help')&&!!top.querySelector('#v51-account')&&!!top.querySelector('#v51-home');
+},null,{timeout:5000});
+await page.waitForFunction(()=>!!document.querySelector('#v51-top-actions #v116-workspace-help #v51-help'),null,{timeout:5000});
+await page.waitForTimeout(140);
+
 check(await page.locator('#v51-top-actions').count()===1,'Workspace topbar actions missing');
 check(await page.locator('#v51-top-actions #v51-help').count()===1,'Workspace Help & Support action missing');
 check(await page.locator('#v51-top-actions #v51-account').count()===1,'Workspace Account action missing');
