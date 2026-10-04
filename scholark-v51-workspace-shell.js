@@ -183,6 +183,19 @@
     renderLevels();resetDashboardCanonical();
     return true;
   }
+  function pruneTopActionDuplicates(){
+    if(!topActions?.isConnected)return 0;
+    let removed=0;
+    for(const id of ['v51-help','v51-account','v51-home']){
+      const nodes=[...document.querySelectorAll('#'+id)];
+      const keep=nodes.find(el=>topActions.contains(el))||null;
+      for(const el of nodes){
+        if(el===keep)continue;
+        try{el.remove();removed++}catch{}
+      }
+    }
+    return removed;
+  }
   function ensureTopActions(reason='repair'){
     topActions=keepSingleton('#v51-top-actions',topActions);
     if(!topActions){
@@ -191,11 +204,14 @@
       topActions.setAttribute('aria-label','Workspace actions');
       document.body.appendChild(topActions);
     }
+    pruneTopActionDuplicates();
     let help=$('#v51-help',topActions),account=$('#v51-account',topActions),homeBtn=$('#v51-home',topActions);
     if(!help||!account||!homeBtn){
       topActions.innerHTML='<button type="button" class="v51-top-btn" id="v51-help" aria-haspopup="menu" aria-expanded="false">Help & Support <span>▾</span></button><button type="button" class="v51-top-btn" id="v51-account">Account</button><button type="button" class="v51-top-btn" id="v51-home"><b>⌂</b> Return to homepage</button>';
       help=$('#v51-help',topActions);account=$('#v51-account',topActions);homeBtn=$('#v51-home',topActions);
     }
+    pruneTopActionDuplicates();
+    help=$('#v51-help',topActions);account=$('#v51-account',topActions);homeBtn=$('#v51-home',topActions);
     home=homeBtn;
     if(home)home.onclick=goHome;
     if(account)account.onclick=()=>window.__SCHOLARK_V89_ACCOUNT__?.open?.();
@@ -585,8 +601,8 @@
     forceQuality();const h=route();let id='dashboard';if(h.includes('studio')||h.includes('presentation')||h.includes('webpage')||h.includes('document')||h.includes('report')||h.includes('graphic')||h.includes('social'))id='studio';else if(h.includes('schools'))id='schools';else if(h.includes('study'))id='study';else if(h.includes('book'))id='book';else if(h==='#ai'||h.startsWith('#ai?'))id='ai';else if(h.includes('tutor'))id='tutor';else if(h.includes('education'))id='education';else if(h.includes('language'))id='language';else if(h.includes('planner'))id='planner';else if(h.includes('focus'))id='focus';else if(h.includes('flashcards'))id='flashcards';else if(h.includes('assignments'))id='assignments';else if(h.includes('progress'))id='progress';else if(h.includes('goal'))id='goal';else if(h.includes('project'))id='project';state.active=id;syncNav(id);if(INACTIVE.has(id)){showComingSoon(id);return}if(id==='project'){setCollapsed(false,true);showPage('fallback');setTimeout(()=>{if(route()==='#project'){window.__SCHOLARK_V64_PROJECTS__?.open?.();syncWorkspaceLanguage($('#v51-fallback'))}},0)}else if(id==='dashboard'&&!document.body.classList.contains('v51-native')&&!document.body.classList.contains('v51-studio')&&!document.body.classList.contains('v51-pro'))showPage('dashboard');refreshLogo()
   }
 
-  addEventListener('hashchange',()=>{setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
-  addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
+  addEventListener('hashchange',()=>{if(workspaceRoute())ensureTopActions('hashchange');setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
+  addEventListener('popstate',()=>{if(workspaceRoute())ensureTopActions('popstate');setTimeout(cleanConflicts,40)});
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   let workspaceLanguageTimer=0;
   const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);const run=()=>{if(!workspaceRoute())return;if(document.documentElement.classList.contains('scholark-language-switching')){workspaceLanguageTimer=setTimeout(run,120);return}ensureTopActions('language-refresh');renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()};workspaceLanguageTimer=setTimeout(run,delay)};
@@ -596,17 +612,13 @@
   addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{ensureTopActions('runtime-ready');renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
-  let topActionsRepairTimer=0;
   const topActionsObserver=new MutationObserver(()=>{
     if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
     const top=$('#v51-top-actions');
-    if(top&&$('#v51-help',top)&&$('#v51-account',top)&&$('#v51-home',top))return;
-    clearTimeout(topActionsRepairTimer);
-    topActionsRepairTimer=setTimeout(()=>{
-      if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
-      ensureTopActions('mutation-repair');
-      window.dispatchEvent(new CustomEvent('scholark-workspace-top-actions-ready'));
-    },24);
+    const healthy=!!top&&!!$('#v51-help',top)&&!!$('#v51-account',top)&&!!$('#v51-home',top)&&document.querySelectorAll('#v51-help').length===1&&document.querySelectorAll('#v51-account').length===1&&document.querySelectorAll('#v51-home').length===1;
+    if(healthy)return;
+    ensureTopActions('mutation-repair');
+    window.dispatchEvent(new CustomEvent('scholark-workspace-top-actions-ready'));
   });
   if(document.body)topActionsObserver.observe(document.body,{childList:true,subtree:true});
   else addEventListener('DOMContentLoaded',()=>topActionsObserver.observe(document.body,{childList:true,subtree:true}),{once:true});
