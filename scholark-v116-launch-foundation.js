@@ -251,7 +251,7 @@
   function sync(){
     decorateAccessibility();
     publicActions();
-    if(document.body.classList.contains('v51-workspace')){workspaceHelpActions();removeStandaloneWorkspaceSignOut();renderOnboarding();sourceBadge()}else{$('.v116-workspace-help').forEach(x=>x.remove())}
+    if(document.body.classList.contains('v51-workspace')){workspaceHelpActions();removeStandaloneWorkspaceSignOut();renderOnboarding();scheduleSourceBadge()}else{sourceBadgeGeneration++;$('.v116-workspace-help').forEach(x=>x.remove())}
   }
   const launchMutationRelevant=muts=>muts.some(m=>[...m.addedNodes,...m.removedNodes].some(node=>{
     if(node?.nodeType!==1)return false;
