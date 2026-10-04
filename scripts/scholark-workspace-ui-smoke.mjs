@@ -853,6 +853,8 @@ await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
 await page.click('#v52-tutor-send');
+await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.user').length===1,{timeout:3000}).catch(()=>{});
+await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.ai').length>=2,{timeout:3000}).catch(()=>{});
 check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept a user question');
 check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
 
