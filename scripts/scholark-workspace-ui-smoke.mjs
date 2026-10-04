@@ -394,6 +394,32 @@ check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level str
 check(await page.locator('#v90-language option').count()===74,`Workspace language selector should expose 74 languages`);
 const bootMs=Date.now()-bootStarted;timings.push(['dashboard-boot',bootMs]);check(bootMs<9000,`Dashboard boot took ${bootMs}ms (>9000ms)`);
 
+// Credit wallet must expose the monthly allowance separately from purchased top-ups.
+await page.route('**/api/billing/status',async route=>{
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,wallet:{plan:'plus',balance:475,monthly_balance:225,topup_balance:250,monthly_allowance:300,cycle_started_at:'2026-10-01T00:00:00Z'}})});
+});
+await page.evaluate(async()=>{
+  window.__schWalletSmokeOrig={test:window.__SCHOLARK_TEST_MODE__,cloud:window.__SCHOLARK_V72_CLOUD__};
+  const original=window.__SCHOLARK_V72_CLOUD__||{};
+  window.__SCHOLARK_TEST_MODE__=false;
+  window.__SCHOLARK_V72_CLOUD__={...original,currentSession:()=>({access_token:'wallet-ci-token',user:{id:'ci-user'}}),session:async()=>({access_token:'wallet-ci-token',user:{id:'ci-user'}})};
+  await window.__SCHOLARK_CREDITS__?.load?.();
+});
+await page.waitForFunction(()=>document.querySelector('.v85-wallet [data-v85-wallet-breakdown="1"]'),null,{timeout:5000});
+await page.click('.v85-wallet');
+const walletBreakdown=(await page.locator('.v85-wallet').innerText()).replace(/\s+/g,' ');
+check(/Monthly credits left/i.test(walletBreakdown)&&/225\s*\/\s*300/.test(walletBreakdown),'Wallet does not show monthly credits left');
+check(/Extra credits left/i.test(walletBreakdown)&&/250/.test(walletBreakdown),'Wallet does not show extra credits left');
+check(/Total available/i.test(walletBreakdown)&&/475/.test(walletBreakdown),'Wallet total does not match monthly + extra credits');
+await page.evaluate(()=>{
+  const orig=window.__schWalletSmokeOrig||{};
+  window.__SCHOLARK_TEST_MODE__=orig.test;
+  window.__SCHOLARK_V72_CLOUD__=orig.cloud;
+  delete window.__schWalletSmokeOrig;
+  window.__SCHOLARK_CREDITS__?.render?.();
+});
+await page.unroute('**/api/billing/status');
+
 const groups=await page.locator('.v51-levels.v51-levels-suriname [data-v51-group]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-v51-group')));
 check(JSON.stringify(groups)===JSON.stringify(['basic','voj','vos','higher']),`Unexpected Suriname groups: ${groups.join(',')}`);
 const levels=await page.locator('.v51-levels.v51-levels-suriname [data-level]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-level')));
