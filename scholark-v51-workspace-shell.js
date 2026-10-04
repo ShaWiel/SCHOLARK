@@ -199,7 +199,7 @@
 
   function build(){
     sanitizeWorkspace('build');
-    if(side?.isConnected&&main?.isConnected)return;
+    if(side?.isConnected&&main?.isConnected&&topActions?.isConnected)return;
     // A partial shell is more dangerous than rebuilding it: it lets legacy
     // recovery layers create a second surface beside the remaining half.
     [side,main,topActions,toggle].filter(x=>x?.isConnected).forEach(x=>x.remove());
