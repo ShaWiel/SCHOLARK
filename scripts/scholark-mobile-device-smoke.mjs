@@ -40,6 +40,8 @@ async function noCriticalDupes(page,label){
     store:document.querySelectorAll('#v117-credit-store-page').length,
     main:document.querySelectorAll('#v51-main').length,
     side:document.querySelectorAll('#v51-sidebar').length,
+    topActions:document.querySelectorAll('#v51-top-actions').length,
+    workspaceHelp:document.querySelectorAll('#v51-top-actions #v116-workspace-help').length,
     language:document.querySelectorAll('#v55-language').length,
     storeHome:document.querySelectorAll('#v117-store-return-home').length,
     storeWorkspace:document.querySelectorAll('#v117-store-return-workspace').length
@@ -132,6 +134,13 @@ for(const profile of profiles){
     await page.click('#v117-store-return-workspace');
     await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
     check(await visible(page,'#v51-main [data-v51-page="dashboard"].active',12000),profile.name+': Workspace dashboard did not open');
+    check(await visible(page,'#v51-top-actions',6000),profile.name+': Workspace topbar actions missing');
+    check(await page.locator('#v51-help').count()===1&&await page.locator('#v51-account').count()===1&&await page.locator('#v51-home').count()===1,profile.name+': Workspace topbar ownership incomplete');
+    await page.click('#v51-help');
+    check(await page.locator('#v116-workspace-help [data-v116-help-action]').count()===4,profile.name+': Help & Support menu is incomplete');
+    await page.keyboard.press('Escape');
+    const mobileStandaloneSignout=await page.evaluate(()=>[...document.querySelectorAll('button,a,[role="button"]')].filter(el=>!el.closest('#v89-account,#v72-modal,#v116-workspace-help')&&/^(sign\s*out|log\s*out|logout|uitloggen)$/i.test((el.textContent||'').trim())).length);
+    check(mobileStandaloneSignout===0,profile.name+': standalone Workspace Sign out remains');
     await checkViewport(page,profile.name+' dashboard');
     await noCriticalDupes(page,profile.name+' dashboard');
 
