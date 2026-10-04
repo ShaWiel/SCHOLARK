@@ -276,5 +276,5 @@
   },true);
   if(document.body)syncRoute();else addEventListener('DOMContentLoaded',syncRoute,{once:true});
   [120,480].forEach(ms=>setTimeout(syncRoute,ms));
-  window.__SCHOLARK_CREDIT_STORE__={open:routeStore,close:routeHome,workspace:routeWorkspace,render,sync:syncRoute,restore:restoreStoreSurface,isOpen:isStore,stableNavigation:true,release:'r211'};
+  window.__SCHOLARK_CREDIT_STORE__={open:routeStore,close:routeHome,workspace:routeWorkspace,render,sync:syncRoute,restore:restoreStoreSurface,isOpen:isStore,stableNavigation:true,release:'r212'};
 })();
