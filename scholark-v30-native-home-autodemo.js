@@ -175,16 +175,24 @@
     const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
     const step=promptSteps[mode]||0,p=bank[step%bank.length];promptSteps[mode]=step+1;return p;
   }
-  function autoType(mode){
-    const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
-    clearInterval(typingTimer);input.value='';resizePrompt(input);const p=nextPrompt(mode);
-    if(document.documentElement.classList.contains('scholark-performance-safe')){input.classList.remove('v30-typing-cursor');input.value=p;resizePrompt(input);return}
+  function prefersReducedTyping(){try{return !!matchMedia?.('(prefers-reduced-motion: reduce)')?.matches}catch{return false}}
+  function typePrompt(input,p,{reset=true}={}){
+    if(!input||document.activeElement===input)return;
+    clearInterval(typingTimer);typingTimer=null;
+    if(reset){input.value='';resizePrompt(input)}
+    if(prefersReducedTyping()){input.classList.remove('v30-typing-cursor');input.value=p;resizePrompt(input);return}
+    const lite=document.documentElement.classList.contains('scholark-performance-safe');
+    const step=lite?2:1,delay=lite?58:42;
     input.classList.add('v30-typing-cursor');let i=0;
     typingTimer=setInterval(()=>{
-      if(document.activeElement===input){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');return;}
-      input.value=p.slice(0,++i);resizePrompt(input);
-      if(i>=p.length){clearInterval(typingTimer);input.classList.remove('v30-typing-cursor');resizePrompt(input);}
-    },42);
+      if(document.activeElement===input||document.hidden||!isHome()){clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');return}
+      i=Math.min(p.length,i+step);input.value=p.slice(0,i);resizePrompt(input);
+      if(i>=p.length){clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');resizePrompt(input)}
+    },delay);
+  }
+  function autoType(mode){
+    const input=$('#v29-prompt');if(!input||document.activeElement===input||Date.now()<pausedUntil)return;
+    typePrompt(input,nextPrompt(mode));
   }
 
   function cycleCapabilities(){
@@ -355,10 +363,9 @@
     // Only replace language-sensitive text for the frame that is already visible.
     const input=$('#v29-prompt');
     if(input&&document.activeElement!==input){
-      clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');
       const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
       const step=Math.max(0,(promptSteps[mode]||1)-1);
-      input.value=bank[step%bank.length];resizePrompt(input);
+      typePrompt(input,bank[step%bank.length]);
     }
     const lc=uiLanguage(),schoolRows=schoolLiveLabels[lc]||schoolLiveLabels.en,aheadRows=aheadLiveLabels[lc]||aheadLiveLabels.en;
     const displayed=Math.max(0,futureStep-1)%4;
@@ -376,9 +383,8 @@
     statusStep=0;animateQualitySteps(mode);
     const input=$('#v29-prompt');
     if(input&&document.activeElement!==input){
-      clearInterval(typingTimer);typingTimer=null;input.classList.remove('v30-typing-cursor');
       const language=uiLanguage(),bank=promptBanks[mode]?.[language]||promptBanks[mode]?.en||['Ask ARKI or open a SCHOLARK learning tool.'];
-      input.value=bank[0];resizePrompt(input);
+      typePrompt(input,bank[0]);
     }
   }
 
