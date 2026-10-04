@@ -688,6 +688,7 @@
     if(sel)syncSelectOptions(sel,countryOptions(c),c,'country|dashboard|'+uiLang()+'|'+c,ui.country)
     const title=$('.v96-country-copy b',wrap),label=$('.v96-country-label',wrap),note=$('#v96-system-note',wrap);
     if(title)title.textContent=ui.system;if(label)label.textContent=ui.country;if(note)note.textContent=countryName(c)+' · '+ui.note;
+    queueMicrotask(()=>{if(wrap.isConnected)window.dispatchEvent(new CustomEvent('scholark-country-context-ready',{detail:{country:c,language:uiLang()}}))});
   }
   function applyLevels(){
     const c=currentCountry(),sys=system(c),ui=LEVEL_COPY[uiLang()]||LEVEL_COPY.en;
