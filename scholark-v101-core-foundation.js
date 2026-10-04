@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r212';
+  const RELEASE = 'r214';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, duplicateRepairs:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -56,6 +56,7 @@
     ['#v55-topbar .v55-account-wrap','topbar-account'],
     ['#v55-topbar .v85-topbar-credit','topbar-credit'],
     ['#v51-sidebar .v85-wallet','workspace-credit-wallet'],
+    ['.v85-topbar-wallet-panel','wallet-panel'],
     ['#v51-main [data-v51-page="dashboard"] .v85-dash','dashboard-credit-status'],
     ['#v51-sidebar .v90-langbox','workspace-language-box'],
     ['#v51-sidebar #v96-side-country','workspace-country-box'],
@@ -318,6 +319,7 @@
       route:info.raw,
       routeKind:info.kind,
       runtimeVersion:window.__SCHOLARK_RUNTIME__?.version || '',
+      releaseAligned:String(window.__SCHOLARK_RUNTIME__?.version||'').endsWith('-'+RELEASE),
       runtimeErrors,
       surfaceHealthy:surfaceHealthy(info),
       connectedCore:publicSurface||!!window.__SCHOLARK_WORKSPACE_CORE__,
@@ -349,7 +351,7 @@
       localErrors:state.errors.slice(-8),
       lastRepairAt:state.lastRepairAt || null
     };
-    report.ok = !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.languageResilience && report.globalCountryRegistry && report.globalSchools && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable && report.staleSelectorLocks===0 && report.duplicateCriticalIds.length===0 && report.duplicateCriticalSelectors.length===0;
+    report.ok = report.releaseAligned && !runtimeErrors.length && report.surfaceHealthy && report.connectedCore && report.connectedExperience && report.workspaceRootLocked && report.localeControls && report.language74 && report.languageResilience && report.globalCountryRegistry && report.globalSchools && report.countryLevels && report.visualSystem && report.visualHealthy && report.orchestrator && report.orchestratorHealthy && report.orchestratorSelftest && report.hardening && report.hardeningHealthy && report.qualityMaxGone && report.previewHealthy && report.schoolsScrollable && report.staleSelectorLocks===0 && report.duplicateCriticalIds.length===0 && report.duplicateCriticalSelectors.length===0;
     try { sessionStorage.setItem('scholark_core_health', JSON.stringify(report)); } catch {}
     return report;
   }
