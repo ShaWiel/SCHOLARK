@@ -40,7 +40,7 @@ async function visible(sel,timeout=7000){
 async function checkWorkspaceSingletons(label){
   const state=await page.evaluate(()=>{
     const shown=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.02&&r.width>0&&r.height>0};
-    const ids=['v51-main','v51-sidebar','v51-top-actions','v51-home','v51-side-toggle'];
+    const ids=['v51-main','v51-sidebar','v51-sidebar-actions','v51-home','v51-side-toggle'];
     const idCounts=Object.fromEntries(ids.map(id=>[id,document.querySelectorAll('#'+id).length]));
     const byParent={};
     [...document.querySelectorAll('.v111-live[data-v111-owner]')].forEach(el=>{const p=el.parentElement;if(!p)return;const key=p.id||p.className||p.tagName;byParent[key]=(byParent[key]||0)+1});
@@ -51,7 +51,7 @@ async function checkWorkspaceSingletons(label){
       duplicateTools,
       languageBoxes:document.querySelectorAll('#v51-sidebar .v90-langbox').length,
       countryBoxes:document.querySelectorAll('#v51-sidebar #v96-side-country').length,
-      workspaceHelp:document.querySelectorAll('#v51-top-actions #v116-workspace-help').length,
+      workspaceHelp:document.querySelectorAll('#v51-sidebar-actions #v116-workspace-help').length,
       standaloneWorkspaceSignout:[...document.querySelectorAll('button,a,[role="button"]')].filter(el=>!el.closest('#v89-account,#v72-modal,#v116-workspace-help')&&/^(sign\s*out|log\s*out|logout|uitloggen)$/i.test((el.textContent||'').trim())).length,
       onboarding:document.querySelectorAll('#v51-main #v116-onboarding').length,
       connectedBars:document.querySelectorAll('.v114-connect').length,
@@ -88,13 +88,14 @@ async function checkTransitionSingletons(label){
       storePage:counts('#v117-credit-store-page'),workspaceMain:counts('#v51-main'),workspaceSidebar:counts('#v51-sidebar'),
       wallet:counts('#v51-sidebar .v85-wallet'),dashCredit:counts('#v51-main [data-v51-page="dashboard"] .v85-dash'),
       langbox:counts('#v51-sidebar .v90-langbox'),country:counts('#v51-sidebar #v96-side-country'),
-      topActions:counts('#v51-top-actions'),workspaceHelp:counts('#v51-top-actions #v116-workspace-help'),publicHelp:counts('#v55-topbar .v116-public-actions'),storeBar:counts('#v117-credit-store-page .v117-storebar'),sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
+      topActions:counts('#v51-top-actions'),sidebarActions:counts('#v51-sidebar-actions'),workspaceHelp:counts('#v51-sidebar-actions #v116-workspace-help'),publicHelp:counts('#v55-topbar .v116-public-actions'),storeBar:counts('#v117-credit-store-page .v117-storebar'),sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
       visibleTopbarSurfaces:[...document.querySelectorAll('#v55-topbar,#v51-top-actions,.v117-storebar')].filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0}).length,
       connected:counts('.v114-connect'),storeClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
     };
   });
-  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','topActions','workspaceHelp','publicHelp','onboarding','connected'];
+  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','sidebarActions','workspaceHelp','publicHelp','onboarding','connected'];
   check(state.sideActions===0,label+': legacy Workspace sidebar help actions returned '+JSON.stringify(state));
+  check(state.topActions===0,label+': obsolete Workspace topbar returned '+JSON.stringify(state));
   check(state.storeBar===0,label+': duplicate internal Credit Store bar returned '+JSON.stringify(state));
   check(state.visibleTopbarSurfaces<=1,label+': more than one topbar surface is visible '+JSON.stringify(state));
   check(maxOne.every(k=>state[k]<=1),label+': duplicate transition surfaces '+JSON.stringify(state));
@@ -1252,21 +1253,22 @@ await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.d
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
 await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:8000});
 
-// Deliberately remove the Help action once. V51 must repair only the canonical
-// topbar, then V116 must re-wrap Help & Support without duplicating Workspace.
+// Deliberately remove the Help action once. V51 must repair the canonical
+// sidebar actions, then V116 must re-wrap Help & Support without adding a topbar.
 await page.evaluate(()=>document.querySelector('#v51-help')?.remove());
 await page.waitForFunction(()=>{
-  const top=document.querySelector('#v51-top-actions');
-  return top?.dataset.v51TopActionsReady==='1'&&!!top.querySelector('#v51-help')&&!!top.querySelector('#v51-account')&&!!top.querySelector('#v51-home');
+  const box=document.querySelector('#v51-sidebar-actions');
+  return box?.dataset.v51SidebarActionsReady==='1'&&!!box.querySelector('#v51-help')&&!!box.querySelector('#v51-account')&&!!box.querySelector('#v51-home');
 },null,{timeout:5000});
-await page.waitForFunction(()=>!!document.querySelector('#v51-top-actions #v116-workspace-help #v51-help'),null,{timeout:5000});
+await page.waitForFunction(()=>!!document.querySelector('#v51-sidebar-actions #v116-workspace-help #v51-help'),null,{timeout:5000});
 await page.waitForTimeout(140);
 
-check(await page.locator('#v51-top-actions').count()===1,'Workspace topbar actions missing');
+check(await page.locator('#v51-top-actions').count()===0,'Workspace should not have a topbar');
 check(await page.locator('#v55-topbar').count()===0,'Public/Home topbar leaked into Workspace');
-check(await page.locator('#v51-top-actions #v51-help').count()===1,'Workspace Help & Support action missing');
-check(await page.locator('#v51-top-actions #v51-account').count()===1,'Workspace Account action missing');
-check(await page.locator('#v51-top-actions #v51-home').count()===1,'Workspace Return to homepage action missing');
+check(await page.locator('#v51-sidebar-actions').count()===1,'Workspace sidebar action area missing');
+check(await page.locator('#v51-sidebar-actions #v51-help').count()===1,'Workspace Help & Support sidebar action missing');
+check(await page.locator('#v51-sidebar-actions #v51-account').count()===1,'Workspace Account sidebar action missing');
+check(await page.locator('#v51-sidebar-actions #v51-home').count()===1,'Workspace Home sidebar action missing');
 check(await page.locator('#v51-sidebar .v116-side-actions').count()===0,'Legacy Workspace sidebar support/privacy controls remain');
 check(await page.locator('#v51-help').getAttribute('aria-expanded')==='false','Workspace Help & Support should start closed');
 await page.click('#v51-help');
@@ -1303,7 +1305,7 @@ try{
   await mobile.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
   await mobile.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
   const mobileState=await mobile.evaluate(()=>{
-    const visibleButtons=[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active button,#v51-top-actions button')].filter(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}).map(x=>({text:(x.textContent||'').trim().slice(0,40),h:x.getBoundingClientRect().height}));
+    const visibleButtons=[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active button,#v51-sidebar-actions button')].filter(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}).map(x=>({text:(x.textContent||'').trim().slice(0,40),h:x.getBoundingClientRect().height}));
     const main=document.querySelector('#v51-main'),h1=document.querySelector('#v51-main [data-v51-page="dashboard"].active .v51-head h1');
     return {sw:document.documentElement.scrollWidth,w:innerWidth,mainVisible:main?getComputedStyle(main).visibility:'',titleFont:h1?parseFloat(getComputedStyle(h1).fontSize):0,smallTargets:visibleButtons.filter(x=>x.h<42).slice(0,10)};
   });
