@@ -8,6 +8,7 @@
   const lower=e=>text(e).toLowerCase();
   const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
   const workspace=()=>!publicHome();
+  const publicTopbarRoute=()=>{const h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return h==='credit-store'||publicHome()};
 
   const FALLBACK_LANGS=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
   const languageRows=()=>window.__SCHOLARK_I18N__?.langs?.length?window.__SCHOLARK_I18N__.langs:FALLBACK_LANGS;
@@ -96,6 +97,7 @@
     topbar=accountWrap=authButton=null;
   }
   function buildTopbar(){
+    if(!publicTopbarRoute()){removePublicTopbar();return null}
     pruneTopbarDuplicates();
     if(topbar?.isConnected)return;
     topbar=$('#v55-topbar');
@@ -128,6 +130,7 @@
   }
 
   function ensureLanguageSelector(){
+    if(!publicTopbarRoute()){removePublicTopbar();return null}
     buildTopbar();
     if(!topbar?.isConnected)return null;
     const actions=$('.v55-actions',topbar);if(!actions)return null;
@@ -145,7 +148,7 @@
   function scheduleTopbarRepair(delay=40){
     clearTimeout(topbarRepairTimer);
     topbarRepairTimer=setTimeout(()=>{
-      if(!publicHome()){removePublicTopbar();return}
+      if(!publicTopbarRoute()){removePublicTopbar();return}
       buildTopbar();ensureLanguageSelector();bindCopyObserver();pruneTopbarDuplicates();
       const bar=$('#v55-topbar');if(bar){if(bar.style.visibility)bar.style.removeProperty('visibility');if(bar.style.opacity)bar.style.removeProperty('opacity')}
     },delay);
@@ -177,8 +180,8 @@
     if(accountLabel&&accountLabel.textContent!==t.account)accountLabel.textContent=t.account;
     const expectedAuth=t.signin;
     if(authButton){
-      authButton.hidden=on;
-      authButton.setAttribute('aria-hidden',on?'true':'false');
+      if(authButton.hidden!==on)authButton.hidden=on;
+      const ariaHidden=on?'true':'false';if(authButton.getAttribute('aria-hidden')!==ariaHidden)authButton.setAttribute('aria-hidden',ariaHidden);
       if(!on&&(authButton.dataset.v55State!==state||text(authButton)!==expectedAuth)){
         authButton.dataset.v55State=state;
         authButton.innerHTML='<b>'+t.signin+'</b>';
