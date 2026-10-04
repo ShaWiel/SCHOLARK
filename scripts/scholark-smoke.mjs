@@ -71,6 +71,8 @@ if(guardHealth){
   check(guardHealth.ipHashedRateKeys===true&&guardHealth.bearerRotationSafe===true,'Rate-limit identity hardening is not active');
   check(guardHealth.sensitiveQueryGuard===true,'Sensitive-query credential guard is not active');
   check(Number(guardHealth.maxBuckets)===10000,'API rate-limit bucket bound mismatch');
+  check(guardHealth.perClientConcurrencyGuard===true&&Number(guardHealth.maxConcurrentPerClient)===6,'API per-client concurrency guard is not active');
+  check(guardHealth.apiNoStore===true,'API no-store cache protection is not active');
   if(live)check(guardHealth.rateLimitMode==='enforced','Live API guard is not enforcing production rate limits');
   else check(guardHealth.rateLimitMode==='test-bypass','CI/test container did not expose test-only rate-limit bypass');
 }
