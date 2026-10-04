@@ -183,6 +183,13 @@
     renderLevels();resetDashboardCanonical();
     return true;
   }
+  function ownWorkspaceTopbar(){
+    document.querySelectorAll('#v55-topbar,.v116-public-actions,.v117-storebar').forEach(el=>el.remove());
+    document.documentElement.classList.remove('v117-credit-store-route','v55-public-home');
+    document.body.classList.remove('v117-credit-store-route','v55-public-home','v81-home');
+    const storePage=document.querySelector('#v117-credit-store-page');
+    if(storePage){storePage.hidden=true;storePage.setAttribute('aria-hidden','true')}
+  }
   function pruneTopActionDuplicates(){
     if(!topActions?.isConnected)return 0;
     let removed=0;
@@ -197,6 +204,7 @@
     return removed;
   }
   function ensureTopActions(reason='repair'){
+    if(workspaceRoute())ownWorkspaceTopbar();
     topActions=keepSingleton('#v51-top-actions',topActions);
     if(!topActions){
       topActions=document.createElement('div');
@@ -261,6 +269,7 @@
   function workspaceEntryBusy(){return document.documentElement.classList.contains('scholark-workspace-entering')}
   function beginWorkspaceEntry(reason='route'){
     if(!workspaceRoute())return 0;
+    ownWorkspaceTopbar();
     build();
     if(workspaceEntryBusy())return Number(document.documentElement.dataset.scholarkWorkspaceEntry||workspaceEntryEpoch)||workspaceEntryEpoch||1;
     const homeLayer=$('#v29-home-layer');
@@ -319,7 +328,7 @@
     }finally{
       if(epoch===workspaceEntryEpoch&&workspaceRoute()){
         document.body.classList.add('v51-workspace');document.documentElement.classList.add('v51-workspace-root');
-        document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
+        ownWorkspaceTopbar();
         clearTimeout(workspaceEntryFailsafe);workspaceEntryFailsafe=0;
         document.documentElement.classList.remove('scholark-workspace-entering');
         delete document.documentElement.dataset.scholarkWorkspaceEntry;
