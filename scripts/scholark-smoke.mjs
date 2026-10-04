@@ -310,6 +310,7 @@ if(!live){
         check(!/Testing mode is active/i.test(String(r.overview||'')),'learning:study_ahead exposes misleading testing-mode copy');
       }
     },45000);
+  }
 
   await post('/api/learning/generate',{mode:'general_ai',prompt:'Who owns SCHOLARK and how long did it take to build?',history:[],deep:false,level:'student',language:'English'},'learning:arki_public_facts',d=>{
     const answer=String(d.result?.answer||'');
@@ -324,7 +325,7 @@ if(!live){
     check(/shakur wielson/.test(answer)&&/suriname/.test(answer),'ARKI privacy response should retain only approved public owner facts');
     check(/do not share|can only share|only share/.test(answer),'ARKI privacy response does not refuse extra personal data');
   },15000);
-  }
+
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');
   check(geminiHealth?.configured===true,'Live Gemini key is not configured');
