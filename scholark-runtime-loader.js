@@ -12,7 +12,7 @@
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r206'});
 
-  const VERSION = '20261004-r213';
+  const VERSION = '20261004-r214';
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
@@ -66,7 +66,7 @@
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);
   const loaded = new Set(), inflight = new Map(), preloaded = new Set(), failures = new Map();
-  let foregroundChain = Promise.resolve(true), backgroundChain = Promise.resolve(true), replaying = false, busy = 0;
+  let foregroundChain = Promise.resolve(true), backgroundChain = Promise.resolve(true), replaying = false, busy = 0, routeLoadTimer = 0, routeLoadEpoch = 0;
   const html = document.documentElement;
 
   if (!document.getElementById('scholark-runtime-loader-style')) {
@@ -275,11 +275,19 @@
     if (key === 'studio') prefetchStudioHeavy();
   }
 
-  addEventListener('hashchange', () => {
-    const key = routeKey();
-    ensure(key, true).then(() => afterRouteLoad(key));
-  });
-  addEventListener('popstate', () => ensure(routeKey(), true));
+  function scheduleRouteLoad(delay=0) {
+    const epoch=++routeLoadEpoch;
+    clearTimeout(routeLoadTimer);
+    routeLoadTimer=setTimeout(async()=>{
+      const key=routeKey();
+      const ok=await ensure(key,true);
+      if(epoch!==routeLoadEpoch||key!==routeKey())return;
+      if(ok)afterRouteLoad(key);
+    },Math.max(0,delay));
+  }
+
+  addEventListener('hashchange', () => scheduleRouteLoad(0));
+  addEventListener('popstate', () => scheduleRouteLoad(18));
   addEventListener('online', () => {
     if (!failures.size) return;
     ensure(routeKey(), true).then(ok => { if (ok) window.__SCHOLARK_FOUNDATION__?.recover?.(); });
@@ -299,7 +307,6 @@
   };
 
   (async () => {
-    preloadFiles([...STUDIO_CORE, ...FEATURES.project]);
     html.classList.add('scholark-runtime-loading');
     const key = routeKey();
     preloadFiles(required(key));
