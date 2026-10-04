@@ -40,7 +40,7 @@ async function visible(sel,timeout=7000){
 async function checkWorkspaceSingletons(label){
   const state=await page.evaluate(()=>{
     const shown=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.02&&r.width>0&&r.height>0};
-    const ids=['v51-main','v51-sidebar','v51-home','v51-side-toggle'];
+    const ids=['v51-main','v51-sidebar','v51-top-actions','v51-home','v51-side-toggle'];
     const idCounts=Object.fromEntries(ids.map(id=>[id,document.querySelectorAll('#'+id).length]));
     const byParent={};
     [...document.querySelectorAll('.v111-live[data-v111-owner]')].forEach(el=>{const p=el.parentElement;if(!p)return;const key=p.id||p.className||p.tagName;byParent[key]=(byParent[key]||0)+1});
@@ -51,7 +51,8 @@ async function checkWorkspaceSingletons(label){
       duplicateTools,
       languageBoxes:document.querySelectorAll('#v51-sidebar .v90-langbox').length,
       countryBoxes:document.querySelectorAll('#v51-sidebar #v96-side-country').length,
-      sideActions:document.querySelectorAll('#v51-sidebar .v116-side-actions').length,
+      workspaceHelp:document.querySelectorAll('#v51-top-actions #v116-workspace-help').length,
+      standaloneWorkspaceSignout:[...document.querySelectorAll('button,a,[role="button"]')].filter(el=>!el.closest('#v89-account,#v72-modal,#v116-workspace-help')&&/^(sign\s*out|log\s*out|logout|uitloggen)$/i.test((el.textContent||'').trim())).length,
       onboarding:document.querySelectorAll('#v51-main #v116-onboarding').length,
       connectedBars:document.querySelectorAll('.v114-connect').length,
       visibleConnectedBars:[...document.querySelectorAll('.v114-connect')].filter(shown).length,
@@ -68,7 +69,8 @@ async function checkWorkspaceSingletons(label){
   });
   check(Object.values(state.idCounts).every(n=>n===1),`${label}: canonical Workspace shell duplicated: ${JSON.stringify(state)}`);
   check(state.duplicateTools.length===0,`${label}: sidebar tools duplicated: ${JSON.stringify(state)}`);
-  check(state.languageBoxes<=1&&state.countryBoxes<=1&&state.sideActions<=1&&state.onboarding<=1,`${label}: Workspace controls duplicated: ${JSON.stringify(state)}`);
+  check(state.languageBoxes<=1&&state.countryBoxes<=1&&state.workspaceHelp<=1&&state.onboarding<=1,`${label}: Workspace controls duplicated: ${JSON.stringify(state)}`);
+  check(state.standaloneWorkspaceSignout===0,`${label}: standalone Workspace Sign out action remains: ${JSON.stringify(state)}`);
   check(state.connectedBars<=1&&state.visibleConnectedBars<=1,`${label}: connected-flow bar duplicated: ${JSON.stringify(state)}`);
   check(Object.values(state.experienceByParent).every(n=>n<=1)&&state.visibleExperience<=1,`${label}: Workspace experience panel duplicated: ${JSON.stringify(state)}`);
   check(state.emergencyVisible===0,`${label}: emergency Workspace is visible beside primary shell: ${JSON.stringify(state)}`);
@@ -86,11 +88,12 @@ async function checkTransitionSingletons(label){
       storePage:counts('#v117-credit-store-page'),workspaceMain:counts('#v51-main'),workspaceSidebar:counts('#v51-sidebar'),
       wallet:counts('#v51-sidebar .v85-wallet'),dashCredit:counts('#v51-main [data-v51-page="dashboard"] .v85-dash'),
       langbox:counts('#v51-sidebar .v90-langbox'),country:counts('#v51-sidebar #v96-side-country'),
-      sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
+      topActions:counts('#v51-top-actions'),workspaceHelp:counts('#v51-top-actions #v116-workspace-help'),sideActions:counts('#v51-sidebar .v116-side-actions'),onboarding:counts('#v51-main #v116-onboarding'),
       connected:counts('.v114-connect'),storeClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
     };
   });
-  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','sideActions','onboarding','connected'];
+  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','topActions','workspaceHelp','onboarding','connected'];
+  check(state.sideActions===0,label+': legacy Workspace sidebar help actions returned '+JSON.stringify(state));
   check(maxOne.every(k=>state[k]<=1),label+': duplicate transition surfaces '+JSON.stringify(state));
   return state;
 }
@@ -1225,7 +1228,21 @@ await page.waitForFunction(()=>document.documentElement.lang==='nl'&&!document.d
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('dashboard'));
 await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:8000});
 
-check(await page.locator('.v116-side-actions').count()===1,'Workspace support/privacy/feedback controls missing');
+check(await page.locator('#v51-top-actions').count()===1,'Workspace topbar actions missing');
+check(await page.locator('#v51-top-actions #v51-help').count()===1,'Workspace Help & Support action missing');
+check(await page.locator('#v51-top-actions #v51-account').count()===1,'Workspace Account action missing');
+check(await page.locator('#v51-top-actions #v51-home').count()===1,'Workspace Return to homepage action missing');
+check(await page.locator('#v51-sidebar .v116-side-actions').count()===0,'Legacy Workspace sidebar support/privacy controls remain');
+check(await page.locator('#v51-help').getAttribute('aria-expanded')==='false','Workspace Help & Support should start closed');
+await page.click('#v51-help');
+check(await page.locator('#v116-workspace-help').evaluate(el=>el.classList.contains('open')),'Workspace Help & Support menu did not open');
+check(await page.locator('#v116-workspace-help [data-v116-help-action]').count()===4,'Help & Support menu should contain Support, Feedback, Privacy & Terms and Service status');
+const helpText=(await page.locator('#v116-workspace-help .v116-help-menu').innerText()).replace(/\s+/g,' ');
+check(/Support/i.test(helpText)&&/Feedback/i.test(helpText)&&/Privacy\s*&\s*Terms/i.test(helpText)&&/Service status/i.test(helpText),'Help & Support menu content is incomplete');
+await page.keyboard.press('Escape');
+check(!(await page.locator('#v116-workspace-help').evaluate(el=>el.classList.contains('open'))),'Workspace Help & Support menu did not close with Escape');
+const standaloneSignout=await page.evaluate(()=>[...document.querySelectorAll('button,a,[role="button"]')].filter(el=>!el.closest('#v89-account,#v72-modal,#v116-workspace-help')&&/^(sign\s*out|log\s*out|logout|uitloggen)$/i.test((el.textContent||'').trim())).length);
+check(standaloneSignout===0,'Standalone Sign out remains in Workspace topbar');
 check(await page.locator('#v116-onboarding').count()<=1,'Onboarding duplicated in Workspace');
 const runtimeErrors=await page.evaluate(()=>window.__SCHOLARK_RUNTIME__?.errors?.()||[]);
 check(runtimeErrors.length===0,'Runtime loader errors: '+runtimeErrors.join(', '));
@@ -1250,7 +1267,7 @@ try{
   await mobile.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:10000});
   await mobile.waitForFunction(()=>!document.documentElement.classList.contains('scholark-workspace-entering'),null,{timeout:6000});
   const mobileState=await mobile.evaluate(()=>{
-    const visibleButtons=[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active button,.v116-side-actions button')].filter(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}).map(x=>({text:(x.textContent||'').trim().slice(0,40),h:x.getBoundingClientRect().height}));
+    const visibleButtons=[...document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active button,#v51-top-actions button')].filter(x=>{const r=x.getBoundingClientRect(),cs=getComputedStyle(x);return r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden'}).map(x=>({text:(x.textContent||'').trim().slice(0,40),h:x.getBoundingClientRect().height}));
     const main=document.querySelector('#v51-main'),h1=document.querySelector('#v51-main [data-v51-page="dashboard"].active .v51-head h1');
     return {sw:document.documentElement.scrollWidth,w:innerWidth,mainVisible:main?getComputedStyle(main).visibility:'',titleFont:h1?parseFloat(getComputedStyle(h1).fontSize):0,smallTargets:visibleButtons.filter(x=>x.h<42).slice(0,10)};
   });
