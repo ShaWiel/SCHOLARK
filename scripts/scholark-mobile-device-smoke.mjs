@@ -44,9 +44,14 @@ async function noCriticalDupes(page,label){
     workspaceHelp:document.querySelectorAll('#v51-top-actions #v116-workspace-help').length,
     language:document.querySelectorAll('#v55-language').length,
     storeHome:document.querySelectorAll('#v117-store-return-home').length,
-    storeWorkspace:document.querySelectorAll('#v117-store-return-workspace').length
+    storeWorkspace:document.querySelectorAll('#v117-store-return-workspace').length,
+    publicHelp:document.querySelectorAll('#v55-topbar .v116-public-actions').length,
+    storeBar:document.querySelectorAll('#v117-credit-store-page .v117-storebar').length,
+    visibleTopbars:[...document.querySelectorAll('#v55-topbar,#v51-top-actions,.v117-storebar')].filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0}).length
   }));
-  check(Object.values(state).every(n=>n<=1),label+': duplicate critical surface '+JSON.stringify(state));
+  check(Object.entries(state).filter(([k])=>k!=='visibleTopbars').every(([,n])=>n<=1),label+': duplicate critical surface '+JSON.stringify(state));
+  check(state.storeBar===0,label+': duplicate internal Credit Store bar '+JSON.stringify(state));
+  check(state.visibleTopbars<=1,label+': multiple visible topbar surfaces '+JSON.stringify(state));
 }
 async function checkViewport(page,label){
   const state=await page.evaluate(()=>({
@@ -85,6 +90,9 @@ for(const profile of profiles){
     await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint'),{timeout:10000}).catch(()=>{});
     check(await visible(page,'#v55-topbar'),profile.name+': homepage topbar missing');
     check(await visible(page,'#v117-credit-store-button'),profile.name+': Credit Store button missing');
+    check(await visible(page,'.v116-public-help-toggle',5000),profile.name+': Help & Support toggle missing');
+    check(await page.locator('.v116-public-help-menu [data-v116-public-help]').count()===4,profile.name+': Help & Support menu items incomplete');
+    check(await page.locator('[data-v116-public-support],[data-v116-public-feedback],[data-v116-public-privacy]').count()===0,profile.name+': legacy standalone help actions remain');
     await checkViewport(page,profile.name+' home');
     await noCriticalDupes(page,profile.name+' home');
 
@@ -119,6 +127,8 @@ for(const profile of profiles){
     check(await visible(page,'#v117-credit-store-page',6000),profile.name+': Credit Store did not open');
     check(await visible(page,'#v117-store-return-home',4000),profile.name+': Store home return missing');
     check(await visible(page,'#v117-store-return-workspace',4000),profile.name+': Store workspace return missing');
+    check(await page.locator('#v51-top-actions').count()===0,profile.name+': Workspace topbar leaked into Credit Store');
+    check(await page.locator('#v117-credit-store-page .v117-storebar').count()===0,profile.name+': duplicate internal Store bar remains');
     await checkViewport(page,profile.name+' store');
     await noCriticalDupes(page,profile.name+' store');
 
@@ -135,6 +145,7 @@ for(const profile of profiles){
     await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
     check(await visible(page,'#v51-main [data-v51-page="dashboard"].active',12000),profile.name+': Workspace dashboard did not open');
     check(await visible(page,'#v51-top-actions',6000),profile.name+': Workspace topbar actions missing');
+    check(await page.locator('#v55-topbar').count()===0,profile.name+': public topbar leaked into Workspace');
     check(await page.locator('#v51-help').count()===1&&await page.locator('#v51-account').count()===1&&await page.locator('#v51-home').count()===1,profile.name+': Workspace topbar ownership incomplete');
     await page.click('#v51-help');
     check(await page.locator('#v116-workspace-help [data-v116-help-action]').count()===4,profile.name+': Help & Support menu is incomplete');
