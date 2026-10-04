@@ -41,7 +41,8 @@ async function noCriticalDupes(page,label){
     main:document.querySelectorAll('#v51-main').length,
     side:document.querySelectorAll('#v51-sidebar').length,
     topActions:document.querySelectorAll('#v51-top-actions').length,
-    workspaceHelp:document.querySelectorAll('#v51-top-actions #v116-workspace-help').length,
+    sidebarActions:document.querySelectorAll('#v51-sidebar-actions').length,
+    workspaceHelp:document.querySelectorAll('#v51-sidebar-actions #v116-workspace-help').length,
     language:document.querySelectorAll('#v55-language').length,
     storeHome:document.querySelectorAll('#v117-store-return-home').length,
     storeWorkspace:document.querySelectorAll('#v117-store-return-workspace').length,
@@ -51,6 +52,7 @@ async function noCriticalDupes(page,label){
   }));
   check(Object.entries(state).filter(([k])=>k!=='visibleTopbars').every(([,n])=>n<=1),label+': duplicate critical surface '+JSON.stringify(state));
   check(state.storeBar===0,label+': duplicate internal Credit Store bar '+JSON.stringify(state));
+  check(state.topActions===0,label+': obsolete Workspace topbar returned '+JSON.stringify(state));
   check(state.visibleTopbars<=1,label+': multiple visible topbar surfaces '+JSON.stringify(state));
 }
 async function checkViewport(page,label){
@@ -144,9 +146,10 @@ for(const profile of profiles){
     await page.click('#v117-store-return-workspace');
     await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
     check(await visible(page,'#v51-main [data-v51-page="dashboard"].active',12000),profile.name+': Workspace dashboard did not open');
-    check(await visible(page,'#v51-top-actions',6000),profile.name+': Workspace topbar actions missing');
+    check(await page.locator('#v51-top-actions').count()===0,profile.name+': Workspace should not have a topbar');
     check(await page.locator('#v55-topbar').count()===0,profile.name+': public topbar leaked into Workspace');
-    check(await page.locator('#v51-help').count()===1&&await page.locator('#v51-account').count()===1&&await page.locator('#v51-home').count()===1,profile.name+': Workspace topbar ownership incomplete');
+    check(await visible(page,'#v51-sidebar-actions',6000),profile.name+': Workspace sidebar actions missing');
+    check(await page.locator('#v51-sidebar-actions #v51-help').count()===1&&await page.locator('#v51-sidebar-actions #v51-account').count()===1&&await page.locator('#v51-sidebar-actions #v51-home').count()===1,profile.name+': Workspace sidebar action ownership incomplete');
     await page.click('#v51-help');
     check(await page.locator('#v116-workspace-help [data-v116-help-action]').count()===4,profile.name+': Help & Support menu is incomplete');
     await page.keyboard.press('Escape');
