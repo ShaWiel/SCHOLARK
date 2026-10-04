@@ -47,6 +47,7 @@ async function noCriticalDupes(page,label){
     storeHome:document.querySelectorAll('#v117-store-return-home').length,
     storeWorkspace:document.querySelectorAll('#v117-store-return-workspace').length,
     publicHelp:document.querySelectorAll('#v55-topbar .v116-public-actions').length,
+    walletPanel:document.querySelectorAll('.v85-topbar-wallet-panel').length,
     storeBar:document.querySelectorAll('#v117-credit-store-page .v117-storebar').length,
     visibleTopbars:[...document.querySelectorAll('#v55-topbar,#v51-top-actions,.v117-storebar')].filter(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0}).length
   }));
@@ -93,6 +94,15 @@ for(const profile of profiles){
     check(await visible(page,'#v55-topbar'),profile.name+': homepage topbar missing');
     check(await visible(page,'#v117-credit-store-button'),profile.name+': Credit Store button missing');
     check(await visible(page,'.v116-public-help-toggle',5000),profile.name+': Help & Support toggle missing');
+    check(await visible(page,'#v55-topbar .v85-topbar-credit',5000),profile.name+': Wallet topbar action missing');
+    const mobileWalletLabel=(await page.locator('#v55-topbar .v85-topbar-credit').innerText()).replace(/\s+/g,' ').trim();
+    check(/^\$\s*Wallet$/i.test(mobileWalletLabel)&&!/\d/.test(mobileWalletLabel),profile.name+': topbar should show Wallet instead of a raw credit balance');
+    await page.click('#v55-topbar .v85-topbar-credit');
+    check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet panel did not open');
+    check(await page.locator('.v85-topbar-wallet-panel').count()===1,profile.name+': Wallet panel duplicated');
+    await checkViewport(page,profile.name+' wallet');
+    await page.keyboard.press('Escape');
+    check(await page.locator('.v85-topbar-wallet-panel.open').count()===0,profile.name+': Wallet panel did not close with Escape');
     check(await page.locator('.v116-public-help-menu [data-v116-public-help]').count()===4,profile.name+': Help & Support menu items incomplete');
     check(await page.locator('[data-v116-public-support],[data-v116-public-feedback],[data-v116-public-privacy]').count()===0,profile.name+': legacy standalone help actions remain');
     await checkViewport(page,profile.name+' home');
