@@ -520,7 +520,7 @@ const reentryState=await page.evaluate(()=>{
 });
 check(reentryState.route==='#dashboard'&&reentryState.workspace&&reentryState.workspaceRoot,`Rapid Workspace re-entry lost route ownership: ${JSON.stringify(reentryState)}`);
 check(!reentryState.entering&&!reentryState.bodyPublic&&!reentryState.htmlPublic,`Home state leaked into Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
-check(reentryState.topbarDisplay==='none'&&reentryState.homeDisplay==='none',`Home UI remained visible over Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
+check(reentryState.topbarDisplay===''&&reentryState.homeDisplay==='none',`Home UI remained visible over Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.mainCount===1&&reentryState.sidebarCount===1&&reentryState.homeCount===1&&reentryState.h1Count===1,`Workspace/home surfaces duplicated after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.title==='Tu espacio de aprendizaje y creación.',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
 check(reentryState.huge.length===0&&reentryState.titleBottom<=reentryState.gridTop,`Workspace layout glitched after Home round-trip: ${JSON.stringify(reentryState)}`);
@@ -531,7 +531,7 @@ await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(documen
 await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
 await page.click('#v55-workspace-cta .v55-entry');
 try{
-  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+  await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.querySelector('#v55-topbar'),null,{timeout:6000});
 }catch(e){
   const diag=await page.evaluate(()=>({hash:location.hash,entry:window.__SCHOLARK_WORKSPACE__?.entryState?.(),topbar:document.querySelector('#v55-topbar')?getComputedStyle(document.querySelector('#v55-topbar')).display:'missing',html:[...document.documentElement.classList],body:[...document.body.classList]}));
   throw new Error('Home CTA workspace re-entry did not settle: '+JSON.stringify(diag));
@@ -543,14 +543,14 @@ const ctaReentry=await page.evaluate(()=>{
   return {
     title:String(h1?.textContent||'').replace(/\s+/g,' ').trim(),
     h1Count:dash?.querySelectorAll('.v51-head h1').length||0,
-    topbar:getComputedStyle(document.querySelector('#v55-topbar')).display,
+    topbar:document.querySelector('#v55-topbar')?getComputedStyle(document.querySelector('#v55-topbar')).display:'missing',
     home:getComputedStyle(document.querySelector('#v29-home-layer')).display,
     bodyPublic:document.body.classList.contains('v55-public-home'),
     htmlPublic:document.documentElement.classList.contains('v55-public-home'),
     titleBottom:hr?.bottom||0,gridTop:gr?.top||0
   };
 });
-check(ctaReentry.title==='Tu espacio de aprendizaje y creación.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='none'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
+check(ctaReentry.title==='Tu espacio de aprendizaje y creación.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='missing'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
 
 await checkWorkspaceSingletons('Home CTA re-entry 1');
 for(let cycle=2;cycle<=6;cycle++){
@@ -559,7 +559,7 @@ for(let cycle=2;cycle<=6;cycle++){
   await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:5000});
   await page.click('#v55-workspace-cta .v55-entry');
   try{
-    await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&getComputedStyle(document.querySelector('#v55-topbar')).display==='none',null,{timeout:6000});
+    await page.waitForFunction(()=>location.hash==='#dashboard'&&document.body.classList.contains('v51-workspace')&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.querySelector('#v55-topbar'),null,{timeout:6000});
   }catch(e){
     const diag=await page.evaluate(cycle=>({
       cycle,
