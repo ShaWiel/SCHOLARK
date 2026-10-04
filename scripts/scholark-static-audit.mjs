@@ -72,7 +72,7 @@ ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is no
 ok(foundation.includes("raw==='credit-store'")&&foundation.includes("kind:'store'")&&foundation.includes("store-watchdog")&&foundation.includes('CRITICAL_SINGLETON_IDS')&&foundation.includes('CRITICAL_SINGLETON_SELECTORS')&&foundation.includes('duplicateCriticalSelectors')&&foundation.includes('repairCriticalSelectorDuplicates')&&foundation.includes('repairCriticalDuplicates')&&foundation.includes('watchdogTick')&&!foundation.includes('setInterval(() => {'),'Core foundation routing, duplicate repair or adaptive watchdog is incomplete');
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
-ok(launchFoundation.includes("release:'r207'"),'Launch client release is not R207');
+ok(launchFoundation.includes("release:'r208'"),'Launch client release is not R208');
 ok(launchFoundation.includes("inStore=document.documentElement.classList.contains('v117-credit-store-route')")&&launchFoundation.includes("'scholark:topbar-ready'"),'Public privacy/feedback Store exclusion or topbar-ready sync is missing');
 ok(homeTopbar.includes("new CustomEvent('scholark:topbar-ready')"),'Topbar-ready event is not emitted by the canonical topbar owner');
 ok(!runtime.includes('scholark-v97-foundation-coordinator.js'),'deprecated V97 coordinator is still active');
@@ -358,13 +358,19 @@ for(const file of syntaxTargets){
   if(r.status!==0)fail.push(`syntax failed: ${file}: ${(r.stderr||r.stdout||'').trim().split('\n').slice(-2).join(' ')}`);
 }
 
+ok(billingRoute.includes('PADDLE_LIVE_API_KEY')&&billingRoute.includes('PADDLE_SANDBOX_API_KEY')&&billingRoute.includes('liveBillingPreflight')&&billingRoute.includes('productionCredentialsPreloaded'),'Paddle dual-environment preload safety is incomplete');
+ok(launchRoute.includes('IN_APP_SUPPORT=true')&&launchRoute.includes("'support'")&&launchRoute.includes("supportChannel:SUPPORT_EMAIL?'email':'in-app'")&&launchRoute.includes('m.replyEmail')&&launchRoute.includes('out.replyEmail=replyEmail')&&launchFoundation.includes('function openSupport(')&&launchFoundation.includes('PRIVACY NOTICE & PRODUCT TERMS · 3 OCT 2026'),'Support/legal launch foundation is incomplete');
+ok(supportFeedbackMigration.includes("'support'::text")&&supportFeedbackMigration.includes('feedback_submissions_category_check'),'Support feedback database contract is not migration-backed');
+ok(cloudProjects.includes("data-v72-terms")&&cloudProjects.includes("terms_version:'2026-10-03'")&&cloudProjects.includes('terms_accepted_at:new Date().toISOString()')&&cloudProjects.includes('View Privacy & Terms'),'Signup legal consent is missing');
+ok(workspaceShell.includes("topActions.id='v51-top-actions'")&&workspaceShell.includes("id=\"v51-help\"")&&workspaceShell.includes("id=\"v51-account\"")&&workspaceShell.includes('Help & Support'),'Canonical Workspace topbar actions are incomplete');
+ok(launchFoundation.includes('function workspaceHelpActions()')&&launchFoundation.includes('data-v116-help-action="support"')&&launchFoundation.includes('data-v116-help-action="feedback"')&&launchFoundation.includes('data-v116-help-action="privacy"')&&launchFoundation.includes('data-v116-help-action="service"')&&launchFoundation.includes('function removeStandaloneWorkspaceSignOut()'),'Workspace Help & Support ownership is incomplete');
+ok(accountSettings.includes("id=\"v89-signout\"")&&accountSettings.includes("cloud()?.signOut?.()"),'Account does not exclusively own the canonical Sign out action');
+ok(foundation.includes("['#v51-top-actions #v116-workspace-help','workspace-help-menu']")&&foundation.includes("'v51-top-actions'"),'Core singleton guard does not protect Workspace topbar/help ownership');
+
 if(fail.length){
   console.error('\nSCHOLARK STATIC AUDIT FAILED');
   fail.forEach(x=>console.error(' - '+x));
   process.exit(1);
 }
 console.log(`SCHOLARK STATIC AUDIT PASS · ${RELEASE} · router ${ROUTER} · school ${SCHOOL_STRICT} · ${active.length} active runtime modules checked`);
-ok(billingRoute.includes('PADDLE_LIVE_API_KEY')&&billingRoute.includes('PADDLE_SANDBOX_API_KEY')&&billingRoute.includes('liveBillingPreflight')&&billingRoute.includes('productionCredentialsPreloaded'),'Paddle dual-environment preload safety is incomplete');
-ok(launchRoute.includes('IN_APP_SUPPORT=true')&&launchRoute.includes("'support'")&&launchRoute.includes("supportChannel:SUPPORT_EMAIL?'email':'in-app'")&&launchRoute.includes('m.replyEmail')&&launchRoute.includes('out.replyEmail=replyEmail')&&launchFoundation.includes('function openSupport(')&&launchFoundation.includes('PRIVACY NOTICE & PRODUCT TERMS · 3 OCT 2026'),'Support/legal launch foundation is incomplete');
-ok(supportFeedbackMigration.includes("'support'::text")&&supportFeedbackMigration.includes('feedback_submissions_category_check'),'Support feedback database contract is not migration-backed');
-ok(cloudProjects.includes("data-v72-terms")&&cloudProjects.includes("terms_version:'2026-10-03'")&&cloudProjects.includes('terms_accepted_at:new Date().toISOString()')&&cloudProjects.includes('View Privacy & Terms'),'Signup legal consent is missing');
+
