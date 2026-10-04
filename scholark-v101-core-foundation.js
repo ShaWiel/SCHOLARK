@@ -48,7 +48,7 @@
   }
 
   const CRITICAL_SINGLETON_IDS = Object.freeze([
-    'v55-topbar','v29-home-layer','v51-sidebar','v51-main','v72-modal','v89-account',
+    'v55-topbar','v29-home-layer','v51-sidebar','v51-main','v51-top-actions','v72-modal','v89-account',
     'v117-credit-store-page','v117-credit-store-button','v117-store-return-home','v117-store-return-workspace','v117-store-dock','v90-language-overlay',
     'v50-school','v25-study','v25-book','v41-studio-workspace','v58-suite','v57-deck','v57-present'
   ]);
@@ -59,7 +59,7 @@
     ['#v51-main [data-v51-page="dashboard"] .v85-dash','dashboard-credit-status'],
     ['#v51-sidebar .v90-langbox','workspace-language-box'],
     ['#v51-sidebar #v96-side-country','workspace-country-box'],
-    ['#v51-sidebar .v116-side-actions','workspace-side-actions'],
+    ['#v51-top-actions #v116-workspace-help','workspace-help-menu'],
     ['#v51-main #v116-onboarding','workspace-onboarding'],
     ['.v114-connect','connected-flow-bar']
   ]);
