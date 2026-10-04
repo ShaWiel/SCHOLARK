@@ -100,7 +100,7 @@
 
   function workspaceHelpActions(){
     document.querySelectorAll('.v116-side-actions').forEach(x=>x.remove());
-    const top=$('#v51-top-actions'),button=$('#v51-help',top);if(!top||!button)return;
+    const top=$('#v51-top-actions');if(!top)return;const button=$('#v51-help',top);if(!button)return;
     const boxes=[...top.querySelectorAll('#v116-workspace-help')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;
     if(!box){
