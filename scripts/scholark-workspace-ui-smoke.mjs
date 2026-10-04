@@ -84,7 +84,7 @@ async function checkTransitionSingletons(label){
     return {
       topbar:counts('#v55-topbar'),language:counts('#v55-language'),storeButton:counts('#v117-credit-store-button'),
       storeHome:counts('#v117-store-return-home'),storeWorkspace:counts('#v117-store-return-workspace'),
-      auth:counts('#v55-auth'),account:counts('#v55-topbar .v55-account-wrap'),creditChip:counts('#v55-topbar .v85-topbar-credit'),
+      auth:counts('#v55-auth'),account:counts('#v55-topbar .v55-account-wrap'),creditChip:counts('#v55-topbar .v85-topbar-credit'),walletPanel:counts('.v85-topbar-wallet-panel'),
       storePage:counts('#v117-credit-store-page'),workspaceMain:counts('#v51-main'),workspaceSidebar:counts('#v51-sidebar'),
       wallet:counts('#v51-sidebar .v85-wallet'),dashCredit:counts('#v51-main [data-v51-page="dashboard"] .v85-dash'),
       langbox:counts('#v51-sidebar .v90-langbox'),country:counts('#v51-sidebar #v96-side-country'),
@@ -93,7 +93,7 @@ async function checkTransitionSingletons(label){
       connected:counts('.v114-connect'),storeClass:document.documentElement.classList.contains('v117-credit-store-route')||document.body.classList.contains('v117-credit-store-route')
     };
   });
-  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','sidebarActions','workspaceHelp','publicHelp','onboarding','connected'];
+  const maxOne=['topbar','language','storeButton','storeHome','storeWorkspace','auth','account','creditChip','walletPanel','storePage','workspaceMain','workspaceSidebar','wallet','dashCredit','langbox','country','sidebarActions','workspaceHelp','publicHelp','onboarding','connected'];
   check(state.sideActions===0,label+': legacy Workspace sidebar help actions returned '+JSON.stringify(state));
   check(state.topActions===0,label+': obsolete Workspace topbar returned '+JSON.stringify(state));
   check(state.storeBar===0,label+': duplicate internal Credit Store bar returned '+JSON.stringify(state));
@@ -374,6 +374,33 @@ await page.click('[data-v116-public-help="service"]');
 check(await visible('#v116-dialog.open',3000),'Service status did not open from Help & Support');
 check(/service status|operational/i.test(await page.locator('#v116-dialog').innerText()),'Service status dialog content missing');
 await page.keyboard.press('Escape');
+
+// Cinematic prompt must visibly type even when the lightweight performance-safe mode is active.
+const cinematicTyping=await page.evaluate(async()=>{
+  const html=document.documentElement,api=window.__SCHOLARK_V30_DEMO__,input=document.querySelector('#v29-prompt');
+  if(!api||!input)return{ok:false,reason:'missing-demo'};
+  const hadSafe=html.classList.contains('scholark-performance-safe');
+  api.stop?.();html.classList.add('scholark-performance-safe');input.blur();api.start?.();
+  await new Promise(r=>setTimeout(r,90));const first=input.value;
+  const cursor1=input.classList.contains('v30-typing-cursor');
+  await new Promise(r=>setTimeout(r,180));const second=input.value;
+  if(!hadSafe)html.classList.remove('scholark-performance-safe');
+  api.stop?.();api.start?.();
+  return{ok:true,first,second,cursor1};
+});
+check(cinematicTyping.ok&&cinematicTyping.first.length>0&&cinematicTyping.second.length>cinematicTyping.first.length&&cinematicTyping.cursor1,'Cinematic prompt is not visibly typing in performance-safe mode: '+JSON.stringify(cinematicTyping));
+
+// The public topbar must show a Wallet action, never the raw credit amount.
+check(await visible('#v55-topbar .v85-topbar-credit',5000),'Wallet topbar action missing');
+const walletButtonLabel=(await page.locator('#v55-topbar .v85-topbar-credit').innerText()).replace(/\s+/g,' ').trim();
+check(/^\$\s*Wallet$/i.test(walletButtonLabel),'Topbar should show "$ Wallet", not the raw credit amount: '+walletButtonLabel);
+check(!/\d/.test(walletButtonLabel),'Topbar Wallet action leaked a raw credit amount');
+await page.click('#v55-topbar .v85-topbar-credit');
+check(await visible('.v85-topbar-wallet-panel.open',3000),'Topbar Wallet panel did not open');
+check(await page.locator('.v85-topbar-wallet-panel').count()===1,'Topbar Wallet panel duplicated');
+await page.keyboard.press('Escape');
+check(await page.locator('.v85-topbar-wallet-panel.open').count()===0,'Topbar Wallet panel did not close with Escape');
+
 timings.push(['home-topbar-boot',topbarReadyMs]);
 
 const bootStarted=Date.now();
@@ -411,6 +438,20 @@ const walletBreakdown=(await page.locator('.v85-wallet').innerText()).replace(/\
 check(/Monthly credits left/i.test(walletBreakdown)&&/225\s*\/\s*300/.test(walletBreakdown),'Wallet does not show monthly credits left');
 check(/Extra credits left/i.test(walletBreakdown)&&/250/.test(walletBreakdown),'Wallet does not show extra credits left');
 check(/Total available/i.test(walletBreakdown)&&/475/.test(walletBreakdown),'Wallet total does not match monthly + extra credits');
+await page.evaluate(()=>{location.hash='home'});
+await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
+check(await visible('#v55-topbar .v85-topbar-credit',8000),'Wallet button did not recover on Home during wallet breakdown QA');
+await page.evaluate(()=>window.__SCHOLARK_CREDITS__?.render?.());
+await page.click('#v55-topbar .v85-topbar-credit');
+check(await visible('.v85-topbar-wallet-panel.open',3000),'Wallet breakdown popover did not open with synced credits');
+const topbarWalletBreakdown=(await page.locator('.v85-topbar-wallet-panel').innerText()).replace(/\s+/g,' ');
+check(/475\s+total/i.test(topbarWalletBreakdown)&&/Total available\s+475/i.test(topbarWalletBreakdown),'Topbar Wallet total is incorrect');
+check(/Monthly credits left\s+225\s*\/\s*300/i.test(topbarWalletBreakdown),'Topbar Wallet monthly credits are incorrect');
+check(/Extra credits left\s+250/i.test(topbarWalletBreakdown),'Topbar Wallet extra credits are incorrect');
+await page.keyboard.press('Escape');
+await page.evaluate(()=>{location.hash='dashboard'});
+await page.waitForFunction(()=>location.hash==='#dashboard',{timeout:5000});
+check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not recover after Wallet topbar QA');
 await page.evaluate(()=>{
   const orig=window.__schWalletSmokeOrig||{};
   window.__SCHOLARK_TEST_MODE__=orig.test;
