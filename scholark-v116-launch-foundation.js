@@ -21,7 +21,7 @@
     .sch-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
     .v116-source{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font:750 7.5px/1.3 Inter;color:#5e55b9;text-decoration:none}.v116-source:hover{text-decoration:underline}
     .v116-onboarding{margin:0 0 16px;padding:16px;border-radius:18px;background:#17191f;color:#fff;box-shadow:0 14px 38px rgba(23,25,31,.08)}.v116-onboarding-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.v116-onboarding h3{font:950 18px/1.1 Inter;margin:0}.v116-onboarding p{font:650 9px/1.5 Inter;color:#bcb7c3;margin:5px 0 0}.v116-close{border:0;background:rgba(255,255,255,.08);color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font:900 16px Inter}.v116-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:13px}.v116-step{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.055);color:#fff;border-radius:12px;padding:10px;text-align:left;cursor:pointer;min-width:0}.v116-step b{display:block;font:900 8px/1.3 Inter;color:#c9ff6a}.v116-step span{display:block;margin-top:4px;font:650 7.3px/1.35 Inter;color:#c7c3cc}.v116-step.done{opacity:.58}.v116-step.done b:before{content:'✓ ';color:#c9ff6a}
-    .v116-side-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:9px 8px 0}.v116-side-actions button{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.055);color:#ddd9e2;border-radius:9px;padding:8px 7px;font:850 6.8px Inter;cursor:pointer}.v116-public-actions{display:flex;align-items:center;gap:5px}.v116-public-actions button{border:0;background:transparent;color:inherit;padding:7px 8px;border-radius:8px;font:800 7px Inter;cursor:pointer}.v116-public-actions button:hover{background:rgba(255,255,255,.06)}
+    .v116-workspace-help{position:relative;display:inline-flex}.v116-help-menu{position:absolute;z-index:2147483600;top:46px;left:0;width:220px;padding:8px;background:#fff;border:1px solid rgba(23,25,31,.10);border-radius:15px;box-shadow:0 22px 65px rgba(31,27,63,.18);display:none}.v116-workspace-help.open .v116-help-menu{display:block}.v116-help-menu button{width:100%;border:0;background:transparent;color:#292631;border-radius:10px;padding:10px;text-align:left;font:850 8.5px Inter;cursor:pointer}.v116-help-menu button:hover{background:#f3f1fa}.v116-help-menu small{display:block;padding:6px 10px 7px;color:#8a8490;font:800 6.8px Inter;letter-spacing:.1em}.v116-public-actions{display:flex;align-items:center;gap:5px}.v116-public-actions button{border:0;background:transparent;color:inherit;padding:7px 8px;border-radius:8px;font:800 7px Inter;cursor:pointer}.v116-public-actions button:hover{background:rgba(255,255,255,.06)}
     #v116-dialog{position:fixed;inset:0;z-index:2147483647;background:rgba(11,12,16,.72);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:18px;font-family:Inter,system-ui}#v116-dialog.open{display:flex}.v116-dialog-card{width:min(760px,96vw);max-height:90vh;overflow:auto;background:#f7f6f3;border-radius:24px;color:#17191f;padding:22px;box-shadow:0 30px 100px rgba(0,0,0,.32)}.v116-dialog-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.v116-dialog-top small{font:900 7px Inter;letter-spacing:.14em;color:#6d5dfc}.v116-dialog-top h2{font:950 30px/1 Inter;margin:6px 0 6px;letter-spacing:-.04em}.v116-dialog-top p{font:650 9px/1.5 Inter;color:#777;margin:0}.v116-x{border:0;width:36px;height:36px;border-radius:50%;background:#fff;cursor:pointer;font-size:20px}.v116-panel{margin-top:12px;padding:14px;background:#fff;border:1px solid rgba(23,25,31,.08);border-radius:15px}.v116-panel h3{font:900 11px Inter;margin:0 0 7px}.v116-panel p,.v116-panel li{font:650 8.5px/1.5 Inter;color:#625d66}.v116-panel ul{margin:7px 0;padding-left:18px}.v116-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.v116-btn{border:0;border-radius:10px;background:#17191f;color:#fff;padding:9px 11px;font:900 8px Inter;cursor:pointer}.v116-btn.alt{background:#ece9ff;color:#574bd1}.v116-btn.danger{background:#8b302d}.v116-btn:disabled{opacity:.55;cursor:wait}.v116-status{min-height:18px;margin-top:8px;font:750 8px/1.4 Inter;color:#5f54bd}.v116-danger-confirm{display:flex;gap:7px;margin-top:8px}.v116-danger-confirm input{flex:1;border:1px solid rgba(23,25,31,.13);border-radius:10px;padding:9px 10px;font:700 9px Inter}.v116-feedback textarea{width:100%;min-height:120px;box-sizing:border-box;resize:vertical;border:1px solid rgba(23,25,31,.13);border-radius:12px;padding:11px;font:650 10px/1.45 Inter}.v116-feedback select{width:100%;margin-bottom:8px;border:1px solid rgba(23,25,31,.13);border-radius:10px;padding:9px;background:#fff;font:700 9px Inter}
     @media(max-width:900px){.v116-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.v116-steps{grid-template-columns:1fr}.v116-dialog-card{padding:17px;border-radius:18px}.v116-dialog-top h2{font-size:26px}.v116-danger-confirm{flex-direction:column}}
     @media(pointer:coarse){:where(button,a,input,select,textarea){min-height:44px}.v116-step{min-height:64px}}
@@ -98,16 +98,32 @@
     });
   }
 
-  function sidebarActions(){
-    const side=$('#v51-sidebar');if(!side)return;
-    const boxes=[...side.querySelectorAll('.v116-side-actions')];boxes.slice(0,-1).forEach(x=>x.remove());
-    let box=boxes.at(-1)||null;if(box)return;
-    box=document.createElement('div');box.className='v116-side-actions';
-    box.innerHTML='<button type="button" data-v116-support>Support</button><button type="button" data-v116-feedback>Feedback</button><button type="button" data-v116-privacy>Privacy & data</button>';
-    const anchor=$('.v51-quality',side)||side.lastElementChild;anchor?.insertAdjacentElement('beforebegin',box)||side.appendChild(box);
-    $('[data-v116-support]',box).onclick=e=>openSupport(e.currentTarget);
-    $('[data-v116-feedback]',box).onclick=e=>openFeedback(e.currentTarget);
-    $('[data-v116-privacy]',box).onclick=e=>openPrivacy(e.currentTarget);
+  function workspaceHelpActions(){
+    $('.v116-side-actions').forEach(x=>x.remove());
+    const top=$('#v51-top-actions'),button=$('#v51-help',top);if(!top||!button)return;
+    const boxes=[...top.querySelectorAll('#v116-workspace-help')];boxes.slice(0,-1).forEach(x=>x.remove());
+    let box=boxes.at(-1)||null;
+    if(!box){
+      box=document.createElement('div');box.id='v116-workspace-help';box.className='v116-workspace-help';
+      button.insertAdjacentElement('beforebegin',box);box.appendChild(button);
+      const menu=document.createElement('div');menu.className='v116-help-menu';menu.setAttribute('role','menu');menu.innerHTML='<small>HELP & SUPPORT</small><button type="button" role="menuitem" data-v116-help-action="support">Support</button><button type="button" role="menuitem" data-v116-help-action="feedback">Feedback</button><button type="button" role="menuitem" data-v116-help-action="privacy">Privacy & Terms</button><button type="button" role="menuitem" data-v116-help-action="service">Service status</button>';box.appendChild(menu);
+      menu.addEventListener('click',e=>{const item=e.target.closest('[data-v116-help-action]');if(!item)return;box.classList.remove('open');button.setAttribute('aria-expanded','false');const action=item.dataset.v116HelpAction;if(action==='support')openSupport(item);else if(action==='feedback')openFeedback(item);else if(action==='privacy')openPrivacy(item);else if(action==='service')openService(item)});
+    }
+    button.onclick=e=>{e.stopPropagation();const open=!box.classList.contains('open');$('.v116-workspace-help.open').forEach(x=>x!==box&&x.classList.remove('open'));box.classList.toggle('open',open);button.setAttribute('aria-expanded',open?'true':'false')};
+  }
+  function toggleWorkspaceHelp(returnEl){
+    workspaceHelpActions();const box=$('#v116-workspace-help'),button=$('#v51-help');if(!box||!button)return false;
+    const open=!box.classList.contains('open');box.classList.toggle('open',open);button.setAttribute('aria-expanded',open?'true':'false');return true;
+  }
+  function removeStandaloneWorkspaceSignOut(){
+    if(!document.body.classList.contains('v51-workspace'))return 0;
+    const words=/^(sign\s*out|log\s*out|logout|uitloggen|cerrar sesión|se déconnecter|abmelden|sair|esci)$/i;let removed=0;
+    $('button,a,[role="button"]').forEach(el=>{
+      if(el.closest('#v89-account,#v72-modal,#v116-workspace-help,#v51-sidebar,#v51-main'))return;
+      const mark=[el.id,el.className,el.getAttribute('data-action'),el.getAttribute('data-testid')].filter(Boolean).join(' ').toLowerCase();
+      if(words.test(clean(el.textContent,80))||/(^|[-_\s])(signout|sign-out|logout|log-out)([-_\s]|$)/i.test(mark)){el.remove();removed++}
+    });
+    return removed;
   }
 
   function publicActions(){
@@ -163,6 +179,11 @@
       '<section class="v116-panel"><h3>Product terms</h3><ul><li>SCHOLARK is a learning and productivity tool. AI-generated content can be incomplete or wrong and should be checked when decisions matter.</li><li>Use SCHOLARK lawfully and respect academic-integrity, copyright, privacy and safety rules that apply to you.</li><li>You are responsible for keeping your account credentials secure and for activity under your account.</li><li>Credits and paid features are provided according to the plan or top-up shown at checkout. One-time credit top-ups are separate from recurring subscriptions.</li><li>If local law requires parental, guardian or school consent for a minor, the responsible adult or institution must provide it before the learner uses the relevant service.</li><li>SCHOLARK may change features to improve reliability, safety or product quality; material commercial changes should be communicated before they take effect.</li></ul>'+supportCopy+'<p><b>Legal review status:</b> '+(reviewed?'Reviewed for commercial launch.':'Pre-launch text is technically ready but still requires final human legal review before commercial launch.')+'</p><div class="v116-actions"><button class="v116-btn alt" type="button" data-v116-open-support>Contact support</button></div></section>'+
       '<section class="v116-panel"><h3>Export or delete</h3><p>Account deletion is blocked while an active, trialing or past-due subscription still exists so you cannot accidentally keep being billed after the SCHOLARK account disappears.</p><div class="v116-actions"><button class="v116-btn" type="button" data-v116-export '+(!signed?'disabled':'')+'>Export my data</button></div><div class="v116-danger-confirm"><input type="text" autocomplete="off" placeholder="Type DELETE to confirm" aria-label="Type DELETE to confirm account deletion" '+(!signed?'disabled':'')+'><button class="v116-btn danger" type="button" data-v116-delete '+(!signed?'disabled':'')+'>Delete account</button></div><div class="v116-status" data-v116-status>'+(signed?'':'Sign in first to manage account data.')+'</div></section>';
   }
+  function serviceHtml(){
+    const release=esc(RELEASE()),billing=esc(launchHealth?.billing?.environment||'sandbox'),ready=launchHealth?.ok!==false;
+    return '<div class="v116-dialog-top"><div><small>SCHOLARK · SERVICE STATUS</small><h2>'+(ready?'SCHOLARK is operational.':'SCHOLARK service status')+'</h2><p>Current product-service information for this session.</p></div><button class="v116-x" type="button" aria-label="Close" data-v116-close>×</button></div><section class="v116-panel"><h3>Core service</h3><p>Workspace, learning, account, support and guarded billing routes are available on release <b>'+release+'</b>.</p></section><section class="v116-panel"><h3>Billing environment</h3><p>Current environment: <b>'+billing+'</b>. Checkout remains protected by server-side billing and webhook validation.</p></section><section class="v116-panel"><h3>Need help?</h3><p>If something is not working as expected, use Support or Feedback from Help & Support.</p></section>';
+  }
+  function openService(returnEl){openDialog(serviceHtml(),returnEl)}
   function openPrivacy(returnEl){
     openDialog(privacyHtml(),returnEl);const body=$('#v116-dialog-body'),st=$('[data-v116-status]',body),confirm=$('.v116-danger-confirm input',body);
     $('[data-v116-manage]',body)?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;st.textContent='Opening secure Paddle subscription management…';try{await window.__SCHOLARK_BILLING__?.manage?.('overview')}catch(err){st.textContent=clean(err?.message||err)}finally{b.disabled=false}});
@@ -218,16 +239,17 @@
   function sync(){
     decorateAccessibility();
     publicActions();
-    if(document.body.classList.contains('v51-workspace')){sidebarActions();renderOnboarding();sourceBadge()}
+    if(document.body.classList.contains('v51-workspace')){workspaceHelpActions();removeStandaloneWorkspaceSignOut();renderOnboarding();sourceBadge()}else{$('.v116-workspace-help').forEach(x=>x.remove())}
   }
   const launchMutationRelevant=muts=>muts.some(m=>[...m.addedNodes,...m.removedNodes].some(node=>{
     if(node?.nodeType!==1)return false;
     const el=node;
-    if(el.matches?.('#v55-topbar,#v51-main,#v51-sidebar,#v29-home-layer,#v116-onboarding,.v116-side-actions,.v116-public-actions,button,input,select,textarea,a[href]'))return true;
-    return !!el.querySelector?.('#v55-topbar,#v51-main,#v51-sidebar,#v29-home-layer,button,input,select,textarea,a[href]');
+    if(el.matches?.('#v55-topbar,#v51-main,#v51-sidebar,#v51-top-actions,#v29-home-layer,#v116-onboarding,#v116-workspace-help,.v116-public-actions,button,input,select,textarea,a[href]'))return true;
+    return !!el.querySelector?.('#v55-topbar,#v51-main,#v51-sidebar,#v51-top-actions,#v29-home-layer,button,input,select,textarea,a[href]');
   }));
   const mo=new MutationObserver(muts=>{if(!launchMutationRelevant(muts))return;clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,110)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
   addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>setTimeout(sourceBadge,80));addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('scholark:topbar-ready',()=>sync());addEventListener('pageshow',()=>setTimeout(sync,80));
+  document.addEventListener('click',e=>{if(!e.target.closest?.('#v116-workspace-help')){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});
   installObservability();[120,600,1400].forEach(ms=>setTimeout(sync,ms));
-  window.__SCHOLARK_LAUNCH__={health,sources,support:openSupport,feedback:openFeedback,privacy:openPrivacy,sync,release:'r207'};
+  window.__SCHOLARK_LAUNCH__={health,sources,help:toggleWorkspaceHelp,support:openSupport,feedback:openFeedback,privacy:openPrivacy,service:openService,sync,release:'r208'};
 })();
