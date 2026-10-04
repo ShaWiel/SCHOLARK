@@ -812,6 +812,13 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 
 await route('language','#v51-fallback .v93');
 check(await page.locator('#v93-build').count()===1,'Language lesson builder missing');
+check(await page.locator('.v93-language-orb').count()===1,'Language Learner hero language indicator missing');
+check(await page.locator('.v93-skill-strip span').count()===4,'Language Learner skill strip is incomplete');
+check(await page.locator('[data-v93-preset]').count()>=5,'Language Learner quick lesson ideas missing');
+await page.click('[data-v93-preset="Ordering food at a restaurant"]');
+check((await page.inputValue('#v93-topic'))==='Ordering food at a restaurant','Language Learner quick lesson idea did not populate the topic');
+await page.selectOption('#v93-level','B1');
+check((await page.locator('#v93-hero-level').innerText()).trim()==='B1','Language Learner level indicator did not update');
 
 await route('planner','#v51-fallback .v52-tool');
 check(await page.locator('#v52-plan-add').count()===1,'Planner add action missing');
