@@ -145,7 +145,10 @@
 
   async function sourceBadge(){
     const wrap=$('#v96-country-context');if(!wrap)return;
-    let a=$('.v116-source',wrap);if(!a){a=document.createElement('a');a.className='v116-source';a.target='_blank';a.rel='noopener';a.textContent='Education source basis ↗';$('.v96-country-copy',wrap)?.appendChild(a)}
+    const host=$('.v96-country-copy',wrap)||wrap;
+    let a=$('.v116-source',wrap);
+    if(!a){a=document.createElement('a');a.className='v116-source';a.target='_blank';a.rel='noopener';a.textContent='Education source basis ↗';host.appendChild(a)}
+    else if(a.parentElement!==host)host.appendChild(a);
     const country=localStorage.getItem('scholark_country')||'Suriname';
     const paint=(best,verification)=>{
       if(!best?.url)return false;
