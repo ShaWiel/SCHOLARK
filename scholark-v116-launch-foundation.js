@@ -99,7 +99,7 @@
   }
 
   function workspaceHelpActions(){
-    $('.v116-side-actions').forEach(x=>x.remove());
+    document.querySelectorAll('.v116-side-actions').forEach(x=>x.remove());
     const top=$('#v51-top-actions'),button=$('#v51-help',top);if(!top||!button)return;
     const boxes=[...top.querySelectorAll('#v116-workspace-help')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;
@@ -109,7 +109,7 @@
       const menu=document.createElement('div');menu.className='v116-help-menu';menu.setAttribute('role','menu');menu.innerHTML='<small>HELP & SUPPORT</small><button type="button" role="menuitem" data-v116-help-action="support">Support</button><button type="button" role="menuitem" data-v116-help-action="feedback">Feedback</button><button type="button" role="menuitem" data-v116-help-action="privacy">Privacy & Terms</button><button type="button" role="menuitem" data-v116-help-action="service">Service status</button>';box.appendChild(menu);
       menu.addEventListener('click',e=>{const item=e.target.closest('[data-v116-help-action]');if(!item)return;box.classList.remove('open');button.setAttribute('aria-expanded','false');const action=item.dataset.v116HelpAction;if(action==='support')openSupport(item);else if(action==='feedback')openFeedback(item);else if(action==='privacy')openPrivacy(item);else if(action==='service')openService(item)});
     }
-    button.onclick=e=>{e.stopPropagation();const open=!box.classList.contains('open');$('.v116-workspace-help.open').forEach(x=>x!==box&&x.classList.remove('open'));box.classList.toggle('open',open);button.setAttribute('aria-expanded',open?'true':'false')};
+    button.onclick=e=>{e.stopPropagation();const open=!box.classList.contains('open');document.querySelectorAll('.v116-workspace-help.open').forEach(x=>x!==box&&x.classList.remove('open'));box.classList.toggle('open',open);button.setAttribute('aria-expanded',open?'true':'false')};
   }
   function toggleWorkspaceHelp(returnEl){
     workspaceHelpActions();const box=$('#v116-workspace-help'),button=$('#v51-help');if(!box||!button)return false;
@@ -118,7 +118,7 @@
   function removeStandaloneWorkspaceSignOut(){
     if(!document.body.classList.contains('v51-workspace'))return 0;
     const words=/^(sign\s*out|log\s*out|logout|uitloggen|cerrar sesión|se déconnecter|abmelden|sair|esci)$/i;let removed=0;
-    $('button,a,[role="button"]').forEach(el=>{
+    document.querySelectorAll('button,a,[role="button"]').forEach(el=>{
       if(el.closest('#v89-account,#v72-modal,#v116-workspace-help,#v51-sidebar,#v51-main'))return;
       const mark=[el.id,el.className,el.getAttribute('data-action'),el.getAttribute('data-testid')].filter(Boolean).join(' ').toLowerCase();
       if(words.test(clean(el.textContent,80))||/(^|[-_\s])(signout|sign-out|logout|log-out)([-_\s]|$)/i.test(mark)){el.remove();removed++}
@@ -261,7 +261,7 @@
   }));
   const mo=new MutationObserver(muts=>{if(!launchMutationRelevant(muts))return;clearTimeout(window.__v116Sync);window.__v116Sync=setTimeout(sync,110)});if(document.body)mo.observe(document.body,{childList:true,subtree:true});else addEventListener('DOMContentLoaded',()=>mo.observe(document.body,{childList:true,subtree:true}),{once:true});
   addEventListener('hashchange',()=>setTimeout(sync,80));addEventListener('scholark-country-change',()=>scheduleSourceBadge());addEventListener('scholark-country-context-ready',()=>scheduleSourceBadge());addEventListener('scholark-language-ready',()=>setTimeout(sync,80));addEventListener('scholark-workspace-entry-ready',()=>setTimeout(sync,40));addEventListener('scholark:topbar-ready',()=>sync());addEventListener('pageshow',()=>setTimeout(sync,80));
-  document.addEventListener('click',e=>{if(!e.target.closest?.('#v116-workspace-help')){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});
+  document.addEventListener('click',e=>{if(!e.target.closest?.('#v116-workspace-help')){document.querySelectorAll('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.v116-workspace-help.open').forEach(x=>x.classList.remove('open'));$('#v51-help')?.setAttribute('aria-expanded','false')}});
   installObservability();[120,600,1400].forEach(ms=>setTimeout(sync,ms));
   window.__SCHOLARK_LAUNCH__={health,sources,help:toggleWorkspaceHelp,support:openSupport,feedback:openFeedback,privacy:openPrivacy,service:openService,sync,release:'r208'};
 })();
