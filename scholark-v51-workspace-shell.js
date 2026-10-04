@@ -183,8 +183,30 @@
     renderLevels();resetDashboardCanonical();
     return true;
   }
+  function ensureTopActions(reason='repair'){
+    topActions=keepSingleton('#v51-top-actions',topActions);
+    if(!topActions){
+      topActions=document.createElement('div');
+      topActions.id='v51-top-actions';
+      topActions.setAttribute('aria-label','Workspace actions');
+      document.body.appendChild(topActions);
+    }
+    let help=$('#v51-help',topActions),account=$('#v51-account',topActions),homeBtn=$('#v51-home',topActions);
+    if(!help||!account||!homeBtn){
+      topActions.innerHTML='<button type="button" class="v51-top-btn" id="v51-help" aria-haspopup="menu" aria-expanded="false">Help & Support <span>▾</span></button><button type="button" class="v51-top-btn" id="v51-account">Account</button><button type="button" class="v51-top-btn" id="v51-home"><b>⌂</b> Return to homepage</button>';
+      help=$('#v51-help',topActions);account=$('#v51-account',topActions);homeBtn=$('#v51-home',topActions);
+    }
+    home=homeBtn;
+    if(home)home.onclick=goHome;
+    if(account)account.onclick=()=>window.__SCHOLARK_V89_ACCOUNT__?.open?.();
+    if(help)help.onclick=e=>window.__SCHOLARK_LAUNCH__?.help?.(e.currentTarget);
+    topActions.dataset.v51TopActionsReady='1';
+    return topActions;
+  }
+
   function sanitizeWorkspace(reason='auto'){
     side=keepSingleton('#v51-sidebar',side);main=keepSingleton('#v51-main',main);topActions=keepSingleton('#v51-top-actions',topActions);home=keepSingleton('#v51-home',home);toggle=keepSingleton('#v51-side-toggle',toggle);
+    if(workspaceRoute()&&(side?.isConnected||main?.isConnected))ensureTopActions(reason);
     if(main?.isConnected){
       Array.from(main.querySelectorAll(':scope > [data-v51-page="fallback"]')).slice(1).forEach(x=>x.remove());
       if(!dashboardStructureHealthy())rebuildDashboard();
@@ -206,10 +228,7 @@
     side=main=home=toggle=topActions=null;
     side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><b>SCHOLARK</b><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${ic}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
     toggle=document.createElement('button');toggle.id='v51-side-toggle';toggle.type='button';toggle.onclick=()=>setCollapsed(!document.body.classList.contains('v51-collapsed'));document.body.appendChild(toggle);
-    topActions=document.createElement('div');topActions.id='v51-top-actions';topActions.setAttribute('aria-label','Workspace actions');topActions.innerHTML='<button type="button" class="v51-top-btn" id="v51-help" aria-haspopup="menu" aria-expanded="false">Help & Support <span>▾</span></button><button type="button" class="v51-top-btn" id="v51-account">Account</button><button type="button" class="v51-top-btn" id="v51-home"><b>⌂</b> Return to homepage</button>';document.body.appendChild(topActions);
-    home=$('#v51-home',topActions);home.onclick=goHome;
-    $('#v51-account',topActions).onclick=()=>window.__SCHOLARK_V89_ACCOUNT__?.open?.();
-    $('#v51-help',topActions).onclick=e=>window.__SCHOLARK_LAUNCH__?.help?.(e.currentTarget);
+    ensureTopActions('build');
     main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard"><div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLARK SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLARK WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLARK should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI','AI Tutor','Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Keep learning projects, research, notes and ongoing work connected in one place.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div></section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
     $$('[data-v51-tool]',document).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
     renderLevels();setCollapsed(localStorage.getItem('scholark_v51_collapsed')==='1',false);refreshLogo();
@@ -570,13 +589,27 @@
   addEventListener('popstate',()=>setTimeout(cleanConflicts,40));
   addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
   let workspaceLanguageTimer=0;
-  const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);const run=()=>{if(!workspaceRoute())return;if(document.documentElement.classList.contains('scholark-language-switching')){workspaceLanguageTimer=setTimeout(run,120);return}renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()};workspaceLanguageTimer=setTimeout(run,delay)};
+  const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);const run=()=>{if(!workspaceRoute())return;if(document.documentElement.classList.contains('scholark-language-switching')){workspaceLanguageTimer=setTimeout(run,120);return}ensureTopActions('language-refresh');renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()};workspaceLanguageTimer=setTimeout(run,delay)};
   addEventListener('scholark-language-applied',()=>scheduleWorkspaceLanguageRefresh(90));
   addEventListener('scholark-language-ready',()=>scheduleWorkspaceLanguageRefresh(120));
   addEventListener('scholark-language-complete',()=>scheduleWorkspaceLanguageRefresh(150));
-  addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
+  addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{ensureTopActions('runtime-ready');renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
+  let topActionsRepairTimer=0;
+  const topActionsObserver=new MutationObserver(()=>{
+    if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
+    const top=$('#v51-top-actions');
+    if(top&&$('#v51-help',top)&&$('#v51-account',top)&&$('#v51-home',top))return;
+    clearTimeout(topActionsRepairTimer);
+    topActionsRepairTimer=setTimeout(()=>{
+      if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
+      ensureTopActions('mutation-repair');
+      window.dispatchEvent(new CustomEvent('scholark-workspace-top-actions-ready'));
+    },24);
+  });
+  if(document.body)topActionsObserver.observe(document.body,{childList:true,subtree:true});
+  else addEventListener('DOMContentLoaded',()=>topActionsObserver.observe(document.body,{childList:true,subtree:true}),{once:true});
   setTimeout(()=>{build();cleanConflicts();if(workspaceRoute())openTool((route().replace('#','').split('-')[0]||'dashboard'))},80);
-  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,sanitize:reason=>sanitizeWorkspace(reason||'external'),prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,entryState:()=>({epoch:workspaceEntryEpoch,homeEpoch:homeTransitionEpoch,busy:workspaceEntryBusy(),route:route(),bodyWorkspace:document.body.classList.contains('v51-workspace'),bodyPublic:document.body.classList.contains('v55-public-home'),htmlPublic:document.documentElement.classList.contains('v55-public-home')}),getActive:()=>state.active};
+  window.__SCHOLARK_WORKSPACE__={openTool,clearModes,setCollapsed,syncLanguage:syncWorkspaceLanguage,goHome,ensureTopActions:reason=>ensureTopActions(reason||'external'),sanitize:reason=>sanitizeWorkspace(reason||'external'),prepareEntry:reason=>beginWorkspaceEntry(reason||'external'),finishEntry:finishWorkspaceEntry,entryState:()=>({epoch:workspaceEntryEpoch,homeEpoch:homeTransitionEpoch,busy:workspaceEntryBusy(),route:route(),bodyWorkspace:document.body.classList.contains('v51-workspace'),bodyPublic:document.body.classList.contains('v55-public-home'),htmlPublic:document.documentElement.classList.contains('v55-public-home')}),getActive:()=>state.active};
 })();
