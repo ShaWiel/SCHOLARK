@@ -6,7 +6,7 @@
   let wallet=null,busy=false,costs=null,lastToken='';
 
   const css=document.createElement('style');css.id='scholark-v85-style';css.textContent=`
-    .v85-wallet{margin:9px 8px 0;padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);color:#fff}.v85-wallet small{display:block;font:900 6.8px Inter;letter-spacing:.13em;color:#8f8b98}.v85-wallet b{display:block;margin-top:5px;font:950 18px/1 Inter}.v85-wallet span{display:block;margin-top:4px;font:650 7px/1.35 Inter;color:#aaa6b2}.v85-wallet button{margin-top:7px;border:0;border-radius:9px;background:#c9ff6a;color:#17191f;padding:7px 9px;font:900 7px Inter;cursor:pointer}.v85-low{color:#ffcf72!important}.v85-meter{height:4px;margin-top:8px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}.v85-meter i{display:block;height:100%;border-radius:inherit;background:#c9ff6a}
+    .v85-wallet{margin:9px 8px 0;padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);color:#fff;cursor:pointer;transition:.18s ease}.v85-wallet:hover,.v85-wallet.open{background:rgba(255,255,255,.08);border-color:rgba(201,255,106,.19)}.v85-wallet small{display:block;font:900 6.8px Inter;letter-spacing:.13em;color:#8f8b98}.v85-wallet b{display:block;margin-top:5px;font:950 18px/1 Inter}.v85-wallet span{display:block;margin-top:4px;font:650 7px/1.35 Inter;color:#aaa6b2}.v85-wallet button{margin-top:7px;border:0;border-radius:9px;background:#c9ff6a;color:#17191f;padding:7px 9px;font:900 7px Inter;cursor:pointer}.v85-wallet-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.v85-wallet-caret{font:900 11px Inter;color:#c9ff6a;transition:transform .18s ease}.v85-wallet.open .v85-wallet-caret{transform:rotate(180deg)}.v85-wallet-details{display:none;grid-template-columns:1fr;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}.v85-wallet.open .v85-wallet-details{display:grid}.v85-credit-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border-radius:10px;background:rgba(255,255,255,.045)}.v85-credit-row span{margin:0;font:750 7px Inter;color:#b9b4c0}.v85-credit-row strong{font:950 9px Inter;color:#fff}.v85-credit-row.extra strong{color:#c9ff6a}.v85-wallet-note{font:650 6.8px/1.4 Inter!important;color:#8f8b98!important}.v85-low{color:#ffcf72!important}.v85-meter{height:4px;margin-top:8px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}.v85-meter i{display:block;height:100%;border-radius:inherit;background:#c9ff6a}
     .v85-topbar-credit{height:38px;display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(201,255,106,.28);border-radius:12px;padding:0 10px;background:rgba(201,255,106,.08);color:#fff;cursor:pointer;font-family:Inter,system-ui;white-space:nowrap}.v85-topbar-credit:hover{background:rgba(201,255,106,.14)}.v85-topbar-credit .v85-star{color:#c9ff6a;font-size:12px}.v85-topbar-credit b{font:950 10px/1 Inter}.v85-topbar-credit em{font:900 6.5px/1 Inter;letter-spacing:.09em;font-style:normal;color:#c9ff6a}.v85-topbar-credit[hidden]{display:none!important}
     .v85-dash{display:flex;gap:18px;align-items:center;justify-content:space-between;margin:0 0 18px;padding:14px 16px;background:#17191f;color:#fff;border-radius:16px;min-height:58px}.v85-dash>div{min-width:0;display:flex;flex-direction:column;gap:5px}.v85-dash b{display:block;font:950 12px/1.1 Inter}.v85-dash span{display:block;font:700 8px/1.45 Inter;color:#bdb8c5;max-width:760px}.v85-dash i{flex:0 0 auto;margin-left:auto;font:950 16px/1 Inter;color:#c9ff6a;font-style:normal;white-space:nowrap}
     @media(max-width:720px){.v85-dash{align-items:flex-start;flex-direction:column}.v85-dash i{margin-left:0}.v85-topbar-credit{padding:0 8px;gap:5px}.v85-topbar-credit em{display:none}}
@@ -34,7 +34,7 @@
       if(!resolved){
         const x=await ctx();
         if(x){
-          const r=await x.c.request('/rest/v1/credit_wallets?select=balance,plan,monthly_allowance,cycle_started_at,updated_at&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1',{method:'GET'});
+          const r=await x.c.request('/rest/v1/credit_wallets?select=balance,monthly_balance,topup_balance,plan,monthly_allowance,cycle_started_at,updated_at&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1',{method:'GET'});
           const d=await r.json().catch(()=>[]);if(r.ok)resolved=Array.isArray(d)?d[0]:d;
         }
       }
@@ -73,6 +73,14 @@
   function pricing(){const old=location.href;history.replaceState(null,'',location.pathname+location.search+'#pricing');dispatchEvent(new HashChangeEvent('hashchange',{oldURL:old,newURL:location.href}))}
   function creditStore(){if(window.__SCHOLARK_CREDIT_STORE__?.open)window.__SCHOLARK_CREDIT_STORE__.open();else location.hash='credit-store'}
   const signed=()=>!!currentSession()?.access_token;
+  function walletParts(){
+    if(!wallet)return{total:0,monthly:0,extra:0,allowance:0};
+    const total=Math.max(0,Number(wallet.balance)||0),allowance=Math.max(0,Number(wallet.monthly_allowance)||0);
+    const hasMonthly=wallet.monthly_balance!=null,hasExtra=wallet.topup_balance!=null;
+    const monthly=hasMonthly?Math.max(0,Number(wallet.monthly_balance)||0):Math.min(total,allowance||total);
+    const extra=hasExtra?Math.max(0,Number(wallet.topup_balance)||0):Math.max(0,total-monthly);
+    return{total:Math.max(total,monthly+extra),monthly,extra,allowance};
+  }
   function renderTopbar(){
     const actions=$('#v55-topbar .v55-actions');if(!actions)return;
     let chip=$('.v85-topbar-credit',actions);
@@ -102,10 +110,15 @@
         if(window.__SCHOLARK_TEST_MODE__)box.innerHTML='<small>SCHOLARK TEST MODE</small><b>∞</b><span>AI credits are not deducted while product test mode is active.</span>';
         else if(!signed())box.innerHTML='<small>SCHOLARK CREDITS</small><b>—</b><span>Sign in to see and sync your credit balance.</span>';
         else if(wallet){
-          const bal=Math.max(0,Number(wallet.balance)||0),allowance=Math.max(0,Number(wallet.monthly_allowance)||0),low=bal<10,pct=allowance?Math.max(0,Math.min(100,bal/allowance*100)):0,plan=clean(wallet.plan||'free').toUpperCase();
-          box.innerHTML='<small>SCHOLARK CREDITS · '+plan+'</small><b class="'+(low?'v85-low':'')+'">'+bal.toLocaleString()+(allowance?' / '+allowance.toLocaleString():'')+'</b><span>'+(low?'Low balance — heavy AI actions may be limited.':'Available credit balance')+'</span>'+(allowance?'<div class="v85-meter" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%"></i></div>':'')+'<button type="button">Credit Store</button>';
-          box.querySelector('button').onclick=creditStore;
-        }else{box.innerHTML='<small>SCHOLARK CREDITS</small><b>…</b><span>Loading your credit balance.</span><button type="button">Credit Store</button>';box.querySelector('button').onclick=creditStore}
+          const parts=walletParts(),bal=parts.total,allowance=parts.allowance,low=bal<10,pct=allowance?Math.max(0,Math.min(100,parts.monthly/allowance*100)):0,plan=clean(wallet.plan||'free').toUpperCase(),wasOpen=box.classList.contains('open');
+          box.setAttribute('role','button');box.setAttribute('tabindex','0');box.setAttribute('aria-expanded',wasOpen?'true':'false');box.setAttribute('aria-label','SCHOLARK credit wallet. Press to show monthly and extra credits.');
+          box.innerHTML='<div class="v85-wallet-head"><small>SCHOLARK CREDITS · '+plan+'</small><span class="v85-wallet-caret" aria-hidden="true">⌄</span></div><b class="'+(low?'v85-low':'')+'">'+bal.toLocaleString()+'</b><span>'+(low?'Low balance — heavy AI actions may be limited.':'Total credits available · tap for breakdown')+'</span>'+(allowance?'<div class="v85-meter" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%"></i></div>':'')+'<div class="v85-wallet-details"><div class="v85-credit-row"><span>Monthly credits</span><strong>'+parts.monthly.toLocaleString()+(allowance?' / '+allowance.toLocaleString():'')+'</strong></div><div class="v85-credit-row extra"><span>Extra credits</span><strong>'+parts.extra.toLocaleString()+'</strong></div><div class="v85-credit-row"><span>Total available</span><strong>'+bal.toLocaleString()+'</strong></div><span class="v85-wallet-note">Monthly credits refresh with your plan cycle. Extra credits are one-time top-ups and stay available until used.</span><button type="button">Credit Store</button></div>';
+          box.classList.toggle('open',wasOpen);
+          const toggle=()=>{const open=box.classList.toggle('open');box.setAttribute('aria-expanded',open?'true':'false')};
+          box.onclick=e=>{if(e.target.closest('button'))return;toggle()};
+          box.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();toggle()}};
+          box.querySelector('button').onclick=e=>{e.stopPropagation();creditStore()};
+        }else{box.removeAttribute('role');box.removeAttribute('tabindex');box.removeAttribute('aria-expanded');box.classList.remove('open');box.innerHTML='<small>SCHOLARK CREDITS</small><b>…</b><span>Loading your credit balance.</span><button type="button">Credit Store</button>';box.querySelector('button').onclick=creditStore}
       }
     }
     const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(dash){
@@ -128,5 +141,5 @@
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r205'};
+  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r211-wallet'};
 })();
