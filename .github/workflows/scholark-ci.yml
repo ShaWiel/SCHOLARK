@@ -34,6 +34,7 @@ jobs:
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
           node --check scripts/scholark-arki-production-smoke.mjs
+          node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
           node scripts/scholark-static-audit.mjs
@@ -69,6 +70,8 @@ jobs:
         run: node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
       - name: Validate ARKI product facts and privacy guard
         run: node scripts/scholark-arki-production-smoke.mjs http://127.0.0.1:10000
+      - name: Validate Gemini fallback and emergency provider routing
+        run: node scripts/scholark-gemini-router-smoke.mjs
       - name: Simulate transient Supabase credit-network failures
         run: node scripts/scholark-credit-resilience-smoke.mjs
       - name: Install browser smoke dependency
