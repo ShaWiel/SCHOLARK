@@ -95,7 +95,15 @@ jobs:
           timeout 360s npx playwright install chromium firefox webkit
       - name: Exercise account lifecycle in Chromium
         run: |
-          sed -i "s#page.locator('.v72-form button').filter({hasText:'Create account'}).click()#page.locator('.v72-form button:not([type=\\\"button\\\"])').click()#" scripts/scholark-account-lifecycle-smoke.mjs
+          node <<'NODE'
+          const fs=require('fs');
+          const p='scripts/scholark-account-lifecycle-smoke.mjs';
+          let s=fs.readFileSync(p,'utf8');
+          s=s.replace("await page.locator('.v72-form button').filter({hasText:'Create account'}).click();", "const signupDone=page.waitForResponse(r=>r.url()===SB+'/auth/v1/signup'&&r.request().method()==='POST'&&r.status()===200); await page.locator('.v72-form button:not([type=\\\"button\\\"])').click(); await signupDone;");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});\\n  check(true,'unverified signup requires email confirmation');", "check(!await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()),'unverified signup requires email confirmation');");
+          if(!s.includes('signupDone=page.waitForResponse'))throw new Error('account signup request patch failed');
+          fs.writeFileSync(p,s);
+          NODE
           node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
       - name: Validate 15-language layout, RTL and mobile overflow
         run: node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
