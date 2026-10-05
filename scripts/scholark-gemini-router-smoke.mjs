@@ -44,7 +44,6 @@ const server=http.createServer(async(req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;
 async function call(){
-  const r=await globalThis.__nativeHttpFetch?.() || null;
   return new Promise((resolve,reject)=>{
     const q=http.request({host:'127.0.0.1',port,path:'/api/learning/generate',method:'POST',headers:{'content-type':'application/json'}},res=>{
       let raw='';res.on('data',x=>raw+=x);res.on('end',()=>{try{resolve({status:res.statusCode,body:JSON.parse(raw)})}catch(e){reject(e)}})
