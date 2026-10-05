@@ -74,6 +74,7 @@ ok(/^\d{8}-r\d+$/.test(VERSION),'runtime VERSION has invalid format: '+VERSION);
 ok(/^r\d+$/.test(RELEASE),'runtime release suffix is missing: '+VERSION);
 ok(foundation.includes(`const RELEASE = '${RELEASE}'`),'foundation RELEASE is not '+RELEASE);
 ok(foundation.includes("raw==='credit-store'")&&foundation.includes("kind:'store'")&&foundation.includes("store-watchdog")&&foundation.includes('CRITICAL_SINGLETON_IDS')&&foundation.includes('CRITICAL_SINGLETON_SELECTORS')&&foundation.includes("['.v85-topbar-wallet-panel','wallet-panel']")&&foundation.includes('duplicateCriticalSelectors')&&foundation.includes('repairCriticalSelectorDuplicates')&&foundation.includes('repairCriticalDuplicates')&&foundation.includes('releaseAligned:')&&foundation.includes('watchdogTick')&&!foundation.includes('setInterval(() => {'),'Core foundation routing, release alignment, duplicate repair or adaptive watchdog is incomplete');
+ok(foundation.includes('hardening:publicSurface||')&&foundation.includes('hardeningHealthy:publicSurface||')&&foundationHealth.includes('hardening:!workspaceNeeded||'),'Route-isolated hardening is still incorrectly required on the public homepage');
 ok(docker.includes(`ENV SCHOLARK_RELEASE=${RELEASE}`),'Docker release is not '+RELEASE);
 ok(docker.includes(`?v=${VERSION}`),'Docker cache key is not '+VERSION);
 ok(launchFoundation.includes(`release:'${RELEASE}'`),'Launch client release is not '+RELEASE);
