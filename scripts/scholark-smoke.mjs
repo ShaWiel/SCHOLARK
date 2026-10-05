@@ -388,7 +388,7 @@ if(!live){
     check(shellRes.r.ok&&shell.includes("['kindergarten','🧸','Kleuterschool / Kleuteronderwijs'")&&shell.includes("['mulo','🎒','MULO'")&&shell.includes("['havo','🎓','HAVO'")&&shell.includes("['mbo','🧰','MBO'")&&shell.includes("['hbo','🏫','HBO'")&&shell.includes("['wo','🏛️','WO / Universiteit'"),'live Workspace dashboard is missing exact Suriname levels');
     check(shell.includes("{id:'basic',label:'Basisonderwijs',tone:'green'}")&&shell.includes("{id:'voj',label:'VOJ',tone:'dark'}")&&shell.includes("{id:'vos',label:'VOS',tone:'green'}")&&shell.includes("{id:'higher',label:'Hoger Onderwijs',tone:'dark'}"),'live Suriname group labels/colors are wrong');
     check(shell.includes('v51-levels-suriname')&&shell.includes('overflow-x:auto')&&shell.includes("host.addEventListener('keydown'")&&shell.includes("host.scrollBy({left:"),'live Suriname level strip is not horizontally scrollable');
-    check(shell.includes("$('[data-level]',host).forEach"),'live dashboard level button wiring is not collection-safe');
+    check(shell.includes("qsa('[data-level]',host).forEach"),'live dashboard level button wiring is not collection-safe');
     check(shell.includes('SURINAME_AI_LEVEL')&&shell.includes("localStorage.setItem('scholark_education_track',id)"),'live Suriname dashboard selection wiring is incomplete');
     check(filterRes.r.ok&&filter.includes("20260918-school-filter-v4"),'live school filter guard is stale');
     check(filter.includes('documentWideObserver:false')&&!filter.includes('observer.observe(document.documentElement')&&!filter.includes('setInterval('),'live school filter still has a runaway mutation/poll loop');
