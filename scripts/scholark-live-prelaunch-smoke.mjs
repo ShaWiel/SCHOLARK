@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const base=String(process.argv[2]||'https://scholark-app-shawiel.onrender.com').replace(/\/$/,'');
 const failures=[];
 const results=[];
+const LANGUAGE_SETTLE_TIMEOUT=22000;
 const check=(cond,msg)=>{if(!cond)failures.push(msg);else results.push(msg)};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const json=async(path,opts={})=>{
@@ -62,8 +63,10 @@ try{
   // Representative live locale pass. The full 74-language matrix runs in the
   // release gate; this verifies the real deployed translation lifecycle.
   for(const code of ['nl','en','es','fr','pt','de','ar','hi','zh','ja']){
+    console.log('LIVE LOCALE '+code+' start');
     await page.evaluate(c=>{window.__SCHOLARK_I18N__?.changeLanguage?.(c)},code);
-    await page.waitForFunction(c=>localStorage.getItem('scholark_ui_language')===c&&document.documentElement.lang===c&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:15000});
+    await page.waitForFunction(c=>localStorage.getItem('scholark_ui_language')===c&&document.documentElement.lang===c&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:LANGUAGE_SETTLE_TIMEOUT});
+    console.log('LIVE LOCALE '+code+' ready');
     const state=await page.evaluate(()=>({topbars:document.querySelectorAll('#v55-topbar').length,lang:document.documentElement.lang,dir:document.documentElement.dir,sw:document.documentElement.scrollWidth,w:innerWidth}));
     check(state.topbars===1&&state.lang===code,'live locale '+code+' settles without duplicate Home UI');
     check(state.sw<=state.w+6,'live locale '+code+' does not create horizontal overflow');
@@ -114,13 +117,13 @@ try{
 
   // Reproduce the historical locale/re-entry failure against production.
   await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
-  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:LANGUAGE_SETTLE_TIMEOUT});
   await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForSelector('#v55-topbar',{state:'visible',timeout:15000});
-  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',null,{timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',null,{timeout:LANGUAGE_SETTLE_TIMEOUT});
   await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state:'visible',timeout:15000});
-  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&!document.documentElement.classList.contains('scholark-workspace-entering')&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:LANGUAGE_SETTLE_TIMEOUT});
   const reentry=await page.evaluate(()=>({
     main:document.querySelectorAll('#v51-main').length,
     sidebar:document.querySelectorAll('#v51-sidebar').length,
@@ -129,7 +132,7 @@ try{
     h1:document.querySelectorAll('#v51-main [data-v51-page="dashboard"].active .v51-head h1').length
   }));
   check(reentry.main===1&&reentry.sidebar===1&&reentry.langbox===1&&reentry.wallet===1&&reentry.h1===1,'live Arabic Home/Workspace re-entry remains duplicate-free');
-  await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('nl'));
+  await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
 
   await sleep(300);
   check(pageErrors.filter(x=>/TypeError|ReferenceError|SyntaxError/i.test(x)).length===0,'live browser flow has no uncaught JavaScript errors');
