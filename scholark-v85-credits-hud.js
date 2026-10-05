@@ -84,6 +84,7 @@
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   const boundWalletTriggers=new WeakSet();
+  let lastWalletPointerAt=0,lastWalletPointerSurface='';
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
@@ -136,6 +137,9 @@
     topbarWalletPanel.addEventListener('click',e=>{const store=e.target.closest('.v85-panel-store');if(store){e.stopPropagation();closeTopbarWallet();creditStore()}});
     return topbarWalletPanel;
   }
+  function walletSurface(trigger){
+    return trigger?.classList?.contains('v85-wallet')?'workspace':trigger?.classList?.contains('v85-topbar-credit')?'topbar':'';
+  }
   function bindWalletTrigger(trigger){
     if(!trigger)return;
     trigger.title='Open SCHOLARK Wallet';
@@ -143,10 +147,25 @@
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
     if(!boundWalletTriggers.has(trigger)){
       boundWalletTriggers.add(trigger);
+      trigger.addEventListener('pointerup',e=>{
+        if(typeof e.button==='number'&&e.button!==0)return;
+        e.preventDefault();
+        e.stopPropagation();
+        const live=liveWalletTrigger(trigger);
+        if(!live)return;
+        lastWalletPointerAt=Date.now();
+        lastWalletPointerSurface=walletSurface(live);
+        toggleWallet(live);
+      });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
         e.stopPropagation();
-        toggleWallet(trigger);
+        const live=liveWalletTrigger(trigger),surface=walletSurface(live||trigger);
+        if(surface&&surface===lastWalletPointerSurface&&Date.now()-lastWalletPointerAt<900){
+          if(topbarWalletPanel?.classList.contains('open')&&!walletPanelAnchor?.isConnected)preserveWalletAnchor();
+          return;
+        }
+        toggleWallet(live||trigger);
       });
     }
   }
