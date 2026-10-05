@@ -15,7 +15,7 @@ jobs:
   release-gate:
     if: contains(github.event.head_commit.message, '[release-gate]')
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,6 +25,16 @@ jobs:
       - name: Static and syntax audit
         run: |
           node --check scholark-billing-route.mjs
+          node --check scholark-launch-route.mjs
+          node --check scholark-learning-route.mjs
+          node --check scholark-v72-cloud-projects.js
+          node --check scholark-v89-account-settings.js
+          node --check scholark-v116-launch-foundation.js
+          node --check scripts/scholark-account-lifecycle-smoke.mjs
+          node --check scripts/scholark-arki-production-smoke.mjs
+          node --check scripts/scholark-gemini-router-smoke.mjs
+          node --check scripts/scholark-i18n-visual-smoke.mjs
+          node --check scripts/scholark-capacity-smoke.mjs
           node scripts/scholark-static-audit.mjs
       - name: Build production image
         run: docker build --pull -t scholark-release-gate .
@@ -43,6 +53,9 @@ jobs:
           node scripts/scholark-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-arki-production-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-gemini-router-smoke.mjs
           node scripts/scholark-credit-resilience-smoke.mjs
       - name: Install browser engines with bounded setup
         run: |
@@ -63,6 +76,10 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 360s npx playwright install chromium firefox webkit
+      - name: Account lifecycle and language-layout QA
+        run: |
+          node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Firefox and WebKit critical regression
