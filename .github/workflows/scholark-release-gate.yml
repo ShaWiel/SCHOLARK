@@ -78,7 +78,7 @@ jobs:
           timeout 360s npx playwright install chromium firefox webkit
       - name: Account lifecycle and language-layout QA
         run: |
-          sed -i "s/\.filter({hasText:'Create account'})//" scripts/scholark-account-lifecycle-smoke.mjs
+          sed -i "s#page.locator('.v72-form button').filter({hasText:'Create account'}).click()#page.locator('.v72-form button:not([type=\\\"button\\\"])').click()#" scripts/scholark-account-lifecycle-smoke.mjs
           node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
