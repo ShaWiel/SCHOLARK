@@ -141,8 +141,15 @@
     trigger.setAttribute('aria-label','Wallet · show total, monthly and extra SCHOLARK credits');
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
   }
+  function liveWalletTrigger(trigger){
+    if(trigger?.isConnected)return trigger;
+    if(trigger?.classList?.contains('v85-wallet'))return document.querySelector('#v51-sidebar .v85-wallet');
+    if(trigger?.classList?.contains('v85-topbar-credit'))return document.querySelector('#v55-topbar .v85-topbar-credit');
+    return null;
+  }
   function toggleWallet(trigger){
-    if(!trigger?.isConnected)return;
+    trigger=liveWalletTrigger(trigger);
+    if(!trigger)return;
     const panel=ensureTopbarWalletPanel(),same=panel.classList.contains('open')&&walletPanelAnchor===trigger;
     document.querySelector('.v55-account-wrap.open')?.classList.remove('open');
     document.querySelector('.v116-public-actions.open')?.classList.remove('open');
