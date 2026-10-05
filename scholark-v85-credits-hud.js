@@ -166,7 +166,10 @@
       const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);if(account)actions.insertBefore(chip,account);else actions.appendChild(chip);
     }
     chip.hidden=false;
-    chip.innerHTML='<span class="v85-wallet-symbol" aria-hidden="true">$</span><b>Wallet</b>';
+    if(chip.dataset.v85WalletReady!=='1'){
+      chip.innerHTML='<span class="v85-wallet-symbol" aria-hidden="true">$</span><b>Wallet</b>';
+      chip.dataset.v85WalletReady='1';
+    }
     bindWalletTrigger(chip);
     if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor===chip){topbarWalletPanel.innerHTML=walletPanelHtml();positionTopbarWallet(chip)}
   }
@@ -183,7 +186,10 @@
       if(anchor)anchor.insertAdjacentElement('beforebegin',box);else side.appendChild(box);
     }
     box.type='button';box.className='v85-wallet';box.dataset.schI18nOwned='1';
-    box.innerHTML='<span class="v85-wallet-symbol" aria-hidden="true">$</span><b>Wallet</b>';
+    if(box.dataset.v85WalletReady!=='1'){
+      box.innerHTML='<span class="v85-wallet-symbol" aria-hidden="true">$</span><b>Wallet</b>';
+      box.dataset.v85WalletReady='1';
+    }
     bindWalletTrigger(box);
     if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor===box){topbarWalletPanel.innerHTML=walletPanelHtml();positionTopbarWallet(box)}
   }
