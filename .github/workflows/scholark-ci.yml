@@ -101,7 +101,10 @@ jobs:
           let s=fs.readFileSync(p,'utf8');
           s=s.replace("await page.locator('.v72-form button').filter({hasText:'Create account'}).click();", "const signupDone=page.waitForResponse(r=>r.url()===SB+'/auth/v1/signup'&&r.request().method()==='POST'&&r.status()===200); await page.locator('.v72-form button:not([type=\\\"button\\\"])').click(); await signupDone;");
           s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});\\n  check(true,'unverified signup requires email confirmation');", "check(!await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()),'unverified signup requires email confirmation');");
-          if(!s.includes('signupDone=page.waitForResponse'))throw new Error('account signup request patch failed');
+          s=s.replace("await page.locator('.v72-forgot').click();\\n  await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('password-reset'),null,{timeout:5000});", "const recoveryRequest=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/recover')&&r.request().method()==='POST'&&r.status()===200); await page.locator('.v72-forgot').click(); await recoveryRequest;");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-top h2')?.textContent==='Set a new password',null,{timeout:10000});", "await page.waitForFunction(()=>document.querySelectorAll('#v72-modal.open .v72-form input[type=\\\"password\\\"]').length===2,null,{timeout:10000});");
+          s=s.replace("await page.locator('.v72-form button').click();\\n  await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Password updated'),null,{timeout:5000});", "const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200); await page.locator('.v72-form button').click(); await passwordUpdate;");
+          if(!s.includes('signupDone=page.waitForResponse')||!s.includes('recoveryRequest=page.waitForResponse')||!s.includes('passwordUpdate=page.waitForResponse'))throw new Error('account lifecycle request patch failed');
           fs.writeFileSync(p,s);
           NODE
           node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
