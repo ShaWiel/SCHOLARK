@@ -241,7 +241,10 @@
   function sync(){render();if(cloud())loadCosts();load()}
   function checkSession(){const token=currentSession()?.access_token||'';if(token!==lastToken){lastToken=token;load()}}
 
-  addEventListener('hashchange',()=>{closeTopbarWallet();setTimeout(render,80);setTimeout(load,220)});
+  addEventListener('hashchange',()=>{closeTopbarWallet();setTimeout(render,80);setTimeout(render,360);setTimeout(load,500)});
+  addEventListener('scholark-workspace-entry-ready',()=>{render();setTimeout(render,80)});
+  addEventListener('scholark-workspace-sidebar-actions-ready',()=>queueMicrotask(render));
+  addEventListener('scholark-workspace-change',()=>setTimeout(render,0));
   addEventListener('pageshow',()=>setTimeout(load,80));
   addEventListener('focus',()=>setTimeout(load,80));
   addEventListener('scholark-runtime-ready',()=>setTimeout(sync,60));
