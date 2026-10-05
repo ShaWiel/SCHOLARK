@@ -53,6 +53,8 @@ jobs:
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Firefox and WebKit critical regression
         run: node scripts/scholark-cross-browser-smoke.mjs http://127.0.0.1:10000
+      - name: Mobile device launch QA
+        run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Homepage and runtime contract
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
