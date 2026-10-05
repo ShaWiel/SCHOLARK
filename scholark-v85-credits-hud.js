@@ -253,6 +253,27 @@
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
+  addEventListener('click',e=>{
+    const captured=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
+    if(!captured)return;
+    const surface=walletSurface(captured);
+    queueMicrotask(()=>{
+      if(captured.isConnected)return;
+      const live=surface==='workspace'
+        ?document.querySelector('#v51-sidebar .v85-wallet')
+        :document.querySelector('#v55-topbar .v85-topbar-credit');
+      if(!live)return;
+      bindWalletTrigger(live);
+      if(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface){
+        walletPanelAnchor=live;
+        live.setAttribute('aria-expanded','true');
+        positionTopbarWallet(live);
+      }else if(!topbarWalletPanel?.classList.contains('open')){
+        toggleWallet(live);
+      }
+    });
+  },true);
+
   document.addEventListener('click',e=>{
     const requested=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
     if(requested&&!requested.isConnected){
