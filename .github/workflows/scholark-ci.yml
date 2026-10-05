@@ -56,6 +56,10 @@ jobs:
         run: node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
       - name: Run concurrent launch load smoke
         run: node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
+      - name: Run staged 25/50/100 capacity smoke
+        run: node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
+      - name: Validate ARKI product facts and privacy guard
+        run: node scripts/scholark-arki-production-smoke.mjs http://127.0.0.1:10000
       - name: Simulate transient Supabase credit-network failures
         run: node scripts/scholark-credit-resilience-smoke.mjs
       - name: Install browser smoke dependency
@@ -77,6 +81,10 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 360s npx playwright install chromium firefox webkit
+      - name: Exercise account lifecycle in Chromium
+        run: node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
+      - name: Validate 15-language layout, RTL and mobile overflow
+        run: node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
@@ -152,6 +160,8 @@ jobs:
           exit 1
       - name: Test live health, AI Tutor, Language Learner and Studio presentation
         run: node scripts/scholark-smoke.mjs https://scholark-app-shawiel.onrender.com --live
+      - name: Validate live ARKI provider chain and public-fact guard
+        run: node scripts/scholark-arki-production-smoke.mjs https://scholark-app-shawiel.onrender.com --live
       - name: Install live browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
