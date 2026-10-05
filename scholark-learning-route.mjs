@@ -313,34 +313,24 @@ const SCHOLARK_PUBLIC_FACTS=Object.freeze({
 function scholarkPublicFactResult(p){
   const prompt=clean(p?.prompt||''),lower=prompt.toLowerCase();
   if(!lower.includes('scholark'))return null;
-  const ownerIntent=/(who\s+(owns|created|built|founded)|owner|founder|creator|eigenaar|oprichter|wie\s+.*scholark|achter\s+scholark)/i.test(prompt);
-  const durationIntent=/(how\s+long|how\s+much\s+time|build\s+time|development\s+time|took\s+to\s+(make|build)|hoe\s+lang|hoeveel\s+tijd|bouwtijd|ontwikkelingstijd)/i.test(prompt);
-  const privateIntent=/(address|adres|phone|telefoon|email|e-mail|age|leeftijd|birthday|geboortedatum|family|familie|private\s+account|priv[eé]\s+account|social\s+media)/i.test(prompt)&&/shakur|owner|eigenaar|founder|oprichter/i.test(prompt);
+  const ownerIntent=/(who\s+(owns|created|built|founded)|owner|founder|creator|eigenaar|oprichter|wie\s+.*scholark|achter\s+scholark|propietari[oa]|dueñ[oa]|fundador|creador|propri[eé]taire|fondateur|cr[eé]ateur|besitzer|gründer|eigentuemer|eigentümer|dono|propriet[aá]rio|fundador|criador)/i.test(prompt);
+  const durationIntent=/(how\s+long|how\s+much\s+time|build\s+time|development\s+time|took\s+to\s+(make|build)|hoe\s+lang|hoeveel\s+tijd|bouwtijd|ontwikkelingstijd|cu[aá]nto\s+tiempo|temps\s+.*(construire|cr[eé]er)|combien\s+de\s+temps|wie\s+lange|entwicklungszeit|quanto\s+tempo|tempo\s+.*(criar|construir))/i.test(prompt);
+  const ownerWords=/(shakur|owner|eigenaar|founder|oprichter|propietari[oa]|fundador|propri[eé]taire|fondateur|besitzer|gründer|dono|propriet[aá]rio)/i;
+  const privateIntent=/(address|adres|phone|telefoon|email|e-mail|age|leeftijd|birthday|geboortedatum|family|familie|private\s+account|priv[eé]\s+account|social\s+media|direcci[oó]n|tel[eé]fono|edad|familia|adresse|t[eé]l[eé]phone|[aâ]ge|famille|anschrift|telefon|alter|familie|endere[cç]o|telefone|idade|fam[ií]lia)/i.test(prompt)&&ownerWords.test(prompt);
   if(!ownerIntent&&!durationIntent&&!privateIntent)return null;
-  const lang=clean(p?.language||'English'),nl=/dutch|nederlands|\bnl\b/i.test(lang);
-  let answer='';
-  if(privateIntent){
-    answer=nl
-      ?'Ik kan alleen de publieke SCHOLARK-informatie delen: de eigenaar is Shakur Wielson, hij komt uit Suriname, en de eerste bouw van SCHOLARK heeft ongeveer bijna drie maanden geduurd. Andere persoonlijke gegevens deel of raad ik niet.'
-      :'I can only share SCHOLARK’s public product information: the owner is Shakur Wielson, he is from Suriname, and the first build of SCHOLARK took almost three months. I do not share or infer other personal details.';
-  }else if(ownerIntent&&durationIntent){
-    answer=nl
-      ?'SCHOLARK is eigendom van Shakur Wielson, die uit Suriname komt. De eerste bouw van SCHOLARK heeft ongeveer bijna drie maanden geduurd.'
-      :'SCHOLARK is owned by Shakur Wielson, who is from Suriname. The first build of SCHOLARK took almost three months.';
-  }else if(ownerIntent){
-    answer=nl
-      ?'SCHOLARK is eigendom van Shakur Wielson, die uit Suriname komt.'
-      :'SCHOLARK is owned by Shakur Wielson, who is from Suriname.';
-  }else{
-    answer=nl
-      ?'De eerste bouw van SCHOLARK heeft ongeveer bijna drie maanden geduurd.'
-      :'The first build of SCHOLARK took almost three months.';
-  }
-  return{ok:true,provider:'scholark-public-facts',model:'public-product-facts-v1',tier:'system',result:{
-    title:nl?'Over SCHOLARK':'About SCHOLARK',
-    answer,
-    suggestedFollowUps:nl?['Wat kan SCHOLARK doen?','Welke functies heeft SCHOLARK?']:['What can SCHOLARK do?','Which features does SCHOLARK have?']
-  }};
+
+  const lang=clean(p?.language||'English').toLowerCase();
+  const code=/dutch|nederlands|\bnl\b/.test(lang)?'nl':/spanish|español|\bes\b/.test(lang)?'es':/french|français|francais|\bfr\b/.test(lang)?'fr':/german|deutsch|\bde\b/.test(lang)?'de':/portuguese|português|portugues|\bpt\b/.test(lang)?'pt':'en';
+  const copy={
+    en:{title:'About SCHOLARK',owner:'SCHOLARK is owned by Shakur Wielson, who is from Suriname.',duration:'The first build of SCHOLARK took almost three months.',both:'SCHOLARK is owned by Shakur Wielson, who is from Suriname. The first build of SCHOLARK took almost three months.',private:'I can only share SCHOLARK’s approved public product information: the owner is Shakur Wielson, he is from Suriname, and the first build of SCHOLARK took almost three months. I do not share or infer other personal details.',follow:['What can SCHOLARK do?','Which features does SCHOLARK have?']},
+    nl:{title:'Over SCHOLARK',owner:'SCHOLARK is eigendom van Shakur Wielson, die uit Suriname komt.',duration:'De eerste bouw van SCHOLARK heeft bijna drie maanden geduurd.',both:'SCHOLARK is eigendom van Shakur Wielson, die uit Suriname komt. De eerste bouw van SCHOLARK heeft bijna drie maanden geduurd.',private:'Ik kan alleen de goedgekeurde publieke SCHOLARK-informatie delen: de eigenaar is Shakur Wielson, hij komt uit Suriname en de eerste bouw van SCHOLARK heeft bijna drie maanden geduurd. Andere persoonlijke gegevens deel of raad ik niet.',follow:['Wat kan SCHOLARK doen?','Welke functies heeft SCHOLARK?']},
+    es:{title:'Sobre SCHOLARK',owner:'SCHOLARK pertenece a Shakur Wielson, de Surinam.',duration:'La primera versión de SCHOLARK tardó casi tres meses en construirse.',both:'SCHOLARK pertenece a Shakur Wielson, de Surinam. La primera versión de SCHOLARK tardó casi tres meses en construirse.',private:'Solo puedo compartir la información pública aprobada de SCHOLARK: el propietario es Shakur Wielson, es de Surinam y la primera versión de SCHOLARK tardó casi tres meses en construirse. No comparto ni infiero otros datos personales.',follow:['¿Qué puede hacer SCHOLARK?','¿Qué funciones tiene SCHOLARK?']},
+    fr:{title:'À propos de SCHOLARK',owner:'SCHOLARK appartient à Shakur Wielson, originaire du Suriname.',duration:'La première construction de SCHOLARK a pris presque trois mois.',both:'SCHOLARK appartient à Shakur Wielson, originaire du Suriname. La première construction de SCHOLARK a pris presque trois mois.',private:'Je peux uniquement partager les informations publiques approuvées de SCHOLARK : le propriétaire est Shakur Wielson, il vient du Suriname et la première construction de SCHOLARK a pris presque trois mois. Je ne partage ni ne déduis d’autres informations personnelles.',follow:['Que peut faire SCHOLARK ?','Quelles fonctions propose SCHOLARK ?']},
+    de:{title:'Über SCHOLARK',owner:'SCHOLARK gehört Shakur Wielson aus Suriname.',duration:'Der erste Aufbau von SCHOLARK dauerte fast drei Monate.',both:'SCHOLARK gehört Shakur Wielson aus Suriname. Der erste Aufbau von SCHOLARK dauerte fast drei Monate.',private:'Ich kann nur die freigegebenen öffentlichen SCHOLARK-Informationen teilen: Eigentümer ist Shakur Wielson aus Suriname, und der erste Aufbau von SCHOLARK dauerte fast drei Monate. Weitere persönliche Daten teile oder erschließe ich nicht.',follow:['Was kann SCHOLARK?','Welche Funktionen hat SCHOLARK?']},
+    pt:{title:'Sobre o SCHOLARK',owner:'O SCHOLARK pertence a Shakur Wielson, do Suriname.',duration:'A primeira construção do SCHOLARK levou quase três meses.',both:'O SCHOLARK pertence a Shakur Wielson, do Suriname. A primeira construção do SCHOLARK levou quase três meses.',private:'Só posso compartilhar as informações públicas aprovadas do SCHOLARK: o proprietário é Shakur Wielson, ele é do Suriname e a primeira construção do SCHOLARK levou quase três meses. Não compartilho nem deduzo outros dados pessoais.',follow:['O que o SCHOLARK pode fazer?','Quais recursos o SCHOLARK possui?']}
+  }[code];
+  const answer=privateIntent?copy.private:(ownerIntent&&durationIntent?copy.both:ownerIntent?copy.owner:copy.duration);
+  return{ok:true,provider:'scholark-public-facts',model:'public-product-facts-v2',tier:'system',result:{title:copy.title,answer,suggestedFollowUps:copy.follow}};
 }
 
 function instructions(mode,p){
