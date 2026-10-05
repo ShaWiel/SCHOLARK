@@ -420,7 +420,7 @@ await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
 check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level strip did not mount');
 check(await page.locator('#v90-language option').count()===74,`Workspace language selector should expose 74 languages`);
-const bootMs=Date.now()-bootStarted;timings.push(['dashboard-boot',bootMs]);check(bootMs<9000,`Dashboard boot took ${bootMs}ms (>9000ms)`);
+const bootMs=Date.now()-bootStarted;timings.push(['dashboard-boot',bootMs]);check(bootMs<7000,`Dashboard boot took ${bootMs}ms (>7000ms)`);
 
 // Credit wallet must expose the monthly allowance separately from purchased top-ups.
 await page.route('**/api/billing/status',async route=>{
