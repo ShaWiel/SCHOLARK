@@ -14,6 +14,8 @@ const SCHOOL_STRICT='20261001-school-global-v14';
 
 const runtime=runtimePreview;
 const workspaceBlock=(runtime.match(/const WORKSPACE = \[([\s\S]*?)\];/)||[])[1]||'';
+const baseBlock=(runtime.match(/const BASE = new Set\(\[([\s\S]*?)\]\);/)||[])[1]||'';
+const homeBlock=(runtime.match(/const HOME = \[([\s\S]*?)\];/)||[])[1]||'';
 const docker=read('Dockerfile');
 const foundation=read('scholark-v101-core-foundation.js');
 const prepaint=read('scholark-prepaint-head.html');
@@ -48,6 +50,7 @@ const powerTools=read('scholark-v106-workspace-power-tools.js');
 const generalAi=read('scholark-v107-general-ai.js');
 const accountSettings=read('scholark-v89-account-settings.js');
 const performance=read('scholark-v94-performance-foundation.js');
+const experience=read('scholark-v95-experience-polish.js');
 const visualSystem=read('scholark-v112-workspace-visual-system.js');
 const hardening=read('scholark-v113-foundation-hardening.js');
 const orchestrator=read('scholark-v114-workspace-orchestrator.js');
@@ -109,6 +112,7 @@ ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-
 ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("isCreditStore:creditStore")&&runtime.includes("isLanding:landingHome")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
 ok(runtime.includes('const uniqueFiles=files=>[...new Set')&&runtime.includes('files=uniqueFiles(files)'),'Runtime loader does not deduplicate preload/load batches');
 ok(runtime.includes('function scheduleRouteLoad(')&&runtime.includes('routeLoadEpoch')&&!runtime.includes('preloadFiles([...STUDIO_CORE, ...FEATURES.project])'),'Runtime route coalescing / lazy Project boot optimization is incomplete');
+ok(runtime.includes("attempt===1?'':'&retry='")&&runtime.includes("l.fetchPriority='high'")&&!baseBlock.includes('scholark-v32-mode-preview.js')&&!baseBlock.includes('scholark-v33-preview-compat.js')&&!baseBlock.includes('scholark-v113-foundation-hardening.js')&&homeBlock.includes('scholark-v32-mode-preview.js')&&homeBlock.includes('scholark-v33-preview-compat.js')&&workspaceBlock.includes('scholark-v113-foundation-hardening.js'),'Boot performance routing/preload reuse is incomplete');
 ok(/localhost\|127\\\.0\\\.0\\\.1/.test(runtime)&&runtime.includes('__SCHOLARK_TEST_MODE__'),'Browser test bypass is not restricted to local hosts');
 ok(docker.includes('scholark-gemini-primary.mjs'),'Gemini primary adapter is not shipped');
 ok(docker.includes('--import", "./scholark-gemini-primary.mjs"'),'Gemini primary adapter is not imported at runtime');
@@ -289,6 +293,8 @@ ok(workspaceShell.includes("window.__SCHOLARK_RUNTIME__?.ensure?.('study')")&&wo
 ok(foundation.includes("isVisible($('.v62-study'),180,140)")&&!foundation.includes("isVisible($('#v62-field'),120,80)"),'Core foundation can still misclassify a healthy Study Ahead form');
 ok(foundation.includes("Date.now()-state.lastRepairAt<900")&&foundation.includes("scholark-home-language-adapting"),'Core foundation lacks low-churn fast path or language-transition coordination');
 ok(performance.includes("now-state.lastLayout<240")&&performance.includes("scholark-language-ready"),'Performance foundation does not suppress redundant layout work or retune after locale changes');
+ok(experience.includes("dataset.scholarkExperience='95'")&&!experience.includes("dataset.scholarkRelease='95'")&&!experience.includes("addEventListener('resize',()=>setTimeout(harden")&&experience.includes('function scheduleHarden('),'Experience polish can still clobber release state or rescan the whole UI on resize');
+ok(foundationHealth.includes('function scheduleSelftest(')&&foundationHealth.includes('requestIdleCallback')&&!foundationHealth.includes("setTimeout(()=>selftest(false),700"),'Foundation health diagnostics still compete with critical boot rendering');
 ok(launchFoundation.includes('launchMutationRelevant')&&launchFoundation.includes("setTimeout(sync,110)"),'Launch foundation still synchronizes on irrelevant DOM churn');
 ok(performance.includes("const candidates=$$("),'Performance text fitting must iterate a collection safely');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
