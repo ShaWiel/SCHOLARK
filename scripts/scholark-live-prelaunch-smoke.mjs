@@ -62,14 +62,14 @@ try{
   // Representative live locale pass. The full 74-language matrix runs in the
   // release gate; this verifies the real deployed translation lifecycle.
   for(const code of ['nl','en','es','fr','pt','de','ar','hi','zh','ja']){
-    await page.evaluate(async c=>window.__SCHOLARK_I18N__?.changeLanguage?.(c),code);
+    await page.evaluate(c=>{window.__SCHOLARK_I18N__?.changeLanguage?.(c)},code);
     await page.waitForFunction(c=>localStorage.getItem('scholark_ui_language')===c&&document.documentElement.lang===c&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:15000});
     const state=await page.evaluate(()=>({topbars:document.querySelectorAll('#v55-topbar').length,lang:document.documentElement.lang,dir:document.documentElement.dir,sw:document.documentElement.scrollWidth,w:innerWidth}));
     check(state.topbars===1&&state.lang===code,'live locale '+code+' settles without duplicate Home UI');
     check(state.sw<=state.w+6,'live locale '+code+' does not create horizontal overflow');
     if(code==='ar')check(state.dir==='rtl','live Arabic switches document direction to RTL');
   }
-  await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('nl'));
+  await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
 
   await page.click('#v55-auth');
   await page.waitForSelector('#v72-modal.open',{state:'visible',timeout:5000});
@@ -113,7 +113,7 @@ try{
   check(await page.locator('#v50-country').count()===1&&await page.locator('#v50-radius').count()===1,'live Schools Near Me mounts canonical controls');
 
   // Reproduce the historical locale/re-entry failure against production.
-  await page.evaluate(async()=>window.__SCHOLARK_I18N__?.changeLanguage?.('ar'));
+  await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
   await page.waitForFunction(()=>document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:15000});
   await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForSelector('#v55-topbar',{state:'visible',timeout:15000});
