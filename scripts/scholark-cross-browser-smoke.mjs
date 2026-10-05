@@ -31,8 +31,8 @@ for(const cfg of engines){
   const context=await browser.newContext({viewport:cfg.viewport,hasTouch:cfg.touch,isMobile:cfg.name==='webkit-mobile'});
   const page=await context.newPage();
   const pageErrors=[];
-  page.on('pageerror',e=>pageErrors.push(String(e?.message||e)));
-  page.on('console',m=>{if(m.type()==='error'&&/Uncaught|TypeError|ReferenceError|\[SCHOLARK\]/i.test(m.text()))pageErrors.push(m.text())});
+  page.on('pageerror',e=>pageErrors.push(String(e?.stack||e?.message||e)));
+  page.on('console',m=>{if(m.type()==='error'&&/Uncaught|TypeError|ReferenceError|\[SCHOLARK\]/i.test(m.text()))pageErrors.push('console: '+m.text())});
   await page.addInitScript(()=>{localStorage.setItem('scholark_ui_language','nl');localStorage.setItem('scholark_country','Suriname');localStorage.setItem('scholark_learning_level','secondary')});
   try{
     await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
