@@ -83,6 +83,7 @@
     return{total:Math.max(total,monthly+extra),monthly,extra,allowance};
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
+  const boundWalletTriggers=new WeakSet();
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
@@ -140,6 +141,14 @@
     trigger.title='Open SCHOLARK Wallet';
     trigger.setAttribute('aria-label','Wallet · show total, monthly and extra SCHOLARK credits');
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
+    if(!boundWalletTriggers.has(trigger)){
+      boundWalletTriggers.add(trigger);
+      trigger.addEventListener('click',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        toggleWallet(trigger);
+      });
+    }
   }
   function liveWalletTrigger(trigger){
     if(trigger?.isConnected)return trigger;
@@ -223,15 +232,8 @@
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
   document.addEventListener('click',e=>{
-    const trigger=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
-    if(trigger){
-      e.preventDefault();
-      e.stopPropagation();
-      toggleWallet(trigger);
-      return;
-    }
-    if(!e.target.closest?.('.v85-topbar-wallet-panel'))closeTopbarWallet();
-  },true);
+    if(!e.target.closest?.('.v85-topbar-credit,.v85-wallet,.v85-topbar-wallet-panel'))closeTopbarWallet();
+  });
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTopbarWallet()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession();else closeTopbarWallet()});
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
