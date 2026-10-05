@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V95_EXPERIENCE__)return;
   window.__SCHOLARK_V95_EXPERIENCE__=true;
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-  document.documentElement.dataset.scholarkRelease='95';
+  document.documentElement.dataset.scholarkExperience='95';
 
   const css=document.createElement('style');css.id='scholark-v95-style';css.textContent=`
     :root{--sch-ease:cubic-bezier(.2,.75,.25,1);--sch-shadow:0 22px 65px rgba(31,27,63,.09);--sch-line:rgba(23,25,31,.09)}
@@ -30,7 +30,7 @@
     @media(prefers-reduced-motion:reduce){.v95-reveal,.v95-reveal.v95-in{opacity:1;transform:none;transition:none}.v41-plan:hover,.v51-card:hover,.v91-quick button:hover{transform:none!important}}
   `;document.head.appendChild(css);
 
-  let toast=null,timer=null;
+  let toast=null,timer=null,hardenTimer=0;
   function notify(message){
     if(!toast){toast=document.createElement('div');toast.className='v95-toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}
     toast.innerHTML=message;toast.classList.add('open');clearTimeout(timer);timer=setTimeout(()=>toast.classList.remove('open'),2600);
@@ -53,10 +53,10 @@
     }
   }
 
-  addEventListener('scholark-language-ready',e=>{harden();notify('<b>Language ready:</b> '+(window.__SCHOLARK_I18N__?.nativeName?.(e.detail?.code)||e.detail?.code||''))});
+  function scheduleHarden(delay=80){clearTimeout(hardenTimer);hardenTimer=setTimeout(harden,delay)}
+  addEventListener('scholark-language-ready',e=>{scheduleHarden(0);notify('<b>Language ready:</b> '+(window.__SCHOLARK_I18N__?.nativeName?.(e.detail?.code)||e.detail?.code||''))});
   addEventListener('scholark-language-failed',e=>notify('<b>Language switch could not finish.</b> SCHOLARK kept your previous language instead of leaving the interface half-translated.'));
-  addEventListener('hashchange',()=>setTimeout(harden,80));
-  addEventListener('resize',()=>setTimeout(harden,120),{passive:true});
-  setTimeout(harden,180);
+  addEventListener('hashchange',()=>scheduleHarden(90));
+  const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,700));idle(()=>harden(),{timeout:1400});
   window.__SCHOLARK_V95__={harden,notify};
 })();
