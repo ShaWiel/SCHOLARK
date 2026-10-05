@@ -40,13 +40,14 @@
   const WORKSPACE = [
     'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v53-dashboard-bootstrap.js',
     'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
-    'scholark-v84-profile-cloud.js','scholark-v85-credits-hud.js','scholark-v88-learning-engine.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js','scholark-v110-workspace-core.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js'
+    'scholark-v85-credits-hud.js','scholark-v110-workspace-core.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js'
   ];
+  const WORKSPACE_IDLE = ['scholark-v84-profile-cloud.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js'];
   const FEATURES = {
     studio:[],
     ai:['scholark-v107-general-ai.js'],
     tutor:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
-    education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js'],
+    education:['scholark-v52-workspace-qa.js','scholark-v62-learning-ai.js','scholark-v82-tutor-cloud.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js'],
     planner:['scholark-v52-workspace-qa.js'],
     progress:['scholark-v52-workspace-qa.js'],
     goal:['scholark-v52-workspace-qa.js'],
@@ -198,6 +199,16 @@
     preloadFiles(STUDIO_CORE);
     setTimeout(() => ensureFiles(STUDIO_CORE, false, true), 20);
   }
+  let workspaceIdleScheduled=false;
+  function prewarmWorkspaceIdle(){
+    if(workspaceIdleScheduled)return;
+    workspaceIdleScheduled=true;
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,450));
+    idle(()=>{
+      preloadFiles(WORKSPACE_IDLE);
+      ensureFiles(WORKSPACE_IDLE,false,true);
+    },{timeout:1400});
+  }
   function prefetchStudioHeavy() {
     const idle = window.requestIdleCallback || (fn => setTimeout(fn, 320));
     idle(() => preloadFiles(STUDIO_HEAVY), {timeout:900});
@@ -222,6 +233,15 @@
 
   document.addEventListener('click', e => {
     if (replaying) return;
+    const account=e.target.closest?.('#v51-account,[data-v55-account="manage"]');
+    if(account&&!loaded.has('scholark-v89-account-settings.js')){
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      ensureFiles(['scholark-v89-account-settings.js'],true).then(ok=>{
+        if(!ok||!account.isConnected)return;
+        replaying=true;try{account.click()}finally{replaying=false}
+      });
+      return;
+    }
     const generate = e.target.closest?.('#v41-studio-workspace .v41-generate');
     if (generate && STUDIO_HEAVY.some(file => !loaded.has(file))) {
       e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
@@ -271,7 +291,10 @@
 
   function afterRouteLoad(key) {
     if (key === 'home') window.__SCHOLARK_V30_DEMO__?.start?.();
-    else prewarmStudioCore();
+    else {
+      prewarmStudioCore();
+      prewarmWorkspaceIdle();
+    }
     if (key === 'studio') prefetchStudioHeavy();
   }
 
