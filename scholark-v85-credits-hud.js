@@ -251,6 +251,16 @@
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
   document.addEventListener('click',e=>{
+    const requested=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
+    if(requested&&!requested.isConnected){
+      const live=liveWalletTrigger(requested);
+      if(live){
+        bindWalletTrigger(live);
+        if(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===walletSurface(live))preserveWalletAnchor();
+        else toggleWallet(live);
+      }
+      return;
+    }
     if(!e.target.closest?.('.v85-topbar-credit,.v85-wallet,.v85-topbar-wallet-panel'))closeTopbarWallet();
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTopbarWallet()});
