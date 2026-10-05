@@ -30,7 +30,7 @@ try{
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
   await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
   await page.locator('[data-v72-terms]').check();
-  await page.locator('.v72-form button[type="submit"],.v72-form button').first().click();
+  await page.locator('.v72-form button').filter({hasText:'Create account'}).click();
   await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});
   check(true,'unverified signup requires email confirmation');
 
