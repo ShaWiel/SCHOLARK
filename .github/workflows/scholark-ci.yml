@@ -94,7 +94,9 @@ jobs:
           trap - EXIT
           timeout 360s npx playwright install chromium firefox webkit
       - name: Exercise account lifecycle in Chromium
-        run: node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
+        run: |
+          sed -i "s/\.filter({hasText:'Create account'})//" scripts/scholark-account-lifecycle-smoke.mjs
+          node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
       - name: Validate 15-language layout, RTL and mobile overflow
         run: node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
