@@ -142,3 +142,10 @@ jobs:
           exit 1
       - name: Test live health, AI Tutor, Language Learner and Studio presentation
         run: node scripts/scholark-smoke.mjs https://scholark-app-shawiel.onrender.com --live
+      - name: Install live browser smoke dependency
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          timeout 240s npx playwright install-deps chromium || echo "::warning::Chromium dependency setup timed out; browser launch will validate the runner."
+          timeout 240s npx playwright install chromium
+      - name: Run live prelaunch browser smoke
+        run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
