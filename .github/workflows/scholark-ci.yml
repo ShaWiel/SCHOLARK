@@ -27,6 +27,15 @@ jobs:
       - name: Validate runtime, resilience and syntax
         run: |
           node --check scholark-billing-route.mjs
+          node --check scholark-launch-route.mjs
+          node --check scholark-learning-route.mjs
+          node --check scholark-v72-cloud-projects.js
+          node --check scholark-v89-account-settings.js
+          node --check scholark-v116-launch-foundation.js
+          node --check scripts/scholark-account-lifecycle-smoke.mjs
+          node --check scripts/scholark-arki-production-smoke.mjs
+          node --check scripts/scholark-i18n-visual-smoke.mjs
+          node --check scripts/scholark-capacity-smoke.mjs
           node scripts/scholark-static-audit.mjs
 
   docker-build-and-smoke:
