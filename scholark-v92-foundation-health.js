@@ -93,9 +93,13 @@
   addEventListener('hashchange',()=>{prepareRouteEntry('hashchange');setTimeout(reconcile,0);setTimeout(reconcile,180);setTimeout(()=>selftest(false),900)});
   addEventListener('popstate',()=>{prepareRouteEntry('popstate');setTimeout(reconcile,0);setTimeout(reconcile,180)});
   addEventListener('pageshow',()=>{prepareRouteEntry('pageshow');setTimeout(reconcile,20)});
-  addEventListener('online',()=>setTimeout(()=>selftest(true),500));
-  addEventListener('scholark-runtime-ready',()=>{runtimeReady=true;setTimeout(()=>selftest(false),700)});
+  function scheduleSelftest(force=false,timeout=2600){
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,900));
+    idle(()=>selftest(force),{timeout});
+  }
+  addEventListener('online',()=>scheduleSelftest(true,1200));
+  addEventListener('scholark-runtime-ready',()=>{runtimeReady=true;scheduleSelftest(false,2600)});
   setTimeout(reconcile,180);
-  setTimeout(()=>{if(!runtimeReady)selftest(false)},3200);
+  setTimeout(()=>{if(!runtimeReady)scheduleSelftest(false,1800)},4200);
   window.__SCHOLARK_HEALTH__={selftest,reconcile,refresh:()=>selftest(true),last:()=>lastReport||(()=>{try{return JSON.parse(sessionStorage.getItem('scholark_foundation_health')||'null')}catch{return null}})()};
 })();
