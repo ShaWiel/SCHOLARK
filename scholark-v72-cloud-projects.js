@@ -55,7 +55,7 @@
   function openPasswordRecovery(){
     modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>Set a new password</h2><button class="v72-x" aria-label="Close">×</button></div><form class="v72-form"><input type="password" autocomplete="new-password" placeholder="New password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required><input type="password" autocomplete="new-password" placeholder="Confirm new password" minlength="'+PASSWORD_MIN+'" required><button>Update password</button></form><div class="v72-modal-status">Choose a new password for your SCHOLARK account.</div></div>';
     modal.classList.add('open');$('.v72-x',modal).onclick=closeModal;
-    const form=$('.v72-form',modal),st=$('.v72-modal-status',modal),inputs=$('input[type="password"]',form);
+    const form=$('.v72-form',modal),st=$('.v72-modal-status',modal),inputs=$$('input[type="password"]',form);
     form.onsubmit=async e=>{e.preventDefault();const pass=inputs[0]?.value||'',confirm=inputs[1]?.value||'';if(pass!==confirm){st.textContent='Passwords do not match.';st.style.color='#a13d3d';return}if(!validPassword(pass)){st.textContent='Use at least '+PASSWORD_MIN+' characters.';st.style.color='#a13d3d';return}st.textContent='Updating password…';st.style.color='#6559c9';try{await updatePassword(pass);st.textContent='Password updated. Your account is ready.';setTimeout(()=>{closeModal();enhance(true)},650)}catch(err){st.textContent=clean(err?.message||err);st.style.color='#a13d3d'}};
   }
 
@@ -82,7 +82,7 @@
     });
     form.onsubmit=async e=>{
       e.preventDefault();
-      const inputs=$('input',form),email=clean(inputs[0]?.value),pass=inputs[1]?.value||'',mode=tab,terms=$('[data-v72-terms]',form);
+      const inputs=$$('input',form),email=clean(inputs[0]?.value),pass=inputs[1]?.value||'',mode=tab,terms=$('[data-v72-terms]',form);
       if(!validPassword(pass)){st.textContent='Use at least '+PASSWORD_MIN+' characters for your password.';st.style.color='#a13d3d';return}
       if(mode==='signup'&&!terms?.checked){st.textContent='Agree to the Privacy Notice, Terms, Refund/Cancellation and Subscription Terms before creating an account.';st.style.color='#a13d3d';terms?.focus();return}
       st.textContent=mode==='signin'?'Signing in…':'Creating account…';st.style.color='#6559c9';
