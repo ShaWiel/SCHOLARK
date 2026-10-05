@@ -127,16 +127,20 @@
     trigger.title='Open SCHOLARK Wallet';
     trigger.setAttribute('aria-label','Wallet · show total, monthly and extra SCHOLARK credits');
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
-    trigger.onclick=e=>{
-      e.stopPropagation();
-      const panel=ensureTopbarWalletPanel(),same=panel.classList.contains('open')&&walletPanelAnchor===trigger;
-      document.querySelector('.v55-account-wrap.open')?.classList.remove('open');
-      document.querySelector('.v116-public-actions.open')?.classList.remove('open');
-      closeTopbarWallet();
-      if(same)return;
-      panel.innerHTML=walletPanelHtml();panel.classList.add('open');panel.setAttribute('aria-hidden','false');
-      walletPanelAnchor=trigger;trigger.setAttribute('aria-expanded','true');positionTopbarWallet(trigger);
-    };
+  }
+  function toggleWallet(trigger){
+    if(!trigger?.isConnected)return;
+    const panel=ensureTopbarWalletPanel(),same=panel.classList.contains('open')&&walletPanelAnchor===trigger;
+    document.querySelector('.v55-account-wrap.open')?.classList.remove('open');
+    document.querySelector('.v116-public-actions.open')?.classList.remove('open');
+    closeTopbarWallet();
+    if(same)return;
+    panel.innerHTML=walletPanelHtml();
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden','false');
+    walletPanelAnchor=trigger;
+    trigger.setAttribute('aria-expanded','true');
+    positionTopbarWallet(trigger);
   }
   function renderTopbar(){
     const actions=$('#v55-topbar .v55-actions');
@@ -191,7 +195,16 @@
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
-  document.addEventListener('click',e=>{if(!e.target.closest?.('.v85-topbar-credit,.v85-wallet,.v85-topbar-wallet-panel'))closeTopbarWallet()});
+  document.addEventListener('click',e=>{
+    const trigger=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
+    if(trigger){
+      e.preventDefault();
+      e.stopPropagation();
+      toggleWallet(trigger);
+      return;
+    }
+    if(!e.target.closest?.('.v85-topbar-wallet-panel'))closeTopbarWallet();
+  },true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTopbarWallet()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession();else closeTopbarWallet()});
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
