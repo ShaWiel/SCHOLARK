@@ -2,8 +2,8 @@
   if (window.__SCHOLARK_V51_WORKSPACE_SHELL__) return;
   window.__SCHOLARK_V51_WORKSPACE_SHELL__ = true;
 
-  const $=(s,r=document)=>r.querySelector(s);
-  const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+  const $=(s,r=document)=>r?.querySelector?.(s)||null;
+  const $=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
   const text=e=>(e?.textContent||'').replace(/\s+/g,' ').trim();
   const lower=e=>text(e).toLowerCase();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
