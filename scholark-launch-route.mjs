@@ -106,13 +106,34 @@ async function activeBilling(userId){
   const r=await sb('/rest/v1/billing_subscriptions?select=plan,status,current_period_end,cancel_at_period_end,paddle_subscription_id&user_id=eq.'+encodeURIComponent(userId)+'&limit=1',{method:'GET'}),d=await r.json().catch(()=>[]);
   return r.ok?(Array.isArray(d)?d[0]:d):null;
 }
+async function deleteUserStorage(userId){
+  if(!SB||!SERVICE)return {ok:false,count:0,error:'storage_not_configured'};
+  const bucket='project-media',queue=[userId],files=[],seen=new Set();
+  try{
+    while(queue.length){
+      const prefix=queue.shift();if(!prefix||seen.has(prefix))continue;seen.add(prefix);
+      for(let offset=0;offset<10000;offset+=1000){
+        const r=await fetch(SB+'/storage/v1/object/list/'+encodeURIComponent(bucket),{method:'POST',headers:serviceHeaders(),body:JSON.stringify({prefix,limit:1000,offset,sortBy:{column:'name',order:'asc'}}),signal:timeoutSignal(10000)});
+        if(r.status===404)return {ok:true,count:0};const rows=await r.json().catch(()=>[]);
+        if(!r.ok)return {ok:false,count:files.length,error:'storage_list_failed_'+r.status};
+        if(!Array.isArray(rows)||!rows.length)break;
+        for(const row of rows){
+          const name=clean(row?.name,500);if(!name)continue;
+          const path=prefix+'/'+name;
+          if(row?.id||row?.metadata)files.push(path);else if(seen.size<2000)queue.push(path);
+        }
+        if(rows.length<1000)break;
+      }
+    }
+    for(let i=0;i<files.length;i+=1000){
+      const batch=files.slice(i,i+1000),r=await fetch(SB+'/storage/v1/object/'+encodeURIComponent(bucket),{method:'DELETE',headers:serviceHeaders(),body:JSON.stringify({prefixes:batch}),signal:timeoutSignal(15000)});
+      if(!r.ok)return {ok:false,count:i,error:'storage_delete_failed_'+r.status};
+    }
+    return {ok:true,count:files.length};
+  }catch(e){return {ok:false,count:0,error:clean(e?.message||e,160)||'storage_cleanup_failed'}}
+}
 async function deleteAuthUser(userId){
   const r=await fetch(SB+'/auth/v1/admin/users/'+encodeURIComponent(userId),{method:'DELETE',headers:{apikey:SERVICE,'content-type':'application/json',accept:'application/json'},signal:timeoutSignal(10000)});
-  const d=await r.json().catch(()=>({}));
-  return {ok:r.ok,status:r.status,body:d};
-}
-async function deleteUserData(userId){
-  const r=await sb('/rest/v1/rpc/delete_scholark_user_data',{method:'POST',body:JSON.stringify({p_user_id:userId})});
   const d=await r.json().catch(()=>({}));
   return {ok:r.ok,status:r.status,body:d};
 }
@@ -201,11 +222,11 @@ http.Server.prototype.emit=function(type,...args){
       if(billing&&['trialing','active','past_due','paused'].includes(String(billing.status||''))){
         return json(res,409,{ok:false,code:'ACTIVE_SUBSCRIPTION',error:'Manage or cancel the active subscription before deleting this SCHOLARK account.',manageBilling:true,plan:billing.plan,status:billing.status,currentPeriodEnd:billing.current_period_end||null});
       }
-      const dataResult=await deleteUserData(user.id);
-      if(!dataResult.ok)return json(res,500,{ok:false,code:'ACCOUNT_DATA_DELETE_FAILED',error:'SCHOLARK could not safely remove account data, so the account itself was not deleted.'});
+      const storageResult=await deleteUserStorage(user.id);
+      if(!storageResult.ok)return json(res,500,{ok:false,code:'ACCOUNT_STORAGE_DELETE_FAILED',error:'SCHOLARK could not safely remove cloud media, so the account was not deleted.'});
       const result=await deleteAuthUser(user.id);
-      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED',dataDeleted:true,error:'Account data was removed, but the authentication account still needs cleanup.'});
-      json(res,200,{ok:true,deleted:true,dataDeleted:true});
+      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED',error:'The SCHOLARK account could not be deleted. No database cascade was started.'});
+      json(res,200,{ok:true,deleted:true,dataDeleted:true,storageObjectsDeleted:storageResult.count,billingEventRetention:'provider and detached operational records may remain where required'});
     }).catch(e=>json(res,e?.code==='REQUEST_TOO_LARGE'?413:400,{ok:false,code:e?.code||'ACCOUNT_DELETE_FAILED'}));return true;
   }
 
