@@ -82,12 +82,25 @@
     const extra=hasExtra?Math.max(0,Number(wallet.topup_balance)||0):Math.max(0,total-monthly);
     return{total:Math.max(total,monthly+extra),monthly,extra,allowance};
   }
-  let topbarWalletPanel=null,walletPanelAnchor=null;
+  let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
-    walletPanelAnchor=null;
+    walletPanelAnchor=null;walletPanelSurface='';
     if(topbarWalletPanel){topbarWalletPanel.classList.remove('open');topbarWalletPanel.setAttribute('aria-hidden','true')}
+  }
+  function replacementWalletAnchor(){
+    if(walletPanelSurface==='workspace')return document.querySelector('#v51-sidebar .v85-wallet');
+    if(walletPanelSurface==='topbar')return document.querySelector('#v55-topbar .v85-topbar-credit');
+    return null;
+  }
+  function preserveWalletAnchor(){
+    if(!topbarWalletPanel?.classList.contains('open'))return false;
+    if(walletPanelAnchor?.isConnected)return true;
+    const next=replacementWalletAnchor();
+    if(!next)return false;
+    walletPanelAnchor=next;bindWalletTrigger(next);next.setAttribute('aria-expanded','true');positionTopbarWallet(next);
+    return true;
   }
   function positionTopbarWallet(trigger){
     if(!topbarWalletPanel||!trigger?.isConnected)return;
@@ -139,6 +152,7 @@
     panel.classList.add('open');
     panel.setAttribute('aria-hidden','false');
     walletPanelAnchor=trigger;
+    walletPanelSurface=trigger.closest('#v51-sidebar')?'workspace':'topbar';
     trigger.setAttribute('aria-expanded','true');
     positionTopbarWallet(trigger);
   }
@@ -175,9 +189,9 @@
   }
 
   function render(){
-    if(walletPanelAnchor&&!walletPanelAnchor.isConnected)closeTopbarWallet();
     renderTopbar();
     renderWorkspaceWallet();
+    if(walletPanelAnchor&&!walletPanelAnchor.isConnected&&!preserveWalletAnchor())closeTopbarWallet();
     const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(dash){
       let el=$('.v85-dash',dash);if(!el){el=document.createElement('div');el.className='v85-dash';$('.v51-head',dash)?.insertAdjacentElement('beforebegin',el)}
       if(el){const on=signed(),bal=wallet?Math.max(0,Number(wallet.balance)||0):null;el.innerHTML=window.__SCHOLARK_TEST_MODE__?'<div><b>Testing foundation</b><span>Zero-credit test mode is active.</span></div><i>FREE TESTING</i>':'<div><b>Usage foundation</b><span>'+(on?(wallet?'Cloud wallet active · fair-use limits stay tied to your account.':'Signed in · wallet activation pending.'):'Sign in to keep usage, chats, projects and learning data attached to you.')+'</span></div><i>'+(bal==null?'—':bal.toLocaleString()+' credits')+'</i>'}
