@@ -103,6 +103,23 @@ for(const profile of profiles){
     await checkViewport(page,profile.name+' wallet');
     await page.keyboard.press('Escape');
     check(await page.locator('.v85-topbar-wallet-panel.open').count()===0,profile.name+': Wallet panel did not close with Escape');
+
+    // Reproduce the mobile remount race: a capture listener replaces the
+    // clicked Wallet button before SCHOLARK's delegated document handler sees
+    // the event. The handler must resolve the new canonical live trigger.
+    await page.evaluate(()=>{
+      const sabotage=e=>{
+        const old=e.target?.closest?.('#v55-topbar .v85-topbar-credit');
+        if(!old)return;
+        const clone=old.cloneNode(true);
+        old.replaceWith(clone);
+      };
+      window.addEventListener('click',sabotage,{capture:true,once:true});
+    });
+    await page.click('#v55-topbar .v85-topbar-credit');
+    check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet remount-race recovery failed');
+    check(await page.locator('.v85-topbar-wallet-panel').count()===1,profile.name+': Wallet remount-race duplicated the panel');
+    await page.keyboard.press('Escape');
     check(await page.locator('.v116-public-help-menu [data-v116-public-help]').count()===4,profile.name+': Help & Support menu items incomplete');
     check(await page.locator('[data-v116-public-support],[data-v116-public-feedback],[data-v116-public-privacy]').count()===0,profile.name+': legacy standalone help actions remain');
     await checkViewport(page,profile.name+' home');
