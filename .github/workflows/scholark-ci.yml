@@ -32,6 +32,7 @@ jobs:
           node --check scholark-security-foundation.mjs
           node --check scholark-v72-cloud-projects.js
           node --check scholark-v118-account-security.js
+          node --check scholark-v119-foundation-polish.js
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
