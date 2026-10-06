@@ -49,6 +49,7 @@ const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
 const generalAi=read('scholark-v107-general-ai.js');
 const accountSettings=read('scholark-v89-account-settings.js');
+const accountSecurity=read('scholark-v118-account-security.js');
 const performance=read('scholark-v94-performance-foundation.js');
 const experience=read('scholark-v95-experience-polish.js');
 const visualSystem=read('scholark-v112-workspace-visual-system.js');
