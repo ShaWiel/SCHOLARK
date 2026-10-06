@@ -27,7 +27,9 @@ jobs:
           node --check scholark-billing-route.mjs
           node --check scholark-launch-route.mjs
           node --check scholark-learning-route.mjs
+          node --check scholark-security-foundation.mjs
           node --check scholark-v72-cloud-projects.js
+          node --check scholark-v118-account-security.js
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
@@ -35,7 +37,10 @@ jobs:
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
+          node --check scripts/scholark-security-smoke.mjs
+          node --check scripts/scholark-security-contracts.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-security-contracts.mjs
       - name: Build production image
         run: docker build --pull -t scholark-release-gate .
       - name: Start isolated production container
@@ -57,6 +62,7 @@ jobs:
           node scripts/scholark-arki-production-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-gemini-router-smoke.mjs
           node scripts/scholark-credit-resilience-smoke.mjs
+          node scripts/scholark-security-smoke.mjs http://127.0.0.1:10000
       - name: Install browser engines with bounded setup
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
