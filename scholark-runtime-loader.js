@@ -6,6 +6,12 @@
   window.__SCHOLARK_TEST_MODE__ = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname||''));
   const appPath = () => { const p=String(location.pathname||'/').replace(/\/+$/,'')||'/'; return p==='/'||p==='/index.html'; };
   const authCallbackHash = (hash=location.hash) => /(^|&)access_token=/.test(String(hash||'').replace(/^#/,''));
+  // Preserve Supabase's fragment callback before any route/home repair can rewrite location.hash.
+  // V72 consumes and clears this one-shot value after restoring the authenticated session.
+  try {
+    const initialAuthHash=String(location.hash||'');
+    if(authCallbackHash(initialAuthHash)) sessionStorage.setItem('scholark_auth_callback_hash_v1',initialAuthHash);
+  } catch {}
   const routeHash = () => authCallbackHash() ? 'home' : String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const creditStore = () => appPath() && routeHash()==='credit-store';
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
