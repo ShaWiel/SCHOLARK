@@ -88,6 +88,16 @@ function consume(ip, path, limit) {
   return {allowed:b.count<=limit, remaining, retryAfter:Math.max(1,Math.ceil((WINDOW_MS-(now-b.started))/1000))};
 }
 
+function hardenServer(server) {
+  if (!server || server.__scholarkTransportHardened) return;
+  server.__scholarkTransportHardened = true;
+  try { server.requestTimeout = 120000; } catch {}
+  try { server.headersTimeout = 20000; } catch {}
+  try { server.keepAliveTimeout = 5000; } catch {}
+  try { server.maxHeadersCount = 100; } catch {}
+  try { server.maxRequestsPerSocket = 250; } catch {}
+}
+
 function requestOriginAllowed(req) {
   const site = String(req.headers?.['sec-fetch-site'] || '').toLowerCase();
   if (site === 'cross-site') return false;
@@ -104,6 +114,7 @@ function requestOriginAllowed(req) {
 http.Server.prototype.emit = function(type,...args) {
   if (type !== 'request') return previousEmit.call(this,type,...args);
   const [req,res] = args;
+  hardenServer(this);
   securityHeaders(res);
   let url;
   try { url = new URL(req.url || '/','http://localhost'); }
@@ -118,7 +129,7 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
