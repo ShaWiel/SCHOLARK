@@ -63,7 +63,7 @@ const launchFoundation=read('scholark-v116-launch-foundation.js');
 const cloudProjects=read('scholark-v72-cloud-projects.js');
 const creditStore=read('scholark-v117-credit-store.js');
 const foundationPolish=read('scholark-v119-foundation-polish.js');
-const mfaPerformanceMigration=read('supabase/migrations/20261006_mfa_guard_performance_r218.sql');
+const mfaPerformanceMigration=read('supabase/migrations/20261006_mfa_private_gate_r218.sql');
 const creditSecurityMigration=read('supabase/migrations/20261003_credit_store_expansion_security.sql');
 const futureSecurityMigration=read('supabase/migrations/20261003_future_object_security_hardening.sql');
 const supportFeedbackMigration=read('supabase/migrations/20261003234012_allow_support_feedback_category.sql');
@@ -120,7 +120,7 @@ ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'
 ok(runtime.includes("'scholark-v119-foundation-polish.js'")&&baseBlock.includes('scholark-v119-foundation-polish.js')&&docker.includes('scholark-v119-foundation-polish.js'),'r218 foundation polish is not shipped as a base module');
 ok(foundationPolish.includes('scholark-r218-store')&&foundationPolish.includes("release:'r218'")&&!/#v117|\.v117/.test(foundationPolish),'r218 visual polish must remain isolated from Credit Store selectors');
 ok(hardening.includes('observerRoot')&&hardening.includes('observerRebinds')&&hardening.includes('mutationRelevant')&&hardening.includes('rebindObserver:startObserver')&&hardening.includes('observerLive'),'Foundation observer is not remount-safe/coalesced');
-ok(mfaPerformanceMigration.includes('as restrictive to authenticated')&&mfaPerformanceMigration.includes('where mf.user_id = auth.uid()')&&mfaPerformanceMigration.includes("coalesce(auth.jwt()->>'aal','aal1') = 'aal2'"),'MFA guard performance migration is incomplete');
+ok(mfaPerformanceMigration.includes('scholark_private.mfa_access_allowed')&&mfaPerformanceMigration.includes('security definer')&&mfaPerformanceMigration.includes("set search_path = ''")&&mfaPerformanceMigration.includes('revoke all on function scholark_private.mfa_access_allowed() from public')&&mfaPerformanceMigration.includes('grant execute on function scholark_private.mfa_access_allowed() to authenticated, service_role')&&mfaPerformanceMigration.includes('select scholark_private.mfa_access_allowed()'),'MFA private cached guard migration is incomplete');
 ok(runtime.includes('const uniqueFiles=files=>[...new Set')&&runtime.includes('files=uniqueFiles(files)'),'Runtime loader does not deduplicate preload/load batches');
 ok(runtime.includes('const PRELOAD_CAP=10, YIELD_EVERY=4')&&runtime.includes('if (++burst>=YIELD_EVERY)')&&runtime.includes('preloadCap:PRELOAD_CAP')&&runtime.includes('yieldEvery:YIELD_EVERY'),'Runtime preload/yield tuning is incomplete');
 ok(runtime.includes('function scheduleRouteLoad(')&&runtime.includes('routeLoadEpoch')&&!runtime.includes('preloadFiles([...STUDIO_CORE, ...FEATURES.project])'),'Runtime route coalescing / lazy Project boot optimization is incomplete');
