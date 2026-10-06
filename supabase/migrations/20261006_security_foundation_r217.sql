@@ -10,7 +10,7 @@ create table if not exists public.security_events (
   route text null check (route is null or char_length(route) <= 180),
   risk_level text not null default 'medium' check (risk_level in ('low','medium','high','critical')),
   ip_hash text null check (ip_hash is null or char_length(ip_hash) <= 64),
-  session_id text null check (session_id is null or char_length(session_id) <= 120),
+  session_hash text null check (session_hash is null or char_length(session_hash) <= 64),
   release text null check (release is null or char_length(release) <= 80),
   metadata jsonb not null default '{}'::jsonb,
   constraint security_events_metadata_object check (jsonb_typeof(metadata)='object')
