@@ -66,7 +66,7 @@ async function currentContext(req){
 function eventMeta(input){const src=input&&typeof input==='object'?input:{},out={};for(const k of ['action','method','aal','code','provider','feature','reason']){if(src[k]!=null)out[k]=clean(src[k],120)}return out}
 async function logEvent(req,{userId=null,eventType,outcome='blocked',route='',risk='medium',sessionId=null,metadata={}}={}){
   if(!SB||!SERVICE||TEST_MODE)return;
-  const row={user_id:userId,event_type:clean(eventType,80)||'security_event',outcome:['allowed','blocked','failed','observed'].includes(outcome)?outcome:'observed',route:clean(route||req?.url,180)||null,risk_level:['low','medium','high','critical'].includes(risk)?risk:'medium',ip_hash:req?ipHash(req):null,session_id:sessionId?crypto.createHmac('sha256',STEP_SECRET).update(String(sessionId)).digest('hex').slice(0,32):null,metadata:eventMeta(metadata),release:RELEASE};
+  const row={user_id:userId,event_type:clean(eventType,80)||'security_event',outcome:['allowed','blocked','failed','observed'].includes(outcome)?outcome:'observed',route:clean(route||req?.url,180)||null,risk_level:['low','medium','high','critical'].includes(risk)?risk:'medium',ip_hash:req?ipHash(req):null,session_hash:sessionHash(sessionId),metadata:eventMeta(metadata),release:RELEASE};
   try{const r=await fetch(SB+'/rest/v1/security_events',{method:'POST',headers:serviceHeaders({Prefer:'return=minimal'}),body:JSON.stringify(row),signal:timeoutSignal(4000)});if(!r.ok){const fallback={user_id:userId,feature:'security',event:row.event_type,duration_ms:0,success:row.outcome==='allowed',credits:0,meta:{route:row.route,risk:row.risk_level,outcome:row.outcome,ip_hash:row.ip_hash,release:RELEASE,...row.metadata}};await fetch(SB+'/rest/v1/usage_events',{method:'POST',headers:serviceHeaders({Prefer:'return=minimal'}),body:JSON.stringify(fallback),signal:timeoutSignal(4000)})}}catch{}
 }
 function consumeUser(key,path,limit){
@@ -96,7 +96,7 @@ function challengeReason(ctx){
   return '';
 }
 function securityHealth(){
-  return {ok:true,release:RELEASE,version:'20261006-security-r217',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,tokensStored:false,sessionIdsHashed:true,fallback:'usage_events'},turnstile:{clientConfigured:!!TURNSTILE_SITE_KEY,supabaseValidationRequired:true},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
+  return {ok:true,release:RELEASE,version:'20261006-security-r217',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,rawSessionIdsStored:false,tokensStored:false,sessionIdsHashed:true,fallback:'usage_events'},turnstile:{clientConfigured:!!TURNSTILE_SITE_KEY,supabaseValidationRequired:true},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
 }
 
 http.Server.prototype.emit=function(type,...args){
