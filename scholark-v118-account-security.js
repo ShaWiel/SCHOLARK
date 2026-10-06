@@ -76,14 +76,15 @@
   async function requestProof(action,force=false){
     const cached=proofCache.get(action);if(!force&&cached&&cached.expiresAt>Date.now()+15000)return cached.proof;
     await refreshUser().catch(()=>{});
-    if(verifiedTotp().length){if(aal()!=='aal2')await verifyExistingMfa()}
-    else await passwordReauth();
-    const token=current()?.access_token;if(!token)throw new Error('Your secure session could not be refreshed.');
-    let r=await fetch('/api/security/step-up',{method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({action}),cache:'no-store'});
-    let d=await r.json().catch(()=>({}));
-    if(r.status===428&&d?.code==='MFA_REQUIRED'){await verifyExistingMfa();const t=current()?.access_token;r=await fetch('/api/security/step-up',{method:'POST',headers:{authorization:'Bearer '+t,'content-type':'application/json'},body:JSON.stringify({action}),cache:'no-store'});d=await r.json().catch(()=>({}))}
-    if(!r.ok||!d?.proof)throw new Error(d?.code==='RECENT_AUTH_REQUIRED'?'Verify your identity again before continuing.':d?.error||d?.code||'Security verification failed.');
-    proofCache.set(action,{proof:d.proof,expiresAt:Number(d.expiresAt)||Date.now()+5*60*1000});return d.proof;
+    const issue=async()=>{const token=current()?.access_token;if(!token)throw new Error('Your secure session is unavailable.');const r=await fetch('/api/security/step-up',{method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({action}),cache:'no-store'});return {r,d:await r.json().catch(()=>({}))}};
+    let out=await issue();
+    if(!out.r.ok&&out.r.status===428){
+      if(out.d?.code==='MFA_REQUIRED'||(verifiedTotp().length&&out.d?.code==='RECENT_AUTH_REQUIRED'))await verifyExistingMfa();
+      else if(out.d?.code==='RECENT_AUTH_REQUIRED')await passwordReauth();
+      out=await issue();
+    }
+    if(!out.r.ok||!out.d?.proof)throw new Error(out.d?.error||out.d?.code||'Security verification failed.');
+    proofCache.set(action,{proof:out.d.proof,expiresAt:Number(out.d.expiresAt)||Date.now()+5*60*1000});return out.d.proof;
   }
   async function signOutOthers(){
     await requestProof('sessions');
