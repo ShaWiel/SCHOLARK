@@ -22,9 +22,12 @@
     return {score,label,emailVerified:verified,mfaEnabled:mfa,aal:level};
   }
   async function refreshUser(session=current()){
-    if(!session?.access_token)return null;
-    const r=await fetch(SB+'/auth/v1/user',{headers:authHeaders(session.access_token),cache:'no-store'}),u=await r.json().catch(()=>null);
-    if(r.ok&&u?.id){session.user=u;cloud()?.saveSession?.(session);return u}
+    const token=session?.access_token||'';if(!token)return null;
+    const r=await fetch(SB+'/auth/v1/user',{headers:authHeaders(token),cache:'no-store'}),u=await r.json().catch(()=>null);
+    if(r.ok&&u?.id){
+      const live=current();if(!live?.access_token||live.access_token!==token)return null;
+      live.user=u;cloud()?.saveSession?.(live);return u
+    }
     return null;
   }
   async function authFetch(path,opts={}){
@@ -142,5 +145,5 @@
   const mo=new MutationObserver(()=>injectSettingsButton());mo.observe(document.documentElement,{childList:true,subtree:true});
   addEventListener('scholark:auth-changed',()=>{proofCache.clear();setTimeout(()=>refreshUser().catch(()=>{}),50)});
   [300,900,1800].forEach(ms=>setTimeout(injectSettingsButton,ms));
-  window.__SCHOLARK_SECURITY__={open,score:securityScore,stepUp:requestProof,signOutOthers,completeMfaIfRequired,refreshUser,verifiedFactors:verifiedTotp,release:'r217'};
+  window.__SCHOLARK_SECURITY__={open,score:securityScore,stepUp:requestProof,signOutOthers,completeMfaIfRequired,refreshUser,verifiedFactors:verifiedTotp,release:'r218'};
 })();
