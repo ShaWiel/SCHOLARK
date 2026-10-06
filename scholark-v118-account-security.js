@@ -68,7 +68,8 @@
     const s=current(),email=clean(s?.user?.email,240);if(!email)throw new Error('No account email is available.');
     const password=prompt('For security, enter your current SCHOLARK password again.');
     if(!password)throw new Error('Verification canceled.');
-    const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:KEY,'content-type':'application/json'},body:JSON.stringify({email,password})});
+    const captcha=await cloud()?.captchaToken?.(modal),body=captcha?{email,password,gotrue_meta_security:{captcha_token:captcha}}:{email,password};
+    const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:KEY,'content-type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json().catch(()=>({}));if(!r.ok||!d?.access_token)throw new Error('Identity verification failed.');
     d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);cloud()?.saveSession?.(d);return true;
   }
