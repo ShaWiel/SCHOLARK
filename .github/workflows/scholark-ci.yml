@@ -29,7 +29,9 @@ jobs:
           node --check scholark-billing-route.mjs
           node --check scholark-launch-route.mjs
           node --check scholark-learning-route.mjs
+          node --check scholark-security-foundation.mjs
           node --check scholark-v72-cloud-projects.js
+          node --check scholark-v118-account-security.js
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
@@ -37,7 +39,10 @@ jobs:
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
+          node --check scripts/scholark-security-smoke.mjs
+          node --check scripts/scholark-security-contracts.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-security-contracts.mjs
 
   docker-build-and-smoke:
     runs-on: ubuntu-latest
@@ -60,6 +65,8 @@ jobs:
           done
           docker logs scholark-ci-run
           exit 1
+      - name: Run security foundation smoke
+        run: node scripts/scholark-security-smoke.mjs http://127.0.0.1:10000
       - name: Run full local API smoke suite
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
       - name: Run global Schools Near Me sampling
