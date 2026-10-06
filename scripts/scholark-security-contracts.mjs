@@ -13,7 +13,7 @@ const migration=read('supabase/migrations/20261006_security_foundation_r217.sql'
 
 assert.match(docker,/scholark-security-foundation\.mjs/);
 assert.match(docker,/scholark-v118-account-security\.js/);
-assert.match(docker,/SCHOLARK_RELEASE=r217/);
+assert.match(docker,/SCHOLARK_RELEASE=r218/);
 assert.match(guard,/content-security-policy/);
 assert.match(guard,/strictMutationOrigin:true/);
 assert.match(guard,/SENSITIVE_QUERY_BLOCKED/);
@@ -45,4 +45,4 @@ for (const file of fs.readdirSync('.').filter(x=>x.endsWith('.mjs'))) {
   assert.ok(!/console\.(log|warn|error)\([^\n]*(SERVICE_ROLE_KEY|access_token|refresh_token|password)/i.test(source),file+' may log a secret');
   assert.ok(!/fetch\s*\(\s*(body|payload|data)\??\.(url|href)/i.test(source),file+' contains a possible user-controlled SSRF fetch');
 }
-console.log('SCHOLARK SECURITY CONTRACTS',JSON.stringify({ok:true,release:'r217'}));
+console.log('SCHOLARK SECURITY CONTRACTS',JSON.stringify({ok:true,release:'r218'}));
