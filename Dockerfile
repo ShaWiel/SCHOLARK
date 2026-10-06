@@ -121,8 +121,15 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.
-RUN npm install --omit=dev --no-audit --no-fund \
-    && npm install --omit=dev --no-save --no-audit --no-fund pptxgenjs docx pdfkit pdf-parse@2.4.5 mammoth jszip sanitize-html
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev --no-audit --no-fund; else npm install --omit=dev --no-audit --no-fund; fi \
+    && npm install --omit=dev --no-save --no-audit --no-fund \
+       pptxgenjs@4.0.1 \
+       docx@9.8.1 \
+       pdfkit@0.20.2 \
+       pdf-parse@2.4.5 \
+       mammoth@1.10.0 \
+       jszip@3.10.2 \
+       sanitize-html@2.18.0
 
 ENV NODE_ENV=production
 ENV SCHOLARK_RELEASE=r217
