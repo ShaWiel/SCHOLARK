@@ -233,10 +233,8 @@
     renderTopbar();
     renderWorkspaceWallet();
     if(walletPanelAnchor&&!walletPanelAnchor.isConnected&&!preserveWalletAnchor())closeTopbarWallet();
-    const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(dash){
-      let el=$('.v85-dash',dash);if(!el){el=document.createElement('div');el.className='v85-dash';$('.v51-head',dash)?.insertAdjacentElement('beforebegin',el)}
-      if(el){const on=signed(),bal=wallet?Math.max(0,Number(wallet.balance)||0):null;el.innerHTML=window.__SCHOLARK_TEST_MODE__?'<div><b>Testing foundation</b><span>Zero-credit test mode is active.</span></div><i>FREE TESTING</i>':'<div><b>Usage foundation</b><span>'+(on?(wallet?'Cloud wallet active · fair-use limits stay tied to your account.':'Signed in · wallet activation pending.'):'Sign in to keep usage, chats, projects and learning data attached to you.')+'</span></div><i>'+(bal==null?'—':bal.toLocaleString()+' credits')+'</i>'}
-    }
+    const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');
+    if(dash)$('.v85-dash',dash).forEach(el=>el.remove());
   }
   function sync(){render();if(cloud())loadCosts();load()}
   function checkSession(){const token=currentSession()?.access_token||'';if(token!==lastToken){lastToken=token;load()}}
