@@ -10,13 +10,18 @@ const accountSecurity=read('scholark-v118-account-security.js');
 const launch=read('scholark-v116-launch-foundation.js');
 const reference=read('studio-reference-route.mjs');
 const migration=read('supabase/migrations/20261006_security_foundation_r217.sql');
+const mfaPerformance=read('supabase/migrations/20261006_mfa_guard_performance_r218.sql');
+const polish=read('scholark-v119-foundation-polish.js');
 
 assert.match(docker,/scholark-security-foundation\.mjs/);
 assert.match(docker,/scholark-v118-account-security\.js/);
+assert.match(docker,/scholark-v119-foundation-polish\.js/);
 assert.match(docker,/SCHOLARK_RELEASE=r218/);
 assert.match(guard,/content-security-policy/);
 assert.match(guard,/strictMutationOrigin:true/);
 assert.match(guard,/SENSITIVE_QUERY_BLOCKED/);
+assert.match(guard,/function hardenServer\(server\)/);
+assert.match(guard,/maxHeadersCount = 100/);
 assert.match(security,/STEP_UP_REQUIRED/);
 assert.match(security,/DUPLICATE_ACTION_BLOCKED/);
 assert.match(security,/rawIpStored:false/);
@@ -35,6 +40,10 @@ assert.match(reference,/ZIP_LIMIT/);
 assert.match(migration,/as restrictive to authenticated/i);
 assert.match(migration,/auth\.mfa_factors/);
 assert.match(migration,/revoke all on table public\.security_events from anon, authenticated/i);
+assert.match(mfaPerformance,/as restrictive to authenticated/i);
+assert.match(mfaPerformance,/where mf\.user_id = auth\.uid\(\)/i);
+assert.match(polish,/scholark-r218-store/);
+assert.doesNotMatch(polish,/#v117|\.v117/);
 
 for (const file of fs.readdirSync('.').filter(x=>x.endsWith('.js'))) {
   const source=read(file);
