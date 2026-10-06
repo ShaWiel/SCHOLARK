@@ -34,6 +34,7 @@ jobs:
           node --check scholark-v118-account-security.js
           node --check scholark-v119-foundation-polish.js
           node --check scripts/scholark-r218-foundation-smoke.mjs
+          node --check scripts/scholark-r219-sidebar-dashboard-smoke.mjs
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
@@ -104,6 +105,8 @@ jobs:
           timeout 360s npx playwright install chromium firefox webkit
       - name: Validate r218 foundation, runtime tuning and visual isolation
         run: node scripts/scholark-r218-foundation-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r219 sidebar and dashboard cleanup
+        run: node scripts/scholark-r219-sidebar-dashboard-smoke.mjs http://127.0.0.1:10000
       - name: Exercise account lifecycle in Chromium
         run: |
           node <<'NODE'
