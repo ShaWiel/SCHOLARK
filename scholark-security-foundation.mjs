@@ -96,7 +96,7 @@ function challengeReason(ctx){
   return '';
 }
 function securityHealth(){
-  return {ok:true,release:RELEASE,version:'20261006-security-r217',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,rawSessionIdsStored:false,tokensStored:false,sessionIdsHashed:true,fallback:'usage_events'},turnstile:{clientConfigured:!!TURNSTILE_SITE_KEY,supabaseValidationRequired:true},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
+  return {ok:true,release:RELEASE,version:'20261006-security-r218',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,rawSessionIdsStored:false,tokensStored:false,sessionIdsHashed:true,fallback:'usage_events'},turnstile:{clientConfigured:!!TURNSTILE_SITE_KEY,supabaseValidationRequired:true},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
 }
 
 http.Server.prototype.emit=function(type,...args){
