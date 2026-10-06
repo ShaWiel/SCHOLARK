@@ -11,7 +11,7 @@
 
   function authHeaders(token){return {apikey:KEY,authorization:'Bearer '+token,'content-type':'application/json','accept':'application/json'}}
   function current(){return cloud()?.currentSession?.()||null}
-  function parseJwt(token){try{return JSON.parse(atob(String(token||'').split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch{return{}}}
+  function parseJwt(token){try{let p=String(token||'').split('.')[1].replace(/-/g,'+').replace(/_/g,'/');p+='='.repeat((4-p.length%4)%4);return JSON.parse(atob(p))}catch{return{}}}
   function aal(){return clean(parseJwt(current()?.access_token)?.aal||'aal1',16)||'aal1'}
   function factors(){const u=current()?.user;return Array.isArray(u?.factors)?u.factors:[]}
   function verifiedTotp(){return factors().filter(f=>String(f?.status||'').toLowerCase()==='verified'&&String(f?.factor_type||f?.type||'').toLowerCase()==='totp')}
