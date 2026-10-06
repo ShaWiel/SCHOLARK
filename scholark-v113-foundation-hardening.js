@@ -5,7 +5,7 @@
   const clean=s=>String(s??"").replace(/\s+/g," ").trim();
   const route=()=>String(location.hash||"#home").replace(/^#/,"").split(/[?&]/)[0].toLowerCase()||"home";
   const workspaceRoutes=new Set(["dashboard","ai","tutor","education","planner","focus","flashcards","assignments","progress","goal","language","files","project","schools","study"]);
-  const errors=[];let repairTimer=0,longTasks=0,lastRepair=0;
+  const errors=[];let repairTimer=0,longTasks=0,lastRepair=0,observerRoot=null,observerRebinds=0,repairSchedules=0;
   const style=document.createElement("style");style.id="scholark-v113-style";style.textContent=[
     "html.v113-hidden body.v51-workspace *{animation-play-state:paused!important}",
     "body.v51-workspace .v112-native,body.v51-workspace .v112-feature-shell{min-width:0}",
@@ -74,6 +74,7 @@
   function repair(force=false){
     const now=Date.now();if(!force&&now-lastRepair<90)return;lastRepair=now;
     if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering'))return;
+    startObserver();
     const scope=$("#v51-main")||document.body;ensureScroll();removeDuplicateControls();scrubQuality(scope);
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,40));idle(()=>secureLinks(scope),{timeout:180});
     if(document.body.classList.contains("v51-workspace")){
@@ -105,19 +106,38 @@
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools,
       release:"r203",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
       languageControls:lang,countryControls:country,languageRegistry,languageResilience,selectorCounts,selectorsHealthy,globalCountryRegistry,globalSchools,countryCount:Number(countryApi?.countryCount||0),coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,experienceHealthy,experienceReport,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
-      runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
+      runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
+      observerLive:!!observerRoot?.isConnected,
+      observerRebinds,
+      repairSchedules
     };
-    result.ok=result.ok&&result.runtimeFailures.length===0;
+    result.ok=result.ok&&result.runtimeFailures.length===0&&result.observerLive;
     return result;
   }
   let observer;
+  const mutationRelevant=muts=>muts.some(m=>[...m.addedNodes,...m.removedNodes].some(node=>{
+    if(node?.nodeType!==1)return false;
+    const el=node;
+    if(el.matches?.('#v51-main,#v51-sidebar,#v51-sidebar-actions,#v55-topbar,.v111-live,.v114-connect,.v90-langbox,#v96-side-country,#v116-workspace-help'))return true;
+    return !!el.querySelector?.('#v51-main,#v51-sidebar,#v51-sidebar-actions,#v55-topbar,.v111-live,.v114-connect,.v90-langbox,#v96-side-country,#v116-workspace-help');
+  }));
+  function scheduleRepair(force=false,delay=120){
+    repairSchedules++;
+    clearTimeout(repairTimer);
+    repairTimer=setTimeout(()=>{
+      const run=()=>repair(force);
+      if(!force&&'requestIdleCallback'in window)requestIdleCallback(run,{timeout:220});
+      else requestAnimationFrame(run);
+    },Math.max(0,delay));
+  }
   function startObserver(){
-    if(observer)return;
-    observer=new MutationObserver(muts=>{
-      if(!muts.some(m=>m.addedNodes.length||m.removedNodes.length))return;
-      clearTimeout(repairTimer);repairTimer=setTimeout(()=>repair(false),170);
-    });
-    const observerRoot=$("#v51-main")||document.body;observer.observe(observerRoot,{subtree:true,childList:true});
+    const desired=$("#v51-main")||document.body;
+    if(observer&&observerRoot===desired&&desired?.isConnected)return;
+    observer?.disconnect();
+    observer=new MutationObserver(muts=>{if(mutationRelevant(muts))scheduleRepair(false,125)});
+    observerRoot=desired;
+    observer.observe(observerRoot,{subtree:true,childList:true});
+    observerRebinds++;
   }
   try{
     if("PerformanceObserver" in window){
@@ -125,13 +145,15 @@
       po.observe({entryTypes:["longtask"]});
     }
   }catch{}
-  document.addEventListener("visibilitychange",()=>{document.documentElement.classList.toggle("v113-hidden",document.hidden);if(!document.hidden)repair(true)});
-  addEventListener("hashchange",()=>setTimeout(()=>repair(true),55));
-  addEventListener("scholark-runtime-ready",()=>setTimeout(()=>repair(true),50));
-  addEventListener("scholark-workspace-change",()=>setTimeout(()=>repair(false),60));
+  document.addEventListener("visibilitychange",()=>{document.documentElement.classList.toggle("v113-hidden",document.hidden);if(!document.hidden){startObserver();scheduleRepair(true,20)}});
+  addEventListener("hashchange",()=>{startObserver();scheduleRepair(true,45)});
+  addEventListener("pageshow",()=>{startObserver();scheduleRepair(false,70)});
+  addEventListener("scholark-runtime-ready",()=>{startObserver();scheduleRepair(true,35)});
+  addEventListener("scholark-workspace-change",()=>{startObserver();scheduleRepair(false,55)});
+  addEventListener("scholark-workspace-entry-ready",()=>{startObserver();scheduleRepair(false,45)});
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
-  startObserver();setTimeout(()=>repair(true),35);setTimeout(()=>repair(true),300);
-  const foundationApi={version:"20261001-r203",repair:()=>repair(true),verify,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  startObserver();scheduleRepair(true,25);scheduleRepair(true,260);
+  const foundationApi={version:"20261006-r218",repair:()=>repair(true),verify,rebindObserver:startObserver,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_HARDENING__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;

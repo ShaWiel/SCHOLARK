@@ -15,10 +15,20 @@ async function request(kind){
     else if(kind==='arki')r=await fetch(base+'/api/learning/generate',{method:'POST',headers:{'content-type':'application/json','x-scholark-request-id':'capacity-'+Date.now()+'-'+Math.random().toString(36).slice(2)},body:JSON.stringify({mode:'general_ai',language:'English',prompt:'Who owns SCHOLARK?',history:[]}),signal:ctrl.signal});
     else r=await fetch(base+kind,{cache:'no-store',headers:{'user-agent':'SCHOLARK-capacity-smoke'},signal:ctrl.signal});
     const body=await r.json().catch(()=>({}));
-    return {ok:r.ok&&body?.ok!==false,status:r.status,ms:performance.now()-t,kind,code:body?.code||''};
+    return {ok:r.ok&&body?.ok!==false,status:r.status,ms:performance.now()-t,kind,code:body?.code||'',cached:body?.cached===true};
   }catch(e){return {ok:false,status:0,ms:performance.now()-t,kind,error:String(e?.name||e)}}finally{clearTimeout(timer)}
 }
-await request('schools'); // warm external school sources once; staged traffic should hit SCHOLARK cache.
+let schoolWarm=null;
+for(let attempt=1;attempt<=3;attempt++){
+  schoolWarm=await request('schools');
+  if(schoolWarm.ok&&schoolWarm.cached)break;
+  if(attempt<3)await new Promise(r=>setTimeout(r,150));
+}
+if(!schoolWarm?.ok||!schoolWarm?.cached){
+  console.error('SCHOLARK CAPACITY WARMUP FAILED',JSON.stringify(schoolWarm||{}));
+  process.exit(1);
+}
+console.log('SCHOLARK CAPACITY WARMUP',JSON.stringify({ok:true,cached:true,ms:Math.round(schoolWarm.ms)}));
 const mix=['/api/health','/api/launch/health','/api/learning/credit-health','schools','arki'];
 const reports=[];
 for(const concurrency of stages){
