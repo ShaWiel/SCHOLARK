@@ -5,7 +5,8 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname||''));
   const appPath = () => { const p=String(location.pathname||'/').replace(/\/+$/,'')||'/'; return p==='/'||p==='/index.html'; };
-  const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
+  const authCallbackHash = (hash=location.hash) => /(^|&)access_token=/.test(String(hash||'').replace(/^#/,''));
+  const routeHash = () => authCallbackHash() ? 'home' : String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const creditStore = () => appPath() && routeHash()==='credit-store';
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   const publicHome = () => landingHome() || creditStore();
@@ -78,6 +79,7 @@
   }
 
   function routeKey(hash = location.hash) {
+    if (authCallbackHash(hash)) return 'home';
     const h = String(hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0];
     if (!h || h === 'home' || h === 'pricing' || h === 'start' || h === 'credit-store') return 'home';
     if (/^(presentation|webpage|document|report|graphic|social|studio)/.test(h)) return 'studio';
