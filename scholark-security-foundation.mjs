@@ -42,6 +42,7 @@ function readJson(req,limit=4096){return new Promise((resolve,reject)=>{let raw=
 function sameOrigin(req){const site=String(req.headers?.['sec-fetch-site']||'').toLowerCase();if(site==='cross-site')return false;const origin=String(req.headers?.origin||'').trim();if(!origin)return true;try{const oh=new URL(origin).host.toLowerCase(),host=String(req.headers?.['x-forwarded-host']||req.headers?.host||'').split(',')[0].trim().toLowerCase();return !!host&&oh===host}catch{return false}}
 function sourceIp(req){return clean(String(req.headers?.['cf-connecting-ip']||req.headers?.['x-real-ip']||req.headers?.['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0],120)}
 function ipHash(req){return crypto.createHmac('sha256',STEP_SECRET).update(sourceIp(req)).digest('hex').slice(0,32)}
+function sessionHash(value){const v=clean(value,160);return v?crypto.createHmac('sha256',STEP_SECRET).update(v).digest('hex').slice(0,32):null}
 function tokenHash(token){return crypto.createHash('sha256').update(String(token||'')).digest('hex').slice(0,32)}
 function parseJwt(token){try{const p=String(token).split('.')[1];return p?JSON.parse(Buffer.from(p,'base64url').toString('utf8')):{}}catch{return{}}}
 function hasVerifiedMfa(user){return Array.isArray(user?.factors)&&user.factors.some(f=>String(f?.status||'').toLowerCase()==='verified'&&['totp','phone'].includes(String(f?.factor_type||f?.type||'').toLowerCase()))}
