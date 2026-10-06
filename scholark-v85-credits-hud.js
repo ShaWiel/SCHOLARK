@@ -289,6 +289,29 @@
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTopbarWallet()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSession();else closeTopbarWallet()});
+
+  // Backstop for mobile/topbar remounts that can replace a Wallet trigger
+  // during the same pointer/click sequence. Rebind the canonical live trigger
+  // and preserve an already-open panel without creating duplicate panels.
+  let walletRemountRepairTimer=0;
+  const walletRemountObserver=new MutationObserver(mutations=>{
+    const touched=mutations.some(m=>[...m.addedNodes,...m.removedNodes].some(n=>n?.nodeType===1&&(
+      n.matches?.('.v85-topbar-credit,.v85-wallet,#v55-topbar,#v51-sidebar')||
+      n.querySelector?.('.v85-topbar-credit,.v85-wallet')
+    )));
+    if(!touched)return;
+    clearTimeout(walletRemountRepairTimer);
+    walletRemountRepairTimer=setTimeout(()=>{
+      walletRemountRepairTimer=0;
+      renderTopbar();
+      renderWorkspaceWallet();
+      if(topbarWalletPanel?.classList.contains('open')){
+        if(!preserveWalletAnchor())closeTopbarWallet();
+      }
+    },0);
+  });
+  walletRemountObserver.observe(document.documentElement,{childList:true,subtree:true});
+
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
