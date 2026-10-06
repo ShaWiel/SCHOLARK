@@ -5,6 +5,7 @@ const SB='https://yhafbwdnnpvuedycdkll.supabase.co';
 const USER={id:'11111111-1111-4111-8111-111111111111',email:'scholark-lifecycle@example.test',email_confirmed_at:new Date().toISOString()};
 const SESSION={access_token:'qa-access-token',refresh_token:'qa-refresh-token',expires_in:3600,token_type:'bearer',user:USER};
 const failures=[];
+let signupPayload=null;
 const check=(ok,label,detail='')=>{if(!ok)failures.push({label,detail})};
 
 const browser=await chromium.launch({headless:true});
@@ -12,7 +13,7 @@ try{
   const context=await browser.newContext({viewport:{width:1280,height:800}});
   const page=await context.newPage();
 
-  await page.route(SB+'/auth/v1/signup',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})}));
+  await page.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
   await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
   await page.route(SB+'/auth/v1/recover**',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
   await page.route(SB+'/auth/v1/logout',route=>route.fulfill({status:204,body:''}));
@@ -26,12 +27,13 @@ try{
 
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signup'));
   check(await page.locator('.v72-form input[type="password"]').getAttribute('minlength')==='10','signup password minimum is 10');
-  check((await page.locator('.v72-terms').innerText()).includes('5 Oct 2026'),'signup uses current legal version');
+  check(await page.locator('[data-v72-terms]').count()===1,'signup shows legal consent control');
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
   await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
   await page.locator('[data-v72-terms]').check();
   await page.locator('.v72-form button').filter({hasText:'Create account'}).click();
   await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});
+  check(signupPayload?.data?.terms_version==='2026-10-05','signup uses current legal version',signupPayload?.data?.terms_version||'missing');
   check(true,'unverified signup requires email confirmation');
 
   await page.goto(base+'/#access_token=qa-access-token&refresh_token=qa-refresh-token&expires_in=3600&type=signup',{waitUntil:'domcontentloaded'});
