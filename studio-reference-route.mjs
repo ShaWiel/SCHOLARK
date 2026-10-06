@@ -7,7 +7,11 @@ function json(res,status,obj){if(res.headersSent)return;res.writeHead(status,{'c
 function clean(v){return String(v??'').replace(/\u0000/g,'').trim()}
 function readBody(req,limit=15*1024*1024){return new Promise((resolve,reject)=>{let raw='',size=0;req.setEncoding('utf8');req.on('data',c=>{size+=Buffer.byteLength(c);if(size>limit){reject(Object.assign(new Error('Reference upload is too large'),{code:'PAYLOAD_TOO_LARGE'}));req.destroy();return}raw+=c});req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch{reject(Object.assign(new Error('Invalid JSON'),{code:'INVALID_JSON'}))}});req.on('error',reject)})}
 function decode(body){
-  const name=String(body?.name||'reference').slice(0,220),ext=(name.split('.').pop()||'').toLowerCase(),raw=String(body?.data||'');
+  const rawName=String(body?.name||'reference').replace(/[\u0000-\u001f\u007f]/g,''),name=rawName.split(/[\\/]/).pop().slice(0,180),ext=(name.split('.').pop()||'').toLowerCase(),raw=String(body?.data||''),declared=String(body?.type||body?.mime||'').split(';')[0].trim().toLowerCase();
+  if(!name||rawName.includes('..')||/[\\/]/.test(name)){const e=new Error('Unsafe reference filename');e.code='INVALID_FILE';throw e}
+  const mime={pdf:['application/pdf'],docx:['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],pptx:['application/vnd.openxmlformats-officedocument.presentationml.presentation']};
+  if(!mime[ext]){const e=new Error('Supported binary references are PDF, DOCX and PPTX');e.code='UNSUPPORTED_REFERENCE';throw e}
+  if(declared&&!mime[ext].includes(declared)){const e=new Error('Reference MIME type does not match its extension');e.code='INVALID_MIME';throw e}
   if(!/^[A-Za-z0-9+/=]+$/.test(raw)||raw.length>14*1024*1024){const e=new Error('Invalid or oversized reference data');e.code='INVALID_FILE';throw e}
   const buffer=Buffer.from(raw,'base64');if(!buffer.length||buffer.length>10*1024*1024){const e=new Error('Reference file must be 10 MB or smaller');e.code='FILE_TOO_LARGE';throw e}
   return {name,ext,buffer};
