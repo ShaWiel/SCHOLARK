@@ -76,7 +76,7 @@
       ].map(x=>'<button data-v91-q="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>').join('');
       const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',q);$$('[data-v91-q]',q).forEach(b=>b.onclick=()=>openTool(b.dataset.v91Q));
     }
-    $('.v91-resume',shell).forEach(el=>el.remove());
+    $('[data-v91-resume],.v91-resume',shell).forEach(el=>el.remove());
   }
   function sync(){
     dashboard();
