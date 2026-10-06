@@ -8,6 +8,8 @@
   const KEY='sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A';
   const SESSION='scholark_supabase_session_v2';
   const state={session:null,cloud:[],busy:false,enhanced:false,currentProject:null,authNotice:''};
+  let authModalCloseTimer=0;
+  const cancelAuthModalClose=()=>{if(authModalCloseTimer){clearTimeout(authModalCloseTimer);authModalCloseTimer=0}};
   const PASSWORD_MIN=10;
   const timers=new Map();
 
@@ -57,10 +59,11 @@
     return true;
   }
   function openPasswordRecovery(){
+    cancelAuthModalClose();
     modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>Set a new password</h2><button class="v72-x" aria-label="Close">×</button></div><form class="v72-form"><input type="password" autocomplete="new-password" placeholder="New password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required><input type="password" autocomplete="new-password" placeholder="Confirm new password" minlength="'+PASSWORD_MIN+'" required><button>Update password</button></form><div class="v72-modal-status">Choose a new password for your SCHOLARK account.</div></div>';
     modal.classList.add('open');$('.v72-x',modal).onclick=closeModal;
     const form=$('.v72-form',modal),st=$('.v72-modal-status',modal),inputs=$$('input[type="password"]',form);
-    form.onsubmit=async e=>{e.preventDefault();const pass=inputs[0]?.value||'',confirm=inputs[1]?.value||'';if(pass!==confirm){st.textContent='Passwords do not match.';st.style.color='#a13d3d';return}if(!validPassword(pass)){st.textContent='Use at least '+PASSWORD_MIN+' characters.';st.style.color='#a13d3d';return}st.textContent='Updating password…';st.style.color='#6559c9';try{await updatePassword(pass);st.textContent='Password updated. Your account is ready.';setTimeout(()=>{closeModal();enhance(true)},650)}catch(err){st.textContent=clean(err?.message||err);st.style.color='#a13d3d'}};
+    form.onsubmit=async e=>{e.preventDefault();const pass=inputs[0]?.value||'',confirm=inputs[1]?.value||'';if(pass!==confirm){st.textContent='Passwords do not match.';st.style.color='#a13d3d';return}if(!validPassword(pass)){st.textContent='Use at least '+PASSWORD_MIN+' characters.';st.style.color='#a13d3d';return}st.textContent='Updating password…';st.style.color='#6559c9';try{await updatePassword(pass);st.textContent='Password updated. Your account is ready.';authModalCloseTimer=setTimeout(()=>{authModalCloseTimer=0;closeModal();enhance(true)},650)}catch(err){st.textContent=clean(err?.message||err);st.style.color='#a13d3d'}};
   }
 
   async function signIn(email,password){const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json().catch(()=>({}));if(!r.ok||!d?.access_token){const raw=d?.error_description||d?.msg||d?.message||'Could not sign in';const msg=/invalid login credentials/i.test(raw)?'Sign-in failed. If you have not created a SCHOLARK Cloud account yet, choose Create account first.':raw;throw new Error(msg)}d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);return d}
@@ -69,6 +72,7 @@
   async function signOut(){const s=await session();if(s)try{await fetch(SB+'/auth/v1/logout',{method:'POST',headers:authHeaders(s.access_token)})}catch{}saveSession(null);state.cloud=[];enhance(true)}
 
   function openAuth(tab='signin'){
+    cancelAuthModalClose();
     const signingIn=tab==='signin';
     modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice, Terms, Refund/Cancellation and Subscription Terms (5 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
     modal.classList.add('open');
@@ -94,7 +98,8 @@
         const d=mode==='signin'?await signIn(email,pass):await signUp(email,pass);
         if(mode==='signup'&&!d?.access_token){st.textContent='Account created. Check your email to confirm it, then sign in.';return}
         st.textContent='Connected to SCHOLARK Cloud.';
-        setTimeout(()=>{
+        authModalCloseTimer=setTimeout(()=>{
+          authModalCloseTimer=0;
           closeModal();
           window.__SCHOLARK_CREDITS__?.load?.();
           const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,250));
@@ -103,7 +108,7 @@
       }catch(err){st.textContent=clean(err?.message||err);st.style.color='#a13d3d'}
     };
   }
-  function closeModal(){modal.classList.remove('open');state.currentProject=null}
+  function closeModal(){cancelAuthModalClose();modal.classList.remove('open');state.currentProject=null}
 
   const media=()=>window.__SCHOLARK_V66_MEDIA__;
   const MEDIA_MAP='scholark_v72_cloud_media_map_v1';
