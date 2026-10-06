@@ -21,9 +21,9 @@
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   const publicHome = () => landingHome() || creditStore();
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
-  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r206'});
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r218'});
 
-  const VERSION = '20261006-r217';
+  const VERSION = '20261006-r218';
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
@@ -39,13 +39,13 @@
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
     'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v109-home-owner.js',
-    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js'
+    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js'
   ];
   const BASE = new Set([
     'scholark-v42-route-guard.js',
     'scholark-v72-cloud-projects.js','scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js',
-    'scholark-v98-brand-migration.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v118-account-security.js'
+    'scholark-v98-brand-migration.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js'
   ]);
   const HOME = ['scholark-v32-mode-preview.js','scholark-v33-preview-compat.js','scholark-v109-home-owner.js','scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v41-home-pricing-dashboard.js','scholark-v55-home-topbar-workspace-entry.js','scholark-v99-home-foundation.js','scholark-v117-credit-store.js'];
   const WORKSPACE = [
@@ -131,7 +131,8 @@
     document.head.appendChild(l);
   }
   const uniqueFiles=files=>[...new Set((files||[]).filter(Boolean))];
-  function preloadFiles(files) { uniqueFiles(files).forEach(preloadOne); }
+  const PRELOAD_CAP=10, YIELD_EVERY=4;
+  function preloadFiles(files,limit=PRELOAD_CAP) { uniqueFiles(files).slice(0,Math.max(0,limit)).forEach(preloadOne); }
 
   function oneAttempt(file, attempt) {
     return new Promise(resolve => {
@@ -182,10 +183,11 @@
       let allOk = true;
       if (indicator) { busy++; html.classList.add('scholark-route-loading'); }
       try {
+        let burst=0;
         for (const file of files) {
           if (loaded.has(file)) continue;
           if (!await loadOne(file)) allOk = false;
-          await yieldMain();
+          if (++burst>=YIELD_EVERY) { burst=0; await yieldMain(); }
         }
         return allOk;
       } finally {
@@ -339,7 +341,9 @@
     errors:() => [...failures.keys()],
     failures:() => Object.fromEntries(failures),
     retry:() => ensure(routeKey(), true),
-    activeCount:ACTIVE.length
+    activeCount:ACTIVE.length,
+    preloadCap:PRELOAD_CAP,
+    yieldEvery:YIELD_EVERY
   };
 
   (async () => {
