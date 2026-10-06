@@ -5,14 +5,25 @@
   window.__SCHOLARK_RUNTIME_LOADER__ = true;
   window.__SCHOLARK_TEST_MODE__ = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname||''));
   const appPath = () => { const p=String(location.pathname||'/').replace(/\/+$/,'')||'/'; return p==='/'||p==='/index.html'; };
-  const routeHash = () => String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
+  const authCallbackHash = (hash=location.hash) => /(^|&)access_token=/.test(String(hash||'').replace(/^#/,''));
+  const pendingAuthCallback = () => {
+    if(authCallbackHash()) return true;
+    try{return authCallbackHash(sessionStorage.getItem('scholark_auth_callback_hash_v1')||'')}catch{return false}
+  };
+  // Preserve Supabase's fragment callback before any route/home repair can rewrite location.hash.
+  // V72 consumes and clears this one-shot value after restoring the authenticated session.
+  try {
+    const initialAuthHash=String(location.hash||'');
+    if(authCallbackHash(initialAuthHash)) sessionStorage.setItem('scholark_auth_callback_hash_v1',initialAuthHash);
+  } catch {}
+  const routeHash = () => authCallbackHash() ? 'home' : String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
   const creditStore = () => appPath() && routeHash()==='credit-store';
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   const publicHome = () => landingHome() || creditStore();
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r206'});
 
-  const VERSION = '20261004-r215';
+  const VERSION = '20261005-r216';
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
@@ -78,6 +89,7 @@
   }
 
   function routeKey(hash = location.hash) {
+    if (authCallbackHash(hash)) return 'home';
     const h = String(hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0];
     if (!h || h === 'home' || h === 'pricing' || h === 'start' || h === 'credit-store') return 'home';
     if (/^(presentation|webpage|document|report|graphic|social|studio)/.test(h)) return 'studio';
@@ -95,7 +107,8 @@
       (FEATURES[key] || []).forEach(x => set.add(x));
     }
     const chosen=ACTIVE.filter(file => set.has(file));
-    const first=[...LOCALE_FIRST,...((key==='home')?HOME_FIRST:[])].filter((file,i,a)=>chosen.includes(file)&&a.indexOf(file)===i);
+    const authFirst=(key==='home'&&pendingAuthCallback())?['scholark-v72-cloud-projects.js']:[];
+    const first=[...authFirst,...LOCALE_FIRST,...((key==='home')?HOME_FIRST:[])].filter((file,i,a)=>chosen.includes(file)&&a.indexOf(file)===i);
     const ordered=[...first,...chosen.filter(file=>!first.includes(file))];
     if(key!=='home'){
       const tail=['scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js'];

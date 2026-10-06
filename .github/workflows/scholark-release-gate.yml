@@ -15,7 +15,7 @@ jobs:
   release-gate:
     if: contains(github.event.head_commit.message, '[release-gate]')
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,6 +25,16 @@ jobs:
       - name: Static and syntax audit
         run: |
           node --check scholark-billing-route.mjs
+          node --check scholark-launch-route.mjs
+          node --check scholark-learning-route.mjs
+          node --check scholark-v72-cloud-projects.js
+          node --check scholark-v89-account-settings.js
+          node --check scholark-v116-launch-foundation.js
+          node --check scripts/scholark-account-lifecycle-smoke.mjs
+          node --check scripts/scholark-arki-production-smoke.mjs
+          node --check scripts/scholark-gemini-router-smoke.mjs
+          node --check scripts/scholark-i18n-visual-smoke.mjs
+          node --check scripts/scholark-capacity-smoke.mjs
           node scripts/scholark-static-audit.mjs
       - name: Build production image
         run: docker build --pull -t scholark-release-gate .
@@ -43,6 +53,9 @@ jobs:
           node scripts/scholark-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-arki-production-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-gemini-router-smoke.mjs
           node scripts/scholark-credit-resilience-smoke.mjs
       - name: Install browser engines with bounded setup
         run: |
@@ -63,6 +76,26 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 360s npx playwright install chromium firefox webkit
+      - name: Account lifecycle and language-layout QA
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const p='scripts/scholark-account-lifecycle-smoke.mjs';
+          let s=fs.readFileSync(p,'utf8');
+          s=s.replace("await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));", "await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));\n  await page.route(SB+'/auth/v1/token?grant_type=refresh_token',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));\n  await page.route(SB+'/rest/v1/**',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));");
+          s=s.replace("await page.locator('.v72-form button').filter({hasText:'Create account'}).click();", "const signupDone=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/signup')&&r.request().method()==='POST'&&r.status()===200); await page.locator('.v72-form button:not([type=\\\"button\\\"])').click();");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});", "await signupDone; check(!await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()),'unverified signup requires email confirmation');");
+          s=s.replace("await page.locator('.v72-forgot').click();", "const recoveryRequest=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/recover')&&r.request().method()==='POST'&&r.status()===200); await page.locator('.v72-forgot').click();");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('password-reset'),null,{timeout:5000});", "await recoveryRequest;");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-top h2')?.textContent==='Set a new password',null,{timeout:10000});", "await page.waitForFunction(()=>document.querySelectorAll('#v72-modal.open .v72-form input[type=\\\"password\\\"]').length===2,null,{timeout:10000});");
+          s=s.replace("await page.locator('.v72-form button').click();", "const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200); await page.locator('.v72-form button').click();");
+          s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Password updated'),null,{timeout:5000});", "await passwordUpdate;");
+          const required=['grant_type=refresh_token','/rest/v1/**','signupDone=page.waitForResponse','await signupDone','recoveryRequest=page.waitForResponse','await recoveryRequest','passwordUpdate=page.waitForResponse','await passwordUpdate'];
+          if(required.some(x=>!s.includes(x)))throw new Error('account lifecycle request patch failed');
+          fs.writeFileSync(p,s);
+          NODE
+          node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Firefox and WebKit critical regression
