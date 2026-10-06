@@ -116,7 +116,7 @@
   }
   async function signUp(email,password){if(!validPassword(password))throw new Error('Use at least '+PASSWORD_MIN+' characters for your password.');const body=await authBody({email,password,data:{terms_version:'2026-10-05',terms_accepted_at:new Date().toISOString()}}),r=await fetch(SB+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error('Account creation could not be completed. Check the details and try again.');if(d?.access_token){d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d)}return d}
   async function resetPassword(email){const body=await authBody({email}),r=await fetch(SB+'/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error('If this account can receive recovery mail, use the recovery flow and try again.');return true}
-  async function signOut(){const s=await session();if(s)try{await fetch(SB+'/auth/v1/logout',{method:'POST',headers:authHeaders(s.access_token)})}catch{}saveSession(null);state.cloud=[];enhance(true)}
+  async function signOut(){const s=loadSession(),token=s?.access_token||'';saveSession(null);state.cloud=[];enhance(true);if(token)try{await fetch(SB+'/auth/v1/logout',{method:'POST',headers:authHeaders(token),cache:'no-store'})}catch{}}
 
   function openAuth(tab='signin'){
     cancelAuthModalClose();
@@ -241,5 +241,5 @@
   loadSession();
   addEventListener('storage',e=>{if(e.key!==SESSION)return;const before=state.session?.access_token||'';loadSession();state.cloud=[];if((state.session?.access_token||'')!==before)window.dispatchEvent(new CustomEvent('scholark:auth-changed',{detail:{signedIn:!!state.session?.access_token,user:state.session?.user||null,source:'storage'}}));setTimeout(()=>enhance(true),30)});
   consumeAuthCallback().catch(()=>{}).finally(()=>setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true);if(state.authNotice){status(state.authNotice);state.authNotice=''}},350));
-  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r217'};
+  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r218'};
 })();
