@@ -36,7 +36,7 @@
     let holder=host?.querySelector?.('.v72-captcha');
     if(!holder){holder=document.createElement('div');holder.className='v72-captcha';holder.style.cssText='min-height:66px;display:grid;place-items:center;margin:4px 0';const form=host?.querySelector?.('.v72-form')||host;form?.appendChild?.(holder)}
     if(holder.dataset.token)return holder.dataset.token;
-    if(holder.dataset.pending==='1')return new Promise((resolve,reject)=>{holder.addEventListener('scholark:captcha',{once:true,listener:e=>e.detail?.token?resolve(e.detail.token):reject(new Error('Bot verification expired.'))})});
+    if(holder.dataset.pending==='1')return new Promise((resolve,reject)=>{holder.addEventListener('scholark:captcha',e=>e.detail?.token?resolve(e.detail.token):reject(new Error('Bot verification expired.')),{once:true})});
     holder.dataset.pending='1';
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{delete holder.dataset.pending;reject(new Error('Complete the bot verification and try again.'))},120000);
