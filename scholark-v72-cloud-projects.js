@@ -41,7 +41,11 @@
     return d;
   }
   async function consumeAuthCallback(){
-    const raw=String(location.hash||'');if(!raw.startsWith('#')||!/(^|&)access_token=/.test(raw.slice(1)))return false;
+    const callbackKey='scholark_auth_callback_hash_v1';
+    let raw=String(location.hash||'');
+    if(!raw.startsWith('#')||!/(^|&)access_token=/.test(raw.slice(1))){try{raw=sessionStorage.getItem(callbackKey)||''}catch{raw=''}}
+    if(!raw.startsWith('#')||!/(^|&)access_token=/.test(raw.slice(1)))return false;
+    try{sessionStorage.removeItem(callbackKey)}catch{}
     const p=new URLSearchParams(raw.slice(1)),access_token=p.get('access_token')||'',refresh_token=p.get('refresh_token')||'',type=p.get('type')||'';
     if(!access_token)return false;
     const expires_in=Math.max(60,Number(p.get('expires_in'))||3600),s={access_token,refresh_token,token_type:p.get('token_type')||'bearer',expires_in,expires_at:Math.floor(Date.now()/1000)+expires_in,user:null};
