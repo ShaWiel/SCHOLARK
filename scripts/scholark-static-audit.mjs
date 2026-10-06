@@ -205,6 +205,7 @@ ok(i18n.includes('function sanitizeStoredMap(raw)')&&i18n.includes('canonical=ST
 ok(i18n.includes('[data-sch-i18n-owned="1"]'),'Generic translator does not protect locale-owned education UI');
 ok(homeFoundation.includes('[data-sch-i18n-owned="1"]'),'Foundation repair can still overwrite locale-owned education UI');
 ok(accountSettings.includes("window.__SCHOLARK_I18N__?.changeLanguage?.(lang)"),'Account language save does not apply the UI language engine');
+ok(cloudProjects.includes("async function signOut(){const s=loadSession()")&&cloudProjects.indexOf('saveSession(null)')<cloudProjects.indexOf("fetch(SB+'/auth/v1/logout"),'Logout must clear the local session before network revocation');
 ok(runtime.includes("const LOCALE_FIRST=['scholark-v90-i18n-engine.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js']"),'Locale/country runtime modules are not prioritized before route UI');
 ok(homeBlock.includes('scholark-v109-home-owner.js')&&homeBlock.includes('scholark-v55-home-topbar-workspace-entry.js')&&homeBlock.includes('scholark-v99-home-foundation.js')&&!workspaceBlock.includes('scholark-v109-home-owner.js'),'Home-only modules are not isolated from workspace boot');
 ok(runtime.includes("const HOME_FIRST=['scholark-v55-home-topbar-workspace-entry.js'")&&runtime.includes("key==='home')?HOME_FIRST"),'Homepage topbar is not prioritized before heavier home modules');
