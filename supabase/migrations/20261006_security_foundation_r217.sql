@@ -21,6 +21,15 @@ revoke all on table public.security_events from anon, authenticated;
 grant select, insert, update, delete on table public.security_events to service_role;
 grant usage, select on sequence public.security_events_id_seq to service_role;
 
+drop policy if exists security_events_deny_clients on public.security_events;
+create policy security_events_deny_clients
+  on public.security_events
+  as restrictive
+  for all
+  to anon, authenticated
+  using (false)
+  with check (false);
+
 create index if not exists security_events_created_idx on public.security_events(created_at desc);
 create index if not exists security_events_user_created_idx on public.security_events(user_id, created_at desc) where user_id is not null;
 create index if not exists security_events_type_created_idx on public.security_events(event_type, created_at desc);
