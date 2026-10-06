@@ -13,8 +13,8 @@ try{
     for(const code of sample){
       await page.goto(base+'/#home',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>!!window.__SCHOLARK_I18N__,null,{timeout:15000});
-      await page.evaluate(c=>{localStorage.setItem('scholark_ui_language',c);window.__SCHOLARK_I18N__.apply(document);window.__SCHOLARK_I18N__.upgradeSelectors?.()},code);
-      await page.waitForTimeout(80);
+      await page.evaluate(async c=>{await window.__SCHOLARK_I18N__.changeLanguage(c)},code);
+      await page.waitForFunction(c=>document.documentElement.lang===c&&document.documentElement.dataset.scholarkI18nReady===c,code,{timeout:20000});
       const m=await page.evaluate(code=>{
         const html=document.documentElement,select=document.querySelector('#v55-language')||document.querySelector('#v90-language');
         const body=document.body,overflow=Math.max(html.scrollWidth,body?.scrollWidth||0)-innerWidth;
