@@ -76,8 +76,7 @@
       ].map(x=>'<button data-v91-q="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>').join('');
       const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',q);$$('[data-v91-q]',q).forEach(b=>b.onclick=()=>openTool(b.dataset.v91Q));
     }
-    let r=$('.v91-resume',shell);if(!r){r=document.createElement('div');r.className='v91-resume';const q=$('.v91-quick',shell);q?.insertAdjacentElement('afterend',r)}
-    if(r){const a=lastActivity();r.innerHTML='<div><b>Continue where you left off</b><span>'+a.title+' · '+a.desc+'</span></div><button type="button">Continue →</button>';r.querySelector('button').onclick=()=>openTool(a.tool)}
+    $('.v91-resume',shell).forEach(el=>el.remove());
   }
   function sync(){
     dashboard();
