@@ -16,7 +16,9 @@
   let watchdogTimer = 0;
 
   function routeInfo() {
-    const raw = String(location.hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0].replace(/^\/+|\/+$/g,'');
+    const hash=String(location.hash||'');
+    if(/(^|&)access_token=/.test(hash.replace(/^#/,'')))return {raw:'home',base:'home',kind:'home'};
+    const raw = hash.toLowerCase().replace(/^#/, '').split(/[?&]/)[0].replace(/^\/+|\/+$/g,'');
     if(raw==='credit-store')return {raw,base:'credit-store',kind:'store'};
     const base = raw.split(/[\/-]/)[0] || 'home';
     if (!raw || ['home','pricing','start'].includes(base)) return { raw: raw || 'home', base, kind:'home' };
