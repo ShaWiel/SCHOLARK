@@ -19,6 +19,7 @@ const rules = [
   { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30, maxBytes:2*1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p==='/api/feedback', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/security/step-up', limit:testMode?100:20, maxBytes:4*1024, expensive:false },
   { match:(m,p)=>m==='GET' && p==='/api/account/export', limit:testMode?30:3, maxBytes:1024, expensive:true },
   { match:(m,p)=>m==='DELETE' && p==='/api/account', limit:testMode?20:3, maxBytes:8*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:8, maxBytes:8*1024, expensive:false },
@@ -57,7 +58,7 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
     if (!res.hasHeader('origin-agent-cluster')) res.setHeader('origin-agent-cluster','?1');
-    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'");
+    if (!res.hasHeader('content-security-policy')) res.setHeader('content-security-policy',"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.paddle.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://yhafbwdnnpvuedycdkll.supabase.co wss://yhafbwdnnpvuedycdkll.supabase.co https://api.paddle.com https://sandbox-api.paddle.com https://*.paddle.com https://challenges.cloudflare.com; frame-src https://*.paddle.com https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'");
     if (!res.hasHeader('strict-transport-security')) res.setHeader('strict-transport-security','max-age=31536000; includeSubDomains; preload');
   } catch {}
 }
@@ -117,11 +118,21 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,jsonMutationGuard:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
   if (url.pathname.startsWith('/api/') && !res.hasHeader('cache-control')) res.setHeader('cache-control','no-store');
+
+  if (url.pathname.startsWith('/api/') && !['GET','POST','DELETE','OPTIONS'].includes(String(req.method||'').toUpperCase())) {
+    json(res,405,{ok:false,code:'METHOD_NOT_ALLOWED',error:'HTTP method is not allowed for SCHOLARK APIs.'},{allow:'GET, POST, DELETE, OPTIONS'});
+    return true;
+  }
+
+  if (url.pathname.startsWith('/api/') && ['POST','DELETE'].includes(String(req.method||'').toUpperCase()) && url.pathname!=='/api/billing/webhook' && !requestOriginAllowed(req)) {
+    json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED',error:'Cross-origin request blocked.'});
+    return true;
+  }
 
   if (String(req.url||'').length > 4096) {
     json(res,414,{ok:false,code:'URI_TOO_LONG',error:'Request URI is too long.'});

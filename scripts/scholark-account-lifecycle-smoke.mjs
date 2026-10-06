@@ -47,8 +47,16 @@ try{
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signin'));
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
   await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
+  const loginDone=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/token?grant_type=password')&&r.request().method()==='POST');
   await page.locator('.v72-form button').first().click();
-  await page.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='qa-access-token',null,{timeout:5000});
+  const loginResponse=await loginDone;
+  check(loginResponse.status()===200,'login token request succeeds',String(loginResponse.status()));
+  try{
+    await page.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='qa-access-token',null,{timeout:8000});
+  }catch(err){
+    const diag=await page.evaluate(()=>({status:document.querySelector('#v72-modal .v72-modal-status')?.textContent||'',securityLoaded:!!window.__SCHOLARK_SECURITY__,signedIn:!!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()}));
+    throw new Error('login session was not retained '+JSON.stringify(diag));
+  }
   check(true,'login restores session');
 
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signin'));

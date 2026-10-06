@@ -112,7 +112,7 @@ ok(docker.includes('scholark-api-guard.mjs'),'API guard is not shipped');
 ok(docker.includes('--import", "./scholark-api-guard.mjs"'),'API guard is not imported at runtime');
 ok(docker.includes('COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs')&&docker.includes('COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js'),'Launch foundation is not shipped in production image');
 ok(docker.includes('--import", "./scholark-launch-route.mjs"'),'Launch route is not imported at runtime');
-ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must be the outermost route wrapper');
+ok(docker.includes('./scholark-gemini-primary.mjs", "--import", "./scholark-security-foundation.mjs", "--import", "./scholark-api-guard.mjs"'),'Central API guard must remain outermost after the security foundation wrapper');
 ok(runtime.includes("'scholark-v116-launch-foundation.js'")&&runtime.includes("'scholark-v117-credit-store.js'")&&runtime.includes("isCreditStore:creditStore")&&runtime.includes("isLanding:landingHome")&&runtime.includes("h === 'credit-store'"),'Credit Store/public runtime routing is incomplete');
 ok(runtime.includes('const uniqueFiles=files=>[...new Set')&&runtime.includes('files=uniqueFiles(files)'),'Runtime loader does not deduplicate preload/load batches');
 ok(runtime.includes('function scheduleRouteLoad(')&&runtime.includes('routeLoadEpoch')&&!runtime.includes('preloadFiles([...STUDIO_CORE, ...FEATURES.project])'),'Runtime route coalescing / lazy Project boot optimization is incomplete');
