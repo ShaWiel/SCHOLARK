@@ -7,6 +7,7 @@ const PUB=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
 const SERVICE=String(process.env.SUPABASE_SERVICE_ROLE_KEY||'').trim();
 const RELEASE=String(process.env.SCHOLARK_RELEASE||'dev');
 const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''));
+const TURNSTILE_SITE_KEY=cleanEnv(process.env.TURNSTILE_SITE_KEY||process.env.CLOUDFLARE_TURNSTILE_SITE_KEY||'',200);
 const STEP_TTL_SECONDS=Math.max(180,Math.min(900,Number(process.env.SCHOLARK_STEP_UP_TTL_SECONDS)||600));
 const RECENT_AUTH_SECONDS=Math.max(180,Math.min(1800,Number(process.env.SCHOLARK_RECENT_AUTH_SECONDS)||600));
 const STEP_SECRET=crypto.createHash('sha256').update(
@@ -31,6 +32,7 @@ const USER_RULES=[
 ];
 
 const clean=(v,max=240)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+function cleanEnv(v,max=240){return String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
 const bearer=req=>{const v=String(req.headers?.authorization||'');return /^Bearer\s+/i.test(v)?v.replace(/^Bearer\s+/i,'').trim():''};
 const timeoutSignal=ms=>{try{return AbortSignal.timeout(ms)}catch{return undefined}};
 const b64url=v=>Buffer.from(v).toString('base64url');
@@ -93,7 +95,7 @@ function challengeReason(ctx){
   return '';
 }
 function securityHealth(){
-  return {ok:true,release:RELEASE,version:'20261006-security-r217',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,tokensStored:false},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
+  return {ok:true,release:RELEASE,version:'20261006-security-r217',uptimeSeconds:Math.round((Date.now()-STARTED_AT)/1000),stepUp:{enabled:!!SERVICE,ttlSeconds:STEP_TTL_SECONDS,recentAuthSeconds:RECENT_AUTH_SECONDS,mfaAware:true,sessionBound:true},abuse:{perIp:true,perUser:true,userWindowSeconds:USER_WINDOW_MS/1000,trackedUserBuckets:userBuckets.size},events:{enabled:!!SERVICE,rawIpStored:false,tokensStored:false},turnstile:{clientConfigured:!!TURNSTILE_SITE_KEY,supabaseValidationRequired:true},sensitiveActions:{export:true,delete:true,idempotencyLocks:true},failClosed:true};
 }
 
 http.Server.prototype.emit=function(type,...args){
@@ -102,6 +104,7 @@ http.Server.prototype.emit=function(type,...args){
   const method=String(req.method||'GET').toUpperCase();
 
   if(method==='GET'&&url.pathname==='/api/security/health'){json(res,200,securityHealth());return true}
+  if(method==='GET'&&url.pathname==='/api/security/config'){json(res,200,{ok:true,turnstile:{enabled:!!TURNSTILE_SITE_KEY,siteKey:TURNSTILE_SITE_KEY||null,validation:'supabase-auth'}});return true}
 
   if(url.pathname.startsWith('/api/security/')&&!['GET','POST'].includes(method)){json(res,405,{ok:false,code:'METHOD_NOT_ALLOWED'},{allow:'GET, POST'});return true}
 
