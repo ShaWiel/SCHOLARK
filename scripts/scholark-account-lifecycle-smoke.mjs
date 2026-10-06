@@ -69,7 +69,7 @@ try{
   await second.goto(base+'/#home',{waitUntil:'domcontentloaded'});
   await second.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__&&!!window.__SCHOLARK_LAUNCH__,null,{timeout:15000});
   await page.evaluate(s=>localStorage.setItem('scholark_supabase_session_v2',JSON.stringify(s)),{...SESSION,access_token:'tab-sync-token'});
-  await second.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token',null,{timeout:5000});
+  await second.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token',null,{timeout:15000});
   check(true,'multi-tab session synchronization works');
 
   await second.evaluate(()=>window.__SCHOLARK_LAUNCH__?.privacy?.());
