@@ -41,10 +41,10 @@
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{delete holder.dataset.pending;reject(new Error('Complete the bot verification and try again.'))},120000);
       const done=token=>{clearTimeout(timer);holder.dataset.token=token||'';delete holder.dataset.pending;holder.dispatchEvent(new CustomEvent('scholark:captcha',{detail:{token}}));token?resolve(token):reject(new Error('Bot verification failed.'))};
-      try{api.render(holder,{sitekey:cfg.turnstile.siteKey,theme:'auto',callback:done,'expired-callback':()=>done(''),'error-callback':()=>done('')})}catch(e){clearTimeout(timer);delete holder.dataset.pending;reject(e)}
+      try{const widgetId=api.render(holder,{sitekey:cfg.turnstile.siteKey,theme:'auto',callback:done,'expired-callback':()=>done(''),'error-callback':()=>done('')});holder.dataset.widgetId=String(widgetId)}catch(e){clearTimeout(timer);delete holder.dataset.pending;reject(e)}
     });
   }
-  async function authBody(body,host=modal){const token=await captchaToken(host);return token?{...body,gotrue_meta_security:{captcha_token:token}}:body}
+  async function authBody(body,host=modal){const token=await captchaToken(host);const holder=host?.querySelector?.('.v72-captcha');if(holder&&token){delete holder.dataset.token;try{if(window.turnstile?.reset&&holder.dataset.widgetId)window.turnstile.reset(holder.dataset.widgetId)}catch{}}return token?{...body,gotrue_meta_security:{captcha_token:token}}:body}
   async function digestText(value){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(value||'')));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch{return ''}}
 
   const css=document.createElement('style');css.id='scholark-v72-style';css.textContent=`
