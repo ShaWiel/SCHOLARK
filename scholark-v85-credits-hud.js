@@ -234,7 +234,7 @@
     renderWorkspaceWallet();
     if(walletPanelAnchor&&!walletPanelAnchor.isConnected&&!preserveWalletAnchor())closeTopbarWallet();
     const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');
-    if(dash)$('.v85-dash',dash).forEach(el=>el.remove());
+    if(dash)dash.querySelectorAll('.v85-dash').forEach(el=>el.remove());
   }
   function sync(){render();if(cloud())loadCosts();load()}
   function checkSession(){const token=currentSession()?.access_token||'';if(token!==lastToken){lastToken=token;load()}}
