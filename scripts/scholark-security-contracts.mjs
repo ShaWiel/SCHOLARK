@@ -21,6 +21,8 @@ assert.match(security,/STEP_UP_REQUIRED/);
 assert.match(security,/DUPLICATE_ACTION_BLOCKED/);
 assert.match(security,/rawIpStored:false/);
 assert.match(security,/tokensStored:false/);
+assert.match(security,/rawSessionIdsStored:false/);
+assert.doesNotMatch(security,/session_id:clean\(/);
 assert.match(security,/USER_RATE_LIMITED/);
 assert.match(launch,/x-scholark-step-up/);
 assert.match(auth,/gotrue_meta_security/);
