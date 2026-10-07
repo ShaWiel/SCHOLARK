@@ -108,7 +108,8 @@
   async function signIn(email,password){
     const wait=authCooldownSeconds();if(wait)throw new Error('Too many sign-in attempts. Try again in '+wait+' seconds.');
     const body=await authBody({email,password});
-    const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));
+    const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)});
+    let d=await r.json().catch(()=>({}));
     if(!r.ok||!d?.access_token){noteAuthFailure();throw new Error('Sign-in failed. Check your credentials or use password recovery.')}
     d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);
     try{if(window.__SCHOLARK_SECURITY__?.completeMfaIfRequired)d=await window.__SCHOLARK_SECURITY__.completeMfaIfRequired(d)||d}catch(err){saveSession(null);throw err}
