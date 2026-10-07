@@ -10,7 +10,7 @@
   const state={session:null,cloud:[],busy:false,enhanced:false,currentProject:null,authNotice:''};
   let authModalCloseTimer=0;
   const cancelAuthModalClose=()=>{if(authModalCloseTimer){clearTimeout(authModalCloseTimer);authModalCloseTimer=0}};
-  const PASSWORD_MIN=10;
+  const PASSWORD_MIN=12;
   const timers=new Map();
   let authFailures=0,authBlockedUntil=0,captchaConfigPromise=null,turnstileLoadPromise=null;
   function authCooldownSeconds(){return Math.max(0,Math.ceil((authBlockedUntil-Date.now())/1000))}
@@ -66,7 +66,7 @@
   function label(k){return ({presentation:'Presentation',webpage:'Webpage',document:'Document',social:'Social',graphic:'Graphic',book:'Book'}[k]||k||'Project')}
   function host(){return $('.v64-projects')}
   function status(t,err=false){const x=$('.v72-status');if(x){x.textContent=t||'';x.style.color=err?'#a13d3d':'#5c50cb'}}
-  function validPassword(pass){return String(pass||'').length>=PASSWORD_MIN}
+  function validPassword(pass){const s=String(pass||'');if(s.length<PASSWORD_MIN)return false;if(/^(password|password123|1234567890|qwerty|letmein|welcome|admin|scholark|iloveyou)/i.test(s))return false;return s.length>=16||(/[A-Za-z]/.test(s)&&/\d/.test(s))}
   async function updatePassword(password,accessToken=''){
     if(!validPassword(password))throw new Error('Use at least '+PASSWORD_MIN+' characters for your new password.');
     const s=accessToken?null:await session(),token=accessToken||s?.access_token;
@@ -121,7 +121,7 @@
   function openAuth(tab='signin'){
     cancelAuthModalClose();
     const signingIn=tab==='signin';
-    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice, Terms, Refund/Cancellation and Subscription Terms (5 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
+    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="'+(signingIn?'Password':'Password · '+PASSWORD_MIN+'+ characters')+'" minlength="'+(signingIn?'1':PASSWORD_MIN)+'" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice, Terms, Refund/Cancellation and Subscription Terms (5 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
     modal.classList.add('open');
     window.__SCHOLARK_I18N__?.apply?.(modal);
     setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
@@ -138,7 +138,7 @@
     form.onsubmit=async e=>{
       e.preventDefault();
       const inputs=$$('input',form),email=clean(inputs[0]?.value),pass=inputs[1]?.value||'',mode=tab,terms=$('[data-v72-terms]',form);
-      if(!validPassword(pass)){st.textContent='Use at least '+PASSWORD_MIN+' characters for your password.';st.style.color='#a13d3d';return}
+      if(mode==='signup'&&!validPassword(pass)){st.textContent='Use '+PASSWORD_MIN+'+ characters with letters and numbers, or a longer passphrase.';st.style.color='#a13d3d';return}if(mode==='signin'&&!pass){st.textContent='Enter your password.';st.style.color='#a13d3d';return}
       if(mode==='signup'&&!terms?.checked){st.textContent='Agree to the Privacy Notice, Terms, Refund/Cancellation and Subscription Terms before creating an account.';st.style.color='#a13d3d';terms?.focus();return}
       st.textContent=mode==='signin'?'Signing in…':'Creating account…';st.style.color='#6559c9';
       try{
