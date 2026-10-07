@@ -258,6 +258,45 @@ async function resolveCenter(body,country,city){
   return{...root,countryCode:clean(root.countryCode||expected).toUpperCase(),mode:'country'};
 }
 
+function tokenOverlap(a,b){
+  const A=new Set(key(a).split(' ').filter(x=>x.length>1)),B=new Set(key(b).split(' ').filter(x=>x.length>1));
+  if(!A.size||!B.size)return 0;let hits=0;for(const x of A)if(B.has(x))hits++;
+  return hits/Math.max(1,Math.min(A.size,B.size));
+}
+function withDistance(row,center){
+  const lat=Number(row?.lat),lon=Number(row?.lon);
+  if(!Number.isFinite(lat)||!Number.isFinite(lon)||!Number.isFinite(center?.lat)||!Number.isFinite(center?.lon))return row;
+  return {...row,lat,lon,distance:distance(center.lat,center.lon,lat,lon)};
+}
+async function locateSchoolRow(row,country,city,center,countryCode){
+  if(Number.isFinite(Number(row?.lat))&&Number.isFinite(Number(row?.lon)))return withDistance(row,center);
+  const cacheKey=key([row?.name,row?.description,city,country].filter(Boolean).join('|')),cached=schoolGeoCache.get(cacheKey);
+  if(cached&&Date.now()-cached.at<SCHOOL_GEO_TTL)return cached.value?withDistance({...row,...cached.value},center):row;
+  try{
+    const q=[row?.name,clean(row?.description).split('·').slice(0,2).join(' '),city,country].map(clean).filter(Boolean).join(', ');
+    const u=new URL('https://nominatim.openstreetmap.org/search');u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','3');u.searchParams.set('q',q);
+    if(countryCode)u.searchParams.set('countrycodes',String(countryCode).toLowerCase());
+    const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 school-distance-enrichment'}},5500);
+    if(!r.ok)throw new Error('school geocoder '+r.status);
+    const data=await r.json().catch(()=>[]);
+    const ranked=(Array.isArray(data)?data:[]).map(x=>({x,score:tokenOverlap(row?.name,x?.name||String(x?.display_name||'').split(',')[0])})).sort((a,b)=>b.score-a.score);
+    const best=ranked[0];if(!best||best.score<0.55)throw new Error('low-confidence school geocode');
+    const code=clean(best.x?.address?.country_code).toUpperCase();if(countryCode&&code&&!sameCode(countryCode,code))throw new Error('country mismatch');
+    const lat=Number(best.x.lat),lon=Number(best.x.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))throw new Error('invalid coordinates');
+    const value={lat,lon,geocodedDistance:true,geocodedDisplay:clean(best.x.display_name,500)};cacheSchoolGeo(cacheKey,value);return withDistance({...row,...value},center);
+  }catch{cacheSchoolGeo(cacheKey,null);return row}
+}
+async function enrichSchoolDistances(rows,country,city,center,countryCode,countryWide){
+  let remaining=countryWide?10:20,changed=0,out=[];
+  for(const row of rows){
+    if(Number.isFinite(Number(row?.lat))&&Number.isFinite(Number(row?.lon))){out.push(withDistance(row,center));continue}
+    const eligible=remaining>0&&(row?.official||row?.verifiedCurrent||clean(row?.description).length>8);
+    if(!eligible){out.push(row);continue}
+    remaining--;const located=await locateSchoolRow(row,country,city,center,countryCode);if(located?.distance!=null)changed++;out.push(located);
+  }
+  return {rows:out,changed};
+}
+
 function levelSet(tags={},extra=''){
   const a=low(tags.amenity),n=low(tags.name||tags['name:en']||tags['name:local']||tags.operator),i=low(tags['isced:level']||tags.isced);
   const text=[n,low(extra),low(tags.education),low(tags.description),low(tags['school:level']),low(tags.grades),low(tags['education_level']),low(tags['operator:type']),low(tags.sheet)].join(' ');
