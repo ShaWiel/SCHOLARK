@@ -553,7 +553,7 @@ async function discover(body){
   }
 
   const officialPromiseForRequest=isSuriname?officialSurinameSchools():Promise.resolve([]);
-  let rows=[],provider=includeNearbyCountries?'OpenStreetMap nearby cross-border search':'OpenStreetMap country-boundary search',radiusStepsTried=[];
+  let rows=[],provider=includeNearbyCountries?'OpenStreetMap nearby cross-border search':'OpenStreetMap country-boundary search',radiusStepsTried=[],overpassUnavailable=false;
   const radii=countryWide?[radius]:(autoRadius?NEARBY_RADII.filter(x=>x>=radius):[radius]);
   for(const step of radii){
     radius=step;radiusStepsTried.push(step);
@@ -563,15 +563,15 @@ async function discover(body){
       rows=o.elements.map(e=>normalized(e,center)).filter(Boolean).filter(x=>countryWide||x.distance==null||x.distance<=step+1);
       if(rows.length>=MIN_NEARBY_RESULTS||countryWide||!autoRadius)break;
     }catch(e){
-      sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false,radius:step})));rows=[];
+      sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false,radius:step})));rows=[];overpassUnavailable=true;break;
     }
   }
-  if(!rows.length&&countryCode){
+  if(!rows.length&&countryCode&&!overpassUnavailable){
     try{
       const byName=await overpass(countryAreaQuery(country,countryCode,center,radius,countryWide,true,includeNearbyCountries));
       sourceStatus.push({source:byName.endpoint+' name-boundary',ok:true,count:byName.elements.length,mode:countryWide?'country-wide':'nearby',radius});
       rows=byName.elements.map(e=>normalized(e,center)).filter(Boolean);
-    }catch(e){sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false,radius})))}
+    }catch(e){sourceStatus.push(...(e.failures||[]).map(source=>({source,ok:false,radius})));overpassUnavailable=true}
   }
 
   if(!rows.length||rows.length<(countryWide?12:6)){
