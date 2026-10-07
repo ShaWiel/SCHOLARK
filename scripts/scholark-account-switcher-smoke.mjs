@@ -59,7 +59,7 @@ try{
   });
 
   await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
-  await page.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__&&!!window.__SCHOLARK_V89_ACCOUNT__,null,{timeout:15000});
+  await page.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__,null,{timeout:15000});
 
   async function login(email){
     await page.evaluate(e=>window.__SCHOLARK_V72_CLOUD__.openAuth('signin',{email:e}),email);
@@ -88,6 +88,8 @@ try{
   check(!/access_token|refresh_token|qa-token|qa-refresh|SafePassword123/i.test(storageAudit.remembered),'remembered account list contains a token or password');
   check(/qa-token-beta/.test(storageAudit.session),'active session was unexpectedly removed');
 
+  await page.evaluate(()=>{location.hash='dashboard'});
+  await page.waitForFunction(()=>!!window.__SCHOLARK_V89_ACCOUNT__&&document.body.classList.contains('v51-workspace'),null,{timeout:15000});
   await page.evaluate(()=>window.__SCHOLARK_V89_ACCOUNT__.open());
   await page.waitForSelector('#v89-account.open #v89-account-list',{state:'visible',timeout:5000});
   check(await page.locator('#v89-add-account').count()===1,'Add account control is missing');
