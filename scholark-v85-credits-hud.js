@@ -84,10 +84,10 @@
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   const boundWalletTriggers=new WeakSet(),walletRecoveredEvents=new WeakSet();
-  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null,walletAnchorRepairTimer=0,walletAnchorRepairEpoch=0;
+  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null,walletAnchorRepairTimer=0,walletAnchorRepairEpoch=0,walletRemountClickEpoch=0;
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
-    walletAnchorRepairEpoch++;
+    walletAnchorRepairEpoch++;walletRemountClickEpoch++;
     clearTimeout(walletAnchorRepairTimer);walletAnchorRepairTimer=0;
     lastWalletPointerAt=0;lastWalletPointerSurface='';lastWalletPointerTrigger=null;
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
@@ -279,25 +279,40 @@
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
-  addEventListener('click',e=>{
-    const captured=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
-    if(!captured)return;
-    const surface=walletSurface(captured);
-    queueMicrotask(()=>{
-      if(captured.isConnected)return;
+  function recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,delay=0){
+    const run=()=>{
+      if(epoch!==walletRemountClickEpoch||captured?.isConnected)return;
       const live=surface==='workspace'
         ?document.querySelector('#v51-sidebar .v85-wallet')
         :document.querySelector('#v55-topbar .v85-topbar-credit');
       if(!live)return;
       bindWalletTrigger(live);
-      if(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface){
-        walletPanelAnchor=live;
-        live.setAttribute('aria-expanded','true');
-        positionTopbarWallet(live);
-      }else if(!topbarWalletPanel?.classList.contains('open')){
-        toggleWallet(live);
-      }
-    });
+      const isOpen=!!topbarWalletPanel?.classList.contains('open');
+      if(shouldOpen){
+        if(!isOpen)toggleWallet(live);
+        else{
+          walletPanelAnchor=live;walletPanelSurface=surface;
+          live.setAttribute('aria-expanded','true');
+          positionTopbarWallet(live);
+        }
+      }else if(isOpen&&walletPanelSurface===surface)closeTopbarWallet();
+    };
+    if(delay) setTimeout(run,delay); else queueMicrotask(run);
+  }
+  addEventListener('click',e=>{
+    const captured=e.target.closest?.('.v85-topbar-credit,.v85-wallet');
+    if(!captured)return;
+    const surface=walletSurface(captured),recentPointer=surface&&surface===lastWalletPointerSurface&&Date.now()-lastWalletPointerAt<900;
+    const shouldOpen=recentPointer
+      ?!!topbarWalletPanel?.classList.contains('open')
+      :!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface);
+    const epoch=++walletRemountClickEpoch;
+    // A capture listener elsewhere can replace the Wallet trigger later in
+    // this same click. Re-assert the intended open/closed state across a few
+    // short remount ticks so Android does not depend on one exact DOM frame.
+    recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,0);
+    recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,24);
+    recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,80);
   },true);
 
   document.addEventListener('click',e=>{
