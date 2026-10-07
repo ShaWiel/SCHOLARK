@@ -19,12 +19,13 @@ const COUNTRY_CODES={
 };
 let officialCache=null;
 let officialPromise=null;
-const discoveryCache=new Map();
-const DISCOVERY_TTL=10*60*1000,DISCOVERY_CACHE_MAX=240;
-const NEARBY_RADII=Object.freeze([25,50,100,150,250]),MAX_NEARBY_RADIUS=250,MIN_NEARBY_RESULTS=6;
+const discoveryCache=new Map(),schoolGeoCache=new Map();
+const DISCOVERY_TTL=10*60*1000,DISCOVERY_CACHE_MAX=240,SCHOOL_GEO_TTL=24*60*60*1000,SCHOOL_GEO_CACHE_MAX=1200;
+const NEARBY_RADII=Object.freeze([25,50,100,250,500,700]),MAX_NEARBY_RADIUS=700,MIN_NEARBY_RESULTS=6;
 const OVERPASS_CIRCUIT_MS=5*60*1000;
 let overpassDownUntil=0,overpassLastFailures=[];
 function cacheDiscovery(key,value){discoveryCache.set(key,{at:Date.now(),value});while(discoveryCache.size>DISCOVERY_CACHE_MAX)discoveryCache.delete(discoveryCache.keys().next().value)}
+function cacheSchoolGeo(k,value){schoolGeoCache.set(k,{at:Date.now(),value});while(schoolGeoCache.size>SCHOOL_GEO_CACHE_MAX)schoolGeoCache.delete(schoolGeoCache.keys().next().value)}
 const SRC_POLANEN='https://gov.sr/priority-social-projects-program-renovation-of-schools-phase-1/';
 const SRC_TVET='https://gov.sr/beroepsonderwijs/scholen/';
 const SRC_NUFFIC='https://www.nuffic.nl/onderwijssystemen/suriname/onderwijsinstellingen-en-opleidingen';
