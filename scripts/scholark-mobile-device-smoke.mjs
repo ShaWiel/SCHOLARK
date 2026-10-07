@@ -176,7 +176,7 @@ for(const profile of profiles){
     check(await page.locator('#v51-top-actions').count()===0,profile.name+': Workspace should not have a topbar');
     check(await page.locator('#v55-topbar').count()===0,profile.name+': public topbar leaked into Workspace');
     check(await visible(page,'#v51-sidebar-actions',6000),profile.name+': Workspace sidebar actions missing');
-    check(await page.locator('#v51-sidebar-actions #v51-help').count()===1&&await page.locator('#v51-sidebar-actions #v51-account').count()===1&&await page.locator('#v51-sidebar-actions #v51-home').count()===1,profile.name+': Workspace sidebar action ownership incomplete');
+    check(await page.locator('#v51-sidebar-actions #v51-help').count()===1&&await page.locator('#v51-sidebar-actions #v51-account').count()===1&&await page.locator('#v51-sidebar > #v51-home').count()===1&&await page.locator('#v51-sidebar-actions #v51-home').count()===0&&await page.locator('#v51-sidebar .v51-brand + #v51-home').count()===1,profile.name+': Workspace sidebar action ownership incomplete');
     await page.click('#v51-help');
     check(await page.locator('#v116-workspace-help [data-v116-help-action]').count()===4,profile.name+': Help & Support menu is incomplete');
     await page.keyboard.press('Escape');
