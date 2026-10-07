@@ -163,12 +163,12 @@ function launchHealth(){
   return {
     ok:true,release:RELEASE,nodeEnv:String(process.env.NODE_ENV||''),testMode:TEST_MODE,productStage:PRODUCT_STAGE,uptimeSeconds:Math.round(process.uptime()),
     runtime:{rssMB:Math.round((mem.rss||0)/1048576),heapUsedMB:Math.round((mem.heapUsed||0)/1048576)},
-    foundation:{feedback:true,accountExport:true,accountDeletion:true,storageAwareDeletion:true,authCascadeDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,sharedAiSessionRecovery:true,connectedWorkspaceContext:true,adaptiveSchoolRadiusKm:250,globalSchoolSampling:true,crossBrowserCi:['chromium','firefox','webkit'],accessibility:true,onboarding:true,languageQa:74},
+    foundation:{feedback:true,accountExport:true,accountDeletion:true,storageAwareDeletion:true,authCascadeDeletion:true,sourceProvenance:true,observability:true,serverCreditPreflight:true,serverCreditIdempotency:true,sharedAiSessionRecovery:true,connectedWorkspaceContext:true,adaptiveSchoolRadiusKm:250,globalSchoolSampling:true,crossBrowserCi:['chromium','firefox','webkit'],accessibility:true,onboarding:true,languageQa:74,multiAccountSwitching:true,privateProfilePhotos:true,paymentRefundReversal:true,featureFreeze:true},
     infrastructure:{provider:'render',deployTier:DEPLOY_TIER,productionCapacityValidated:CAPACITY_VALIDATED,mobileDeviceEmulationValidated:true,mobileProfiles:['iphone-webkit','android-chromium'],realDeviceQaValidated:REAL_DEVICE_QA_VALIDATED},
     billing:{environment:PADDLE_ENV,liveEnvironment:liveBilling,liveCredentialShapes,liveCredentialsPreloaded:liveCredentialShapes,liveEndToEndValidated:LIVE_BILLING_VALIDATED},
     security:{leakedPasswordProtectionValidated:LEAKED_PASSWORD_PROTECTION_VALIDATED,rlsExpected:true},
     legal:{product:LEGAL_NAME,supportContactConfigured:supportReady,supportChannel:SUPPORT_EMAIL?'email':'in-app',supportEmail:SUPPORT_EMAIL||null,legalContentVersion:'2026-10-05',legalReviewValidated:LEGAL_REVIEW_VALIDATED,ready:legalReady},
-    readiness:{codeReady,commerciallyReady:!hardBlock},
+    readiness:{codeReady,commerciallyReady:!hardBlock,featureFreeze:true},
     blockers,
     publicCommercialLaunchReady:!hardBlock
   };
