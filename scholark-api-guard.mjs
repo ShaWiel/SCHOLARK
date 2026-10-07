@@ -20,6 +20,15 @@ const rules = [
   { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p==='/api/feedback', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/security/step-up', limit:testMode?100:20, maxBytes:4*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/schools/search', limit:testMode?180:36, maxBytes:16*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p==='/api/schools/location', limit:testMode?180:45, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/schools/reviews', limit:testMode?100:18, maxBytes:12*1024, expensive:true },
+  { match:(m,p)=>m==='GET' && p==='/api/notifications/preferences', limit:testMode?240:90, maxBytes:1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/notifications/preferences', limit:testMode?180:45, maxBytes:16*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/notifications/subscription', limit:testMode?160:30, maxBytes:32*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/notifications/unsubscribe', limit:testMode?160:30, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/notifications/test', limit:testMode?100:10, maxBytes:8*1024, expensive:false },
+  { match:(m,p)=>m==='POST' && p==='/api/notifications/dispatch', limit:testMode?600:180, maxBytes:4*1024, expensive:false },
   { match:(m,p)=>m==='GET' && p==='/api/account/export', limit:testMode?30:3, maxBytes:1024, expensive:true },
   { match:(m,p)=>m==='DELETE' && p==='/api/account', limit:testMode?20:3, maxBytes:8*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/billing/portal', limit:testMode?80:8, maxBytes:8*1024, expensive:false },
@@ -53,7 +62,7 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','DENY');
     if (!res.hasHeader('cross-origin-opener-policy')) res.setHeader('cross-origin-opener-policy','same-origin-allow-popups');
     if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
-    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), usb=()');
+    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), usb=(), payment=(self), publickey-credentials-get=(self), accelerometer=(), gyroscope=(), magnetometer=(), browsing-topics=()');
     if (!res.hasHeader('x-permitted-cross-domain-policies')) res.setHeader('x-permitted-cross-domain-policies','none');
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
@@ -129,7 +138,7 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,schoolDiscoveryGuards:true,pushNotificationGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 

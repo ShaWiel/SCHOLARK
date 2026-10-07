@@ -1,0 +1,14 @@
+{
+  "name": "SCHOLARK",
+  "short_name": "SCHOLARK",
+  "description": "AI learning and creation workspace for students and learners.",
+  "start_url": "/#home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f4ef",
+  "theme_color": "#111827",
+  "icons": [
+    {"src": "/scholark-logo.png", "sizes": "any", "type": "image/png", "purpose": "any"},
+    {"src": "/scholark-logo.png", "sizes": "any", "type": "image/png", "purpose": "maskable"}
+  ]
+}

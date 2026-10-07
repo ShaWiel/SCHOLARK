@@ -24,7 +24,7 @@
 
   async function open(){
     modal.classList.add('open');const body=$('#v89-body',modal),x=await ctx();
-    if(!x){body.innerHTML='<div class="v89-cloud"><div><b>Local mode</b><span>Sign in to save your profile, projects, Tutor chats, Study Ahead tracks, Planner and Mastery across devices.</span></div><button class="v89-btn primary" id="v89-signin">Sign in / Create account</button></div>';$('#v89-signin',body).onclick=()=>{modal.classList.remove('open');cloud()?.openAuth?.()};return}
+    if(!x){body.innerHTML='<div class="v89-cloud"><div><b>Local mode</b><span>Sign in to save your profile, projects, Tutor chats, Study Ahead tracks, Planner and Mastery across devices.</span></div><button class="v89-btn primary" id="v89-signin">Sign in / Create account</button></div>';$('#v89-signin',body).onclick=()=>{modal.classList.remove('open');cloud()?.openAuth?.()};window.dispatchEvent(new CustomEvent('scholark:account-opened',{detail:{signedIn:false}}));return}
     body.innerHTML='<div class="v89-status" id="v89-status">Loading profile…</div>';
     let p={};try{const r=await x.c.request('/rest/v1/profiles?select=display_name,role,country,city,school_name,study_field,education_level,language,preferences,onboarding_completed&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1',{method:'GET'}),d=await r.json().catch(()=>[]);if(r.ok)p=(Array.isArray(d)?d[0]:d)||{}}catch{}
     const prefs=p.preferences||{};
@@ -36,6 +36,7 @@
     $('#v89-data').onclick=e=>{modal.classList.remove('open');window.__SCHOLARK_LAUNCH__?.privacy?.(e.currentTarget)};
     $('#v89-signout').onclick=async()=>{status('Signing out…');try{await cloud()?.signOut?.();modal.classList.remove('open');location.hash='home'}catch(e){status(clean(e?.message||e),true)}};
     status(p.onboarding_completed?'Profile loaded.':'Profile loaded · finish your preferences when ready.');
+    window.dispatchEvent(new CustomEvent('scholark:account-opened',{detail:{signedIn:true}}));
   }
 
   async function save(x,oldPrefs={}){

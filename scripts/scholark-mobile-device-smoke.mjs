@@ -92,6 +92,15 @@ for(const profile of profiles){
     await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint'),{timeout:10000}).catch(()=>{});
     check(await visible(page,'#v55-topbar'),profile.name+': homepage topbar missing');
+    await page.waitForFunction(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r225',{timeout:7000}).catch(()=>{});
+    const notificationFoundation=await page.evaluate(()=>({
+      client:window.__SCHOLARK_NOTIFICATIONS__?.release||'',
+      manifest:document.querySelector('link[rel="manifest"]')?.getAttribute('href')||'',
+      hasOpen:typeof window.__SCHOLARK_NOTIFICATIONS__?.open==='function',
+      permissionPrompted:typeof Notification!=='undefined'&&Notification.permission==='denied'
+    }));
+    check(notificationFoundation.client==='r225'&&notificationFoundation.hasOpen,profile.name+': notification client did not load '+JSON.stringify(notificationFoundation));
+    check(/manifest\.webmanifest$/.test(notificationFoundation.manifest),profile.name+': installable manifest is missing');
     check(await visible(page,'#v117-credit-store-button'),profile.name+': Credit Store button missing');
     check(await visible(page,'.v116-public-help-toggle',5000),profile.name+': Help & Support toggle missing');
     check(await visible(page,'#v55-topbar .v85-topbar-credit',5000),profile.name+': Wallet topbar action missing');

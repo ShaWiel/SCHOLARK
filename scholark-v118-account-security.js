@@ -142,8 +142,8 @@
     const actions=$('.v89-actions',account);if(!actions)return;
     const b=document.createElement('button');b.className='v89-btn alt';b.id='v89-security';b.textContent='Security';b.onclick=()=>{document.querySelector('#v89-account')?.classList.remove('open');open()};actions.insertBefore(b,actions.firstChild);
   }
-  const mo=new MutationObserver(()=>injectSettingsButton());mo.observe(document.documentElement,{childList:true,subtree:true});
+  addEventListener('scholark:account-opened',()=>queueMicrotask(injectSettingsButton));
   addEventListener('scholark:auth-changed',()=>{proofCache.clear();setTimeout(()=>refreshUser().catch(()=>{}),50)});
-  [300,900,1800].forEach(ms=>setTimeout(injectSettingsButton,ms));
+  [500,1400].forEach(ms=>setTimeout(injectSettingsButton,ms));
   window.__SCHOLARK_SECURITY__={open,score:securityScore,stepUp:requestProof,signOutOthers,completeMfaIfRequired,refreshUser,verifiedFactors:verifiedTotp,release:'r218'};
 })();

@@ -26,10 +26,10 @@ try{
   await page.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__,null,{timeout:15000});
 
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signup'));
-  check(await page.locator('.v72-form input[type="password"]').getAttribute('minlength')==='10','signup password minimum is 10');
+  check(await page.locator('.v72-form input[type="password"]').getAttribute('minlength')==='12','signup password minimum is 12');
   check(await page.locator('[data-v72-terms]').count()===1,'signup shows legal consent control');
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
-  await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
+  await page.locator('.v72-form input[type="password"]').fill('ScholarkSecurePass1');
   await page.locator('[data-v72-terms]').check();
   await page.locator('.v72-form button').filter({hasText:'Create account'}).click();
   await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});
@@ -46,7 +46,7 @@ try{
 
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signin'));
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
-  await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
+  await page.locator('.v72-form input[type="password"]').fill('ScholarkSecurePass1');
   const loginDone=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/token?grant_type=password')&&r.request().method()==='POST');
   await page.locator('.v72-form button').first().click();
   const loginResponse=await loginDone;

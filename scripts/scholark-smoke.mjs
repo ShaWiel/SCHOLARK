@@ -232,7 +232,7 @@ if(schoolHealth){
   check(Array.isArray(schoolHealth.providers)&&schoolHealth.providers.length>=2,'School discovery providers missing');
   check(schoolHealth.strictCountry===true,'School search is not enforcing strict country boundaries');
   check(schoolHealth.version==='20261001-school-global-v14','School country/level search version mismatch');
-  check(JSON.stringify(schoolHealth.adaptiveNearbyRadius?.steps)===JSON.stringify([25,50,100,150,250])&&schoolHealth.adaptiveNearbyRadius?.maxKm===250&&schoolHealth.adaptiveNearbyRadius?.minResults===6,'Adaptive nearby school radius health contract mismatch');
+  check(JSON.stringify(schoolHealth.adaptiveNearbyRadius?.steps)===JSON.stringify([25,50,100,250,500,700])&&schoolHealth.adaptiveNearbyRadius?.maxKm===700&&schoolHealth.adaptiveNearbyRadius?.minResults===6,'Adaptive nearby school radius health contract mismatch');
   check(schoolHealth.countryBoundaryDefault===true&&schoolHealth.nearbyCountriesOptIn===true,'School border policy health contract mismatch');
   check(/Kleuterschool/i.test(String(schoolHealth.levels?.kindergarten||'')),'Kleuteronderwijs taxonomy missing');
   check(/Lagere school|Basisschool/i.test(String(schoolHealth.levels?.primary||'')),'Basisonderwijs taxonomy missing');

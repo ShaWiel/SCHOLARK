@@ -1,7 +1,7 @@
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const failures=[];
 const results=[];
-const validSteps=new Set([25,50,100,150,250]);
+const validSteps=new Set([25,50,100,250,500,700]);
 
 async function request(path,body,attempt=1){
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000);
@@ -35,10 +35,12 @@ for(const x of cases){
   if(status!==200||!data?.ok)continue;
   check(data.searchMode==='coordinates',x.name+': exact coordinates were not used ('+data.searchMode+')');
   check(data.strictCountry===true&&data.includeNearbyCountries!==true,x.name+': same-country default not enforced');
-  check(Number(data.radius)<=250,x.name+': radius exceeded 250 km ('+data.radius+')');
+  check(Number(data.radius)<=700,x.name+': radius exceeded 700 km ('+data.radius+')');
   const steps=Array.isArray(data.radiusStepsTried)?data.radiusStepsTried:[];
   check(steps.length>=1&&steps[0]===25&&steps.every(v=>validSteps.has(Number(v)))&&steps.every((v,i)=>i===0||Number(v)>=Number(steps[i-1])),x.name+': invalid adaptive radius steps '+JSON.stringify(steps));
   check(Number(data.count)>0&&Array.isArray(data.schools)&&data.schools.length>0,x.name+': no schools returned');
+  check(data.distanceMode==='user-location',x.name+': distance mode was not user-location ('+data.distanceMode+')');
+  check((data.schools||[]).some(s=>Number.isFinite(Number(s?.distance))),x.name+': school distances are missing');
   const explicitForeign=(data.schools||[]).filter(s=>{
     const code=String(s?.tags?.['addr:country']||s?.countryCode||'').trim().toUpperCase();
     return code&&code!==x.countryCode;
@@ -52,7 +54,9 @@ for(const x of cases){
   check(status===200&&data?.ok===true,'Suriname exact-location regression failed');
   if(data?.ok){
     check(data.searchMode==='coordinates','GPS did not take precedence over populated city field');
-    check(Number(data.radius)<=250,'Suriname exact-location radius exceeded 250 km');
+    check(data.distanceMode==='user-location','Suriname GPS search did not expose user-location distance mode');
+    check((data.schools||[]).some(s=>Number.isFinite(Number(s?.distance))),'Suriname GPS search returned no school distances');
+    check(Number(data.radius)<=700,'Suriname exact-location radius exceeded 700 km');
     const repeat=await request('/api/schools/search',{country:'Suriname',countryCode:'SR',city:'Paramaribo',lat:5.8520,lon:-55.2038,level:'all',radius:25,autoRadius:true,includeNearbyCountries:false});
     check(repeat.status===200&&repeat.data?.ok===true,'Repeated exact-location cache request failed');
     check(repeat.data?.cached===true,'Discovery cache did not serve repeated exact-location request');
@@ -65,7 +69,7 @@ for(const x of cases){
   check(status===200&&data?.ok===true,'Cross-border opt-in regression failed');
   if(data?.ok){
     check(data.strictCountry===false&&data.includeNearbyCountries===true,'Cross-border opt-in was not reflected by API');
-    check(Number(data.radius)<=250&&Number(data.requestedRadius)<=250,'Cross-border request escaped 250 km cap ('+data.radius+'/'+data.requestedRadius+')');
+    check(Number(data.radius)<=700&&Number(data.requestedRadius)<=700,'Cross-border request escaped 700 km cap ('+data.radius+'/'+data.requestedRadius+')');
   }
 }
 
