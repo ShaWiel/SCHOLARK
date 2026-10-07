@@ -142,8 +142,14 @@ jobs:
           VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
           test -n "$VERSION"
           grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html
-          grep -q 'scholark-v102-language-quiz.js?v=20261007-language-choice-v4' /tmp/scholark-home.html
-          grep -q 'scholark-v103-language-next-lesson.js?v=20260918-language-next-v2' /tmp/scholark-home.html
+          if grep -q 'scholark-v102-language-quiz.js?v=' /tmp/scholark-home.html; then
+            echo 'Language quiz helper leaked into homepage boot'
+            exit 1
+          fi
+          if grep -q 'scholark-v103-language-next-lesson.js?v=' /tmp/scholark-home.html; then
+            echo 'Language next-lesson helper leaked into homepage boot'
+            exit 1
+          fi
           grep -q 'scholark-v105-school-vwo.js?v=20260918-school-vwo-v7' /tmp/scholark-home.html
           if grep -Eqi 'Student[[:space:]]*OS' /tmp/scholark-home.html; then
             echo 'Legacy StudentOS text leaked into served homepage'
