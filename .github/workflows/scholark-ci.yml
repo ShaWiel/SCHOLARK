@@ -108,10 +108,10 @@ jobs:
             sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/apt-mirrors.txt
           fi
           printf 'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99scholark-network >/dev/null
-          timeout 300s npx playwright install-deps chromium firefox webkit
+          timeout 600s npx playwright install-deps chromium firefox webkit
           restore_ms_sources
           trap - EXIT
-          timeout 360s npx playwright install chromium firefox webkit
+          timeout 480s npx playwright install chromium firefox webkit
       - name: Validate r218 foundation, runtime tuning and visual isolation
         run: node scripts/scholark-r218-foundation-smoke.mjs http://127.0.0.1:10000
       - name: Validate r219 sidebar and dashboard cleanup
@@ -240,9 +240,9 @@ jobs:
             sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/apt-mirrors.txt
           fi
           printf 'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99scholark-network >/dev/null
-          timeout 300s npx playwright install-deps chromium
+          timeout 600s npx playwright install-deps chromium
           restore_ms_sources
           trap - EXIT
-          timeout 300s npx playwright install chromium
+          timeout 480s npx playwright install chromium
       - name: Run live prelaunch browser smoke
         run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
