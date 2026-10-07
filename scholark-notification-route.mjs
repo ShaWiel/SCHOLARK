@@ -10,7 +10,8 @@ const SERVICE=String(process.env.SUPABASE_SERVICE_ROLE_KEY||'');
 const VAPID_PUBLIC=String(process.env.VAPID_PUBLIC_KEY||'');
 const VAPID_PRIVATE=String(process.env.VAPID_PRIVATE_KEY||'');
 const VAPID_SUBJECT=String(process.env.VAPID_SUBJECT||'https://scholark-app-shawiel.onrender.com');
-const DISPATCH_SECRET=String(process.env.SCHOLARK_NOTIFICATION_DISPATCH_SECRET||'');
+const DISPATCH_HASH=String(process.env.SCHOLARK_NOTIFICATION_DISPATCH_HASH||'').toLowerCase();
+const LEGACY_DISPATCH_SECRET=String(process.env.SCHOLARK_NOTIFICATION_DISPATCH_SECRET||'');
 const VERSION='20261007-push-v1';
 const authCache=new Map();
 
@@ -161,7 +162,7 @@ http.Server.prototype.emit=function(type,...args){
   const method=String(req.method||'GET').toUpperCase(),path=url.pathname;
 
   if(method==='GET'&&path==='/api/notifications/health'){
-    json(res,200,{ok:true,version:VERSION,configured:!!(SERVICE&&VAPID_PUBLIC&&VAPID_PRIVATE&&DISPATCH_SECRET),webPush:!!(VAPID_PUBLIC&&VAPID_PRIVATE),database:!!SERVICE,schedulerSecret:!!DISPATCH_SECRET});
+    json(res,200,{ok:true,version:VERSION,configured:!!(SERVICE&&VAPID_PUBLIC&&VAPID_PRIVATE&&(DISPATCH_HASH||LEGACY_DISPATCH_SECRET)),webPush:!!(VAPID_PUBLIC&&VAPID_PRIVATE),database:!!SERVICE,schedulerSecret:!!(DISPATCH_HASH||LEGACY_DISPATCH_SECRET)});
     return true;
   }
   if(method==='GET'&&path==='/api/notifications/config'){
@@ -170,7 +171,9 @@ http.Server.prototype.emit=function(type,...args){
   }
   if(method==='POST'&&path==='/api/notifications/dispatch'){
     const supplied=String(req.headers?.['x-scholark-dispatch-secret']||'');
-    if(!DISPATCH_SECRET||!safeEqual(supplied,DISPATCH_SECRET)){json(res,403,{ok:false,code:'DISPATCH_FORBIDDEN'});return true}
+    const suppliedHash=crypto.createHash('sha256').update(supplied).digest('hex');
+    const dispatchOk=(DISPATCH_HASH&&safeEqual(suppliedHash,DISPATCH_HASH))||(!DISPATCH_HASH&&LEGACY_DISPATCH_SECRET&&safeEqual(supplied,LEGACY_DISPATCH_SECRET));
+    if(!dispatchOk){json(res,403,{ok:false,code:'DISPATCH_FORBIDDEN'});return true}
     readJson(req,4096).catch(()=>({})).then(()=>dispatch()).then(x=>json(res,200,x)).catch(e=>json(res,503,{ok:false,code:'DISPATCH_FAILED',error:clean(e?.message||e,300)}));return true;
   }
 
