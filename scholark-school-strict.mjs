@@ -22,8 +22,8 @@ let officialPromise=null;
 const discoveryCache=new Map();
 const DISCOVERY_TTL=10*60*1000,DISCOVERY_CACHE_MAX=240;
 const NEARBY_RADII=Object.freeze([25,50,100,150,250]),MAX_NEARBY_RADIUS=250,MIN_NEARBY_RESULTS=6;
-const OVERPASS_CIRCUIT_MS=5*60*1000;
-let overpassDownUntil=0,overpassLastFailures=[];
+const OVERPASS_CIRCUIT_MS=90*1000;
+let overpassDownUntil=0,overpassLastFailures=[],overpassFailureStreak=0;
 function cacheDiscovery(key,value){discoveryCache.set(key,{at:Date.now(),value});while(discoveryCache.size>DISCOVERY_CACHE_MAX)discoveryCache.delete(discoveryCache.keys().next().value)}
 const SRC_POLANEN='https://gov.sr/priority-social-projects-program-renovation-of-schools-phase-1/';
 const SRC_TVET='https://gov.sr/beroepsonderwijs/scholen/';
@@ -436,7 +436,7 @@ async function overpass(query){
   }
   const failures=[];
   try{
-    const first=await overpassEndpoint(OVERPASS[0],query,6500);overpassDownUntil=0;overpassLastFailures=[];return first;
+    const first=await overpassEndpoint(OVERPASS[0],query,6500);overpassDownUntil=0;overpassLastFailures=[];overpassFailureStreak=0;return first;
   }catch(e){failures.push(OVERPASS[0]+' '+clean(e?.name==='AbortError'?'timeout':e?.message||e))}
   const backupFailures=[];
   try{
@@ -444,9 +444,9 @@ async function overpass(query){
       try{return await overpassEndpoint(endpoint,query,8000)}
       catch(e){backupFailures.push(endpoint+' '+clean(e?.name==='AbortError'?'timeout':e?.message||e));throw e}
     }));
-    overpassDownUntil=0;overpassLastFailures=[];return winner;
+    overpassDownUntil=0;overpassLastFailures=[];overpassFailureStreak=0;return winner;
   }catch{}
-  failures.push(...backupFailures);overpassLastFailures=failures.slice();overpassDownUntil=Date.now()+OVERPASS_CIRCUIT_MS;
+  failures.push(...backupFailures);overpassLastFailures=failures.slice();overpassFailureStreak++;overpassDownUntil=overpassFailureStreak>=2?Date.now()+OVERPASS_CIRCUIT_MS:0;
   const e=new Error('Strict country school sources unavailable');e.failures=failures;throw e;
 }
 function countryAreaQuery(country,countryCode,pos,radius,countryWide,forceName=false,includeNearbyCountries=false){
@@ -484,8 +484,14 @@ async function nominatimSchoolFallback(country,city,center,countryCode,countryWi
   const rows=[],queries=fallbackQueries(country,city,center,level,nameQuery);
   for(let qi=0;qi<queries.length;qi++){
     try{
-      const u=new URL('https://nominatim.openstreetmap.org/search');u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','50');u.searchParams.set('q',queries[qi]);
-      const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 global-school-fallback'}},6500);if(!r.ok)continue;
+      const u=new URL('https://nominatim.openstreetmap.org/search');u.searchParams.set('format','jsonv2');u.searchParams.set('addressdetails','1');u.searchParams.set('limit','50');
+      const nearbyTerm=!countryWide&&qi===0?(nameQuery||fallbackTerms(level)[0]||'school'):queries[qi];u.searchParams.set('q',nearbyTerm);
+      if(countryCode)u.searchParams.set('countrycodes',countryCode.toLowerCase());
+      if(!countryWide&&Number.isFinite(center?.lat)&&Number.isFinite(center?.lon)){
+        const latSpan=2.8,cos=Math.max(.25,Math.cos(Number(center.lat)*Math.PI/180)),lonSpan=Math.min(6,2.8/cos);
+        u.searchParams.set('viewbox',[Number(center.lon)-lonSpan,Number(center.lat)+latSpan,Number(center.lon)+lonSpan,Number(center.lat)-latSpan].join(','));u.searchParams.set('bounded','1');
+      }
+      const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 global-school-fallback'}},5500);if(!r.ok)continue;
       const data=await r.json().catch(()=>[]);
       for(const x of data||[]){
         const code=clean(x.address?.country_code).toUpperCase();if(countryCode&&code&&!sameCode(countryCode,code))continue;
@@ -495,7 +501,7 @@ async function nominatimSchoolFallback(country,city,center,countryCode,countryWi
         rows.push({name,description:clean(x.display_name),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'OpenStreetMap search fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
       }
     }catch{}
-    if(mergeRows(rows).length>=18)break;
+    if(mergeRows(rows).length>=(countryWide?18:6))break;
     if(qi+1<queries.length)await new Promise(r=>setTimeout(r,1050));
   }
   return mergeRows(rows);
@@ -504,7 +510,7 @@ async function photonSchoolFallback(country,city,center,countryCode,countryWide,
   const rows=[],queries=fallbackQueries(country,city,center,level,nameQuery);
   for(let qi=0;qi<queries.length;qi++){
     try{
-      const u=new URL('https://photon.komoot.io/api/');u.searchParams.set('q',queries[qi]);u.searchParams.set('limit','50');
+      const u=new URL('https://photon.komoot.io/api/');u.searchParams.set('q',!countryWide&&qi===0?(nameQuery||fallbackTerms(level)[0]||'school'):queries[qi]);u.searchParams.set('limit','50');
       if(!countryWide&&Number.isFinite(center?.lat)&&Number.isFinite(center?.lon)){u.searchParams.set('lat',String(center.lat));u.searchParams.set('lon',String(center.lon))}
       const r=await timedFetch(u,{headers:{accept:'application/json','user-agent':'SCHOLARK/1.0 photon-school-fallback'}},7000);if(!r.ok)continue;
       const d=await r.json().catch(()=>null);
@@ -516,7 +522,7 @@ async function photonSchoolFallback(country,city,center,countryCode,countryWide,
         rows.push({name,description:[p.street,p.housenumber,p.city,p.state,p.country].map(clean).filter(Boolean).join(' · '),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'Photon / OpenStreetMap fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
       }
     }catch{}
-    if(mergeRows(rows).length>=18)break;
+    if(mergeRows(rows).length>=(countryWide?18:6))break;
     if(qi+1<queries.length)await new Promise(r=>setTimeout(r,180));
   }
   return mergeRows(rows);
