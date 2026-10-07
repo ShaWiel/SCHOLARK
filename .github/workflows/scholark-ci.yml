@@ -74,6 +74,8 @@ jobs:
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
       - name: Run global Schools Near Me sampling
         run: node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r225 notifications and security
+        run: node scripts/scholark-r225-notification-security-smoke.mjs http://127.0.0.1:10000
       - name: Run concurrent launch load smoke
         run: node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
       - name: Run staged 25/50/100 capacity smoke
