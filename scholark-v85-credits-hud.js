@@ -89,6 +89,7 @@
   function closeTopbarWallet(){
     walletAnchorRepairEpoch++;
     clearTimeout(walletAnchorRepairTimer);walletAnchorRepairTimer=0;
+    lastWalletPointerAt=0;lastWalletPointerSurface='';lastWalletPointerTrigger=null;
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
     walletPanelAnchor=null;walletPanelSurface='';
     if(topbarWalletPanel){topbarWalletPanel.classList.remove('open');topbarWalletPanel.setAttribute('aria-hidden','true')}
@@ -166,10 +167,13 @@
         e.stopPropagation();
         const live=liveWalletTrigger(trigger);
         if(!live)return;
+        // Toggle first. closeTopbarWallet() intentionally clears any stale
+        // gesture state; recording this pointer afterwards binds the following
+        // synthetic click to this exact gesture instead of a previous tap.
+        toggleWallet(live);
         lastWalletPointerAt=Date.now();
         lastWalletPointerSurface=walletSurface(live);
         lastWalletPointerTrigger=live;
-        toggleWallet(live);
       });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
