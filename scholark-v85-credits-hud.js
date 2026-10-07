@@ -84,7 +84,7 @@
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   const boundWalletTriggers=new WeakSet();
-  let lastWalletPointerAt=0,lastWalletPointerSurface='';
+  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null;
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
@@ -155,16 +155,18 @@
         if(!live)return;
         lastWalletPointerAt=Date.now();
         lastWalletPointerSurface=walletSurface(live);
+        lastWalletPointerTrigger=live;
         toggleWallet(live);
       });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
         e.stopPropagation();
         const live=liveWalletTrigger(trigger),surface=walletSurface(live||trigger);
-        if(surface&&surface===lastWalletPointerSurface&&Date.now()-lastWalletPointerAt<900){
+        if(surface&&surface===lastWalletPointerSurface&&live===lastWalletPointerTrigger&&Date.now()-lastWalletPointerAt<900){
           if(topbarWalletPanel?.classList.contains('open')&&!walletPanelAnchor?.isConnected)preserveWalletAnchor();
           return;
         }
+        if(surface&&surface===lastWalletPointerSurface&&Date.now()-lastWalletPointerAt>=900)lastWalletPointerTrigger=null;
         toggleWallet(live||trigger);
       });
     }
