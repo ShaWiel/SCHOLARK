@@ -7,6 +7,7 @@
   const SB='https://yhafbwdnnpvuedycdkll.supabase.co';
   const KEY='sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A';
   const SESSION='scholark_supabase_session_v2';
+  const REMEMBERED='scholark_remembered_accounts_v1';
   const state={session:null,cloud:[],busy:false,enhanced:false,currentProject:null,authNotice:''};
   let authModalCloseTimer=0;
   const cancelAuthModalClose=()=>{if(authModalCloseTimer){clearTimeout(authModalCloseTimer);authModalCloseTimer=0}};
@@ -47,9 +48,45 @@
   async function authBody(body,host=modal){const token=await captchaToken(host);const holder=host?.querySelector?.('.v72-captcha');if(holder&&token){delete holder.dataset.token;try{if(window.turnstile?.reset&&holder.dataset.widgetId)window.turnstile.reset(holder.dataset.widgetId)}catch{}}return token?{...body,gotrue_meta_security:{captcha_token:token}}:body}
   async function digestText(value){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(value||'')));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch{return ''}}
 
+  function rememberedAccounts(){
+    try{
+      const rows=JSON.parse(localStorage.getItem(REMEMBERED)||'[]');
+      return (Array.isArray(rows)?rows:[]).filter(x=>x&&x.id&&x.email).map(x=>({
+        id:clean(x.id),email:clean(x.email).toLowerCase(),displayName:clean(x.displayName||''),avatarPath:clean(x.avatarPath||''),lastUsedAt:Number(x.lastUsedAt)||0
+      })).slice(0,8);
+    }catch{return[]}
+  }
+  function writeRememberedAccounts(rows){
+    const safe=(Array.isArray(rows)?rows:[]).filter(x=>x?.id&&x?.email).map(x=>({id:clean(x.id),email:clean(x.email).toLowerCase(),displayName:clean(x.displayName||''),avatarPath:clean(x.avatarPath||''),lastUsedAt:Number(x.lastUsedAt)||Date.now()})).sort((a,b)=>b.lastUsedAt-a.lastUsedAt).slice(0,8);
+    try{localStorage.setItem(REMEMBERED,JSON.stringify(safe))}catch{}
+    window.dispatchEvent(new CustomEvent('scholark:remembered-accounts',{detail:{accounts:safe}}));
+    return safe;
+  }
+  function rememberAccount(sessionLike=state.session,extra={}){
+    const user=sessionLike?.user||state.session?.user||{},id=clean(extra.id||extra.userId||user.id),email=clean(extra.email||user.email||'').toLowerCase();
+    if(!id||!email)return null;
+    const rows=rememberedAccounts(),prior=rows.find(x=>x.id===id||x.email===email)||{};
+    const row={id,email,displayName:clean(extra.displayName||prior.displayName||user.user_metadata?.full_name||email.split('@')[0]),avatarPath:clean(extra.avatarPath??prior.avatarPath??''),lastUsedAt:Date.now()};
+    writeRememberedAccounts([row,...rows.filter(x=>x.id!==id&&x.email!==email)]);
+    return row;
+  }
+  function updateRememberedAccount(extra={}){return rememberAccount(state.session,extra)}
+  function forgetRememberedAccount(key){
+    const k=clean(key).toLowerCase();
+    return writeRememberedAccounts(rememberedAccounts().filter(x=>x.id.toLowerCase()!==k&&x.email!==k));
+  }
+  async function switchRememberedAccount(key){
+    const k=clean(key).toLowerCase(),row=rememberedAccounts().find(x=>x.id.toLowerCase()===k||x.email===k);
+    if(!row)return false;
+    if(state.session?.user?.id===row.id)return true;
+    if(state.session?.access_token)await signOut();
+    openAuth('signin',{email:row.email,switching:true});
+    return true;
+  }
+
   const css=document.createElement('style');css.id='scholark-v72-style';css.textContent=`
     .v72-cloud{margin-top:22px;border-top:1px solid #ece9ef;padding-top:20px}.v72-cloud-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.v72-cloud-head h2{font:950 23px/1 Inter;margin:5px 0 7px;letter-spacing:-.03em}.v72-cloud-head p{font:600 9.5px/1.5 Inter;color:#706c77;margin:0;max-width:720px}.v72-actions{display:flex;gap:7px;flex-wrap:wrap}.v72-btn{border:0;border-radius:10px;background:#17191f;color:#fff;padding:9px 11px;font:850 8px Inter;cursor:pointer}.v72-btn.alt{background:#eeecff;color:#5549ca}.v72-btn.ghost{background:#f4f3f6;color:#615d67}.v72-btn.danger{background:#fff0f0;color:#9a3d3d}.v72-btn:disabled{opacity:.5;cursor:wait}.v72-account{margin-top:13px;padding:14px;border:1px solid #ebe8ee;border-radius:15px;background:#fafafa;display:flex;align-items:center;justify-content:space-between;gap:10px}.v72-account b{font:900 9px Inter}.v72-account span{display:block;margin-top:3px;font:650 8px Inter;color:#7c7682}.v72-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.v72-card{position:relative;border:1px solid #e8e5ec;border-radius:15px;background:#fff;padding:14px}.v72-card small{display:block;color:#6d5dfc;font:850 7px Inter;text-transform:uppercase;letter-spacing:.08em}.v72-card h3{font:900 13px/1.15 Inter;margin:6px 62px 5px 0}.v72-card p{font:600 8.5px/1.4 Inter;color:#77717c;margin:0 0 10px}.v72-card-actions{display:flex;gap:5px;flex-wrap:wrap}.v72-mini{border:0;border-radius:8px;background:#f1eff5;color:#4f4a55;padding:7px 8px;font:800 7px Inter;cursor:pointer}.v72-mini.primary{background:#17191f;color:#fff}.v72-mini.danger{background:#fff0f0;color:#954242}.v72-time{position:absolute;right:12px;top:12px;font:750 6.5px Inter;color:#99939e}.v72-empty{margin-top:12px;padding:18px;border:1px dashed #d6d2dc;border-radius:14px;font:650 9px/1.45 Inter;color:#7b7581}.v72-status{margin-top:8px;min-height:13px;font:750 7.5px/1.4 Inter;color:#5c50cb}
-    #v72-modal{position:fixed;inset:0;z-index:2147483647;background:rgba(14,15,21,.62);display:none;place-items:center;padding:20px;font-family:Inter,system-ui}#v72-modal.open{display:grid}.v72-modal-card{width:min(560px,96vw);max-height:86vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.3)}.v72-modal-top{display:flex;justify-content:space-between;gap:12px}.v72-modal-top h2{font:950 22px Inter;margin:0}.v72-x{width:32px;height:32px;border:0;border-radius:10px;background:#f1eff3;font:900 14px Inter;cursor:pointer}.v72-tabs{display:flex;gap:6px;margin-top:15px}.v72-tab{flex:1;border:0;border-radius:10px;padding:9px;background:#f1eff3;font:850 8px Inter;cursor:pointer}.v72-tab.active{background:#17191f;color:#fff}.v72-form{display:grid;gap:8px;margin-top:12px}.v72-form input{width:100%;box-sizing:border-box;border:1px solid #dad6df;border-radius:11px;padding:11px;font:650 9px Inter}.v72-form button{border:0;border-radius:11px;background:#c9ff6a;color:#17191f;padding:11px;font:900 9px Inter;cursor:pointer}.v72-modal-status{margin-top:8px;font:750 8px/1.4 Inter;color:#6559c9}.v72-version{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #eee}.v72-version b{font:850 9px Inter}.v72-version span{display:block;margin-top:3px;font:650 7.5px Inter;color:#85808a}.v72-restore{border:0;border-radius:9px;background:#eeecff;color:#5549ca;padding:8px 9px;font:850 7.5px Inter;cursor:pointer}
+    #v72-modal{position:fixed;inset:0;z-index:2147483647;background:rgba(14,15,21,.62);display:none;place-items:center;padding:20px;font-family:Inter,system-ui}#v72-modal.open{display:grid}.v72-modal-card{width:min(560px,96vw);max-height:86vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.3)}.v72-modal-top{display:flex;justify-content:space-between;gap:12px}.v72-modal-top h2{font:950 22px Inter;margin:0}.v72-x{width:32px;height:32px;border:0;border-radius:10px;background:#f1eff3;font:900 14px Inter;cursor:pointer}.v72-tabs{display:flex;gap:6px;margin-top:15px}.v72-tab{flex:1;border:0;border-radius:10px;padding:9px;background:#f1eff3;font:850 8px Inter;cursor:pointer}.v72-tab.active{background:#17191f;color:#fff}.v72-form{display:grid;gap:8px;margin-top:12px}.v72-form input{width:100%;box-sizing:border-box;border:1px solid #dad6df;border-radius:11px;padding:11px;font:650 9px Inter}.v72-form button{border:0;border-radius:11px;background:#c9ff6a;color:#17191f;padding:11px;font:900 9px Inter;cursor:pointer}.v72-modal-status{margin-top:8px;font:750 8px/1.4 Inter;color:#6559c9}.v72-remembered{display:grid;gap:6px;margin-top:10px}.v72-remembered-label{font:850 7px Inter;color:#7d7783;letter-spacing:.06em;text-transform:uppercase}.v72-remembered-row{display:flex;gap:7px;overflow:auto;padding-bottom:2px}.v72-remembered-account{flex:0 0 auto;border:1px solid #e1dde7;background:#faf9fb;color:#292630;border-radius:10px;padding:8px 10px;font:800 8px Inter;cursor:pointer}.v72-remembered-account:hover{border-color:#6d5dfc;background:#f2efff}.v72-version{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #eee}.v72-version b{font:850 9px Inter}.v72-version span{display:block;margin-top:3px;font:650 7.5px Inter;color:#85808a}.v72-restore{border:0;border-radius:9px;background:#eeecff;color:#5549ca;padding:8px 9px;font:850 7.5px Inter;cursor:pointer}
     @media(max-width:720px){.v72-cloud-head,.v72-account{display:block}.v72-actions{margin-top:10px}.v72-grid{grid-template-columns:1fr}.v72-account .v72-actions{margin-top:9px}}
   `;document.head.appendChild(css);
   const modal=document.createElement('div');modal.id='v72-modal';document.body.appendChild(modal);
@@ -91,7 +128,7 @@
     }
     const expires_in=Math.max(60,Number(p.get('expires_in'))||3600),s={access_token,refresh_token,token_type:p.get('token_type')||'bearer',expires_in,expires_at:Math.floor(Date.now()/1000)+expires_in,user:null};
     try{const r=await fetch(SB+'/auth/v1/user',{headers:authHeaders(access_token)}),u=await r.json().catch(()=>null);if(r.ok&&u?.id)s.user=u}catch{}
-    saveSession(s);
+    saveSession(s);rememberAccount(s);
     try{history.replaceState(null,'',location.pathname+location.search+'#home')}catch{location.hash='home'}
     if(type==='recovery')setTimeout(()=>openPasswordRecovery(),60);
     else if(type==='signup'||type==='email_change')state.authNotice='Email confirmed. Your SCHOLARK account is signed in.';
@@ -113,22 +150,25 @@
     if(!r.ok||!d?.access_token){noteAuthFailure();throw new Error('Sign-in failed. Check your credentials or use password recovery.')}
     d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);
     try{if(window.__SCHOLARK_SECURITY__?.completeMfaIfRequired)d=await window.__SCHOLARK_SECURITY__.completeMfaIfRequired(d)||d}catch(err){saveSession(null);throw err}
-    noteAuthSuccess();return d;
+    rememberAccount(d);noteAuthSuccess();return d;
   }
-  async function signUp(email,password){if(!validPassword(password))throw new Error('Use at least '+PASSWORD_MIN+' characters for your password.');const body=await authBody({email,password,data:{terms_version:'2026-10-05',terms_accepted_at:new Date().toISOString()}}),r=await fetch(SB+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error('Account creation could not be completed. Check the details and try again.');if(d?.access_token){d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d)}return d}
+  async function signUp(email,password){if(!validPassword(password))throw new Error('Use at least '+PASSWORD_MIN+' characters for your password.');const body=await authBody({email,password,data:{terms_version:'2026-10-05',terms_accepted_at:new Date().toISOString()}}),r=await fetch(SB+'/auth/v1/signup',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error('Account creation could not be completed. Check the details and try again.');if(d?.access_token){d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);rememberAccount(d)}return d}
   async function resetPassword(email){const body=await authBody({email}),r=await fetch(SB+'/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error('If this account can receive recovery mail, use the recovery flow and try again.');return true}
   async function signOut(){const s=loadSession(),token=s?.access_token||'';saveSession(null);state.cloud=[];enhance(true);if(token)try{await fetch(SB+'/auth/v1/logout',{method:'POST',headers:authHeaders(token),cache:'no-store'})}catch{}}
 
-  function openAuth(tab='signin'){
+  function openAuth(tab='signin',opts={}){
     cancelAuthModalClose();
-    const signingIn=tab==='signin';
-    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div><form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice, Terms, Refund/Cancellation and Subscription Terms (5 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
+    const signingIn=tab==='signin',presetEmail=clean(opts?.email||''),remembered=signingIn?rememberedAccounts():[];
+    modal.innerHTML='<div class="v72-modal-card"><div class="v72-modal-top"><h2>SCHOLARK Cloud</h2><button class="v72-x">×</button></div><div class="v72-tabs"><button class="v72-tab '+(signingIn?'active':'')+'" data-tab="signin">Sign in</button><button class="v72-tab '+(!signingIn?'active':'')+'" data-tab="signup">Create account</button></div>'+(remembered.length?'<div class="v72-remembered"><div class="v72-remembered-label">Accounts on this device</div><div class="v72-remembered-row">'+remembered.map(a=>'<button type="button" class="v72-remembered-account" data-v72-account-email="'+esc(a.email)+'">'+esc(a.displayName||a.email)+'</button>').join('')+'</div></div>':'')+'<form class="v72-form"><input type="email" autocomplete="email" placeholder="Email address" required><input type="password" autocomplete="'+(signingIn?'current-password':'new-password')+'" placeholder="Password · '+PASSWORD_MIN+'+ characters" minlength="'+PASSWORD_MIN+'" required>'+(!signingIn?'<label class="v72-terms" style="display:flex;gap:8px;align-items:flex-start;font:650 8px/1.45 Inter;color:#655f6b;text-align:left"><input type="checkbox" data-v72-terms required style="width:16px;height:16px;margin:1px 0 0;flex:0 0 auto"> <span>I agree to the SCHOLARK Privacy Notice, Terms, Refund/Cancellation and Subscription Terms (5 Oct 2026).</span></label><button type="button" class="v72-view-terms" style="background:#ece9ff;color:#574bd1">View Privacy & Terms</button>':'')+'<button>'+(signingIn?'Sign in':'Create account')+'</button>'+(signingIn?'<button type="button" class="v72-forgot" style="background:#f3f1f7;color:#514b5d">Forgot your password?</button>':'')+'</form><div class="v72-modal-status"></div></div>';
     modal.classList.add('open');
     window.__SCHOLARK_I18N__?.apply?.(modal);
     setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
     $('.v72-x',modal).onclick=closeModal;
-    $$('[data-tab]',modal).forEach(b=>{b.type='button';b.onclick=()=>openAuth(b.dataset.tab)});
-    const form=$('.v72-form',modal),emailInput=$('input[type="email"]',form),st=$('.v72-modal-status',modal);securityConfig().then(c=>{if(c?.turnstile?.enabled)captchaToken(modal).catch(()=>{})}).catch(()=>{});
+    const form=$('.v72-form',modal),emailInput=$('input[type="email"]',form),st=$('.v72-modal-status',modal);if(presetEmail)emailInput.value=presetEmail;
+    modal.querySelectorAll('[data-v72-account-email]').forEach(b=>b.onclick=()=>{emailInput.value=clean(b.dataset.v72AccountEmail);$('input[type="password"]',form)?.focus()});
+    modal.querySelectorAll('[data-tab]').forEach(b=>{b.type='button';b.onclick=()=>openAuth(b.dataset.tab,{email:clean(emailInput?.value||presetEmail)})});
+    if(opts?.switching&&presetEmail){st.textContent='Switching account · verify '+presetEmail;st.style.color='#6559c9'}
+    securityConfig().then(c=>{if(c?.turnstile?.enabled)captchaToken(modal).catch(()=>{})}).catch(()=>{});
     $('.v72-view-terms',modal)?.addEventListener('click',e=>window.__SCHOLARK_LAUNCH__?.privacy?.(e.currentTarget));
     $('.v72-forgot',modal)?.addEventListener('click',async()=>{
       const email=clean(emailInput?.value);
@@ -172,6 +212,25 @@
     try{
       const bmp=await createImageBitmap(blob),max=1800,scale=Math.min(1,max/bmp.width,max/bmp.height),w=Math.max(1,Math.round(bmp.width*scale)),h=Math.max(1,Math.round(bmp.height*scale)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(bmp,0,0,w,h);bmp.close?.();const out=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.84));return out&&out.size<=5*1024*1024?out:null;
     }catch{return blob.size<=5*1024*1024?blob:null}
+  }
+  async function compactAvatar(file){
+    if(!file||!/image\/(jpeg|png|webp)/i.test(file.type||''))throw new Error('Choose a JPG, PNG or WebP image.');
+    if(file.size>8*1024*1024)throw new Error('Profile photo must be smaller than 8 MB.');
+    try{
+      const bmp=await createImageBitmap(file),size=512,side=Math.min(bmp.width,bmp.height),sx=Math.max(0,(bmp.width-side)/2),sy=Math.max(0,(bmp.height-side)/2),canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d');ctx.drawImage(bmp,sx,sy,side,side,0,0,size,size);bmp.close?.();const out=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.86));if(!out||out.size>2*1024*1024)throw new Error('Could not optimize profile photo.');return out;
+    }catch(e){if(file.size<=2*1024*1024)return file;throw e}
+  }
+  async function uploadProfilePhoto(file){
+    const s=await session(),uid=clean(s?.user?.id);if(!uid)throw new Error('Sign in to add a profile photo.');
+    const blob=await compactAvatar(file),path=uid+'/profile/avatar.jpg';await uploadMediaBlob(path,blob);return path;
+  }
+  async function profilePhotoUrl(path){
+    const p=clean(path);if(!p)return'';const blob=await downloadMediaBlob(p);return blob?URL.createObjectURL(blob):'';
+  }
+  async function removeProfilePhoto(path){
+    const s=await session(),uid=clean(s?.user?.id),p=clean(path);if(!uid||!p||!p.startsWith(uid+'/profile/'))return false;
+    const r=await fetch(SB+'/storage/v1/object/project-media',{method:'DELETE',headers:{apikey:KEY,authorization:'Bearer '+s.access_token,'content-type':'application/json'},body:JSON.stringify({prefixes:[p]})});
+    return r.ok;
   }
   async function uploadMediaBlob(path,blob){
     const s=await session();if(!s?.access_token)throw new Error('Sign in to sync project media');
@@ -242,5 +301,5 @@
   loadSession();
   addEventListener('storage',e=>{if(e.key!==SESSION)return;const before=state.session?.access_token||'';loadSession();state.cloud=[];if((state.session?.access_token||'')!==before)window.dispatchEvent(new CustomEvent('scholark:auth-changed',{detail:{signedIn:!!state.session?.access_token,user:state.session?.user||null,source:'storage'}}));setTimeout(()=>enhance(true),30)});
   consumeAuthCallback().catch(()=>{}).finally(()=>setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true);if(state.authNotice){status(state.authNotice);state.authNotice=''}},350));
-  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r218'};
+  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,rememberedAccounts,switchAccount:switchRememberedAccount,forgetRememberedAccount,updateRememberedAccount,uploadProfilePhoto,profilePhotoUrl,removeProfilePhoto,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r221'};
 })();

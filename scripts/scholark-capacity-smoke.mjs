@@ -6,7 +6,7 @@ if(!isLocal&&!/^(1|true|yes)$/i.test(String(process.env.SCHOLARK_CAPACITY_ALLOW_
 }
 const stages=(process.env.SCHOLARK_CAPACITY_STAGES||'25,50,100').split(',').map(Number).filter(x=>x>0&&x<=100);
 const waves=Math.max(1,Math.min(5,Number(process.env.SCHOLARK_CAPACITY_WAVES)||2));
-const schoolBody={country:'Suriname',countryCode:'SR',city:'Paramaribo',level:'all',radius:25,lat:5.852,long:-55.2038,lon:-55.2038};
+const schoolBody={country:'Suriname',countryCode:'SR',city:'Paramaribo',level:'all',radius:25,autoRadius:true,includeNearbyCountries:false,lat:5.852,long:-55.2038,lon:-55.2038};
 async function request(kind){
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000),t=performance.now();
   try{

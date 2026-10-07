@@ -26,7 +26,7 @@ try{
   check(home.release==='r218','r218 polish API missing');
   check(home.polish==='r218'&&home.style,'r218 stylesheet not mounted');
   check(home.storeClass===false,'Store exclusion class incorrectly active on Home');
-  check(home.runtimeVersion==='20261006-r218','runtime version is not r218');
+  check(home.runtimeVersion==='20261007-r221','runtime version is not r221');
   check(home.preloadCap===10&&home.yieldEvery===4,'runtime preload/yield tuning missing');
 
   await page.evaluate(()=>{location.hash='dashboard'});

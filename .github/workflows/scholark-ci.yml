@@ -38,6 +38,8 @@ jobs:
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
           node --check scripts/scholark-account-lifecycle-smoke.mjs
+          node --check scripts/scholark-account-switcher-smoke.mjs
+          node --check scripts/scholark-billing-edge-smoke.mjs
           node --check scripts/scholark-arki-production-smoke.mjs
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
@@ -84,6 +86,8 @@ jobs:
         run: node scripts/scholark-gemini-router-smoke.mjs
       - name: Simulate transient Supabase credit-network failures
         run: node scripts/scholark-credit-resilience-smoke.mjs
+      - name: Validate payment refund, duplicate and cancellation edge cases
+        run: node scripts/scholark-billing-edge-smoke.mjs
       - name: Install browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
@@ -126,6 +130,8 @@ jobs:
           fs.writeFileSync(p,s);
           NODE
           node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
+      - name: Validate multi-account switching and private profile photos
+        run: node scripts/scholark-account-switcher-smoke.mjs http://127.0.0.1:10000
       - name: Validate 15-language layout, RTL and mobile overflow
         run: node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium

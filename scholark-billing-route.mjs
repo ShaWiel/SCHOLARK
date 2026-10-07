@@ -93,7 +93,7 @@ async function auditCatalogBrandPreview(){
   return {ok:!!plans.plus&&!!plans.pro&&!plans.plus.legacyBrand&&!plans.pro.legacyBrand,plans};
 }
 async function verifyWebhookDestination(){
-  const required=['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled','transaction.completed'];
+  const required=['subscription.created','subscription.trialing','subscription.activated','subscription.updated','subscription.past_due','subscription.paused','subscription.resumed','subscription.canceled','transaction.completed','adjustment.created','adjustment.updated'];
   const normalize=v=>String(v||'').trim().replace(/\/+$/,'');
   const readList=async active=>{
     const r=await paddle('/notification-settings?active='+(active?'true':'false')+'&per_page=200',{method:'GET'}),d=await r.json().catch(()=>({}));
@@ -170,6 +170,40 @@ async function applyCreditPackTransaction(t,expectedUserId=''){
   if(!rr.ok||rd?.ok===false)return {ok:false,http:500,code:'CREDIT_TOPUP_APPLY_FAILED',error:rd?.message||rd?.error||'Could not add purchased credits.'};
   return {ok:true,http:200,purchaseType:'credit_pack',pack:packKey,creditsAdded:Number(rd.credits_added||0),transactionId:String(t.id||''),creditResult:rd};
 }
+async function handleAdjustmentEvent(event){
+  const data=event?.data||{},action=String(data.action||'').toLowerCase(),status=String(data.status||'').toLowerCase(),transactionId=String(data.transaction_id||''),eventId=String(event?.event_id||'');
+  const reversalAction=action==='refund'||action==='chargeback';
+  if(!reversalAction||status!=='approved'||!/^txn_[a-z\d]{26}$/.test(transactionId)){
+    await recordEvent(event,null,null);
+    return {ok:true,recorded:true,reversed:false,status,action};
+  }
+  const tr=await paddle('/transactions/'+encodeURIComponent(transactionId),{method:'GET'}),td=await tr.json().catch(()=>({}));
+  if(!tr.ok||!td?.data)throw new Error('adjustment_transaction_verify_failed');
+  const t=td.data,custom=t.custom_data||{},owner=String(custom.scholark_user_id||''),subscriptionId=String(t.subscription_id||'');
+  if(String(custom.scholark_purchase_type||'')!=='credit_pack'){
+    await recordEvent(event,/^[0-9a-f-]{36}$/i.test(owner)?owner:null,subscriptionId||null);
+    return {ok:true,recorded:true,reversed:false,subscriptionId};
+  }
+  const packKey=String(custom.scholark_credit_pack||'').toLowerCase(),pack=creditPack(packKey);
+  if(!pack||!/^[0-9a-f-]{36}$/i.test(owner))throw new Error('adjustment_credit_pack_owner_invalid');
+  const refundAmount=Math.max(0,Number(data?.totals?.total||0));
+  if(!refundAmount){
+    await recordEvent(event,owner,null);
+    return {ok:true,recorded:true,reversed:false,manualReview:true,code:'REFUND_AMOUNT_MISSING'};
+  }
+  const rr=await sb('/rest/v1/rpc/reverse_credit_topup_full',{method:'POST',body:JSON.stringify({p_user_id:owner,p_transaction_id:transactionId,p_event_id:eventId,p_refund_amount_cents:refundAmount,p_reason:action})}),rd=await rr.json().catch(()=>({}));
+  if(!rr.ok)throw new Error(rd?.message||rd?.error||'credit_refund_reverse_failed');
+  if(rd?.ok===false&&rd?.code==='PARTIAL_REFUND_REVIEW_REQUIRED'){
+    await recordEvent(event,owner,null);
+    console.warn('[SCHOLARK] Paddle partial credit refund requires review · '+transactionId+' · '+refundAmount+' cents');
+    return {ok:true,recorded:true,reversed:false,manualReview:true,code:rd.code};
+  }
+  if(rd?.ok===false)throw new Error(rd?.code||'credit_refund_reverse_failed');
+  await recordEvent(event,owner,null);
+  console.log('[SCHOLARK] Paddle credit refund reversal · '+transactionId+' · reversed '+Number(rd?.credits_reversed||0)+' credits');
+  return {ok:true,recorded:true,reversed:true,creditResult:rd};
+}
+
 async function createCreditCheckout(user,packKey){
   const pack=creditPack(packKey);if(!pack)return {ok:false,http:400,code:'INVALID_CREDIT_PACK'};
   const body={items:[{quantity:1,price:{description:'SCHOLARK '+pack.credits+' credit top-up',name:pack.credits+' SCHOLARK Credits',billing_cycle:null,unit_price:{amount:String(pack.amountCents),currency_code:'USD'},product:{name:'SCHOLARK '+pack.credits+' Credits',description:'One-time SCHOLARK credit top-up. Extra credits remain available until used.',tax_category:'saas'}}}],collection_mode:'automatic',custom_data:{scholark_user_id:user.id,scholark_purchase_type:'credit_pack',scholark_credit_pack:packKey,scholark_credits:pack.credits,scholark_amount_cents:pack.amountCents}};
@@ -228,7 +262,7 @@ http.Server.prototype.emit=function(type,...args){if(type!=='request')return pre
   if(req.method==='POST'&&url.pathname==='/api/billing/finalize'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});const result=await finalizeTransaction(user,String(body?.transactionId||''));console.log('[SCHOLARK] Paddle checkout finalize · '+(result.ok?'OK':result.code));json(res,result.http||500,result)}).catch(e=>json(res,400,{ok:false,code:'FINALIZE_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/credits/checkout'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});if(!checkoutConfigured())return json(res,503,{ok:false,code:'BILLING_NOT_CONFIGURED',error:'Payments are not configured yet.'});const result=await createCreditCheckout(user,String(body?.pack||''));json(res,result.http||500,result)}).catch(e=>json(res,400,{ok:false,code:'CREDIT_CHECKOUT_FAILED',error:String(e.message||e)}));return true}
   if(req.method==='POST'&&url.pathname==='/api/billing/checkout'){if(!sameOrigin(req))return json(res,403,{ok:false,code:'CROSS_ORIGIN_BLOCKED'});Promise.all([currentUser(req),readJson(req)]).then(async([user,body])=>{if(!user)return json(res,401,{ok:false,code:'AUTH_REQUIRED'});if(!checkoutConfigured())return json(res,503,{ok:false,code:'BILLING_NOT_CONFIGURED',error:'Payments are not configured yet.'});const plan=String(body?.plan||'').toLowerCase();if(!['plus','pro'].includes(plan))return json(res,400,{ok:false,code:'INVALID_PLAN'});const price=PRICES[plan];const pr=await paddle('/transactions',{method:'POST',body:JSON.stringify({items:[{price_id:price,quantity:1}],collection_mode:'automatic',custom_data:{scholark_user_id:user.id,scholark_plan:plan}})}),pd=await pr.json().catch(()=>({}));if(!pr.ok||!pd?.data?.id)return json(res,502,{ok:false,code:'PADDLE_TRANSACTION_FAILED',error:pd?.error?.detail||pd?.error?.type||'Could not create checkout.'});json(res,200,{ok:true,transactionId:pd.data.id,environment:ENV})}).catch(e=>json(res,400,{ok:false,code:'CHECKOUT_FAILED',error:String(e.message||e)}));return true}
-  if(req.method==='POST'&&url.pathname==='/api/billing/webhook'){readRaw(req,1024*1024).then(async raw=>{if(!verifyWebhook(raw,req.headers?.['paddle-signature']))return json(res,401,{ok:false,code:'INVALID_SIGNATURE'});const event=JSON.parse(raw);if(/^subscription\.(created|trialing|activated|updated|paused|resumed|canceled|past_due)$/.test(String(event.event_type||'')))await handleSubscriptionEvent(event);else if(String(event.event_type||'')==='transaction.completed'&&String(event?.data?.custom_data?.scholark_purchase_type||'')==='credit_pack'){const tr=await paddle('/transactions/'+encodeURIComponent(String(event?.data?.id||'')),{method:'GET'}),td=await tr.json().catch(()=>({}));if(!tr.ok)throw new Error('credit_transaction_verify_failed');const applied=await applyCreditPackTransaction(td?.data||{},'');if(!applied.ok)throw new Error(applied.code||'credit_topup_failed');await recordEvent(event,String(td?.data?.custom_data?.scholark_user_id||''),null)}else await recordEvent(event,null,event?.data?.subscription_id||null);json(res,200,{ok:true})}).catch(e=>json(res,400,{ok:false,code:'WEBHOOK_FAILED',error:String(e.message||e)}));return true}
+  if(req.method==='POST'&&url.pathname==='/api/billing/webhook'){readRaw(req,1024*1024).then(async raw=>{if(!verifyWebhook(raw,req.headers?.['paddle-signature']))return json(res,401,{ok:false,code:'INVALID_SIGNATURE'});const event=JSON.parse(raw);if(/^subscription\.(created|trialing|activated|updated|paused|resumed|canceled|past_due)$/.test(String(event.event_type||'')))await handleSubscriptionEvent(event);else if(String(event.event_type||'')==='transaction.completed'&&String(event?.data?.custom_data?.scholark_purchase_type||'')==='credit_pack'){const tr=await paddle('/transactions/'+encodeURIComponent(String(event?.data?.id||'')),{method:'GET'}),td=await tr.json().catch(()=>({}));if(!tr.ok)throw new Error('credit_transaction_verify_failed');const applied=await applyCreditPackTransaction(td?.data||{},'');if(!applied.ok)throw new Error(applied.code||'credit_topup_failed');await recordEvent(event,String(td?.data?.custom_data?.scholark_user_id||''),null)}else if(/^adjustment\.(created|updated)$/.test(String(event.event_type||'')))await handleAdjustmentEvent(event);else await recordEvent(event,null,event?.data?.subscription_id||null);json(res,200,{ok:true})}).catch(e=>json(res,400,{ok:false,code:'WEBHOOK_FAILED',error:String(e.message||e)}));return true}
   return previousEmit.call(this,type,...args)
 };
 
