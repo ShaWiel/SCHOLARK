@@ -31,6 +31,12 @@ check(learningHealth.data?.authRequiredForAI===true,'live AI requires an authent
 check(learningHealth.data?.generalAi?.sessionRefreshAwareClient===true,'live ARKI session-refresh contract is active');
 check(String(learningHealth.r.headers.get('cache-control')||'').includes('no-store'),'live API responses are no-store');
 
+const securityConfig=await json('/api/security/config');
+check(securityConfig.r.ok&&securityConfig.data?.turnstile?.enabled===true&&String(securityConfig.data?.turnstile?.siteKey||'').startsWith('0x'),'live Cloudflare Turnstile client configuration is enabled');
+const launchHealth=await json('/api/launch/health');
+check(launchHealth.r.ok&&launchHealth.data?.foundation?.featureFreeze===true&&launchHealth.data?.readiness?.featureFreeze===true,'live launch feature freeze is active');
+check(launchHealth.data?.foundation?.multiAccountSwitching===true&&launchHealth.data?.foundation?.privateProfilePhotos===true&&launchHealth.data?.foundation?.paymentRefundReversal===true,'live prelaunch account/payment capabilities are advertised');
+
 const geminiHealth=await json('/api/gemini/health');
 check(geminiHealth.r.ok&&geminiHealth.data?.ok===true&&geminiHealth.data?.configured===true,'live primary AI resilience router is configured');
 
@@ -74,9 +80,16 @@ try{
   }
   await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('nl')});
 
+  await page.evaluate(()=>localStorage.setItem('scholark_remembered_accounts_v1',JSON.stringify([
+    {id:'11111111-1111-4111-8111-111111111111',email:'first-account@example.test',displayName:'First Account',avatarPath:'',lastUsedAt:2},
+    {id:'22222222-2222-4222-8222-222222222222',email:'second-account@example.test',displayName:'Second Account',avatarPath:'',lastUsedAt:1}
+  ])));
   await page.click('#v55-auth');
   await page.waitForSelector('#v72-modal.open',{state:'visible',timeout:5000});
   check(await page.locator('#v72-modal [data-tab="signin"]').count()===1&&await page.locator('#v72-modal [data-tab="signup"]').count()===1,'live auth exposes sign-in and create-account flows');
+  check(await page.locator('#v72-modal .v72-remembered-account').count()===2,'live auth exposes remembered-account chooser without storing extra sessions');
+  await page.locator('#v72-modal [data-v72-account-email="first-account@example.test"]').click();
+  check(await page.locator('#v72-modal input[type="email"]').inputValue()==='first-account@example.test','live remembered-account chooser prefills the selected identity');
   const sentinel='SCHOLARK-LIVE-SMOKE-PASSWORD-NOT-STORED-9x!';
   await page.fill('#v72-modal input[type="email"]','qa-do-not-submit@example.invalid');
   await page.fill('#v72-modal input[type="password"]',sentinel);
@@ -88,6 +101,7 @@ try{
   },sentinel);
   check(passwordStored===false,'live auth does not persist an unsubmitted password in browser storage');
   await page.click('#v72-modal .v72-x');
+  await page.evaluate(()=>localStorage.removeItem('scholark_remembered_accounts_v1'));
 
   await page.click('#v117-credit-store-button');
   await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
