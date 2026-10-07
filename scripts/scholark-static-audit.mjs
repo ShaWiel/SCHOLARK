@@ -179,7 +179,7 @@ ok(schoolStrict.includes("name:'Kangoeroe Community School'")&&schoolStrict.incl
 ok(schoolStrict.includes("name:'Ad Fontes Lyceum'")&&schoolStrict.includes('Advontis; Advantis'),'Ad Fontes typo aliases are missing');
 ok(schoolStrict.includes('schoolNameMatch(row,query)')&&schoolStrict.includes('nameQuery=clean(body.name)'),'Strict school API lacks school-name filtering');
 ok(schoolStrict.includes('function enrichSchoolDistances')&&schoolStrict.includes('function locateSchoolRow')&&schoolStrict.includes("distanceMode:center.mode==='coordinates'?'user-location'")&&!schoolStrict.includes("rows=rows.map(x=>({...x,distance:null}))"),'Global school distance restoration / coordinate enrichment is incomplete');
-ok(schoolFinder.includes('function distanceLabel')&&schoolFinder.includes("distanceMode==='user-location'")&&schoolFinder.includes('Within 700 km')&&schoolFinder.includes('decision-ready'),'Schools Near Me decision-distance UI is incomplete');
+ok(schoolFinder.includes('function distanceLabel')&&schoolFinder.includes("mode==='user-location'")&&schoolFinder.includes('Within 700 km')&&schoolFinder.includes('decision-ready'),'Schools Near Me decision-distance UI is incomplete');
 ok(schoolStrict.includes("out.add('mulo')")&&schoolStrict.includes("out.add('lbo')")&&schoolStrict.includes("out.add('havo')")&&schoolStrict.includes("out.add('mbo')")&&schoolStrict.includes("out.add('hbo')")&&schoolStrict.includes("out.add('wo')"),'Strict Suriname school taxonomy is incomplete');
 ok(schoolStrict.includes("['mulo','lbo','havo','vwo','mbo','hbo','wo'].includes(wanted)")&&schoolStrict.includes("wanted==='early'||wanted==='kindergarten'"),'Strict Suriname level matching is missing');
 ok(docker.includes('scholark-v104-school-filter-guard.js'),'School client filter guard is not copied');
@@ -299,7 +299,7 @@ ok(schoolFinder.includes("STUDY_FIELD_LEVELS=new Set(['havo','vwo','mbo','hbo','
 ok(schoolFinder.includes("study.hidden=!visible")&&schoolFinder.includes("study.disabled=!visible"),'Study field visibility guard is incomplete');
 ok(schoolFinder.includes('id="v50-name"')&&schoolFinder.includes("name:nameQuery")&&schoolFinder.includes('nameMatch(x,nameQuery)'),'Schools Near Me school-name search is incomplete');
 ok(schoolFinder.includes('id="v50-type"')&&schoolFinder.includes('id="v50-verified"')&&schoolFinder.includes('id="v50-compare-btn"')&&schoolFinder.includes('id="v50-saved-btn"'),'Expanded Schools Near Me filters/save/compare controls are missing');
-ok(schoolFinder.includes('id="v50-crossborder"')&&schoolFinder.includes('includeNearbyCountries')&&schoolFinder.includes('25 → 50 → 100 → 150 → 250 km'),'Schools Near Me adaptive radius / cross-border controls are missing');
+ok(schoolFinder.includes('id="v50-crossborder"')&&schoolFinder.includes('includeNearbyCountries')&&schoolFinder.includes('25 → 50 → 100 → 250 → 500 → 700 km'),'Schools Near Me adaptive radius / cross-border controls are missing');
 ok(schoolFinder.includes('match score measures fit with your search criteria')&&schoolFinder.includes('metricMarkup(x)'),'School match score/performance distinction is missing');
 ok(schoolFinder.includes('data-sch-school-name="1"')&&schoolFinder.includes('data-sch-school-name-text="1"'),'Rendered school names are not marked as immutable institution names');
 ok(i18n.includes('[data-sch-school-name="1"]')&&i18n.includes('[data-sch-school-name="1"] *'),'Language engine can still translate official school names');
