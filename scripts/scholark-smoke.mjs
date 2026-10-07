@@ -418,7 +418,7 @@ if(!live){
       request('/scholark-v83-study-ahead-cloud.js?smoke='+bust,{},30000),
       request('/scholark-v62-learning-ai.js?smoke='+bust,{},30000),
       request('/scholark-v93-language-learner.js?smoke='+bust,{},30000),
-      request('/scholark-v102-language-quiz.js?v=20260918-language-choice-v3',{},30000),
+      request('/scholark-v102-language-quiz.js?v=20261007-language-choice-v4',{},30000),
       request('/scholark-v103-language-next-lesson.js?v=20260918-language-next-v2',{},30000),
       request('/scholark-v50-school-finder.js?smoke='+bust,{},30000),
       request('/scholark-v96-country-education.js?smoke='+bust,{},30000)
@@ -437,7 +437,7 @@ if(!live){
     check(tools.includes('BEST FOR')&&tools.includes("example:'Biology example:")&&tools.includes("practice:{name:'Practice Testing'")&&tools.includes("elaborate:{name:'Elaborative Interrogation'"),'live Study Methods examples/subject guidance is incomplete');
     check(learn.includes('assignmentContextFor(prompt)')&&learn.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'live Tutor does not attach Assignment context');
     check(langRes.r.ok&&lang.includes('Exercise accuracy')&&lang.includes('adaptive=accuracy==null'),'live Language Learner adaptation is missing');
-    check(quizRes.r.ok&&quiz.includes("20260918-language-choice-v3")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
+    check(quizRes.r.ok&&quiz.includes("20261007-language-choice-v4")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
     check(nextRes.r.ok&&next.includes("20260918-language-next-v2")&&!next.includes('MutationObserver'),'live next-lesson compatibility helper is stale or observer-heavy');
     check(lang.includes('async function nextLesson()')&&lang.includes('id="v93-next"')&&lang.includes("nextButton.onclick=nextLesson")&&lang.includes("source.result?.nextStep"),'live Language Learner next lesson button is not functional');
     check(schoolFinderRes.r.ok&&school.includes('<option value="kindergarten">Kleuterschool / Kleuteronderwijs')&&school.includes('<option value="mbo">MBO · NATIN, IMEAO, Kweekschool'), 'Suriname school options are incomplete');
