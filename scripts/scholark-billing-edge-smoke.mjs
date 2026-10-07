@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 
 const nativeFetch=globalThis.fetch.bind(globalThis);
 const USER='33333333-3333-4333-8333-333333333333';
-const TX1='txn_'+('a'.repeat(26)),TX2='txn_'+('b'.repeat(26)),SUB='sub_'+('c'.repeat(26));
+const TX1='txn_'+('a'.repeat(26)),TX2='txn_'+('b'.repeat(26)),TX3='txn_'+('z'.repeat(26)),SUB='sub_'+('c'.repeat(26));
 const PLUS='pri_'+('p'.repeat(26)),PRO='pri_'+('q'.repeat(26)),SECRET='scholark-edge-webhook-secret';
 process.env.SUPABASE_URL='https://supabase.edge.test';
 process.env.SUPABASE_PUBLISHABLE_KEY='sb_publishable_edge_test';
@@ -21,7 +21,7 @@ let subscription={user_id:USER,provider:'paddle',paddle_customer_id:'ctm_'+('d'.
 const check=(ok,msg)=>{if(!ok)failures.push(msg)};
 const jsonResponse=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}});
 const creditTransaction=(id)=>({id,status:'completed',subscription_id:null,currency_code:'USD',custom_data:{scholark_user_id:USER,scholark_purchase_type:'credit_pack',scholark_credit_pack:'starter'},items:[{price:{unit_price:{amount:'699',currency_code:'USD'}}}]});
-transactions.set(TX1,creditTransaction(TX1));transactions.set(TX2,creditTransaction(TX2));
+transactions.set(TX1,creditTransaction(TX1));transactions.set(TX2,creditTransaction(TX2));transactions.set(TX3,{...creditTransaction(TX3),status:'ready'});
 
 globalThis.fetch=async(input,opts={})=>{
   const url=new URL(String(input));
@@ -44,6 +44,7 @@ globalThis.fetch=async(input,opts={})=>{
   }
 
   if(url.hostname==='supabase.edge.test'){
+    if(url.pathname==='/auth/v1/user')return jsonResponse({id:USER,email:'billing-edge@example.test'});
     if(url.pathname==='/rest/v1/rpc/apply_credit_topup'){
       const b=body(),id=String(b.p_transaction_id||'');
       const old=purchases.get(id);
@@ -84,6 +85,11 @@ async function webhook(event,valid=true){
 const event=(id,type,data)=>({event_id:id,event_type:type,occurred_at:new Date().toISOString(),data});
 
 try{
+  const beforeFailed={...wallet};
+  let failed=await nativeFetch(base+'/api/billing/finalize',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer edge-test-token'},body:JSON.stringify({transactionId:TX3})}),failedData=await failed.json().catch(()=>({}));
+  check(failed.status===202&&failedData?.pending===true,'incomplete payment did not remain pending');
+  check(wallet.balance===beforeFailed.balance&&wallet.topup_balance===beforeFailed.topup_balance,'incomplete payment changed wallet credits');
+
   let out=await webhook(event('evt_bad','transaction.completed',transactions.get(TX1)),false);
   check(out.r.status===401&&out.data?.code==='INVALID_SIGNATURE','invalid webhook signature was not rejected');
 
@@ -120,7 +126,7 @@ try{
   check(wallet.plan==='free'&&wallet.monthly_balance===30&&wallet.topup_balance===250&&wallet.balance===280,'subscription cancellation did not downgrade monthly credits while preserving purchased top-up credits');
 
   check(failures.length===0,'');
-  console.log('SCHOLARK BILLING EDGE SMOKE',JSON.stringify({ok:failures.length===0,events:events.size,purchases:purchases.size,refundCalls:refundCalls.length,wallet}));
+  console.log('SCHOLARK BILLING EDGE SMOKE',JSON.stringify({ok:failures.length===0,failedPaymentProtected:true,events:events.size,purchases:purchases.size,refundCalls:refundCalls.length,wallet}));
 } finally {
   await new Promise(resolve=>server.close(resolve));
   globalThis.fetch=nativeFetch;
