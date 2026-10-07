@@ -84,9 +84,12 @@
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   const boundWalletTriggers=new WeakSet(),walletRecoveredEvents=new WeakSet();
-  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null;
+  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null,walletAnchorRepairTimer=0,walletAnchorRepairEpoch=0;
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
+    walletAnchorRepairEpoch++;
+    clearTimeout(walletAnchorRepairTimer);walletAnchorRepairTimer=0;
+    lastWalletPointerAt=0;lastWalletPointerSurface='';lastWalletPointerTrigger=null;
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
     walletPanelAnchor=null;walletPanelSurface='';
     if(topbarWalletPanel){topbarWalletPanel.classList.remove('open');topbarWalletPanel.setAttribute('aria-hidden','true')}
@@ -103,6 +106,17 @@
     if(!next)return false;
     walletPanelAnchor=next;bindWalletTrigger(next);next.setAttribute('aria-expanded','true');positionTopbarWallet(next);
     return true;
+  }
+  function repairWalletAnchorSoon(){
+    if(!topbarWalletPanel?.classList.contains('open'))return;
+    if(preserveWalletAnchor())return;
+    const epoch=++walletAnchorRepairEpoch;
+    clearTimeout(walletAnchorRepairTimer);
+    walletAnchorRepairTimer=setTimeout(()=>{
+      walletAnchorRepairTimer=0;
+      if(epoch!==walletAnchorRepairEpoch||!topbarWalletPanel?.classList.contains('open'))return;
+      if(!preserveWalletAnchor())closeTopbarWallet();
+    },110);
   }
   function positionTopbarWallet(trigger){
     if(!topbarWalletPanel||!trigger?.isConnected)return;
@@ -153,21 +167,32 @@
         e.stopPropagation();
         const live=liveWalletTrigger(trigger);
         if(!live)return;
+        // Toggle first. closeTopbarWallet() intentionally clears any stale
+        // gesture state; recording this pointer afterwards binds the following
+        // synthetic click to this exact gesture instead of a previous tap.
+        toggleWallet(live);
         lastWalletPointerAt=Date.now();
         lastWalletPointerSurface=walletSurface(live);
         lastWalletPointerTrigger=live;
-        toggleWallet(live);
       });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
         e.stopPropagation();
         if(walletRecoveredEvents.has(e))return;
-        const live=liveWalletTrigger(trigger),surface=walletSurface(live||trigger);
-        if(surface&&surface===lastWalletPointerSurface&&live===lastWalletPointerTrigger&&Date.now()-lastWalletPointerAt<900){
-          if(topbarWalletPanel?.classList.contains('open')&&!walletPanelAnchor?.isConnected)preserveWalletAnchor();
+        const live=liveWalletTrigger(trigger),surface=walletSurface(live||trigger),sincePointer=Date.now()-lastWalletPointerAt;
+        if(surface&&surface===lastWalletPointerSurface&&sincePointer<900){
+          // A mobile topbar/sidebar remount can replace the button between
+          // pointerup and click. Treat the surface as the gesture identity so
+          // the synthetic click cannot immediately toggle the Wallet closed.
+          if(topbarWalletPanel?.classList.contains('open')){
+            if(!walletPanelAnchor?.isConnected)repairWalletAnchorSoon();
+            else if(live&&walletPanelAnchor!==live&&walletSurface(walletPanelAnchor)===surface){
+              walletPanelAnchor=live;bindWalletTrigger(live);live.setAttribute('aria-expanded','true');positionTopbarWallet(live);
+            }
+          }
           return;
         }
-        if(surface&&surface===lastWalletPointerSurface&&Date.now()-lastWalletPointerAt>=900)lastWalletPointerTrigger=null;
+        if(surface&&surface===lastWalletPointerSurface&&sincePointer>=900)lastWalletPointerTrigger=null;
         toggleWallet(live||trigger);
       });
     }
@@ -235,7 +260,7 @@
   function render(){
     renderTopbar();
     renderWorkspaceWallet();
-    if(walletPanelAnchor&&!walletPanelAnchor.isConnected&&!preserveWalletAnchor())closeTopbarWallet();
+    if(walletPanelAnchor&&!walletPanelAnchor.isConnected)repairWalletAnchorSoon();
     const dash=$('#v51-main [data-v51-page="dashboard"] .v51-shell');
     if(dash)dash.querySelectorAll('.v85-dash').forEach(el=>el.remove());
   }
@@ -326,9 +351,7 @@
       walletRemountRepairTimer=0;
       renderTopbar();
       renderWorkspaceWallet();
-      if(topbarWalletPanel?.classList.contains('open')){
-        if(!preserveWalletAnchor())closeTopbarWallet();
-      }
+      if(topbarWalletPanel?.classList.contains('open')&&!preserveWalletAnchor())repairWalletAnchorSoon();
     },0);
   });
   walletRemountObserver.observe(document.documentElement,{childList:true,subtree:true});

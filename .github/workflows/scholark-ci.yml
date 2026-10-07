@@ -225,10 +225,9 @@ jobs:
       - name: Install live browser smoke dependency
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.55.0
-          # Some GitHub Ubuntu runners expose a transiently broken
-          # packages.microsoft.com APT source. Playwright/WebKit does not need
-          # that repository, so disable only those source files during the
-          # browser dependency install and restore them afterwards.
+          # Keep live production validation independent from transient GitHub
+          # runner mirror failures. The Microsoft source is unnecessary here,
+          # and the official Ubuntu archive is equivalent for Playwright deps.
           mapfile -t SCHOLARK_MS_SOURCES < <(grep -rl "packages.microsoft.com" /etc/apt/sources.list.d 2>/dev/null || true)
           restore_ms_sources() {
             for src in "${SCHOLARK_MS_SOURCES[@]}"; do
@@ -237,9 +236,13 @@ jobs:
           }
           trap restore_ms_sources EXIT
           for src in "${SCHOLARK_MS_SOURCES[@]}"; do sudo mv "${src}" "${src}.scholark-disabled"; done
-          timeout 240s npx playwright install-deps chromium
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/apt-mirrors.txt
+          fi
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99scholark-network >/dev/null
+          timeout 300s npx playwright install-deps chromium
           restore_ms_sources
           trap - EXIT
-          timeout 240s npx playwright install chromium
+          timeout 300s npx playwright install chromium
       - name: Run live prelaunch browser smoke
         run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
