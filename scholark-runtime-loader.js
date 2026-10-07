@@ -38,7 +38,7 @@
     'scholark-v81-stability-foundation.js','scholark-v82-tutor-cloud.js','scholark-v83-study-ahead-cloud.js','scholark-v84-profile-cloud.js',
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
-    'scholark-v93-language-learner.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v109-home-owner.js',
+    'scholark-v93-language-learner.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v109-home-owner.js',
     'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js'
   ];
   const BASE = new Set([
@@ -64,7 +64,7 @@
     goal:['scholark-v52-workspace-qa.js'],
     schools:['scholark-v50-school-finder.js'],
     study:['scholark-v62-learning-ai.js','scholark-v83-study-ahead-cloud.js'],
-    language:['scholark-v93-language-learner.js'],
+    language:['scholark-v93-language-learner.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js'],
     files:['scholark-v69-reference-reader.js','scholark-v86-file-intelligence.js'],
     project:['scholark-v64-projects.js','scholark-v78-artifact-sharing.js','scholark-v79-collaboration.js'],
     book:[],

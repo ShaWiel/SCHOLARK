@@ -2,7 +2,7 @@
   if (window.__SCHOLARK_V102_LANGUAGE_QUIZ__) return;
   window.__SCHOLARK_V102_LANGUAGE_QUIZ__ = true;
 
-  const VERSION = '20260918-language-choice-v3';
+  const VERSION = '20261007-language-choice-v4';
   const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
   const key = value => clean(value)
     .normalize('NFD')
@@ -12,7 +12,6 @@
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
-  let observer = null;
 
   function correctChoice(choice, answer) {
     const c = key(choice);
@@ -175,27 +174,14 @@
     choose(hit.exercise, hit.choice);
   }
 
-  function stopWatching() {
-    observer?.disconnect();
-    observer = null;
+  function activeRoute() {
+    return String(location.hash || '').toLowerCase().startsWith('#language');
   }
 
-  function startWatching() {
-    if (!String(location.hash || '').toLowerCase().startsWith('#language')) {
-      stopWatching();
-      return;
-    }
+  function refresh() {
+    if (!activeRoute()) return false;
     decorate(document);
-    if (observer) return;
-    observer = new MutationObserver(records => {
-      for (const record of records) {
-        for (const node of record.addedNodes) {
-          if (!(node instanceof Element)) continue;
-          decorate(node);
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    return true;
   }
 
   if (!document.getElementById('scholark-v102-language-quiz-style')) {
@@ -218,9 +204,11 @@
 
   window.addEventListener('click', onChoiceClick, true);
   window.addEventListener('keydown', onChoiceKeydown, true);
-  addEventListener('hashchange', () => setTimeout(startWatching, 20));
-  addEventListener('pageshow', () => setTimeout(startWatching, 20));
-  setTimeout(startWatching, 120);
+  addEventListener('scholark-language-lesson-rendered', () => requestAnimationFrame(refresh));
+  addEventListener('scholark-tool-mounted', e => { if (e.detail?.tool === 'language') requestAnimationFrame(refresh); });
+  addEventListener('hashchange', () => setTimeout(refresh, 20));
+  addEventListener('pageshow', () => setTimeout(refresh, 20));
+  setTimeout(refresh, 120);
 
   window.__SCHOLARK_V102_LANGUAGE_QUIZ_API__ = {
     version: VERSION,

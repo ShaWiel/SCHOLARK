@@ -895,6 +895,23 @@ await page.click('[data-v93-preset="Ordering food at a restaurant"]');
 check((await page.inputValue('#v93-topic'))==='Ordering food at a restaurant','Language Learner quick lesson idea did not populate the topic');
 await page.selectOption('#v93-level','B1');
 check((await page.locator('#v93-hero-level').innerText()).trim()==='B1','Language Learner level indicator did not update');
+const languageHealth=await page.evaluate(()=>{
+  const h1=document.querySelector('.v93-intro h1'),orb=document.querySelector('.v93-language-orb'),swap=document.querySelector('#v93-swap');
+  const fields=[...document.querySelectorAll('.v93-language-row .v93-field select')],target=fields[0],support=fields[1];
+  const rect=el=>{const r=el?.getBoundingClientRect();return r?{left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}:null};
+  return {
+    selftest:window.__SCHOLARK_V93_LANGUAGE__?.selftest?.()||null,
+    quizVersion:window.__SCHOLARK_V102_LANGUAGE_QUIZ_API__?.version||'',
+    nextVersion:window.__SCHOLARK_V103_LANGUAGE_NEXT_API__?.version||'',
+    h1:rect(h1),orb:rect(orb),swap:rect(swap),target:rect(target),support:rect(support),
+    overflow:document.documentElement.scrollWidth-innerWidth
+  };
+});
+check(languageHealth.selftest?.ok===true&&languageHealth.selftest?.reviewEvery===4&&languageHealth.selftest?.reviewQuestions===12,'Language Learner spaced-review self-test failed: '+JSON.stringify(languageHealth));
+check(languageHealth.quizVersion==='20261007-language-choice-v4'&&languageHealth.nextVersion==='20260918-language-next-v2','Language Learner route-lazy helpers did not load: '+JSON.stringify(languageHealth));
+check(languageHealth.h1&&languageHealth.orb&&languageHealth.h1.top>=languageHealth.orb.bottom-2,'Language Learner hero headline overlaps Now Learning indicator: '+JSON.stringify(languageHealth));
+check(languageHealth.swap&&languageHealth.target&&languageHealth.support&&languageHealth.swap.left>=languageHealth.target.right-3&&languageHealth.swap.right<=languageHealth.support.left+3,'Language swap control is not contained between the selectors: '+JSON.stringify(languageHealth));
+check(languageHealth.swap?.width>=38&&languageHealth.swap?.width<=58&&languageHealth.overflow<=4,'Language swap/layout sizing or horizontal overflow regressed: '+JSON.stringify(languageHealth));
 
 await route('planner','#v51-fallback .v52-tool');
 check(await page.locator('#v52-plan-add').count()===1,'Planner add action missing');
