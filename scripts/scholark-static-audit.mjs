@@ -353,8 +353,8 @@ ok(learningRoute.includes("clean(p.tutorMode)==='assignment_coach'")&&learningRo
 ok(powerTools.includes('What should I do next?')&&powerTools.includes("sessionStorage.setItem('scholark_v62_assignment_id'"),'Assignments do not launch contextual AI coaching');
 ok(fastTools.includes("best:['Biology','History','Law'")&&fastTools.includes("example:'Biology example:")&&fastTools.includes("practice:{name:'Practice Testing'")&&fastTools.includes("elaborate:{name:'Elaborative Interrogation'"),'Study Methods Lab lacks subject guidance/examples or expanded methods');
 ok(fastTools.includes('BEST FOR')&&fastTools.includes('Show me with my topic'),'Study Methods Lab does not render best-subject guidance and worked examples');
-ok(docker.includes('scholark-v102-language-quiz.js?v=20261007-language-choice-v4'),'Adaptive Language quiz version is not shipped');
-ok(docker.includes('scholark-v103-language-next-lesson.js?v=20260918-language-next-v2'),'Language next-lesson fix is not shipped at v2');
+ok(docker.includes('scholark-v102-language-quiz.js')&&!docker.includes('scholark-v102-language-quiz.js?v='),'Adaptive Language quiz helper is not shipped route-lazily');
+ok(docker.includes('scholark-v103-language-next-lesson.js')&&!docker.includes('scholark-v103-language-next-lesson.js?v='),'Language next-lesson helper is not shipped route-lazily');
 
 ok(billingRoute.includes("'/customers/'+encodeURIComponent(row.paddle_customer_id)+'/portal-sessions'")&&billingRoute.includes("url.pathname==='/api/billing/portal'")&&billingRoute.includes('customerPortalSupported:true'),'Paddle customer self-service portal is incomplete');
 ok(billingClient.includes("async function manage(action='overview')")&&billingClient.includes("'/api/billing/portal'"),'Billing client does not expose secure subscription management');
