@@ -11,11 +11,14 @@
   let authModalCloseTimer=0;
   const cancelAuthModalClose=()=>{if(authModalCloseTimer){clearTimeout(authModalCloseTimer);authModalCloseTimer=0}};
   const PASSWORD_MIN=12;
-  const timers=new Map();
-  let authFailures=0,authBlockedUntil=0,captchaConfigPromise=null,turnstileLoadPromise=null;
+  const timers=new Map(),AUTH_THROTTLE='scholark_auth_throttle_v1';
+  function loadAuthThrottle(){try{const x=JSON.parse(sessionStorage.getItem(AUTH_THROTTLE)||'{}');return{failures:Math.max(0,Math.min(8,Number(x.failures)||0)),until:Math.max(0,Number(x.until)||0)}}catch{return{failures:0,until:0}}}
+  const initialAuthThrottle=loadAuthThrottle();
+  let authFailures=initialAuthThrottle.failures,authBlockedUntil=initialAuthThrottle.until,captchaConfigPromise=null,turnstileLoadPromise=null;
+  function persistAuthThrottle(){try{sessionStorage.setItem(AUTH_THROTTLE,JSON.stringify({failures:authFailures,until:authBlockedUntil}))}catch{}}
   function authCooldownSeconds(){return Math.max(0,Math.ceil((authBlockedUntil-Date.now())/1000))}
-  function noteAuthFailure(){authFailures=Math.min(8,authFailures+1);if(authFailures>=3)authBlockedUntil=Date.now()+Math.min(30000,1000*(2**(authFailures-2)))}
-  function noteAuthSuccess(){authFailures=0;authBlockedUntil=0}
+  function noteAuthFailure(){authFailures=Math.min(8,authFailures+1);if(authFailures>=3)authBlockedUntil=Date.now()+Math.min(60000,1000*(2**(authFailures-2)));persistAuthThrottle()}
+  function noteAuthSuccess(){authFailures=0;authBlockedUntil=0;persistAuthThrottle()}
   async function securityConfig(){
     if(!captchaConfigPromise)captchaConfigPromise=fetch('/api/security/config',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
     return captchaConfigPromise;
