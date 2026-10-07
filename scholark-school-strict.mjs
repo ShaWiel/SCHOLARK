@@ -287,7 +287,7 @@ async function locateSchoolRow(row,country,city,center,countryCode){
   }catch{cacheSchoolGeo(cacheKey,null);return row}
 }
 async function enrichSchoolDistances(rows,country,city,center,countryCode,countryWide){
-  let remaining=countryWide?10:20,changed=0,out=[];
+  let remaining=countryWide?4:6,changed=0,out=[];
   for(const row of rows){
     if(Number.isFinite(Number(row?.lat))&&Number.isFinite(Number(row?.lon))){out.push(withDistance(row,center));continue}
     const eligible=remaining>0&&(row?.official||row?.verifiedCurrent||clean(row?.description).length>8);
@@ -532,7 +532,7 @@ async function nominatimSchoolFallback(country,city,center,countryCode,countryWi
         const lat=Number(x.lat),lon=Number(x.lon),name=clean(x.name||String(x.display_name||'').split(',')[0]);if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
         const raw=clean(x.type)+' '+clean(x.category)+' '+clean(x.display_name),amenity=/university/i.test(raw)?'university':/college/i.test(raw)?'college':/kindergarten|preschool/i.test(raw)?'kindergarten':'school';
         const tags={name,amenity,'addr:country':code};const levels=levelSet(tags,clean(x.display_name));
-        rows.push({name,description:clean(x.display_name),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'OpenStreetMap search fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
+        rows.push({name,description:clean(x.display_name),lat,lon,distance:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'OpenStreetMap search fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
       }
     }catch{}
     if(mergeRows(rows).length>=18)break;
@@ -553,7 +553,7 @@ async function photonSchoolFallback(country,city,center,countryCode,countryWide,
         if(countryCode&&code&&!sameCode(countryCode,code))continue;if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
         const raw=[p.osm_value,p.type,p.name,p.city,p.state].map(clean).join(' '),amenity=/university/i.test(raw)?'university':/college/i.test(raw)?'college':/kindergarten|preschool/i.test(raw)?'kindergarten':'school';
         const tags={name,amenity,'addr:country':code,city:clean(p.city)};const levels=levelSet(tags,raw);
-        rows.push({name,description:[p.street,p.housenumber,p.city,p.state,p.country].map(clean).filter(Boolean).join(' · '),lat,lon,distance:countryWide?null:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'Photon / OpenStreetMap fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
+        rows.push({name,description:[p.street,p.housenumber,p.city,p.state,p.country].map(clean).filter(Boolean).join(' · '),lat,lon,distance:distance(center.lat,center.lon,lat,lon),website:'',phone:'',email:'',source:'Photon / OpenStreetMap fallback',level:publicLevel(levels),levels,levelDetail:levels.join(','),tags});
       }
     }catch{}
     if(mergeRows(rows).length>=18)break;
@@ -573,8 +573,9 @@ async function discover(body){
   if(isSuriname&&nameQuery){
     const curatedFast=curatedSurinameSchools().filter(x=>officialLocationMatch(x,city)&&matchesLevel(x.levels,level)&&schoolNameMatch(x,nameQuery));
     if(curatedFast.length){
-      curatedFast.sort((a,b)=>a.name.localeCompare(b.name));
-      const value={ok:true,strictCountry:!includeNearbyCountries,includeNearbyCountries,country,city,level,name:nameQuery,radius,national,countryWide,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider:'SCHOLARK verified current Suriname supplement',sourceStatus:[{source:'SCHOLARK verified current Suriname supplement',ok:true,count:curatedFast.length}],count:curatedFast.length,schools:curatedFast.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+      const enriched=await enrichSchoolDistances(curatedFast,country,city,center,countryCode,countryWide),ready=enriched.rows;
+      ready.sort((a,b)=>(a.distance??99999)-(b.distance??99999)||a.name.localeCompare(b.name));
+      const value={ok:true,strictCountry:!includeNearbyCountries,includeNearbyCountries,country,city,level,name:nameQuery,radius,national,countryWide,distanceMode:center.mode==='coordinates'?'user-location':center.mode==='city'?'city-center':'country-center',searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider:'SCHOLARK verified current Suriname supplement',sourceStatus:[{source:'SCHOLARK verified current Suriname supplement',ok:true,count:ready.length},{source:'School coordinate enrichment',ok:enriched.changed>0,count:enriched.changed}],count:ready.length,schools:ready.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
       cacheDiscovery(cacheKey,value);return value;
     }
   }
@@ -612,8 +613,8 @@ async function discover(body){
     if(mergedFallback.length){rows=mergedFallback;provider=(provider==='OpenStreetMap country-boundary search'&&sourceStatus.some(x=>x.ok&&/overpass/i.test(x.source||'')))?provider+' + resilient fallbacks':'Resilient global school discovery';}
   }
 
-  if(countryWide)rows=rows.map(x=>({...x,distance:null}));
-  else rows=rows.filter(x=>x.distance==null||x.distance<=Math.min(MAX_NEARBY_RADIUS,radius)+1);
+  rows=rows.map(x=>withDistance(x,center));
+  if(!countryWide)rows=rows.filter(x=>x.distance==null||x.distance<=Math.min(MAX_NEARBY_RADIUS,radius)+1);
 
   const nearbySupplementMatch=row=>{
     if(countryWide)return true;
@@ -631,13 +632,15 @@ async function discover(body){
     if(curated.length)sourceStatus.unshift({source:'SCHOLARK verified current Suriname supplement',ok:true,count:curated.length});
   }
 
+  const enrichedDistances=await enrichSchoolDistances(rows,country,city,center,countryCode,countryWide);rows=enrichedDistances.rows;
+  if(enrichedDistances.changed)sourceStatus.unshift({source:'School coordinate enrichment',ok:true,count:enrichedDistances.changed});
   const genericAllowed=!isSuriname&&['kindergarten','primary','secondary','lower_secondary','upper_secondary','vocational'].includes(level);
   rows=rows.filter(x=>matchesLevel(x.levels,level)||(genericAllowed&&x.level==='school'));
   if(nameQuery)rows=rows.filter(x=>schoolNameMatch(x,nameQuery));
   rows.sort((a,b)=>countryWide?String(a.name||'').localeCompare(String(b.name||'')):(a.distance??9999)-(b.distance??9999)||a.name.localeCompare(b.name));
 
   const successfulSources=sourceStatus.filter(x=>x.ok),degraded=!successfulSources.some(x=>/overpass|kumi|private\.coffee|overpass-api|nchc/i.test(String(x.source||'')));
-  const value={ok:true,strictCountry:!includeNearbyCountries,includeNearbyCountries,global:true,resolvedCountry:center.country||country,country,city,level,name:nameQuery,radius:countryWide?radius:Math.min(MAX_NEARBY_RADIUS,radius),requestedRadius,autoRadius:!countryWide&&autoRadius,expandedRadius:!countryWide&&autoRadius&&radius>NEARBY_RADII[0],radiusStepsTried,national,countryWide,degraded,searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
+  const value={ok:true,strictCountry:!includeNearbyCountries,includeNearbyCountries,global:true,resolvedCountry:center.country||country,country,city,level,name:nameQuery,radius:countryWide?radius:Math.min(MAX_NEARBY_RADIUS,radius),requestedRadius,autoRadius:!countryWide&&autoRadius,expandedRadius:!countryWide&&autoRadius&&radius>NEARBY_RADII[0],radiusStepsTried,national,countryWide,degraded,distanceMode:center.mode==='coordinates'?'user-location':center.mode==='city'?'city-center':'country-center',searchMode:countryWide?'country-wide':center.mode,center:{lat:center.lat,lon:center.lon,countryCode,display:center.display},provider,sourceStatus,count:rows.length,schools:rows.slice(0,1500),taxonomy:SURINAME_TAXONOMY};
   cacheDiscovery(cacheKey,value);
   console.log(`[SCHOLARK] Global school search ${country}${city?', '+city:''} · mode ${value.searchMode} · level ${level}${nameQuery?' · name '+nameQuery:''} · ${rows.length} matches · country ${countryCode||'unknown'} · official ${official.length}`);
   return value;
