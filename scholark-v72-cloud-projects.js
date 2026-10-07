@@ -165,8 +165,8 @@
     setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);
     $('.v72-x',modal).onclick=closeModal;
     const form=$('.v72-form',modal),emailInput=$('input[type="email"]',form),st=$('.v72-modal-status',modal);if(presetEmail)emailInput.value=presetEmail;
-    $('[data-v72-account-email]',modal).forEach(b=>b.onclick=()=>{emailInput.value=clean(b.dataset.v72AccountEmail);$('input[type="password"]',form)?.focus()});
-    $('[data-tab]',modal).forEach(b=>{b.type='button';b.onclick=()=>openAuth(b.dataset.tab,{email:clean(emailInput?.value||presetEmail)})});
+    modal.querySelectorAll('[data-v72-account-email]').forEach(b=>b.onclick=()=>{emailInput.value=clean(b.dataset.v72AccountEmail);$('input[type="password"]',form)?.focus()});
+    modal.querySelectorAll('[data-tab]').forEach(b=>{b.type='button';b.onclick=()=>openAuth(b.dataset.tab,{email:clean(emailInput?.value||presetEmail)})});
     if(opts?.switching&&presetEmail){st.textContent='Switching account · verify '+presetEmail;st.style.color='#6559c9'}
     securityConfig().then(c=>{if(c?.turnstile?.enabled)captchaToken(modal).catch(()=>{})}).catch(()=>{});
     $('.v72-view-terms',modal)?.addEventListener('click',e=>window.__SCHOLARK_LAUNCH__?.privacy?.(e.currentTarget));
