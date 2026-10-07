@@ -113,12 +113,18 @@ async function dispatch(){
   const prefRows=await rest('notification_preferences?select=user_id,enabled,study_reminders,task_reminders,product_updates,study_time,timezone,task_lead_minutes,quiet_hours_start,quiet_hours_end&enabled=eq.true&limit=5000',{method:'GET'})||[];
   const prefMap=new Map(prefRows.map(p=>[String(p.user_id),p]));
   let sent=0,attempted=0;
+  const unfinished=await rest('planner_tasks?select=id,user_id,title,status&status=in.(todo,doing)&due_at=is.null&limit=2500',{method:'GET'})||[];
+  const unfinishedCounts=new Map();
+  for(const task of unfinished)unfinishedCounts.set(String(task.user_id),(unfinishedCounts.get(String(task.user_id))||0)+1);
 
   for(const p of prefRows){
     const parts=localParts(p.timezone||'UTC',now);if(!parts||quietNow(p,parts))continue;
-    if(p.study_reminders&&dueStudy(p,parts)){
+    const openCount=unfinishedCounts.get(String(p.user_id))||0,studyNow=dueStudy(p,parts);
+    if(studyNow&&(p.study_reminders||(p.task_reminders&&openCount>0))){
       attempted++;
-      const out=await sendUser(String(p.user_id),'study:'+parts.date,{title:'Time to study with SCHOLARK',body:'Keep your learning momentum going. Open SCHOLARK and continue your study plan.',url:'/#dashboard',tag:'scholark-study-'+parts.date,kind:'study',ttl:7200});
+      const title=p.study_reminders?'Time to study with SCHOLARK':'You have unfinished work in SCHOLARK';
+      const body=openCount&&p.task_reminders?'You have '+openCount+' unfinished '+(openCount===1?'task':'tasks')+'. Open SCHOLARK and continue where you left off.':'Keep your learning momentum going. Open SCHOLARK and continue your study plan.';
+      const out=await sendUser(String(p.user_id),'study:'+parts.date,{title,body,url:'/#planner',tag:'scholark-study-'+parts.date,kind:openCount?'task':'study',ttl:7200});
       sent+=out.sent||0;
     }
   }
@@ -146,7 +152,7 @@ async function dispatch(){
     sent+=out.sent||0;
     if((out.sent||0)>0)await rest('notification_reminders?id=eq.'+encodeURIComponent(r.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'sent',sent_at:nowIso,updated_at:nowIso})});
   }
-  return {ok:true,attempted,sent,preferences:prefRows.length,tasks:tasks.length,reminders:reminders.length,at:nowIso};
+  return {ok:true,attempted,sent,preferences:prefRows.length,tasks:tasks.length,unfinished:unfinished.length,reminders:reminders.length,at:nowIso};
 }
 
 http.Server.prototype.emit=function(type,...args){
