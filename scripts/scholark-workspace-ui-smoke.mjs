@@ -1340,8 +1340,8 @@ await page.waitForSelector('#v51-main [data-v51-page="dashboard"].active',{state
 // sidebar actions, then V116 must re-wrap Help & Support without adding a topbar.
 await page.evaluate(()=>document.querySelector('#v51-help')?.remove());
 await page.waitForFunction(()=>{
-  const box=document.querySelector('#v51-sidebar-actions');
-  return box?.dataset.v51SidebarActionsReady==='1'&&!!box.querySelector('#v51-help')&&!!box.querySelector('#v51-account')&&!!box.querySelector('#v51-home');
+  const side=document.querySelector('#v51-sidebar'),box=document.querySelector('#v51-sidebar-actions'),home=side?.querySelector('#v51-home'),brand=side?.querySelector('.v51-brand');
+  return box?.dataset.v51SidebarActionsReady==='1'&&!!box.querySelector('#v51-help')&&!!box.querySelector('#v51-account')&&!!home&&home.parentElement===side&&!box.contains(home)&&brand?.nextElementSibling===home;
 },null,{timeout:5000});
 await page.waitForFunction(()=>!!document.querySelector('#v51-sidebar-actions #v116-workspace-help #v51-help'),null,{timeout:5000});
 await page.waitForTimeout(140);
@@ -1351,7 +1351,9 @@ check(await page.locator('#v55-topbar').count()===0,'Public/Home topbar leaked i
 check(await page.locator('#v51-sidebar-actions').count()===1,'Workspace sidebar action area missing');
 check(await page.locator('#v51-sidebar-actions #v51-help').count()===1,'Workspace Help & Support sidebar action missing');
 check(await page.locator('#v51-sidebar-actions #v51-account').count()===1,'Workspace Account sidebar action missing');
-check(await page.locator('#v51-sidebar-actions #v51-home').count()===1,'Workspace Home sidebar action missing');
+check(await page.locator('#v51-sidebar > #v51-home').count()===1,'Workspace Home top navigation row missing');
+check(await page.locator('#v51-sidebar-actions #v51-home').count()===0,'Workspace Home should not be inside the lower action area');
+check(await page.locator('#v51-sidebar .v51-brand + #v51-home').count()===1,'Workspace Home should sit directly below the SCHOLARK brand');
 check(await page.locator('#v51-sidebar .v116-side-actions').count()===0,'Legacy Workspace sidebar support/privacy controls remain');
 check(await page.locator('#v51-help').getAttribute('aria-expanded')==='false','Workspace Help & Support should start closed');
 await page.click('#v51-help');

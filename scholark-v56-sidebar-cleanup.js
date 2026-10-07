@@ -41,22 +41,9 @@
     #v55-topbar .v55-btn.dark{background:#c9ff6a!important;color:#111319!important;border-color:#c9ff6a!important}
     #v55-topbar .v55-btn.dark b{color:#111319!important}
 
-    /* Return Home belongs to the workspace sidebar, not the canvas. */
-    #v51-sidebar #v51-home{
-      position:static!important;z-index:auto!important;width:100%!important;height:auto!important;
-      margin:0 0 12px!important;padding:10px 11px!important;border:1px solid rgba(255,255,255,.10)!important;
-      border-radius:11px!important;background:rgba(255,255,255,.055)!important;color:#e8e6ed!important;
-      box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;
-      gap:8px!important;text-align:left!important;font:800 9.5px/1.2 Inter,system-ui,sans-serif!important;cursor:pointer!important;
-    }
-    #v51-sidebar #v51-home:hover{background:rgba(201,255,106,.10)!important;color:#fff!important}
-    #v51-sidebar #v51-home b{color:#c9ff6a!important;margin:0!important;font-size:12px!important}
-
+    /* V51 owns Home as a first-class sidebar navigation row. */
+    #v51-sidebar #v51-home{position:static!important;z-index:auto!important}
     body.v51-collapsed #v51-home{display:none!important}
-    @media(max-width:720px){
-      #v51-sidebar #v51-home{justify-content:center!important;padding:10px 5px!important;font-size:0!important}
-      #v51-sidebar #v51-home b{font-size:15px!important}
-    }
   `;
   document.head.appendChild(style);
 
@@ -83,11 +70,12 @@
     if(side){
       $('#v41-sidebar-pro')?.remove();
       $$('.v51-quality',side).forEach(el=>el.remove());
-      const home=$('#v51-home');
-      if(home && home.parentElement!==side){
+      const home=$('#v51-home',side)||$('#v51-home');
+      if(home){
+        home.classList.add('v51-nav','v51-home-nav');
         const brand=$('.v51-brand',side);
-        if(brand)brand.insertAdjacentElement('afterend',home);
-        else side.prepend(home);
+        if(brand&&home.previousElementSibling!==brand)brand.insertAdjacentElement('afterend',home);
+        else if(!brand&&home.parentElement!==side)side.prepend(home);
       }
     }
     syncTopbarLogo();
