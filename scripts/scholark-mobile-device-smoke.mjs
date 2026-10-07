@@ -109,17 +109,18 @@ for(const profile of profiles){
     // handler sees the event. Recovery must be deterministic, not a one-run
     // timing success.
     for(let race=1;race<=3;race++){
-      await page.evaluate(()=>{
+      const sabotageEvent=race===1?'pointerdown':'click';
+      await page.evaluate(eventType=>{
         const sabotage=e=>{
           const old=e.target?.closest?.('#v55-topbar .v85-topbar-credit');
           if(!old)return;
           const clone=old.cloneNode(true);
           old.replaceWith(clone);
         };
-        window.addEventListener('click',sabotage,{capture:true,once:true});
-      });
+        window.addEventListener(eventType,sabotage,{capture:true,once:true});
+      },sabotageEvent);
       await page.click('#v55-topbar .v85-topbar-credit');
-      check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet remount-race recovery failed on cycle '+race);
+      check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet remount-race recovery failed on cycle '+race+' ('+sabotageEvent+')');
       check(await page.locator('.v85-topbar-wallet-panel').count()===1,profile.name+': Wallet remount-race duplicated the panel on cycle '+race);
       await page.keyboard.press('Escape');
       check(await page.locator('.v85-topbar-wallet-panel.open').count()===0,profile.name+': Wallet remount-race did not close on cycle '+race);
