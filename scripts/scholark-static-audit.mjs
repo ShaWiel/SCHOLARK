@@ -70,6 +70,7 @@ const notificationRoute=read('scholark-notification-route.mjs');
 const serviceWorker=read('scholark-sw.js');
 const manifest=read('manifest.webmanifest');
 const pushMigration=read('supabase/migrations/20261007_secure_push_notifications_r225.sql');
+const notificationPerformanceMigration=read('supabase/migrations/20261007_notification_performance_r225.sql');
 const mfaPerformanceMigration=read('supabase/migrations/20261006_mfa_private_gate_r218.sql');
 const creditSecurityMigration=read('supabase/migrations/20261003_credit_store_expansion_security.sql');
 const futureSecurityMigration=read('supabase/migrations/20261003_future_object_security_hardening.sql');
@@ -141,6 +142,7 @@ ok(prepaint.includes('rel="manifest"')&&manifest.includes('"display": "standalon
 ok(notifications.includes("Notification.requestPermission()")&&notifications.includes("pushManager.subscribe")&&notifications.includes('/api/notifications/preferences')&&notifications.includes('Tasks, assignments & unfinished work'),'Cross-device notification opt-in/settings client is incomplete');
 ok(notificationRoute.includes('/api/notifications/dispatch')&&notificationRoute.includes('notification_delivery_log')&&notificationRoute.includes('planner_tasks')&&notificationRoute.includes('quietNow')&&notificationRoute.includes('webpush.sendNotification'),'Notification scheduler/task delivery backend is incomplete');
 ok(pushMigration.includes('create table if not exists public.push_subscriptions')&&pushMigration.includes('alter table public.push_subscriptions enable row level security')&&pushMigration.includes('notification_preferences')&&pushMigration.includes('notification_delivery_log'),'Push notification RLS schema is incomplete');
+ok(notificationPerformanceMigration.includes('notification_delivery_subscription_idx')&&notificationPerformanceMigration.includes('planner_tasks_notification_due_idx')&&notificationPerformanceMigration.includes('(select auth.uid())'),'Notification RLS/index performance tuning is incomplete');
 ok(foundationPolish.includes('scholark-r218-store')&&foundationPolish.includes("release:'r218'")&&!/#v117|\.v117/.test(foundationPolish),'r218 visual polish must remain isolated from Credit Store selectors');
 ok(hardening.includes('observerRoot')&&hardening.includes('observerRebinds')&&hardening.includes('mutationRelevant')&&hardening.includes('rebindObserver:startObserver')&&hardening.includes('observerLive'),'Foundation observer is not remount-safe/coalesced');
 ok(mfaPerformanceMigration.includes('scholark_private.mfa_access_allowed')&&mfaPerformanceMigration.includes('security definer')&&mfaPerformanceMigration.includes("set search_path = ''")&&mfaPerformanceMigration.includes('revoke all on function scholark_private.mfa_access_allowed() from public')&&mfaPerformanceMigration.includes('grant execute on function scholark_private.mfa_access_allowed() to authenticated, service_role')&&mfaPerformanceMigration.includes('select scholark_private.mfa_access_allowed()'),'MFA private cached guard migration is incomplete');
