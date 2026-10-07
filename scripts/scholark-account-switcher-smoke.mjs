@@ -53,6 +53,7 @@ try{
     if(req.method()==='POST'){uploads.push(req.url());return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({Key:'ok'})})}
     return route.fulfill({status:200,contentType:'image/png',body:png});
   });
+  await page.route(SB+'/storage/v1/object/authenticated/project-media/**',route=>route.fulfill({status:200,contentType:'image/png',body:png}));
   await page.route(SB+'/storage/v1/object/project-media',async route=>{
     if(route.request().method()==='DELETE'){deletes.push(route.request().postDataJSON());return route.fulfill({status:200,contentType:'application/json',body:'[]'})}
     return route.fulfill({status:200,contentType:'application/json',body:'[]'});
