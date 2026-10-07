@@ -23,8 +23,11 @@ COPY scholark-security-foundation.mjs /app/scholark-security-foundation.mjs
 COPY scholark-gemini-primary.mjs /app/scholark-gemini-primary.mjs
 COPY scholark-billing-route.mjs /app/scholark-billing-route.mjs
 COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs
+COPY scholark-notification-route.mjs /app/scholark-notification-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
+COPY manifest.webmanifest /tmp/manifest.webmanifest
+COPY scholark-sw.js /tmp/scholark-sw.js
 COPY scholark-v105-school-vwo.js /tmp/scholark-v105-school-vwo.js
 COPY scholark-v106-workspace-power-tools.js /tmp/scholark-v106-workspace-power-tools.js
 COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js
@@ -40,6 +43,7 @@ COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js
 COPY scholark-v117-credit-store.js /tmp/scholark-v117-credit-store.js
 COPY scholark-v118-account-security.js /tmp/scholark-v118-account-security.js
 COPY scholark-v119-foundation-polish.js /tmp/scholark-v119-foundation-polish.js
+COPY scholark-v120-notifications.js /tmp/scholark-v120-notifications.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
@@ -117,8 +121,8 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#7 days free, then $14.99/month. Cancel anytime.#g; s#For intensive use and maximum AI quality\.#7 days free, then $19.99/month. Cancel anytime.#g; s#Choose Plus#Start Plus free trial#g; s#Choose Pro#Start Pro free trial#g; s#Continue with Plus#Start 7-day Plus trial#g; s#Continue with Pro#Start 7-day Pro trial#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261006-r218\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261006-r218\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261006-r218\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; cp /tmp/manifest.webmanifest "$dir/manifest.webmanifest"; cp /tmp/scholark-sw.js "$dir/scholark-sw.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261006-r218\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261006-r218\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261006-r218\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/manifest.webmanifest /tmp/scholark-sw.js /tmp/scholark-v*.js
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.
@@ -130,7 +134,8 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev --no-audit --no-fund; el
        pdf-parse@2.4.5 \
        mammoth@1.10.0 \
        jszip@3.10.2 \
-       sanitize-html@2.18.0
+       sanitize-html@2.18.0 \
+       web-push@3.6.7
 
 ENV NODE_ENV=production
 ENV SCHOLARK_RELEASE=r218
@@ -158,4 +163,4 @@ ENV GEMINI_PRIMARY_MODEL=gemini-3.8-flash
 ENV GEMINI_FAST_MODEL=gemini-3.8-flash
 EXPOSE 10000
 
-CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-resilience.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-school-strict.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-billing-route.mjs", "--import", "./scholark-launch-route.mjs", "--import", "./scholark-gemini-primary.mjs", "--import", "./scholark-security-foundation.mjs", "--import", "./scholark-api-guard.mjs", "backend/server.mjs"]
+CMD ["node", "--import", "./server-key-shim.mjs", "--import", "./studio-ai-route.mjs", "--import", "./studio-media-route.mjs", "--import", "./studio-export-route.mjs", "--import", "./studio-reference-route.mjs", "--import", "./studio-research-route.mjs", "--import", "./studio-public-page-route.mjs", "--import", "./studio-public-artifact-route.mjs", "--import", "./scholark-school-resilience.mjs", "--import", "./scholark-school-route.mjs", "--import", "./scholark-school-strict.mjs", "--import", "./scholark-learning-route.mjs", "--import", "./scholark-billing-route.mjs", "--import", "./scholark-launch-route.mjs", "--import", "./scholark-notification-route.mjs", "--import", "./scholark-gemini-primary.mjs", "--import", "./scholark-security-foundation.mjs", "--import", "./scholark-api-guard.mjs", "backend/server.mjs"]
