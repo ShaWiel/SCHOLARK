@@ -14,7 +14,7 @@ for(const [language,prompt,needle] of cases){
   const d=await r.json().catch(()=>({})),answer=String(d?.result?.answer||'');
   const ok=live
     ? r.status===401&&d?.code==='AUTH_REQUIRED'
-    : r.ok&&d?.ok!==false&&answer.includes(needle)&&/Surinam(?:e)?/i.test(answer)&&/(three months|drie maanden|tres meses|trois mois|drei Monate|três meses)/i.test(answer);
+    : r.ok&&d?.ok!==false&&answer.includes(needle)&&/Surinam(?:e)?/i.test(answer)&&/(longer than two months|two months|twee maanden|dos meses|deux mois|zwei Monate|dois meses)/i.test(answer);
   results.push({language,status:r.status,provider:d?.provider||'',model:d?.model||'',ms:Math.round(performance.now()-t),authProtected:live?ok:undefined,ok});
   if(!ok)failures.push({language,status:r.status,code:d?.code||'',answer:answer.slice(0,220)});
 }
