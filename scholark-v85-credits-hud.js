@@ -316,6 +316,7 @@
       x:Number(e.clientX)||0,
       y:Number(e.clientY)||0,
       moved:false,
+      origin:hit,
       at:Date.now()
     };
   },true);
@@ -323,7 +324,14 @@
     const g=walletPointerGesture;if(!g||g.pointerId!==e.pointerId||g.moved)return;
     if(Math.hypot((Number(e.clientX)||0)-g.x,(Number(e.clientY)||0)-g.y)>12)g.moved=true;
   },true);
-  addEventListener('pointercancel',e=>{if(walletPointerGesture?.pointerId===e.pointerId)walletPointerGesture=null},true);
+  addEventListener('pointercancel',e=>{
+    const g=walletPointerGesture;
+    if(!g||g.pointerId!==e.pointerId)return;
+    walletPointerGesture=null;
+    if(!g.moved&&!g.origin?.isConnected&&Date.now()-g.at<1800){
+      queueMicrotask(()=>setWalletSurfaceState(g.surface,g.shouldOpen));
+    }
+  },true);
   addEventListener('pointerup',e=>{
     const g=walletPointerGesture;
     if(!g||g.pointerId!==e.pointerId)return;
@@ -356,9 +364,13 @@
       ?!!topbarWalletPanel?.classList.contains('open')
       :!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface);
     const epoch=++walletRemountClickEpoch;
-    // A capture listener elsewhere can replace the Wallet trigger later in
-    // this same click. Re-assert the intended open/closed state across a few
-    // short remount ticks so Android does not depend on one exact DOM frame.
+    e.preventDefault();
+    e.stopPropagation();
+    // Commit the gesture at the stable window-capture layer before any
+    // downstream listener can remount the clicked button.
+    setWalletSurfaceState(surface,shouldOpen,canonicalWalletTrigger(surface));
+    // A later listener on this same capture target may still replace the
+    // button. Re-assert the same intent against the canonical replacement.
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,0);
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,24);
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,80);
@@ -413,8 +425,13 @@
     clearTimeout(walletRemountRepairTimer);
     walletRemountRepairTimer=setTimeout(()=>{
       walletRemountRepairTimer=0;
+      const gesture=walletPointerGesture;
       renderTopbar();
       renderWorkspaceWallet();
+      if(gesture&&!gesture.moved&&!gesture.origin?.isConnected&&Date.now()-gesture.at<1800){
+        walletPointerGesture=null;
+        setWalletSurfaceState(gesture.surface,gesture.shouldOpen,canonicalWalletTrigger(gesture.surface));
+      }
       if(topbarWalletPanel?.classList.contains('open')&&!preserveWalletAnchor())repairWalletAnchorSoon();
     },0);
   });
