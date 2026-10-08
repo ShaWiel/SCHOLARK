@@ -83,6 +83,7 @@
   };
   const STUDIO_CORE = [];
   const STUDIO_HEAVY = [];
+  const WORKSPACE_FAST_PRELOAD=[...FEATURES.ai,...FEATURES.language,...FEATURES.schools];
 
   const current = document.currentScript;
   const baseUrl = current?.src ? new URL('.', current.src) : new URL('.', location.href);
@@ -229,7 +230,7 @@
     workspaceIdleScheduled=true;
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,450));
     idle(()=>{
-      preloadFiles(WORKSPACE_IDLE);
+      preloadFiles([...WORKSPACE_IDLE,...WORKSPACE_FAST_PRELOAD]);
       ensureFiles(WORKSPACE_IDLE,false,true);
     },{timeout:1400});
   }
@@ -251,6 +252,7 @@
     const key = toolKey(e.target);
     if (key === 'studio') { preloadFiles(STUDIO_CORE); ensureFiles(STUDIO_CORE, false, true); }
     else if (key === 'project') { preloadFiles(FEATURES.project); ensureFiles(FEATURES.project, false, true); }
+    else if (key && FEATURES[key]) preloadFiles(FEATURES[key],4);
   };
   document.addEventListener('pointerover', warmTarget, {passive:true,capture:true});
   document.addEventListener('focusin', warmTarget, true);
