@@ -40,6 +40,7 @@ COPY scholark-v116-launch-foundation.js /tmp/scholark-v116-launch-foundation.js
 COPY scholark-v117-credit-store.js /tmp/scholark-v117-credit-store.js
 COPY scholark-v118-account-security.js /tmp/scholark-v118-account-security.js
 COPY scholark-v119-foundation-polish.js /tmp/scholark-v119-foundation-polish.js
+COPY scholark-v120-experience-controls.js /tmp/scholark-v120-experience-controls.js
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
