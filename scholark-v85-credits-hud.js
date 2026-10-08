@@ -448,5 +448,16 @@
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r221-wallet-everywhere'};
+  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>({
+    open:!!topbarWalletPanel?.classList.contains('open'),
+    hidden:topbarWalletPanel?.getAttribute('aria-hidden')||null,
+    panelConnected:!!topbarWalletPanel?.isConnected,
+    surface:walletPanelSurface,
+    anchorConnected:!!walletPanelAnchor?.isConnected,
+    anchorClass:walletPanelAnchor?.className||'',
+    triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
+    lastPointerSurface: lastWalletPointerSurface,
+    lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
+    gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
+  }),release:'r221-wallet-everywhere'};
 })();
