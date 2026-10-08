@@ -131,7 +131,7 @@
     startInlineEdit(node,oldText,async next=>{await window.__SCHOLARK_V82_TUTOR_CLOUD_API__?.truncateFromUserText?.(oldText);updateTutor(x=>{x.messages=(x.messages||[]).slice(0,index)});syncTutorBackend();renderTutorChat();refreshTutorBar();const q=$('#v52-tutor-q');if(q){q.value=next;q.focus();$('#v52-tutor-send')?.click()}},()=>renderTutorChat(chat))
   }
   function decorateTutorUsers(){
-    const chat=currentTutor(),rows=(chat.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$('#v52-chat .v52-msg.user').filter(n=>!n.dataset.v82MessageId);
+    const chat=currentTutor(),rows=(chat.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$$('#v52-chat .v52-msg.user').filter(n=>!n.dataset.v82MessageId);
     nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120TutorIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+row.i+'">Edit</button></div>')})
   }
   function tutorAssistantHost(){return $$('#v52-chat .v52-msg.ai').filter(x=>!x.querySelector('.v62-loading')).at(-1)}
