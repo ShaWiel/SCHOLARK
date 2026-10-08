@@ -98,7 +98,9 @@ for(const profile of profiles){
     const mobileWalletLabel=(await page.locator('#v55-topbar .v85-topbar-credit').innerText()).replace(/\s+/g,' ').trim();
     check(/^\$\s*Wallet$/i.test(mobileWalletLabel)&&!/\d/.test(mobileWalletLabel),profile.name+': topbar should show Wallet instead of a raw credit balance');
     await page.click('#v55-topbar .v85-topbar-credit');
-    check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet panel did not open');
+    const firstWalletOpen=await visible(page,'.v85-topbar-wallet-panel.open',3000);
+    const firstWalletState=firstWalletOpen?null:await page.evaluate(()=>window.__SCHOLARK_CREDITS__?.debugWallet?.()||null);
+    check(firstWalletOpen,profile.name+': Wallet panel did not open '+JSON.stringify(firstWalletState));
     check(await page.locator('.v85-topbar-wallet-panel').count()===1,profile.name+': Wallet panel duplicated');
     await checkViewport(page,profile.name+' wallet');
     await page.keyboard.press('Escape');
@@ -109,17 +111,20 @@ for(const profile of profiles){
     // handler sees the event. Recovery must be deterministic, not a one-run
     // timing success.
     for(let race=1;race<=3;race++){
-      await page.evaluate(()=>{
+      const sabotageEvent=race===1?'pointerdown':'click';
+      await page.evaluate(eventType=>{
         const sabotage=e=>{
           const old=e.target?.closest?.('#v55-topbar .v85-topbar-credit');
           if(!old)return;
           const clone=old.cloneNode(true);
           old.replaceWith(clone);
         };
-        window.addEventListener('click',sabotage,{capture:true,once:true});
-      });
+        window.addEventListener(eventType,sabotage,{capture:true,once:true});
+      },sabotageEvent);
       await page.click('#v55-topbar .v85-topbar-credit');
-      check(await visible(page,'.v85-topbar-wallet-panel.open',3000),profile.name+': Wallet remount-race recovery failed on cycle '+race);
+      const raceOpen=await visible(page,'.v85-topbar-wallet-panel.open',3000);
+      const raceState=raceOpen?null:await page.evaluate(()=>window.__SCHOLARK_CREDITS__?.debugWallet?.()||null);
+      check(raceOpen,profile.name+': Wallet remount-race recovery failed on cycle '+race+' ('+sabotageEvent+') '+JSON.stringify(raceState));
       check(await page.locator('.v85-topbar-wallet-panel').count()===1,profile.name+': Wallet remount-race duplicated the panel on cycle '+race);
       await page.keyboard.press('Escape');
       check(await page.locator('.v85-topbar-wallet-panel.open').count()===0,profile.name+': Wallet remount-race did not close on cycle '+race);

@@ -84,12 +84,12 @@
   }
   let topbarWalletPanel=null,walletPanelAnchor=null,walletPanelSurface='';
   const boundWalletTriggers=new WeakSet(),walletRecoveredEvents=new WeakSet();
-  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null,walletAnchorRepairTimer=0,walletAnchorRepairEpoch=0,walletRemountClickEpoch=0;
+  let lastWalletPointerAt=0,lastWalletPointerSurface='',lastWalletPointerTrigger=null,walletAnchorRepairTimer=0,walletAnchorRepairEpoch=0,walletRemountClickEpoch=0,walletPointerGesture=null;
   function walletTriggers(){return [...document.querySelectorAll('.v85-topbar-credit,.v85-wallet')]}
   function closeTopbarWallet(){
     walletAnchorRepairEpoch++;walletRemountClickEpoch++;
     clearTimeout(walletAnchorRepairTimer);walletAnchorRepairTimer=0;
-    lastWalletPointerAt=0;lastWalletPointerSurface='';lastWalletPointerTrigger=null;
+    lastWalletPointerAt=0;lastWalletPointerSurface='';lastWalletPointerTrigger=null;walletPointerGesture=null;
     walletTriggers().forEach(el=>el.setAttribute('aria-expanded','false'));
     walletPanelAnchor=null;walletPanelSurface='';
     if(topbarWalletPanel){topbarWalletPanel.classList.remove('open');topbarWalletPanel.setAttribute('aria-hidden','true')}
@@ -197,11 +197,32 @@
       });
     }
   }
+  function canonicalWalletTrigger(surface){
+    if(surface==='workspace')return document.querySelector('#v51-sidebar .v85-wallet');
+    if(surface==='topbar')return document.querySelector('#v55-topbar .v85-topbar-credit');
+    return null;
+  }
   function liveWalletTrigger(trigger){
     if(trigger?.isConnected)return trigger;
-    if(trigger?.classList?.contains('v85-wallet'))return document.querySelector('#v51-sidebar .v85-wallet');
-    if(trigger?.classList?.contains('v85-topbar-credit'))return document.querySelector('#v55-topbar .v85-topbar-credit');
-    return null;
+    return canonicalWalletTrigger(walletSurface(trigger));
+  }
+  function setWalletSurfaceState(surface,shouldOpen,preferred=null){
+    const live=preferred?.isConnected?preferred:canonicalWalletTrigger(surface);
+    if(!live)return false;
+    bindWalletTrigger(live);
+    const open=!!topbarWalletPanel?.classList.contains('open'),sameSurface=open&&walletPanelSurface===surface;
+    if(!shouldOpen){
+      if(sameSurface)closeTopbarWallet();
+      return true;
+    }
+    if(sameSurface){
+      walletPanelAnchor=live;
+      live.setAttribute('aria-expanded','true');
+      positionTopbarWallet(live);
+      return true;
+    }
+    toggleWallet(live);
+    return true;
   }
   function toggleWallet(trigger){
     trigger=liveWalletTrigger(trigger);
@@ -279,23 +300,67 @@
   addEventListener('scholark:billing-changed',()=>setTimeout(load,40));
   addEventListener('scholark-language-ready',()=>setTimeout(render,80));
   addEventListener('resize',()=>{if(topbarWalletPanel?.classList.contains('open')&&walletPanelAnchor?.isConnected)positionTopbarWallet(walletPanelAnchor)},{passive:true});
+
+  // Handle pointer gestures at window capture level instead of relying on the
+  // original Wallet button surviving until pointerup. Some mobile topbar
+  // remounts replace the node between pointerdown and pointerup/click.
+  addEventListener('pointerdown',e=>{
+    if(typeof e.button==='number'&&e.button!==0)return;
+    const hit=e.target?.closest?.('.v85-topbar-credit,.v85-wallet');
+    if(!hit)return;
+    const surface=walletSurface(hit);if(!surface)return;
+    const shouldOpen=!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface);
+    // Commit immediately at the stable window-capture layer. Mobile shells can
+    // replace the button before pointerup/click, but the user's tap intent has
+    // already been applied and later events only preserve that state.
+    setWalletSurfaceState(surface,shouldOpen,hit);
+    const live=canonicalWalletTrigger(surface)||hit;
+    walletPointerGesture={
+      pointerId:e.pointerId,
+      surface,
+      shouldOpen,
+      x:Number(e.clientX)||0,
+      y:Number(e.clientY)||0,
+      moved:false,
+      origin:hit,
+      at:Date.now()
+    };
+    lastWalletPointerAt=Date.now();
+    lastWalletPointerSurface=surface;
+    lastWalletPointerTrigger=live;
+  },true);
+  addEventListener('pointermove',e=>{
+    const g=walletPointerGesture;if(!g||g.pointerId!==e.pointerId||g.moved)return;
+    if(Math.hypot((Number(e.clientX)||0)-g.x,(Number(e.clientY)||0)-g.y)>12)g.moved=true;
+  },true);
+  addEventListener('pointercancel',e=>{
+    const g=walletPointerGesture;
+    if(!g||g.pointerId!==e.pointerId)return;
+    walletPointerGesture=null;
+    if(!g.moved&&!g.origin?.isConnected&&Date.now()-g.at<1800){
+      queueMicrotask(()=>setWalletSurfaceState(g.surface,g.shouldOpen));
+    }
+  },true);
+  addEventListener('pointerup',e=>{
+    const g=walletPointerGesture;
+    if(!g||g.pointerId!==e.pointerId)return;
+    walletPointerGesture=null;
+    if(g.moved||Date.now()-g.at>1800)return;
+    e.preventDefault();
+    e.stopPropagation();
+    const live=canonicalWalletTrigger(g.surface);
+    if(live)setWalletSurfaceState(g.surface,g.shouldOpen,live);
+    lastWalletPointerAt=Date.now();
+    lastWalletPointerSurface=g.surface;
+    lastWalletPointerTrigger=live||lastWalletPointerTrigger;
+  },true);
+
   function recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,delay=0){
     const run=()=>{
       if(epoch!==walletRemountClickEpoch||captured?.isConnected)return;
-      const live=surface==='workspace'
-        ?document.querySelector('#v51-sidebar .v85-wallet')
-        :document.querySelector('#v55-topbar .v85-topbar-credit');
+      const live=canonicalWalletTrigger(surface);
       if(!live)return;
-      bindWalletTrigger(live);
-      const isOpen=!!topbarWalletPanel?.classList.contains('open');
-      if(shouldOpen){
-        if(!isOpen)toggleWallet(live);
-        else{
-          walletPanelAnchor=live;walletPanelSurface=surface;
-          live.setAttribute('aria-expanded','true');
-          positionTopbarWallet(live);
-        }
-      }else if(isOpen&&walletPanelSurface===surface)closeTopbarWallet();
+      setWalletSurfaceState(surface,shouldOpen,live);
     };
     if(delay) setTimeout(run,delay); else queueMicrotask(run);
   }
@@ -307,9 +372,13 @@
       ?!!topbarWalletPanel?.classList.contains('open')
       :!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface);
     const epoch=++walletRemountClickEpoch;
-    // A capture listener elsewhere can replace the Wallet trigger later in
-    // this same click. Re-assert the intended open/closed state across a few
-    // short remount ticks so Android does not depend on one exact DOM frame.
+    e.preventDefault();
+    e.stopPropagation();
+    // Commit the gesture at the stable window-capture layer before any
+    // downstream listener can remount the clicked button.
+    setWalletSurfaceState(surface,shouldOpen,canonicalWalletTrigger(surface));
+    // A later listener on this same capture target may still replace the
+    // button. Re-assert the same intent against the canonical replacement.
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,0);
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,24);
     recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,80);
@@ -364,8 +433,13 @@
     clearTimeout(walletRemountRepairTimer);
     walletRemountRepairTimer=setTimeout(()=>{
       walletRemountRepairTimer=0;
+      const gesture=walletPointerGesture;
       renderTopbar();
       renderWorkspaceWallet();
+      if(gesture&&!gesture.moved&&!gesture.origin?.isConnected&&Date.now()-gesture.at<1800){
+        walletPointerGesture=null;
+        setWalletSurfaceState(gesture.surface,gesture.shouldOpen,canonicalWalletTrigger(gesture.surface));
+      }
       if(topbarWalletPanel?.classList.contains('open')&&!preserveWalletAnchor())repairWalletAnchorSoon();
     },0);
   });
@@ -374,5 +448,16 @@
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,release:'r221-wallet-everywhere'};
+  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>({
+    open:!!topbarWalletPanel?.classList.contains('open'),
+    hidden:topbarWalletPanel?.getAttribute('aria-hidden')||null,
+    panelConnected:!!topbarWalletPanel?.isConnected,
+    surface:walletPanelSurface,
+    anchorConnected:!!walletPanelAnchor?.isConnected,
+    anchorClass:walletPanelAnchor?.className||'',
+    triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
+    lastPointerSurface: lastWalletPointerSurface,
+    lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
+    gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
+  }),release:'r221-wallet-everywhere'};
 })();
