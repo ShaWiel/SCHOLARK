@@ -59,6 +59,7 @@ try{
   await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForSelector('#v55-topbar',{state:'visible',timeout:15000});
   check(await page.locator('#v55-topbar').count()===1,'live Home mounts one canonical topbar');
+  await page.waitForFunction(()=>document.querySelectorAll('#v55-topbar .v85-topbar-credit').length===1,null,{timeout:5000});
   check(await page.locator('#v55-topbar .v85-topbar-credit').count()===1,'live Home exposes one Wallet action');
 
   await page.click('#v55-topbar .v85-topbar-credit');
