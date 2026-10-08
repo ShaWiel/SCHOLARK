@@ -11,7 +11,7 @@
 
   const style=document.createElement('style');style.id='scholark-v120-style';style.textContent=`
     .v120-actions{display:flex;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap}.v120-action{width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:#5d5864;display:grid;place-items:center;font:850 13px Inter;cursor:pointer}.v120-action:hover,.v120-action.active{background:#eceaf2;color:#292631}.v120-menu-wrap{position:relative}.v120-menu{position:absolute;left:0;top:34px;z-index:30;width:205px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:14px;box-shadow:0 18px 55px rgba(25,20,55,.18);padding:6px;display:none}.v120-menu.open{display:block}.v120-menu button{width:100%;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:800 8px Inter;color:#322e38;cursor:pointer}.v120-menu button:hover{background:#f2f0f6}
-    .v120-tutorbar{display:grid;grid-template-columns:minmax(150px,240px) auto minmax(0,1fr);gap:7px;align-items:center;margin-bottom:10px}.v120-tutorbar select,.v120-tutorbar button{height:34px;border:1px solid rgba(23,25,31,.1);border-radius:10px;background:#f8f7f5;padding:0 9px;font:800 8px Inter}.v120-tutor-progress{font:750 7.5px/1.35 Inter;color:#746e7a;text-align:right}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-provider-hidden{display:none!important}
+    .v120-tutorbar{display:grid;grid-template-columns:minmax(150px,240px) auto auto minmax(0,1fr);gap:7px;align-items:center;margin-bottom:10px}.v120-tutorbar select,.v120-tutorbar button{height:34px;border:1px solid rgba(23,25,31,.1);border-radius:10px;background:#f8f7f5;padding:0 9px;font:800 8px Inter}.v120-tutor-progress{font:750 7.5px/1.35 Inter;color:#746e7a;text-align:right}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-provider-hidden{display:none!important}
     .v120-toast{position:fixed;right:18px;bottom:18px;z-index:2147483646;background:#17191f;color:#fff;border-radius:12px;padding:10px 13px;font:800 8px Inter;box-shadow:0 16px 45px rgba(0,0,0,.24)}
     @media(max-width:720px){.v120-tutorbar{grid-template-columns:1fr auto}.v120-tutor-progress{grid-column:1/-1;text-align:left}}
   `;document.head.appendChild(style);
@@ -28,11 +28,11 @@
   function actionMarkup(scope,key){
     const f=feedback()[key]||'';
     return '<div class="v120-actions" data-v120-scope="'+esc(scope)+'" data-v120-key="'+esc(key)+'">'+
-      '<button class="v120-action" data-v120-do="copy" title="Copy" aria-label="Copy">▣</button>'+
-      '<button class="v120-action '+(f==='up'?'active':'')+'" data-v120-do="up" title="Helpful" aria-label="Helpful">♡</button>'+
-      '<button class="v120-action '+(f==='down'?'active':'')+'" data-v120-do="down" title="Not helpful" aria-label="Not helpful">♢</button>'+
-      '<button class="v120-action" data-v120-do="speak" title="Read aloud" aria-label="Read aloud">◖</button>'+
-      '<button class="v120-action" data-v120-do="share" title="Share" aria-label="Share">⌯</button>'+
+      '<button class="v120-action" data-v120-do="copy" title="Copy" aria-label="Copy">⧉</button>'+
+      '<button class="v120-action '+(f==='up'?'active':'')+'" data-v120-do="up" title="Helpful" aria-label="Helpful">👍</button>'+
+      '<button class="v120-action '+(f==='down'?'active':'')+'" data-v120-do="down" title="Not helpful" aria-label="Not helpful">👎</button>'+
+      '<button class="v120-action" data-v120-do="speak" title="Read aloud" aria-label="Read aloud">🔊</button>'+
+      '<button class="v120-action" data-v120-do="share" title="Share" aria-label="Share">↗</button>'+
       '<span class="v120-menu-wrap"><button class="v120-action" data-v120-do="more" title="More" aria-label="More">⋮</button><span class="v120-menu"><button data-v120-menu="branch">Branch in new chat</button><button data-v120-menu="retry">Retry</button><button data-v120-menu="search">Search the web</button></span></span>'+
       '</div>';
   }
@@ -91,9 +91,9 @@
   function decorateTutor(){
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;
     if(!$('#v120-tutorbar',form)){
-      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-new">+ New chat</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
+      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-new">+ New chat</button><button type="button" id="v120-tutor-review">Review topic</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
       $('#v120-tutor-select',bar).onchange=e=>{setTutorActive(e.target.value);const c=currentTutor();syncTutorBackend(c);renderTutorChat(c);refreshTutorBar()};
-      $('#v120-tutor-new',bar).onclick=()=>{newTutorChat();renderTutorChat();refreshTutorBar();q.value='';q.focus()};
+      $('#v120-tutor-new',bar).onclick=()=>{newTutorChat();renderTutorChat();refreshTutorBar();q.value='';q.focus()};$('#v120-tutor-review',bar).onclick=startTutorReview;
       renderTutorChat();refreshTutorBar();syncTutorBackend();
     }
   }
@@ -151,7 +151,9 @@
     updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}));noteTutorProgress(topic,0,false);syncTutorBackend();decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
   });
 
-  const observer=new MutationObserver(m=>{let arki=false,tutor=false,scrub=false;for(const x of m){const n=x.target?.nodeType===1?x.target:x.target?.parentElement;if(n?.closest?.('#v107-ai')||[...x.addedNodes].some(a=>a.nodeType===1&&a.matches?.('#v107-ai,.v107-msg')))arki=true;if(n?.closest?.('[data-v51-page]')||[...x.addedNodes].some(a=>a.nodeType===1&&a.querySelector?.('#v52-tutor-q')))tutor=true;scrub=true}if(arki)queueMicrotask(decorateArki);if(tutor)queueMicrotask(decorateTutor);if(scrub)queueMicrotask(()=>scrubProviderMarks(document))});
+  let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false,observerNeedsScrub=false;
+  function flushObserver(){observerQueued=false;if(observerNeedsArki)decorateArki();if(observerNeedsTutor)decorateTutor();if(observerNeedsScrub)scrubProviderMarks(document);observerNeedsArki=observerNeedsTutor=observerNeedsScrub=false}
+  const observer=new MutationObserver(m=>{for(const x of m){const n=x.target?.nodeType===1?x.target:x.target?.parentElement;if(n?.closest?.('#v107-ai')||[...x.addedNodes].some(a=>a.nodeType===1&&a.matches?.('#v107-ai,.v107-msg')))observerNeedsArki=true;if(n?.closest?.('[data-v51-page]')||[...x.addedNodes].some(a=>a.nodeType===1&&a.querySelector?.('#v52-tutor-q')))observerNeedsTutor=true;observerNeedsScrub=true}if(!observerQueued){observerQueued=true;requestAnimationFrame(flushObserver)}});
   observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},60));

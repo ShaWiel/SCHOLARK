@@ -308,7 +308,7 @@ function schemaFor(mode){
 const SCHOLARK_PUBLIC_FACTS=Object.freeze({
   owner:'Shakur Wielson',
   ownerOrigin:'Suriname',
-  buildDuration:'almost three months'
+  buildDuration:'longer than two months before it was ready'
 });
 function scholarkPublicFactResult(p){
   const prompt=clean(p?.prompt||''),lower=prompt.toLowerCase();

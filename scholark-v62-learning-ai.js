@@ -122,7 +122,7 @@
       (r.keyPoints?.length?'<div class="v62-answer-card"><h4>Key points to remember</h4>'+list(r.keyPoints)+'</div>':'')+
       (r.commonMistakes?.length?'<div class="v62-answer-card"><h4>Common mistakes</h4>'+list(r.commonMistakes)+'</div>':'')+
       (r.checks?.length?'<div class="v62-answer-card"><h4>Check yourself</h4>'+list(r.checks,true)+'</div>':'')+
-      (r.followUp?'<div class="v62-answer-card"><h4>Next step</h4><p>'+esc(r.followUp)+'</p><div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div>':'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div>');
+      (r.followUp?'<div class="v62-answer-card"><h4>Next step</h4><p>'+esc(r.followUp)+'</p></div>':'');
   }
 
   function readTutorHistory(){try{return JSON.parse(localStorage.getItem('scholark_v62_tutor_history')||'[]')}catch{return[]}}
@@ -168,7 +168,7 @@
       const data=await call('curriculum',{subject,country,prompt:'Build a useful learning map for '+subject});const r=data.result;
       if(out)out.innerHTML='<div class="v62-answer"><div class="v62-answer-card"><h3>'+esc(r.title||subject)+'</h3><p>'+esc(r.summary||'')+'</p></div>'+
         (r.subjects||[]).map(s=>'<div class="v62-answer-card"><h4>'+esc(s.name)+'</h4><p>'+esc(s.why||'')+'</p><b>Topics</b>'+list(s.topics)+'<b>Skills</b>'+list(s.skills)+'</div>').join('')+
-        '<div class="v62-answer-card"><h4>Learning roadmap</h4>'+list(r.roadmap,true)+(r.resources?.length?'<h4 style="margin-top:12px">Resources</h4>'+list(r.resources):'')+'<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div></div>';
+        '<div class="v62-answer-card"><h4>Learning roadmap</h4>'+list(r.roadmap,true)+(r.resources?.length?'<h4 style="margin-top:12px">Resources</h4>'+list(r.resources):'')+'</div></div>';
       localStorage.setItem('scholark_education_focus',JSON.stringify({subject,country,level:level(),result:r}));
     }catch(e){error(out,e)}finally{busy(btn,false)}
   }
@@ -188,7 +188,7 @@
       const data=await call('exam',{prompt:name,subject:name,topics,count,difficulty});const r=data.result;
       if(out)out.innerHTML='<div class="v62-answer"><div class="v62-answer-card"><h3>'+esc(r.title||name)+'</h3><p>'+esc(r.instructions||'')+'</p></div>'+
         (r.questions||[]).map((q,i)=>'<div class="v62-question"><div class="v62-meta">Question '+(i+1)+' · '+esc(q.difficulty||'')+'</div><h4>'+esc(q.prompt)+'</h4>'+((q.choices||[]).map((c,j)=>'<span class="v62-choice">'+String.fromCharCode(65+j)+'. '+esc(c)+'</span>').join(''))+'<button class="v62-reveal" type="button">Show answer</button><div class="v62-solution"><b>Answer:</b> '+esc(q.answer)+'<br><b>Why:</b> '+esc(q.explanation||'')+'</div></div>').join('')+
-        '<div class="v62-meta">'+esc(data.provider||'AI')+' · '+esc(data.model||'')+'</div></div>';
+        '</div>';
       window.dispatchEvent(new CustomEvent('scholark:exam-generated',{detail:{name,topics,difficulty,result:r,provider:data.provider||'',model:data.model||'',startedAt:Date.now()}}));
     }catch(e){error(out,e)}finally{busy(btn,false)}
   }

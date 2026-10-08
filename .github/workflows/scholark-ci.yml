@@ -33,6 +33,10 @@ jobs:
           node --check scholark-v72-cloud-projects.js
           node --check scholark-v118-account-security.js
           node --check scholark-v119-foundation-polish.js
+          node --check scholark-v120-experience-controls.js
+          node --check scholark-v107-general-ai.js
+          node --check scholark-v93-language-learner.js
+          node --check scholark-v106-workspace-power-tools.js
           node --check scripts/scholark-r218-foundation-smoke.mjs
           node --check scripts/scholark-r219-sidebar-dashboard-smoke.mjs
           node --check scholark-v89-account-settings.js
