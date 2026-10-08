@@ -30,6 +30,8 @@ const i18n=read('scholark-v90-i18n-engine.js');
 const homeFoundation=read('scholark-v99-home-foundation.js');
 const homeDemo=read('scholark-v30-native-home-autodemo.js');
 const homeTopbar=read('scholark-v55-home-topbar-workspace-entry.js');
+const homePricing=read('scholark-v41-home-pricing-dashboard.js');
+const homePricingHotfix=read('scholark-v41-home-pricing-dashboard-hotfix.js');
 const countryEducation=read('scholark-v96-country-education.js');
 const schoolClient=read('scholark-v104-school-filter-guard.js');
 const schoolVwo=read('scholark-v105-school-vwo.js');
@@ -199,6 +201,8 @@ ok(powerTools.includes("$$('[data-v106-minute-step]').forEach")&&powerTools.incl
 ok(experienceControls.includes("nodes=$$('#v52-chat .v52-msg.user').filter"),'Tutor user-message decorator is not null-safe');
 ok(workspaceShell.includes('tutorDisplayName')&&fastTools.includes('tutorDisplayName')&&workspaceExperience.includes('tutorDisplayName')&&orchestrator.includes("toolName=id=>id==='tutor'?tutorDisplayName()"),'Tutor custom name is still presentation-only instead of source-owned');
 ok(!learningApi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
+ok(homePricing.includes('Billed Monthly. Cancel anytime')&&!/7 days free|free trial/i.test(homePricing),'Homepage Plus/Pro pricing still advertises a free trial');
+ok(homePricingHotfix.includes('Billed Monthly. Cancel anytime')&&!/7 days free|7 dagen gratis|free trial/i.test(homePricingHotfix),'Homepage pricing hotfix still advertises a free trial');
 ok(fileIntelligence.includes("main.hidden=false")&&fileIntelligence.includes("p.hidden=false")&&fileIntelligence.indexOf("main.hidden=false")<fileIntelligence.indexOf("if(!force&&location.hash.toLowerCase()==='#files'"),'Files & Notes route reuse can leave its surface hidden');
 ok(!fileIntelligence.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Files & Notes still renders provider/model watermarks');
 ok(runtime.includes("'scholark-v86-file-intelligence.js':'20261008-v86-route-r233'"),'Files & Notes cache version is stale');

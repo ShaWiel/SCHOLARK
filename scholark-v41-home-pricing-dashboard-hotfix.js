@@ -51,7 +51,7 @@
       <div class="v41-head">
         <small>SCHOLARK PLANS</small>
         <h2>Kies hoeveel voorsprong je wilt.</h2>
-        <p>Begin gratis of probeer Plus en Pro 7 dagen gratis. Vergelijk alle plannen rechtstreeks op de SCHOLARK-homepage.</p>
+        <p>Begin gratis of kies Plus of Pro. Vergelijk alle plannen rechtstreeks op de SCHOLARK-homepage.</p>
       </div>
       <div class="v41-grid">
         <article class="v41-plan free">
@@ -66,18 +66,18 @@
           <div class="v41-kicker">PLUS</div><h3>SCHOLARK Plus</h3>
           <div class="v41-desc">Voor creators die Studio AI regelmatig gebruiken.</div>
           <div class="v41-price">$14.99 <small>/ month</small></div>
-          <div class="v41-trial">7 days free, then $14.99/month. Cancel anytime.</div>
+          <div class="v41-trial">Billed Monthly. Cancel anytime</div>
           <ul><li>Everything in Free</li><li>Presentation, Webpage, Document, Social & Graphic Studio</li><li>Max 4 active creations per Studio type</li><li>Natural Rewrite — 2 uses per day</li><li>Research with web sources</li><li>350 AI text requests per day</li><li>25 AI images per day</li></ul>
-          <button data-v41-plan="plus">Start Plus free trial</button>
+          <button data-v41-plan="plus">Choose Plus</button>
         </article>
         <article class="v41-plan pro">
           <span class="v41-most">MOST POPULAR</span>
           <div class="v41-kicker">PRO</div><h3>SCHOLARK Pro</h3>
           <div class="v41-desc">Voor maximale AI-kwaliteit, grote projecten en een studievoorsprong.</div>
           <div class="v41-price">$19.99 <small>/ month</small></div>
-          <div class="v41-trial">7 days free, then $19.99/month. Cancel anytime.</div>
+          <div class="v41-trial">Billed Monthly. Cancel anytime</div>
           <ul><li>Everything in Plus</li><li>Highest-quality SCHOLARK AI</li><li>Unlimited Studio creations + Natural Rewrite</li><li>Presentations up to 100 slides</li><li>Documents & reports up to 100 pages</li><li>Book Studio up to 900,000 words</li><li>All book/story genres + custom genre blends</li><li>Schools Near Me + Study Ahead</li><li>Advanced research & source checking</li><li>1,000 AI text requests per day</li><li>60 AI images per day</li></ul>
-          <button data-v41-plan="pro">Start Pro free trial</button>
+          <button data-v41-plan="pro">Choose Pro</button>
         </article>
       </div>`;
   }
