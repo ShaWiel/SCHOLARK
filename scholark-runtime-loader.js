@@ -26,7 +26,10 @@
   const VERSION = '20261007-r221';
   const ASSET_VERSION = file => ({
     'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-profile-r225',
-    'scholark-v93-language-learner.js':'20261008-v93-speed-layout-r225',
+    'scholark-v93-language-learner.js':'20261008-v93-adaptive-library-r226',
+    'scholark-v106-workspace-power-tools.js':'20261008-v106-focus-r226',
+    'scholark-v107-general-ai.js':'20261008-v107-actions-r226',
+    'scholark-v120-experience-controls.js':'20261008-v120-r226',
     'scholark-v85-credits-hud.js':'20261008-v85-wallet-r224'
   })[file] || VERSION;
   const ACTIVE = [
@@ -44,7 +47,7 @@
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
     'scholark-v93-language-learner.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v109-home-owner.js',
-    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js'
+    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js','scholark-v120-experience-controls.js'
   ];
   const BASE = new Set([
     'scholark-v42-route-guard.js',
@@ -56,7 +59,7 @@
   const WORKSPACE = [
     'scholark-v36-workspace-i18n.js','scholark-v51-workspace-shell.js','scholark-v53-dashboard-bootstrap.js',
     'scholark-v56-sidebar-cleanup.js','scholark-v61-free-provider-messaging.js','scholark-v72-cloud-projects.js','scholark-v80-workspace-cloud.js',
-    'scholark-v85-credits-hud.js','scholark-v110-workspace-core.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js'
+    'scholark-v85-credits-hud.js','scholark-v110-workspace-core.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v120-experience-controls.js'
   ];
   const WORKSPACE_IDLE = ['scholark-v84-profile-cloud.js','scholark-v89-account-settings.js','scholark-v91-workspace-polish.js'];
   const FEATURES = {
