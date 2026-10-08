@@ -318,7 +318,7 @@ if(!live){
     const answer=String(d.result?.answer||'');
     check(/Shakur Wielson/i.test(answer),'ARKI public facts omitted the SCHOLARK owner');
     check(/Suriname/i.test(answer),'ARKI public facts omitted that the owner is from Suriname');
-    check(/almost three months|nearly three months/i.test(answer),'ARKI public facts omitted the approximate build duration');
+    check(/longer than two months|more than two months|over two months/i.test(answer),'ARKI public facts omitted the approved build duration');
     check(d.provider==='scholark-public-facts','ARKI public facts should use the deterministic product-facts path');
   },15000);
 
