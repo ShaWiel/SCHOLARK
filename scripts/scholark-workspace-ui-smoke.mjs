@@ -833,7 +833,7 @@ await page.click('#v107-send');
 await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),{timeout:5000});
 check(arkiAuthCalls===2,`ARKI expired-session recovery should make exactly 2 calls, got ${arkiAuthCalls}`);
 check((await page.evaluate(()=>window.__schArkiRefreshes))===1,'ARKI did not force-refresh the expired session exactly once');
-check((await page.locator('#v107-state').innerText()).includes('ci-auth-refresh'),'ARKI did not settle on the successful retry response');
+check((await page.locator('#v107-state').innerText()).trim()==='Ready','ARKI did not settle to the provider-neutral Ready state after a successful retry');
 await page.evaluate(()=>{const o=window.__schArkiOrig;window.__SCHOLARK_TEST_MODE__=o.test;window.__SCHOLARK_V72_CLOUD__=o.cloud;window.__SCHOLARK_CREDITS__=o.credits;delete window.__schArkiOrig;delete window.__schArkiRefreshes});
 await page.unroute('**/api/learning/generate');
 
@@ -920,7 +920,7 @@ const languageHealth=await page.evaluate(()=>{
     overflow:document.documentElement.scrollWidth-innerWidth
   };
 });
-check(languageHealth.selftest?.ok===true&&languageHealth.selftest?.reviewEvery===4&&languageHealth.selftest?.reviewQuestions===12,'Language Learner spaced-review self-test failed: '+JSON.stringify(languageHealth));
+check(languageHealth.selftest?.ok===true&&languageHealth.selftest?.adaptiveReview===true&&Array.isArray(languageHealth.selftest?.reviewGap)&&languageHealth.selftest.reviewGap[0]===3&&languageHealth.selftest.reviewGap[1]===6&&languageHealth.selftest?.reviewQuestions===12,'Language Learner adaptive spaced-review self-test failed: '+JSON.stringify(languageHealth));
 check(languageHealth.quizVersion==='20261007-language-choice-v4'&&languageHealth.nextVersion==='20260918-language-next-v2','Language Learner route-lazy helpers did not load: '+JSON.stringify(languageHealth));
 check(languageHealth.h1&&languageHealth.orb&&languageHealth.h1.top>=languageHealth.orb.bottom-2,'Language Learner hero headline overlaps Now Learning indicator: '+JSON.stringify(languageHealth));
 check(languageHealth.swap&&languageHealth.target&&languageHealth.support&&languageHealth.swap.left>=languageHealth.target.right-3&&languageHealth.swap.right<=languageHealth.support.left+3,'Language swap control is not contained between the selectors: '+JSON.stringify(languageHealth));
