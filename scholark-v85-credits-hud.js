@@ -309,16 +309,25 @@
     const hit=e.target?.closest?.('.v85-topbar-credit,.v85-wallet');
     if(!hit)return;
     const surface=walletSurface(hit);if(!surface)return;
+    const shouldOpen=!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface);
+    // Commit immediately at the stable window-capture layer. Mobile shells can
+    // replace the button before pointerup/click, but the user's tap intent has
+    // already been applied and later events only preserve that state.
+    setWalletSurfaceState(surface,shouldOpen,hit);
+    const live=canonicalWalletTrigger(surface)||hit;
     walletPointerGesture={
       pointerId:e.pointerId,
       surface,
-      shouldOpen:!(topbarWalletPanel?.classList.contains('open')&&walletPanelSurface===surface),
+      shouldOpen,
       x:Number(e.clientX)||0,
       y:Number(e.clientY)||0,
       moved:false,
       origin:hit,
       at:Date.now()
     };
+    lastWalletPointerAt=Date.now();
+    lastWalletPointerSurface=surface;
+    lastWalletPointerTrigger=live;
   },true);
   addEventListener('pointermove',e=>{
     const g=walletPointerGesture;if(!g||g.pointerId!==e.pointerId||g.moved)return;
@@ -337,14 +346,13 @@
     if(!g||g.pointerId!==e.pointerId)return;
     walletPointerGesture=null;
     if(g.moved||Date.now()-g.at>1800)return;
-    const live=canonicalWalletTrigger(g.surface);
-    if(!live)return;
     e.preventDefault();
     e.stopPropagation();
-    setWalletSurfaceState(g.surface,g.shouldOpen,live);
+    const live=canonicalWalletTrigger(g.surface);
+    if(live)setWalletSurfaceState(g.surface,g.shouldOpen,live);
     lastWalletPointerAt=Date.now();
     lastWalletPointerSurface=g.surface;
-    lastWalletPointerTrigger=live;
+    lastWalletPointerTrigger=live||lastWalletPointerTrigger;
   },true);
 
   function recoverWalletRemountIntent(surface,shouldOpen,captured,epoch,delay=0){
