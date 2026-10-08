@@ -448,16 +448,23 @@
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>({
-    open:!!topbarWalletPanel?.classList.contains('open'),
-    hidden:topbarWalletPanel?.getAttribute('aria-hidden')||null,
-    panelConnected:!!topbarWalletPanel?.isConnected,
-    surface:walletPanelSurface,
-    anchorConnected:!!walletPanelAnchor?.isConnected,
-    anchorClass:walletPanelAnchor?.className||'',
-    triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
-    lastPointerSurface: lastWalletPointerSurface,
-    lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
-    gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
-  }),release:'r221-wallet-everywhere'};
+  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>{
+    const p=topbarWalletPanel,cs=p?getComputedStyle(p):null,r=p?.getBoundingClientRect?.();
+    return{
+      open:!!p?.classList.contains('open'),
+      hidden:p?.getAttribute('aria-hidden')||null,
+      panelConnected:!!p?.isConnected,
+      surface:walletPanelSurface,
+      panelRect:r?{x:r.x,y:r.y,width:r.width,height:r.height,top:r.top,right:r.right,bottom:r.bottom,left:r.left}:null,
+      panelStyle:cs?{display:cs.display,visibility:cs.visibility,opacity:cs.opacity,position:cs.position,zIndex:cs.zIndex,pointerEvents:cs.pointerEvents}:null,
+      childCount:p?.children?.length||0,
+      textLength:(p?.textContent||'').trim().length,
+      anchorConnected:!!walletPanelAnchor?.isConnected,
+      anchorClass:walletPanelAnchor?.className||'',
+      triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
+      lastPointerSurface:lastWalletPointerSurface,
+      lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
+      gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
+    };
+  },release:'r221-wallet-everywhere'};
 })();
