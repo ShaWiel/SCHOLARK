@@ -195,7 +195,7 @@ ok(experienceControls.includes('Branch in new chat')&&experienceControls.include
 ok(experienceControls.includes("for(const host of $(sel,root))")&&experienceControls.includes("nodes=$('.v107-msg.user',box)")&&!experienceControls.includes('id="v120-tutor-new"'),'Tutor naming/edit selector or duplicate composer New chat regressed');
 ok(tutorCloud.includes("$('[data-v82-edit-message]',chat).forEach"),'Tutor cloud edit selector regressed');
 ok(powerTools.includes("$('[data-v106-minute-step]').forEach")&&powerTools.includes('grid-template-rows:29px 29px')&&!powerTools.includes('contain:layout paint'),'Focus custom-minute stepper stability/visibility regressed');
-ok(experienceControls.includes("nodes=$('#v52-chat .v52-msg.user').filter"),'Tutor user-message decorator is not null-safe');
+ok(experienceControls.includes("nodes=$$('#v52-chat .v52-msg.user').filter"),'Tutor user-message decorator is not null-safe');
 ok(!learningApi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
 ok(tutorCloud.includes('truncateFromUserText')&&tutorCloud.includes('data-v82-edit-message')&&!tutorCloud.includes("tools.innerHTML='<button class=\"v82-new\""),'Tutor cloud duplicate composer New chat/edit sync is incomplete');
 ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'"),'Gemini adapter does not safely bypass test mode for scoped AI routes');
