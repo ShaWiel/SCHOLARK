@@ -11,7 +11,7 @@
   let current=null,busy=false,buildEpoch=0;
 
   const css=document.createElement('style');css.id='scholark-v93-style';css.textContent=`
-    .v93{max-width:1500px;margin:0 auto;padding:30px 30px 72px;box-sizing:border-box;font-family:Inter,system-ui;color:#17191f;background:radial-gradient(circle at 85% 2%,rgba(109,93,252,.11),transparent 28%),radial-gradient(circle at 9% 24%,rgba(201,255,106,.12),transparent 24%)}
+    .v93{max-width:1500px;margin:0 auto;padding:12px 30px 72px;box-sizing:border-box;font-family:Inter,system-ui;color:#17191f;background:radial-gradient(circle at 85% 2%,rgba(109,93,252,.11),transparent 28%),radial-gradient(circle at 9% 24%,rgba(201,255,106,.12),transparent 24%)}
     .v93-hero{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(340px,.82fr);gap:18px;align-items:stretch}
     .v93-card,.v93-section{background:rgba(255,255,255,.94);border:1px solid rgba(23,25,31,.08);border-radius:26px;box-shadow:0 22px 70px rgba(31,27,63,.07);min-width:0}
     .v93-card{padding:24px}.v93-section{padding:22px}
@@ -241,7 +241,7 @@
   async function call(payload){
     const request=window.__SCHOLARK_WORKSPACE_CORE__?.ai?.request;
     if(!request)throw new Error('SCHOLARK AI foundation is not ready yet.');
-    return request('language_learning',payload,{timeoutMs:100000});
+    return request('language_learning',payload,{timeoutMs:70000});
   }
 
   async function buildLesson(options={}){
@@ -253,7 +253,7 @@
       const continuity=source?'This is a direct continuation after “'+clean(source.result?.title||source.topic||'the previous lesson')+'”. The prior next-step recommendation was “'+clean(source.result?.nextStep||topic)+'”. Do not simply repeat the previous lesson; build on it, recycle a few important items through spaced recall, then introduce the next layer of skill.':'Build the lesson as a self-contained starting point for this topic.';
       const recentContext=recent.length?'Recent completed topics: '+recent.map(x=>clean(x.title||x.topic)).filter(Boolean).join(' | ')+'. Avoid unnecessary duplication and connect the new material to this history.':'';
       const reviewContext=Number.isFinite(Number(prior.lastReviewPercent))&&Number(prior.reviewsCompleted)>0?'Most recent review score: '+Number(prior.lastReviewPercent)+'%. '+(Number(prior.lastReviewPercent)<75?'Prioritize retrieval practice and the weaker material before adding too much new content.':'The learner retained the material well, so increase complexity slightly.'):'';
-      const depth='Make this lesson substantive rather than superficial: aim for 8–14 useful vocabulary items or phrases, 2–4 clear grammar points where relevant, a realistic multi-turn dialogue, and 8–12 varied exercises across recall, translation, fill-in and application. Keep difficulty appropriate to '+level+'.';
+      const depth='Make this lesson substantive but quick to generate: aim for 6–10 useful vocabulary items or phrases, 2–3 clear grammar points where relevant, a realistic concise dialogue, and 6–8 varied exercises across recall, translation, fill-in and application. Keep difficulty appropriate to '+level+' and avoid unnecessary repetition.';
       const data=await call({targetLanguage:langName(targetCode),targetLanguageCode:targetCode,nativeLanguage:langName(supportCode),supportLanguageCode:supportCode,language:langName(supportCode),proficiency:level,learningGoal:goal,prompt:'Teach this topic or situation: '+topic+'. Include practical phrases, pronunciation, grammar, a realistic dialogue and exercises. '+adaptive+' '+continuity+' '+recentContext+' '+reviewContext+' '+depth,level:localStorage.getItem('scholark_learning_level')||'student'});
       if(epoch!==buildEpoch)return null;const result=data?.result;if(!result||!Array.isArray(result.exercises)||!result.exercises.length)throw new Error('SCHOLARK could not build a complete lesson. Please try again.');
       current={id:'lang-'+Date.now().toString(36),kind:'lesson',targetCode,supportCode,level,goal,topic,result,provider:data.provider||'',model:data.model||'',at:Date.now(),sequence:(Number(prior.lessons)||0)+1};saveHistory(current);renderLesson(current);renderHistory();localStorage.setItem('scholark_v93_target',targetCode);const p=loadProgress();p[targetCode]={...(p[targetCode]||{}),level,lastTopic:topic,updatedAt:Date.now()};saveProgress(p);renderStats(targetCode);pushCloudProgress(targetCode);if(st)st.textContent='Lesson ready. Work through it, mark it complete, then SCHOLARK will build the next step from your progress.';return current;

@@ -3,12 +3,15 @@ import {createHash} from 'node:crypto';
 
 const previousEmit = http.Server.prototype.emit;
 const buckets = new Map();
+const burstBuckets = new Map();
 const activeExpensiveByClient = new Map();
 let activeExpensive = 0;
 const WINDOW_MS = 5 * 60 * 1000;
 const MAX_CONCURRENT = 18;
-const MAX_CONCURRENT_PER_CLIENT = 6;
+const MAX_CONCURRENT_PER_CLIENT = 5;
 const MAX_BUCKETS = 10000;
+const BURST_WINDOW_MS = 60 * 1000;
+const EXPENSIVE_BURST_LIMIT = 32;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
 const HEALTH_STARTED_AT = Date.now();
 const HEALTH_RELEASE = String(process.env.SCHOLARK_RELEASE || 'dev');
@@ -88,6 +91,13 @@ function consume(ip, path, limit) {
   return {allowed:b.count<=limit, remaining, retryAfter:Math.max(1,Math.ceil((WINDOW_MS-(now-b.started))/1000))};
 }
 
+function consumeBurst(client) {
+  const now=Date.now();let b=burstBuckets.get(client);
+  if(!b||now-b.started>=BURST_WINDOW_MS)b={started:now,count:0};
+  b.count++;burstBuckets.set(client,b);
+  return {allowed:b.count<=EXPENSIVE_BURST_LIMIT,retryAfter:Math.max(1,Math.ceil((BURST_WINDOW_MS-(now-b.started))/1000)),remaining:Math.max(0,EXPENSIVE_BURST_LIMIT-b.count)};
+}
+
 function hardenServer(server) {
   if (!server || server.__scholarkTransportHardened) return;
   server.__scholarkTransportHardened = true;
@@ -129,7 +139,7 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,expensiveBurstGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
@@ -198,6 +208,11 @@ http.Server.prototype.emit = function(type,...args) {
       return true;
     }
   }
+  if (rule.expensive && !testMode) {
+    const burst=consumeBurst(client);
+    res.setHeader('x-scholark-burst-remaining',String(burst.remaining));
+    if(!burst.allowed){json(res,429,{ok:false,code:'BURST_RATE_LIMITED',error:'Too many rapid AI requests. Please wait briefly and try again.'},{'retry-after':String(burst.retryAfter)});return true}
+  }
   if (rule.expensive && (activeExpensiveByClient.get(client)||0) >= MAX_CONCURRENT_PER_CLIENT) {
     json(res,429,{ok:false,code:'CLIENT_CONCURRENCY_LIMIT',error:'Too many concurrent SCHOLARK requests from this client. Please retry shortly.'},{'retry-after':'2'});
     return true;
@@ -227,6 +242,7 @@ http.Server.prototype.emit = function(type,...args) {
 setInterval(() => {
   const cutoff = Date.now() - WINDOW_MS * 2;
   for (const [key,b] of buckets) if (b.started < cutoff) buckets.delete(key);
+  const burstCutoff=Date.now()-BURST_WINDOW_MS*2;for(const [key,b] of burstBuckets)if(b.started<burstCutoff)burstBuckets.delete(key);
 }, WINDOW_MS).unref?.();
 
 console.log('[SCHOLARK] API guard ready');
