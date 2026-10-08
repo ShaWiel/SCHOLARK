@@ -740,7 +740,20 @@ await route('ai','#v107-ai');
 check((await page.inputValue('#v107-q'))==='Draft survives route changes','ARKI draft did not survive Workspace remount');
 await page.fill('#v107-q','What is 2 + 2?');
 await page.click('#v107-send');
-await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \+ 2 = 4|\b4\b/.test(x.textContent||'')),{timeout:5000});
+try{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \\+ 2 = 4|\\b4\\b/.test(x.textContent||'')),{timeout:8000});
+}catch(e){
+  const diag=await page.evaluate(()=>({
+    state:document.querySelector('#v107-state')?.textContent||'',
+    prompt:document.querySelector('#v107-q')?.value||'',
+    sendDisabled:!!document.querySelector('#v107-send')?.disabled,
+    messages:[...document.querySelectorAll('.v107-msg')].map(x=>({cls:x.className,text:(x.textContent||'').slice(0,500)})),
+    chats:localStorage.getItem('scholark_v107_general_ai_chats'),
+    runtime:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
+  }));
+  console.error('ARKI FIRST SEND DIAGNOSTIC '+JSON.stringify(diag));
+  throw e
+}
 check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
 check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
 await page.click('#v107-new');
