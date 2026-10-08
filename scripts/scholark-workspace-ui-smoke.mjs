@@ -742,7 +742,7 @@ await page.fill('#v107-q','What is 2 + 2?');
 await page.click('#v107-send');
 await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \+ 2 = 4|\b4\b/.test(x.textContent||'')),{timeout:5000});
 check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
-check(await page.locator('[data-v107-copy]').count()>=1,'ARKI copy action missing after response');
+check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
 await page.click('#v107-new');
 check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 

@@ -151,10 +151,24 @@
     updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}));noteTutorProgress(topic,0,false);syncTutorBackend();decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
   });
 
-  let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false,observerNeedsScrub=false;
-  function flushObserver(){observerQueued=false;if(observerNeedsArki)decorateArki();if(observerNeedsTutor)decorateTutor();if(observerNeedsScrub)scrubProviderMarks(document);observerNeedsArki=observerNeedsTutor=observerNeedsScrub=false}
-  const observer=new MutationObserver(m=>{for(const x of m){const n=x.target?.nodeType===1?x.target:x.target?.parentElement;if(n?.closest?.('#v107-ai')||[...x.addedNodes].some(a=>a.nodeType===1&&a.matches?.('#v107-ai,.v107-msg')))observerNeedsArki=true;if(n?.closest?.('[data-v51-page]')||[...x.addedNodes].some(a=>a.nodeType===1&&a.querySelector?.('#v52-tutor-q')))observerNeedsTutor=true;observerNeedsScrub=true}if(!observerQueued){observerQueued=true;requestAnimationFrame(flushObserver)}});
-  observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false;const observerRoots=new Set();
+  function flushObserver(){
+    observerQueued=false;
+    if(observerNeedsArki)decorateArki();
+    if(observerNeedsTutor)decorateTutor();
+    for(const root of [...observerRoots].slice(0,24))if(root?.isConnected)scrubProviderMarks(root);
+    observerRoots.clear();observerNeedsArki=observerNeedsTutor=false
+  }
+  const observer=new MutationObserver(m=>{
+    for(const x of m)for(const a of x.addedNodes){
+      if(a.nodeType!==1)continue;
+      observerRoots.add(a);
+      if(a.matches?.('#v107-ai,.v107-msg')||a.querySelector?.('#v107-ai,.v107-msg'))observerNeedsArki=true;
+      if(a.matches?.('#v52-tutor-q')||a.querySelector?.('#v52-tutor-q'))observerNeedsTutor=true
+    }
+    if((observerNeedsArki||observerNeedsTutor||observerRoots.size)&&!observerQueued){observerQueued=true;requestAnimationFrame(flushObserver)}
+  });
+  observer.observe(document.documentElement,{childList:true,subtree:true});
 
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},60));
   addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},30));
