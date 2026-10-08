@@ -161,20 +161,6 @@
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
     if(!boundWalletTriggers.has(trigger)){
       boundWalletTriggers.add(trigger);
-      trigger.addEventListener('pointerup',e=>{
-        if(typeof e.button==='number'&&e.button!==0)return;
-        e.preventDefault();
-        e.stopPropagation();
-        const live=liveWalletTrigger(trigger);
-        if(!live)return;
-        // Toggle first. closeTopbarWallet() intentionally clears any stale
-        // gesture state; recording this pointer afterwards binds the following
-        // synthetic click to this exact gesture instead of a previous tap.
-        toggleWallet(live);
-        lastWalletPointerAt=Date.now();
-        lastWalletPointerSurface=walletSurface(live);
-        lastWalletPointerTrigger=live;
-      });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
         e.stopPropagation();
