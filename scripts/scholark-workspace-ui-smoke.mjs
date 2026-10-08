@@ -756,6 +756,7 @@ try{
 }
 check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
 check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
+check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
 await page.click('#v107-new');
 check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 
@@ -871,12 +872,23 @@ await page.unroute('**/api/learning/generate');
 
 await route('tutor','#v51-fallback .v52-tool');
 check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
+await page.waitForSelector('#v120-tutorbar',{state:'visible',timeout:5000});
+check(await page.locator('#v120-tutor-select').count()===1,'Tutor chat selector missing');
+check((await page.locator('#v120-tutor-select').evaluate(el=>el.getBoundingClientRect().width))>=220,'Tutor chat selector is still too narrow');
+check(await page.locator('.v82-tools .v82-new').count()===0,'Duplicate small Tutor New chat button still exists above composer');
+check(await page.locator('#v120-tutor-name').count()===1,'Tutor custom-name control missing');
+check(await page.evaluate(()=>window.__SCHOLARK_TUTOR_PROFILE__?.set?.('Nova')===true),'Tutor custom name could not be saved');
+await page.waitForFunction(()=>document.querySelector('#v120-tutor-name')?.textContent?.includes('Nova'),null,{timeout:2000});
+check((await page.locator('#v120-tutor-name').innerText()).includes('Nova'),'Tutor custom name did not update UI');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
 await page.click('#v52-tutor-send');
 await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.user').length===1,{timeout:3000}).catch(()=>{});
 await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.ai').length>=2,{timeout:3000}).catch(()=>{});
 check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept a user question');
 check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
+await page.waitForFunction(()=>document.querySelector('[data-v120-edit-tutor]')||document.querySelector('[data-v82-edit-message]'),null,{timeout:2000});
+check((await page.locator('[data-v120-edit-tutor],[data-v82-edit-message]').count())>=1,'Tutor user-message Edit action missing');
+await page.evaluate(()=>{localStorage.removeItem('scholark_tutor_name_v1');window.__SCHOLARK_TUTOR_PROFILE__?.apply?.(document)});
 
 await route('education','#v51-fallback .v52-tool');
 try{
@@ -938,9 +950,15 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 await route('focus','#v106-root');
 check(await page.locator('#v106-focus-main').count()===1,'Focus start button missing');
 check(await page.locator('#v106-focus-custom').count()===1,'Custom Focus duration missing');
+check(await page.locator('[data-v106-minute-step]').count()===2,'Custom Focus minute stepper must expose two always-visible controls');
 await page.fill('#v106-focus-custom','35');
 await page.locator('#v106-focus-custom').dispatchEvent('change');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').duration===35}catch{return false}}),'Custom Focus duration did not persist');
+await page.click('[data-v106-minute-step="5"]');
+check((await page.inputValue('#v106-focus-custom'))==='40','Focus +5 minute control did not update stably');
+await page.click('[data-v106-minute-step="-5"]');
+check((await page.inputValue('#v106-focus-custom'))==='35','Focus -5 minute control did not update stably');
+check(await page.locator('#v106-root').count()===1,'Focus minute stepper caused a duplicate/remount glitch');
 await page.fill('#v106-focus-task','Biology focus smoke');
 await page.click('#v106-focus-main');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_focus')||'{}').running===true}catch{return false}}),'Focus session did not start');
