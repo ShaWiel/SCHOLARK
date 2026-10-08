@@ -8,12 +8,30 @@
   const now=()=>new Date().toISOString();
   const uid=p=>(p||'id')+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
   const providerMark=/(^|\b)(gemini|pollinations|openai(?:-fast)?|gpt-5(?:\.[0-9]+)?(?:-[a-z]+)?|public-product-facts|scholark-test-engine)(\b|$)/i;
+  const TUTOR_NAME_KEY='scholark_tutor_name_v1';
+  let lastTutorName='AI Tutor';
+  function tutorName(){const v=clean(localStorage.getItem(TUTOR_NAME_KEY)||'');return v.slice(0,24)||'AI Tutor'}
+  function applyTutorName(root=document){
+    const name=tutorName(),previous=lastTutorName;lastTutorName=name;
+    for(const sel of ['#v51-sidebar','.v52-head','.v111-live','.v114-connect','#v120-tutorbar','#v52-tutor-send'])for(const host of $(sel,root)){
+      const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT),nodes=[];while(w.nextNode())nodes.push(w.currentNode);
+      for(const n of nodes){let t=n.nodeValue||'';t=t.replace(/Tutor learning loop/g,name+' learning loop').replace(/SCHOLARK Tutor/g,name).replace(/AI Tutor/g,name);if(previous&&previous!=='AI Tutor'&&previous!==name)t=t.replaceAll(previous,name);n.nodeValue=t}
+    }
+    const q=$('#v52-tutor-q',root)||$('#v52-tutor-q');if(q)q.placeholder='Ask '+name+' anything — or ask what you should do next for an assignment...';
+    const send=$('#v52-tutor-send',root)||$('#v52-tutor-send');if(send)send.innerHTML='Ask <span>'+esc(name)+'</span>';
+    const b=$('#v120-tutor-name',root)||$('#v120-tutor-name');if(b)b.textContent='Name: '+name
+  }
+  function chooseTutorName(){
+    const raw=prompt('Choose a name for your AI Tutor (2–24 characters).',tutorName());if(raw==null)return;const next=clean(raw).replace(/[<>]/g,'').slice(0,24);
+    if(next.length<2){toast('Use at least 2 characters');return}try{localStorage.setItem(TUTOR_NAME_KEY,next)}catch{}applyTutorName(document);window.dispatchEvent(new CustomEvent('scholark:tutor-name-changed',{detail:{name:next}}));toast('Tutor name updated')
+  }
+  window.__SCHOLARK_TUTOR_PROFILE__={name:tutorName,set:name=>{const next=clean(name).replace(/[<>]/g,'').slice(0,24);if(next.length<2)return false;localStorage.setItem(TUTOR_NAME_KEY,next);applyTutorName(document);return true},apply:applyTutorName};
 
   const style=document.createElement('style');style.id='scholark-v120-style';style.textContent=`
     .v120-actions{display:flex;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap}.v120-action{width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:#5d5864;display:grid;place-items:center;font:850 13px Inter;cursor:pointer}.v120-action:hover,.v120-action.active{background:#eceaf2;color:#292631}.v120-menu-wrap{position:relative}.v120-menu{position:absolute;left:0;top:34px;z-index:30;width:205px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:14px;box-shadow:0 18px 55px rgba(25,20,55,.18);padding:6px;display:none}.v120-menu.open{display:block}.v120-menu button{width:100%;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:800 8px Inter;color:#322e38;cursor:pointer}.v120-menu button:hover{background:#f2f0f6}
-    .v120-tutorbar{display:grid;grid-template-columns:minmax(150px,240px) auto auto minmax(0,1fr);gap:7px;align-items:center;margin-bottom:10px}.v120-tutorbar select,.v120-tutorbar button{height:34px;border:1px solid rgba(23,25,31,.1);border-radius:10px;background:#f8f7f5;padding:0 9px;font:800 8px Inter}.v120-tutor-progress{font:750 7.5px/1.35 Inter;color:#746e7a;text-align:right}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-provider-hidden{display:none!important}
+    .v120-tutorbar{display:grid;grid-template-columns:minmax(280px,1.35fr) auto auto auto minmax(210px,1fr);gap:7px;align-items:center;margin-bottom:10px}.v120-tutorbar select,.v120-tutorbar button{height:38px;border:1px solid rgba(23,25,31,.1);border-radius:11px;background:#f8f7f5;padding:0 11px;font:850 8.5px Inter}.v120-tutorbar select{min-width:0;font-size:10px;font-weight:900;color:#292631;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.v120-tutor-progress{font:750 7.5px/1.35 Inter;color:#746e7a;text-align:right;min-width:0}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-user-actions{display:flex;justify-content:flex-end;margin-top:5px}.v120-edit-user{border:0;background:transparent;color:inherit;opacity:.68;padding:2px 4px;font:850 7px Inter;cursor:pointer}.v120-editbox{display:grid;gap:7px;min-width:min(520px,70vw)}.v120-editbox textarea{width:100%;min-height:90px;box-sizing:border-box;border:1px solid rgba(23,25,31,.14);border-radius:11px;padding:10px;font:650 10px/1.5 Inter;resize:vertical}.v120-edit-actions{display:flex;gap:6px;justify-content:flex-end}.v120-edit-actions button{border:0;border-radius:9px;padding:7px 10px;font:850 7px Inter;cursor:pointer}.v120-edit-actions .save{background:#17191f;color:#c9ff6a}.v120-provider-hidden{display:none!important}
     .v120-toast{position:fixed;right:18px;bottom:18px;z-index:2147483646;background:#17191f;color:#fff;border-radius:12px;padding:10px 13px;font:800 8px Inter;box-shadow:0 16px 45px rgba(0,0,0,.24)}
-    @media(max-width:720px){.v120-tutorbar{grid-template-columns:1fr auto}.v120-tutor-progress{grid-column:1/-1;text-align:left}}
+    @media(max-width:900px){.v120-tutorbar{grid-template-columns:minmax(220px,1fr) auto auto}.v120-tutor-progress{grid-column:1/-1;text-align:left}}@media(max-width:620px){.v120-tutorbar{grid-template-columns:1fr 1fr}.v120-tutorbar select{grid-column:1/-1}.v120-tutor-progress{grid-column:1/-1}}
   `;document.head.appendChild(style);
 
   function toast(msg){let x=$('#v120-toast');if(!x){x=document.createElement('div');x.id='v120-toast';x.className='v120-toast';document.body.appendChild(x)}x.textContent=msg;clearTimeout(window.__v120toast);window.__v120toast=setTimeout(()=>x.remove(),1800)}
@@ -51,6 +69,17 @@
       node.insertAdjacentHTML('beforeend',actionMarkup('arki',(chat?.id||'chat')+':'+row.i));
     });
   }
+  function decorateArkiUsers(){
+    const api=window.__SCHOLARK_V107_GENERAL_AI__,box=$('#v107-thread');if(!api||!box)return;
+    const chat=api.getCurrent?.(),rows=(chat?.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$('.v107-msg.user',box);
+    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120UserIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-arki="'+row.i+'">Edit</button></div>')})
+  }
+  function startInlineEdit(node,text,onSave,onCancel){
+    if(!node)return;node.innerHTML='<div class="v120-editbox"><textarea data-editing="1">'+esc(text||'')+'</textarea><div class="v120-edit-actions"><button type="button" class="save">Save & resend</button><button type="button" class="cancel">Cancel</button></div></div>';
+    const ta=$('textarea',node);if(ta){ta.focus();ta.selectionStart=ta.selectionEnd=ta.value.length;ta.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();onCancel?.()}}}
+    $('.cancel',node).onclick=()=>onCancel?.();$('.save',node).onclick=()=>{const next=String(ta?.value||'').trim();if(!next)return ta?.focus();onSave?.(next)}
+  }
+  function editArkiUser(index,node){const api=window.__SCHOLARK_V107_GENERAL_AI__,msg=api?.getCurrent?.()?.messages?.[index];if(!msg||msg.role!=='user')return;startInlineEdit(node,msg.content,next=>api?.editUserMessage?.(index,next),()=>api?.open?.())}
   function arkiAction(host,action){
     const api=window.__SCHOLARK_V107_GENERAL_AI__,chat=api?.getCurrent?.(),idx=Number(host.closest('.v107-msg')?.dataset.v120Message),msg=chat?.messages?.[idx],text=String(msg?.content||'');if(!msg)return;
     const key=host.dataset.v120Key;
@@ -83,7 +112,7 @@
   function renderTutorChat(chat=currentTutor()){
     const box=$('#v52-chat');if(!box)return;
     if(!(chat.messages||[]).length){box.innerHTML='<div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div>';return}
-    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):esc(m.text).replace(/\n/g,'<br>'))+'</div>').join('');
+    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div><div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
     const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('')}if(progress)progress.textContent=tutorProgressText()
@@ -91,11 +120,19 @@
   function decorateTutor(){
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;
     if(!$('#v120-tutorbar',form)){
-      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-new">+ New chat</button><button type="button" id="v120-tutor-review">Review topic</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
+      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-new">+ New chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
       $('#v120-tutor-select',bar).onchange=e=>{setTutorActive(e.target.value);const c=currentTutor();syncTutorBackend(c);renderTutorChat(c);refreshTutorBar()};
-      $('#v120-tutor-new',bar).onclick=()=>{newTutorChat();renderTutorChat();refreshTutorBar();q.value='';q.focus()};$('#v120-tutor-review',bar).onclick=startTutorReview;
-      renderTutorChat();refreshTutorBar();syncTutorBackend();
+      $('#v120-tutor-new',bar).onclick=()=>{newTutorChat();renderTutorChat();refreshTutorBar();q.value='';q.focus()};$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;
+      renderTutorChat();refreshTutorBar();syncTutorBackend();applyTutorName(document);
     }
+  }
+  async function editTutorUser(index,node){
+    const chat=currentTutor(),msg=chat.messages?.[index];if(!msg||msg.role!=='user')return;const oldText=String(msg.text||'');
+    startInlineEdit(node,oldText,async next=>{await window.__SCHOLARK_V82_TUTOR_CLOUD_API__?.truncateFromUserText?.(oldText);updateTutor(x=>{x.messages=(x.messages||[]).slice(0,index)});syncTutorBackend();renderTutorChat();refreshTutorBar();const q=$('#v52-tutor-q');if(q){q.value=next;q.focus();$('#v52-tutor-send')?.click()}},()=>renderTutorChat(chat))
+  }
+  function decorateTutorUsers(){
+    const chat=currentTutor(),rows=(chat.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$('#v52-chat .v52-msg.user').filter(n=>!n.dataset.v82MessageId);
+    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120TutorIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+row.i+'">Edit</button></div>')})
   }
   function tutorAssistantHost(){return $$('#v52-chat .v52-msg.ai').filter(x=>!x.querySelector('.v62-loading')).at(-1)}
   function decorateLatestTutor(detail){
@@ -138,13 +175,15 @@
   },true);
 
   document.addEventListener('click',e=>{
+    const ea=e.target.closest?.('[data-v120-edit-arki]');if(ea){editArkiUser(Number(ea.dataset.v120EditArki),ea.closest('.v107-msg.user'));return}
+    const et=e.target.closest?.('[data-v120-edit-tutor]');if(et){editTutorUser(Number(et.dataset.v120EditTutor),et.closest('.v52-msg.user'));return}
     const a=e.target.closest?.('[data-v120-do]');if(a){const host=a.closest('.v120-actions');if(!host)return;const scope=host.dataset.v120Scope;if(scope==='arki')arkiAction(host,a.dataset.v120Do);else tutorAction(host,a.dataset.v120Do);return}
     const m=e.target.closest?.('[data-v120-menu]');if(m){const host=m.closest('.v120-actions');if(host?.dataset.v120Scope==='arki')arkiMenu(host,m.dataset.v120Menu);else tutorMenu(host,m.dataset.v120Menu);return}
     if(e.target.closest?.('#v120-tutor-progress'))startTutorReview();
   },true);
 
   addEventListener('scholark:tutor-user',e=>{
-    const prompt=clean(e.detail?.prompt);if(!prompt)return;updateTutor(x=>{if(!x.messages.length)x.title=prompt.slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,at:now()})});refreshTutorBar()
+    const prompt=clean(e.detail?.prompt);if(!prompt)return;updateTutor(x=>{if(!x.messages.length)x.title=prompt.slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
   });
   addEventListener('scholark:tutor-assistant',e=>{
     const text=clean(e.detail?.answer),topic=clean(e.detail?.result?.topic)||clean(e.detail?.prompt).slice(0,80)||'General';if(!text)return;
@@ -154,8 +193,8 @@
   let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false;const observerRoots=new Set();
   function flushObserver(){
     observerQueued=false;
-    if(observerNeedsArki)decorateArki();
-    if(observerNeedsTutor)decorateTutor();
+    if(observerNeedsArki){decorateArki();decorateArkiUsers()}
+    if(observerNeedsTutor){decorateTutor();decorateTutorUsers();applyTutorName(document)}
     for(const root of [...observerRoots].slice(0,24))if(root?.isConnected)scrubProviderMarks(root);
     observerRoots.clear();observerNeedsArki=observerNeedsTutor=false
   }
@@ -170,9 +209,10 @@
   });
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
-  addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},60));
-  addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},30));
-  setTimeout(()=>{decorateArki();decorateTutor();scrubProviderMarks(document)},180);
+  addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},60));
+  addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},30));
+  addEventListener('scholark:tutor-name-changed',()=>setTimeout(()=>applyTutorName(document),0));
+  setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r226-experience'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r228-experience'};
 })();
