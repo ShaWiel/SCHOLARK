@@ -24,6 +24,10 @@
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r221'});
 
   const VERSION = '20261007-r221';
+  const ASSET_VERSION = file => ({
+    'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-wallet-fix',
+    'scholark-v85-credits-hud.js':'20261008-v85-wallet-r224'
+  })[file] || VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
@@ -126,7 +130,7 @@
     if (preloaded.has(file) || loaded.has(file)) return;
     preloaded.add(file);
     const l = document.createElement('link');
-    l.rel = 'preload'; l.as = 'script'; l.fetchPriority='high'; l.href = new URL(file + '?v=' + VERSION, baseUrl).href;
+    l.rel = 'preload'; l.as = 'script'; l.fetchPriority='high'; l.href = new URL(file + '?v=' + ASSET_VERSION(file), baseUrl).href;
     l.dataset.scholarkPreload = file;
     document.head.appendChild(l);
   }
@@ -149,7 +153,7 @@
       s.async = false;
       s.dataset.scholarkModule = file;
       s.dataset.scholarkAttempt = String(attempt);
-      s.src = new URL(file + '?v=' + VERSION + (attempt===1?'':'&retry='+attempt), baseUrl).href;
+      s.src = new URL(file + '?v=' + ASSET_VERSION(file) + (attempt===1?'':'&retry='+attempt), baseUrl).href;
       s.onload = () => finish(true);
       s.onerror = () => finish(false);
       document.head.appendChild(s);
