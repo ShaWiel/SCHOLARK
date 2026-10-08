@@ -28,7 +28,7 @@
     'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-profile-r225',
     'scholark-v93-language-learner.js':'20261008-v93-adaptive-library-r226',
     'scholark-v82-tutor-cloud.js':'20261008-v82-edit-r229',
-    'scholark-v106-workspace-power-tools.js':'20261008-v106-focus-stepper-r229',
+    'scholark-v106-workspace-power-tools.js':'20261008-v106-focus-stepper-r230',
     'scholark-v107-general-ai.js':'20261008-v107-edit-r228',
     'scholark-v110-workspace-core.js':'20261008-v110-context-safe-r227',
     'scholark-v120-experience-controls.js':'20261008-v120-tutor-r229',
