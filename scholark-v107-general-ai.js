@@ -134,6 +134,11 @@
   }
   function open(){const h=host();if(!h)return;current=getCurrent();h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
 
+  function editUserMessage(index,text){
+    const next=String(text||'').trim();if(!next||busy)return false;current=current||getCurrent();const msg=current?.messages?.[index];if(!msg||msg.role!=='user')return false;
+    current=update(current.id,x=>{x.messages=(x.messages||[]).slice(0,index)})||current;drawHistory();drawThread();
+    const q=$('#v107-q');if(!q)return false;q.dataset.editing='';q.value=next;writeDraft(current.id,next);q.focus();setTimeout(send,0);return true
+  }
   function lastAssistant(){const chat=current||getCurrent(),m=[...(chat?.messages||[])].reverse().find(x=>x.role==='assistant');return m||null}
   function prefill(prompt,opt={}){
     const text=String(prompt||'').trim();if(!text)return false;
@@ -141,5 +146,5 @@
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,send,version:'20261008-r226'};
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261008-r228'};
 })();
