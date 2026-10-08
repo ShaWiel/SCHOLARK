@@ -190,7 +190,7 @@ ok(generalAi.includes("version:'20261008-r226'")&&generalAi.includes("mode:'gene
 ok(generalAi.includes("$('[data-v107-follow]',box).forEach"),'ARKI follow-up selector is not using the null-safe multi-selector');
 ok(generalAi.includes("scholark_v107_general_ai_chats")&&generalAi.includes("suggestedFollowUps")&&runtime.includes("scholark-v120-experience-controls.js"),'General SCHOLARK AI chat history/follow-up/actions are incomplete');
 ok(experienceControls.includes('Branch in new chat')&&experienceControls.includes('Retry')&&experienceControls.includes('Search the web')&&experienceControls.includes('Read aloud')&&experienceControls.includes('scholark_v120_tutor_chats')&&experienceControls.includes('Review topic')&&experienceControls.includes('requestAnimationFrame(flushObserver)'),'Tutor multi-chat/action/progress controls are incomplete');
-ok(!learningAi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
+ok(!learningApi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
 ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'"),'Gemini adapter does not safely bypass test mode for scoped AI routes');
 ok(gemini.includes('GEMINI_FALLBACK_MODELS'),'Gemini fallback models are not configurable');
 ok(gemini.includes('gemini-3.7-flash')&&gemini.includes('gemini-3.6-flash')&&gemini.includes('gemini-3.5-flash-lite'),'Gemini fallback chain is incomplete');
