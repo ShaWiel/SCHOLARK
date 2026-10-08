@@ -741,7 +741,7 @@ check((await page.inputValue('#v107-q'))==='Draft survives route changes','ARKI 
 await page.fill('#v107-q','What is 2 + 2?');
 await page.click('#v107-send');
 try{
-  await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \\+ 2 = 4|\\b4\\b/.test(x.textContent||'')),{timeout:8000});
+  await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/2 \+ 2 = 4|\b4\b/.test(x.textContent||'')),{timeout:8000});
 }catch(e){
   const diag=await page.evaluate(()=>({
     state:document.querySelector('#v107-state')?.textContent||'',
