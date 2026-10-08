@@ -880,6 +880,11 @@ check(await page.locator('#v120-tutor-name').count()===1,'Tutor custom-name cont
 check(await page.evaluate(()=>window.__SCHOLARK_TUTOR_PROFILE__?.set?.('Nova')===true),'Tutor custom name could not be saved');
 await page.waitForFunction(()=>document.querySelector('#v120-tutor-name')?.textContent?.includes('Nova'),null,{timeout:2000});
 check((await page.locator('#v120-tutor-name').innerText()).includes('Nova'),'Tutor custom name did not update UI');
+check((await page.locator('.v52-tool[data-v52-tool="tutor"] .v52-head h1').innerText()).trim()==='Nova','Tutor custom name did not own the Tutor heading');
+check((await page.locator('#v51-sidebar [data-v51-tool="tutor"] span').innerText()).trim()==='Nova','Tutor custom name did not own the sidebar label');
+await page.evaluate(()=>{const h=document.querySelector('.v52-tool[data-v52-tool="tutor"] .v52-head h1');if(h)h.textContent='AI Tutor';window.__SCHOLARK_I18N__?.apply?.(document)});
+await page.waitForFunction(()=>document.querySelector('.v52-tool[data-v52-tool="tutor"] .v52-head h1')?.textContent?.trim()==='Nova',null,{timeout:2000});
+check((await page.locator('.v52-tool[data-v52-tool="tutor"] .v52-head h1').innerText()).trim()==='Nova','Tutor custom name reverted after rerender/i18n mutation');
 await page.fill('#v52-tutor-q','Explain photosynthesis in one sentence.');
 await page.click('#v52-tutor-send');
 await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.user').length===1,{timeout:3000}).catch(()=>{});
@@ -934,7 +939,7 @@ const languageHealth=await page.evaluate(()=>{
 });
 check(languageHealth.selftest?.ok===true&&languageHealth.selftest?.adaptiveReview===true&&Array.isArray(languageHealth.selftest?.reviewGap)&&languageHealth.selftest.reviewGap[0]===3&&languageHealth.selftest.reviewGap[1]===6&&languageHealth.selftest?.reviewQuestions===12,'Language Learner adaptive spaced-review self-test failed: '+JSON.stringify(languageHealth));
 check(languageHealth.quizVersion==='20261007-language-choice-v4'&&languageHealth.nextVersion==='20260918-language-next-v2','Language Learner route-lazy helpers did not load: '+JSON.stringify(languageHealth));
-check(languageHealth.h1&&languageHealth.orb&&languageHealth.h1.top>=languageHealth.orb.bottom-2,'Language Learner hero headline overlaps Now Learning indicator: '+JSON.stringify(languageHealth));
+check(languageHealth.h1&&languageHealth.orb&&languageHealth.h1.top<languageHealth.orb.bottom-18,'Language Learner hero headline dropped below the requested raised position: '+JSON.stringify(languageHealth));
 check(languageHealth.swap&&languageHealth.target&&languageHealth.support&&languageHealth.swap.left>=languageHealth.target.right-3&&languageHealth.swap.right<=languageHealth.support.left+3,'Language swap control is not contained between the selectors: '+JSON.stringify(languageHealth));
 check(languageHealth.swap?.width>=38&&languageHealth.swap?.width<=58&&languageHealth.overflow<=4,'Language swap/layout sizing or horizontal overflow regressed: '+JSON.stringify(languageHealth));
 
