@@ -276,6 +276,7 @@
 
   addEventListener('hashchange',()=>{closeTopbarWallet();setTimeout(render,80);setTimeout(render,360);setTimeout(load,500)});
   addEventListener('scholark-workspace-entry-ready',()=>{render();setTimeout(render,80)});
+  addEventListener('scholark:topbar-ready',()=>{renderTopbar();queueMicrotask(renderTopbar)});
   addEventListener('scholark-workspace-sidebar-actions-ready',()=>queueMicrotask(render));
   addEventListener('scholark-workspace-change',()=>setTimeout(render,0));
   addEventListener('pageshow',()=>setTimeout(load,80));
