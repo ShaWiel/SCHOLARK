@@ -161,8 +161,8 @@
       el.style.removeProperty('display');el.style.removeProperty('visibility');el.style.removeProperty('pointer-events');delete el.dataset.v55Suppressed;
     });
     if(!home)return;
-    const candidates=$$('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]').filter(el=>{
-      if(el===topbar||el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main'))return false;
+    const candidates=$('header,nav,[class*="header"],[class*="topbar"],[class*="nav"]').filter(el=>{
+      if(el===topbar||el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main,.v85-topbar-wallet-panel'))return false;
       const r=el.getBoundingClientRect(),cs=getComputedStyle(el),t=text(el);
       return r.width>Math.min(480,innerWidth*.65)&&r.height>=38&&r.height<170&&r.top<125&&cs.display!=='none'&&cs.visibility!=='hidden'&&(/scholark/i.test(t)||/account|sign in|login|inloggen|aanmelden/i.test(t));
     });
