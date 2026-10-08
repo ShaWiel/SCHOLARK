@@ -203,6 +203,7 @@ ok(workspaceShell.includes('tutorDisplayName')&&fastTools.includes('tutorDisplay
 ok(!learningApi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
 ok(homePricing.includes('Billed Monthly. Cancel anytime')&&!/7 days free|free trial/i.test(homePricing),'Homepage Plus/Pro pricing still advertises a free trial');
 ok(homePricingHotfix.includes('Billed Monthly. Cancel anytime')&&!/7 days free|7 dagen gratis|free trial/i.test(homePricingHotfix),'Homepage pricing hotfix still advertises a free trial');
+ok(docker.includes('Billed Monthly. Cancel anytime')&&!/Choose Plus#Start Plus free trial|Choose Pro#Start Pro free trial|Continue with Plus#Start 7-day Plus trial|Continue with Pro#Start 7-day Pro trial/.test(docker),'Docker build can reintroduce homepage trial messaging');
 ok(fileIntelligence.includes("main.hidden=false")&&fileIntelligence.includes("p.hidden=false")&&fileIntelligence.indexOf("main.hidden=false")<fileIntelligence.indexOf("if(!force&&location.hash.toLowerCase()==='#files'"),'Files & Notes route reuse can leave its surface hidden');
 ok(!fileIntelligence.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Files & Notes still renders provider/model watermarks');
 ok(runtime.includes("'scholark-v86-file-intelligence.js':'20261008-v86-route-r233'"),'Files & Notes cache version is stale');
