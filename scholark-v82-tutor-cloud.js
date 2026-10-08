@@ -14,7 +14,7 @@
     .v82-history{max-height:68vh;overflow:auto}.v82-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.v82-history-head b{font:950 10px Inter}.v82-new{border:0;border-radius:9px;background:#17191f;color:#c9ff6a;padding:8px 9px;font:900 7.5px Inter;cursor:pointer}
     .v82-account{padding:8px;border-radius:10px;background:#f4f3f1;color:#77717e;font:700 7.5px/1.4 Inter;margin-bottom:8px}.v82-account button{border:0;background:transparent;color:#5f53d2;text-decoration:underline;font:850 7.5px Inter;cursor:pointer;padding:0}
     .v82-chatrow{position:relative;border-radius:11px;padding:9px 34px 9px 9px;margin:4px 0;background:#f7f6f3;cursor:pointer}.v82-chatrow.active{background:#ebe8ff}.v82-chatrow b{display:block;font:850 8px/1.3 Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v82-chatrow small{font:700 6.7px Inter;color:#8c8792}.v82-more{position:absolute;right:5px;top:5px;border:0;background:transparent;font:950 14px Inter;cursor:pointer;color:#777}
-    .v82-chatbody{min-width:0}.v82-chatbody #v52-tutor-q{min-height:110px}.v82-chatbody #v52-chat{max-height:46vh;overflow:auto;padding-right:4px}.v82-tools{display:flex;gap:6px;align-items:center;margin:8px 0 2px}.v82-tools span{margin-left:auto;font:750 7px Inter;color:#817b88}
+    .v82-chatbody{min-width:0}.v82-chatbody #v52-tutor-q{min-height:110px}.v82-chatbody #v52-chat{max-height:46vh;overflow:auto;padding-right:4px}.v82-tools{display:flex;justify-content:flex-end;align-items:center;margin:8px 0 2px;min-height:18px}.v82-tools span{font:750 7px Inter;color:#817b88}.v82-msg-edit{margin-top:6px;border:0;background:transparent;color:#7a7382;font:850 7px Inter;cursor:pointer;padding:2px 0}.v82-inline-editor{display:grid;gap:7px}.v82-inline-editor textarea{min-height:84px!important}.v82-inline-actions{display:flex;gap:6px}.v82-inline-actions button{border:0;border-radius:9px;padding:7px 9px;font:850 7px Inter;cursor:pointer}.v82-inline-actions .save{background:#17191f;color:#c9ff6a}
     @media(max-width:760px){.v82-tutor-layout{grid-template-columns:1fr}.v82-history{max-height:190px}.v82-chatbody #v52-chat{max-height:none}}
   `;document.head.appendChild(css);
 
@@ -70,7 +70,7 @@
       const x=await ctx();if(!x)return;setCurrent(id);renderHistory();
       const r=await x.c.request('/rest/v1/ai_messages?select=id,role,content,meta,created_at&chat_id=eq.'+encodeURIComponent(id)+'&order=created_at.asc&limit=200',{method:'GET'});
       const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not load messages');
-      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'">'+esc(m.content).replace(/\n/g,'<br>')+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight}
+      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v82-message-id="'+esc(m.id)+'"><div class="v82-message-text">'+esc(m.content).replace(/\n/g,'<br>')+'</div>'+(m.role==='user'?'<button type="button" class="v82-msg-edit" data-v82-edit-message="'+esc(m.id)+'">Edit</button>':'')+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight;$('[data-v82-edit-message]',chat).forEach(b=>b.onclick=()=>startCloudMessageEdit(b.closest('.v52-msg'),rows.find(x=>x.id===b.dataset.v82EditMessage)))}
       const hist=rows.filter(m=>m.role==='user'||m.role==='assistant').slice(-12).map(m=>({role:m.role,text:m.content}));localStorage.setItem('scholark_v62_tutor_history',JSON.stringify(hist));
     }catch(e){console.warn('[SCHOLARK] Open Tutor chat:',clean(e?.message||e))}
   }
@@ -87,6 +87,31 @@
     })();
     try{return await activePromise}finally{activePromise=null}
   }
+  async function truncateFromRow(row){
+    if(!row?.created_at)return false;
+    try{
+      const x=await ctx(),id=current();if(!x||!id)return false;
+      const path='/rest/v1/ai_messages?chat_id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&created_at=gte.'+encodeURIComponent(row.created_at);
+      const r=await x.c.request(path,{method:'DELETE',headers:{Prefer:'return=minimal'}});return !!r.ok
+    }catch{return false}
+  }
+  async function truncateFromUserText(text){
+    const wanted=clean(text),id=current();if(!wanted||!id)return false;
+    try{
+      const x=await ctx();if(!x)return false;
+      const r=await x.c.request('/rest/v1/ai_messages?select=id,role,content,created_at&chat_id=eq.'+encodeURIComponent(id)+'&order=created_at.asc&limit=200',{method:'GET'});
+      const d=await r.json().catch(()=>[]),rows=Array.isArray(d)?d:[],row=[...rows].reverse().find(m=>m.role==='user'&&clean(m.content)===wanted);
+      return row?await truncateFromRow(row):false
+    }catch{return false}
+  }
+  function startCloudMessageEdit(node,row){
+    if(!node||!row||row.role!=='user')return;const original=String(row.content||'');
+    node.innerHTML='<div class="v82-inline-editor"><textarea data-editing="1">'+esc(original)+'</textarea><div class="v82-inline-actions"><button type="button" class="save">Save & resend</button><button type="button" class="cancel">Cancel</button></div></div>';
+    const ta=$('textarea',node);ta?.focus();if(ta){ta.selectionStart=ta.selectionEnd=ta.value.length}
+    $('.cancel',node).onclick=()=>openChat(current());
+    $('.save',node).onclick=async()=>{const next=clean(ta?.value);if(!next)return ta?.focus();if(next===clean(original)){openChat(current());return}const ok=await truncateFromRow(row);if(!ok){openChat(current());return}const q=$('#v52-tutor-q');if(q){q.value=next;q.focus();$('#v52-tutor-send')?.click()}}
+  }
+
   async function saveMessage(role,content,meta={}){
     const text=clean(content);if(!text)return;
     try{
@@ -106,10 +131,11 @@
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form||form.dataset.v82)return;form.dataset.v82='1';form.classList.add('v82-tutor-layout');
     const children=[...form.children],aside=document.createElement('aside'),body=document.createElement('section');aside.className='v82-history';body.className='v82-chatbody';
     children.forEach(x=>body.appendChild(x));form.append(aside,body);
-    const tools=document.createElement('div');tools.className='v82-tools';tools.innerHTML='<button class="v82-new" type="button">+ New chat</button><span>Ctrl/Cmd + Enter to send</span>';body.insertBefore(tools,$('#v52-tutor-q',body));
-    $('.v82-new',tools).onclick=newChat;renderHistory();loadChats();
+    const tools=document.createElement('div');tools.className='v82-tools';tools.innerHTML='<span>Enter to send · Shift + Enter for a new line</span>';body.insertBefore(tools,$('#v52-tutor-q',body));
+    renderHistory();loadChats();
   }
   addEventListener('hashchange',()=>{setTimeout(enhance,100);setTimeout(enhance,320)});
   addEventListener('scholark:tutor-user',()=>setTimeout(enhance,50));
   [250,700].forEach(ms=>setTimeout(enhance,ms));
+  window.__SCHOLARK_V82_TUTOR_CLOUD_API__={newChat,loadChats,openChat,truncateFromUserText};
 })();
