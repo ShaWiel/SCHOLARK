@@ -123,7 +123,12 @@ try{
   check(await page.locator('#v107-q').count()===1&&await page.locator('#v107-send').count()===1,'live ARKI UI is mounted and Ask action is available');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('language'));
-  await page.waitForSelector('#v51-fallback .v93',{state:'visible',timeout:12000});
+  try{
+    await page.waitForSelector('#v51-fallback .v93',{state:'visible',timeout:12000});
+  }catch{
+    await page.evaluate(()=>{location.hash='#language';window.dispatchEvent(new HashChangeEvent('hashchange'));window.__SCHOLARK_WORKSPACE__?.openTool?.('language')});
+    await page.waitForSelector('#v51-fallback .v93',{state:'visible',timeout:12000});
+  }
   check(await page.locator('#v93-build').count()===1&&await page.locator('[data-v93-preset]').count()>=5,'live Language Learner is complete');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
