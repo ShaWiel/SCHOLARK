@@ -144,7 +144,12 @@
   }
 
   function context(){
-    const s=compute(),fileApi=window.__SCHOLARK_V86_FILES__,studyApi=window.__SCHOLARK_V83_STUDY_AHEAD__;
+    let s;
+    try{s=compute()}catch(e){
+      console.warn('[SCHOLARK] Workspace context compute recovered safely'+(window.__SCHOLARK_TEST_MODE__?' · '+String(e?.message||e):''));
+      s={goals:{active:[]},planner:{active:[],all:[],completion:0},mastery:{weak:[]},flashcards:{due:[]},assignments:{active:[]},projects:[],focus:{minutes7d:0},activity:{consistency:0},next:null}
+    }
+    const fileApi=window.__SCHOLARK_V86_FILES__,studyApi=window.__SCHOLARK_V83_STUDY_AHEAD__;
     let files=null,studyAhead=null;
     try{
       const fs=fileApi?.getState?.(),output=clean(fileApi?.getOutput?.()||'');

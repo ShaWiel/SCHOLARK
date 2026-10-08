@@ -21,6 +21,17 @@
   function getCurrent(){const a=read(),id=activeId();return a.find(x=>x.id===id)||a[0]||createChat()}
   function update(id,fn){const a=read(),x=a.find(z=>z.id===id);if(!x)return null;fn(x);x.updatedAt=new Date().toISOString();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));write(a);return x}
   function outputLanguage(){const code=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.languageName?.(code)||window.__SCHOLARK_I18N__?.nativeName?.(code)||code}
+  function workspaceContextPayload(){
+    if(!$('#v107-context')?.checked)return '';
+    try{
+      const value=window.__SCHOLARK_WORKSPACE_CORE__?.context?.();
+      if(!value||typeof value!=='object')return '';
+      return JSON.stringify(value);
+    }catch(e){
+      console.warn('[SCHOLARK] Workspace context unavailable; ARKI continuing without it'+(window.__SCHOLARK_TEST_MODE__?' · '+String(e?.message||e):''));
+      return ''
+    }
+  }
   function rich(s){const p=String(s??'').split('```');return p.map((x,i)=>i%2?'<pre><code>'+esc(x.replace(/^[a-z0-9_+#.-]+\n/i,''))+'</code></pre>':esc(x).replace(/\n/g,'<br>')).join('')}
 
   const style=document.createElement('style');style.id='scholark-v107-style';style.textContent=`
@@ -87,7 +98,7 @@
 
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
-      const payload={mode:'general_ai',prompt,history,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:$('#v107-context')?.checked?JSON.stringify(window.__SCHOLARK_WORKSPACE_CORE__?.context?.()||{}):''};
+      const payload={mode:'general_ai',prompt,history,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload()};
       const timeoutMs=deep?55000:35000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
 
