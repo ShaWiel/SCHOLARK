@@ -5,6 +5,7 @@
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tutorDisplayName=()=>{try{const v=String(localStorage.getItem('scholark_tutor_name_v1')||'').replace(/\s+/g,' ').trim().replace(/[<>]/g,'').slice(0,24);return v||'AI Tutor'}catch{return'AI Tutor'}};
   // V51 is the single route owner for Studio, My Projects and Pro/Future tools.
   // V52 only handles lightweight native learning views directly.
   const FAST=['dashboard','tutor','education','planner','progress','goal'];
@@ -113,10 +114,10 @@
   }
 
   function renderTutor(){
-    const h=host();if(!h)return;
+    const h=host();if(!h)return;const tutorName=tutorDisplayName();
     const active=assignments().filter(x=>x.status!=='complete').sort((a,b)=>String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999'))).slice(0,6);
     const assignmentPanel=active.length?`<div class="v52-form" style="margin-bottom:12px"><h3 style="margin:0 0 5px">Assignment Coach</h3><p style="margin:0 0 10px">SCHOLARK can read the assignments saved in your Workspace, compare deadlines and progress, and tell you exactly what to work on next.</p><div class="v52-list">${active.map(x=>`<div class="v52-item v52-task"><div><div class="v52-task-title" data-v106-user="1">${esc(x.title)}</div><div class="v52-meta">${x.subject?'<span class="v52-badge" data-v106-user="1">'+esc(x.subject)+'</span>':''}<span class="v52-badge">${esc(assignmentDue(x))}</span><span class="v52-badge">${x.progress}% done</span></div></div><div class="v52-inline-actions"><button class="primary" data-tutor-assignment="${esc(x.id)}">What should I do?</button></div></div>`).join('')}</div><button class="v52-btn" id="v52-tutor-all-assignments" style="margin-top:10px">Prioritise all my assignments</button></div>`:''; 
-    h.innerHTML=shell('AI Tutor','Ask, learn, practise, or let SCHOLARK coach you through your saved assignments at your selected learning level.',assignmentPanel+`<div class="v52-form"><textarea id="v52-tutor-q" placeholder="Ask SCHOLARK anything — or ask what you should do next for an assignment..."></textarea><button class="v52-btn" id="v52-tutor-send">Ask <span>ARKI</span></button><div class="v52-chat" id="v52-chat"><div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div></div></div>`);
+    h.innerHTML=shell(tutorName,'Ask, learn, practise, or let SCHOLARK coach you through your saved assignments at your selected learning level.',assignmentPanel+`<div class="v52-form"><textarea id="v52-tutor-q" placeholder="Ask ${esc(tutorName)} anything — or ask what you should do next for an assignment..."></textarea><button class="v52-btn" id="v52-tutor-send">Ask <span>${esc(tutorName)}</span></button><div class="v52-chat" id="v52-chat"><div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div></div></div>`);
     const q=$('#v52-tutor-q'),chat=$('#v52-chat');
     if(q){
       q.value=tutorDraft;

@@ -9,6 +9,8 @@
   const today=()=>new Date().toISOString().slice(0,10);
   const ROUTES=new Set(['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study']);
   const NAMES={dashboard:'Dashboard',ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',focus:'Focus Sessions',flashcards:'Flashcards',assignments:'Assignments',progress:'Progress',goal:'Goals',language:'Language Learner',files:'Files & Notes',project:'My Projects',schools:'Schools Near Me',study:'Study Ahead'};
+  const tutorDisplayName=()=>{try{const v=clean(localStorage.getItem('scholark_tutor_name_v1')||'').replace(/[<>]/g,'').slice(0,24);return v||'AI Tutor'}catch{return'AI Tutor'}};
+  const toolName=id=>id==='tutor'?tutorDisplayName():(NAMES[id]||id);
   const HANDOFF='scholark_v114_handoff';
   let activeActions=new Map(),raf=0,mutationTimer=0,consumeTimer=0,lastSignature='';
 
@@ -46,7 +48,7 @@
     clearTimeout(showToast.timer);toastEl.textContent=clean(message);toastEl.className='open '+type;showToast.timer=setTimeout(()=>{toastEl.className=''},2600)
   }
   function showTransition(to){
-    transitionEl.innerHTML='<i></i>Connecting to '+esc(NAMES[to]||to)+'…';transitionEl.classList.add('open');
+    transitionEl.innerHTML='<i></i>Connecting to '+esctoolName(to)+'…';transitionEl.classList.add('open');
     clearTimeout(showTransition.timer);showTransition.timer=setTimeout(()=>transitionEl.classList.remove('open'),3200)
   }
   function hideTransition(){transitionEl.classList.remove('open')}
@@ -144,7 +146,7 @@
     clearTimeout(consumeTimer);const row=readHandoff();if(!row)return false;
     if(Date.now()>Number(row.expiresAt||0)){clearHandoff(row.id);hideTransition();return false}
     if(route()!==row.to)return false;
-    const ok=applyHandoff(row);if(ok){clearHandoff(row.id);hideTransition();showToast('Context carried into '+(NAMES[row.to]||row.to)+'.');return true}
+    const ok=applyHandoff(row);if(ok){clearHandoff(row.id);hideTransition();showToast('Context carried into '+toolName(row.to)+'.');return true}
     return false;
   }
   function scheduleConsume(delay=80,attempt=0){

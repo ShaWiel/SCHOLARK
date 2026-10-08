@@ -13,10 +13,14 @@
   function tutorName(){const v=clean(localStorage.getItem(TUTOR_NAME_KEY)||'');return v.slice(0,24)||'AI Tutor'}
   function applyTutorName(root=document){
     const name=tutorName(),previous=lastTutorName;lastTutorName=name;
-    for(const sel of ['#v51-sidebar','.v52-head','.v111-live','.v114-connect','#v120-tutorbar','#v52-tutor-send'])for(const host of $$(sel,root)){
+    for(const sel of ['#v51-sidebar [data-v51-tool="tutor"]','#v51-main [data-v51-tool="tutor"]','.v52-tool[data-v52-tool="tutor"] .v52-head','.v111-live','.v114-connect','#v120-tutorbar','#v52-tutor-send'])for(const host of $$(sel,root)){
       const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT),nodes=[];while(w.nextNode())nodes.push(w.currentNode);
       for(const n of nodes){let t=n.nodeValue||'';t=t.replace(/Tutor learning loop/g,name+' learning loop').replace(/SCHOLARK Tutor/g,name).replace(/AI Tutor/g,name);if(previous&&previous!=='AI Tutor'&&previous!==name)t=t.replaceAll(previous,name);n.nodeValue=t}
     }
+    $$('#v51-sidebar [data-v51-tool="tutor"] span',root).forEach(x=>x.textContent=name);
+    $$('#v51-main [data-v51-tool="tutor"] h3',root).forEach(x=>x.textContent=name);
+    const heading=$('.v52-tool[data-v52-tool="tutor"] .v52-head h1',root)||$('.v52-tool[data-v52-tool="tutor"] .v52-head h1');if(heading)heading.textContent=name;
+    const loop=$('.v52-tool[data-v52-tool="tutor"] .v111-live h2',root)||$('.v52-tool[data-v52-tool="tutor"] .v111-live h2');if(loop)loop.textContent=name+' learning loop';
     const q=$('#v52-tutor-q',root)||$('#v52-tutor-q');if(q)q.placeholder='Ask '+name+' anything — or ask what you should do next for an assignment...';
     const send=$('#v52-tutor-send',root)||$('#v52-tutor-send');if(send)send.innerHTML='Ask <span>'+esc(name)+'</span>';
     const b=$('#v120-tutor-name',root)||$('#v120-tutor-name');if(b)b.textContent='Name: '+name
@@ -198,21 +202,28 @@
     for(const root of [...observerRoots].slice(0,24))if(root?.isConnected)scrubProviderMarks(root);
     observerRoots.clear();observerNeedsArki=observerNeedsTutor=false
   }
+  const tutorHostSelector='#v51-sidebar [data-v51-tool="tutor"],#v51-main [data-v51-tool="tutor"],.v52-tool[data-v52-tool="tutor"] .v52-head,.v111-live,.v114-connect,#v120-tutorbar,#v52-tutor-send';
   const observer=new MutationObserver(m=>{
-    for(const x of m)for(const a of x.addedNodes){
-      if(a.nodeType!==1)continue;
-      observerRoots.add(a);
-      if(a.matches?.('#v107-ai,.v107-msg')||a.querySelector?.('#v107-ai,.v107-msg'))observerNeedsArki=true;
-      if(a.matches?.('#v52-tutor-q')||a.querySelector?.('#v52-tutor-q'))observerNeedsTutor=true
+    for(const x of m){
+      if(x.type==='characterData'){if(x.target?.parentElement?.closest?.(tutorHostSelector))observerNeedsTutor=true;continue}
+      for(const a of x.addedNodes){
+        if(a.nodeType!==1)continue;
+        observerRoots.add(a);
+        if(a.matches?.('#v107-ai,.v107-msg')||a.querySelector?.('#v107-ai,.v107-msg'))observerNeedsArki=true;
+        if(a.matches?.('#v52-tutor-q,'+tutorHostSelector)||a.querySelector?.('#v52-tutor-q,'+tutorHostSelector))observerNeedsTutor=true
+      }
     }
     if((observerNeedsArki||observerNeedsTutor||observerRoots.size)&&!observerQueued){observerQueued=true;requestAnimationFrame(flushObserver)}
   });
-  observer.observe(document.documentElement,{childList:true,subtree:true});
+  observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},60));
   addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},30));
   addEventListener('scholark:tutor-name-changed',()=>setTimeout(()=>applyTutorName(document),0));
+  addEventListener('scholark-language-applied',()=>requestAnimationFrame(()=>applyTutorName(document)));
+  addEventListener('scholark-language-ready',()=>requestAnimationFrame(()=>applyTutorName(document)));
+  addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r229-experience'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r231-experience'};
 })();
