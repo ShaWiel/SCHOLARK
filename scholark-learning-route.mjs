@@ -1026,7 +1026,7 @@ http.Server.prototype.emit = function(event,...args){
       json(res,200,{...out,usage:charged.usage});
     }catch(e){
       const status=e.code==='AI_ENGINE_UNAVAILABLE'||e.code==='CREDIT_SERVICE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
-      if(mode==='general_ai')console.warn('[SCHOLARK] ARKI request failed · '+String(e.code||'LEARNING_ERROR')+' · '+networkCode(e));
+      if(mode==='general_ai')console.warn('[SCHOLARK] ARKI request failed · '+String(e.code||'LEARNING_ERROR')+' · '+networkCode(e)+(TEST_MODE?' · '+String(e?.stack||e):''));
       json(res,status,{ok:false,code:e.code||'LEARNING_ERROR',error:e.code==='CREDIT_SERVICE_UNAVAILABLE'?'SCHOLARK is reconnecting to account services. Please try ARKI again in a moment.':e.message,details:e.details||undefined});
     }
   })();
