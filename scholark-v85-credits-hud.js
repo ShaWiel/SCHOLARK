@@ -161,20 +161,6 @@
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
     if(!boundWalletTriggers.has(trigger)){
       boundWalletTriggers.add(trigger);
-      trigger.addEventListener('pointerup',e=>{
-        if(typeof e.button==='number'&&e.button!==0)return;
-        e.preventDefault();
-        e.stopPropagation();
-        const live=liveWalletTrigger(trigger);
-        if(!live)return;
-        // Toggle first. closeTopbarWallet() intentionally clears any stale
-        // gesture state; recording this pointer afterwards binds the following
-        // synthetic click to this exact gesture instead of a previous tap.
-        toggleWallet(live);
-        lastWalletPointerAt=Date.now();
-        lastWalletPointerSurface=walletSurface(live);
-        lastWalletPointerTrigger=live;
-      });
       trigger.addEventListener('click',e=>{
         e.preventDefault();
         e.stopPropagation();
@@ -448,16 +434,47 @@
   setInterval(()=>{if(!document.hidden)checkSession()},10000);
   setTimeout(sync,500);
 
-  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>({
-    open:!!topbarWalletPanel?.classList.contains('open'),
-    hidden:topbarWalletPanel?.getAttribute('aria-hidden')||null,
-    panelConnected:!!topbarWalletPanel?.isConnected,
-    surface:walletPanelSurface,
-    anchorConnected:!!walletPanelAnchor?.isConnected,
-    anchorClass:walletPanelAnchor?.className||'',
-    triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
-    lastPointerSurface: lastWalletPointerSurface,
-    lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
-    gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
-  }),release:'r221-wallet-everywhere'};
+  window.__SCHOLARK_CREDITS__={load,render,wallet:()=>wallet,balance:()=>wallet?.balance??null,consume,authorize,quote,cost,debugWallet:()=>{
+    const p=topbarWalletPanel,cs=p?getComputedStyle(p):null,r=p?.getBoundingClientRect?.();
+    const matchedRules=[];
+    const walkRules=(rules,source)=>{
+      for(const rule of [...(rules||[])]){
+        if(rule.cssRules){try{walkRules(rule.cssRules,source)}catch{};continue}
+        const sel=rule.selectorText;if(!sel||!p)continue;
+        let matches=false;try{matches=p.matches(sel)}catch{}
+        if(!matches)continue;
+        const st=rule.style||{};
+        const display=st.getPropertyValue?.('display')||'';
+        const visibility=st.getPropertyValue?.('visibility')||'';
+        const pointerEvents=st.getPropertyValue?.('pointer-events')||'';
+        if(display||visibility||pointerEvents){
+          matchedRules.push({source,selector:sel,display,visibility,pointerEvents,important:{
+            display:st.getPropertyPriority?.('display')||'',
+            visibility:st.getPropertyPriority?.('visibility')||'',
+            pointerEvents:st.getPropertyPriority?.('pointer-events')||''
+          }});
+        }
+      }
+    };
+    for(const sheet of [...document.styleSheets]){
+      try{walkRules(sheet.cssRules,sheet.ownerNode?.id||sheet.href||'inline')}catch{}
+    }
+    return{
+      open:!!p?.classList.contains('open'),
+      hidden:p?.getAttribute('aria-hidden')||null,
+      panelConnected:!!p?.isConnected,
+      surface:walletPanelSurface,
+      panelRect:r?{x:r.x,y:r.y,width:r.width,height:r.height,top:r.top,right:r.right,bottom:r.bottom,left:r.left}:null,
+      panelStyle:cs?{display:cs.display,visibility:cs.visibility,opacity:cs.opacity,position:cs.position,zIndex:cs.zIndex,pointerEvents:cs.pointerEvents}:null,
+      matchedRules:matchedRules.slice(-20),
+      childCount:p?.children?.length||0,
+      textLength:(p?.textContent||'').trim().length,
+      anchorConnected:!!walletPanelAnchor?.isConnected,
+      anchorClass:walletPanelAnchor?.className||'',
+      triggers:walletTriggers().map(el=>({className:el.className,connected:el.isConnected,expanded:el.getAttribute('aria-expanded')})),
+      lastPointerSurface:lastWalletPointerSurface,
+      lastPointerAge:lastWalletPointerAt?Date.now()-lastWalletPointerAt:null,
+      gesture:walletPointerGesture?{surface:walletPointerGesture.surface,shouldOpen:walletPointerGesture.shouldOpen,moved:walletPointerGesture.moved,originConnected:!!walletPointerGesture.origin?.isConnected,age:Date.now()-walletPointerGesture.at}:null
+    };
+  },release:'r221-wallet-everywhere'};
 })();
