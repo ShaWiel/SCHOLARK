@@ -85,7 +85,7 @@
 
   const escAccount=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const accountInitials=(name,email)=>{const p=String(name||'').trim().split(/\s+/).filter(Boolean);return ((p[0]?.[0]||String(email||'S')[0]||'S')+(p.length>1?(p.at(-1)?.[0]||''):'')).toUpperCase().slice(0,2)};
-  let v55AvatarUrl='',v55Identity={id:'',email:'',name:'',avatarPath:''},v55HydrateEpoch=0;
+  let v55AvatarUrl='',v55AvatarPath='',v55Identity={id:'',email:'',name:'',avatarPath:''},v55HydrateEpoch=0,v55ProfileFetchedAt=0,v55ProfileFetchedId='';
   function accountSnapshot(){
     const c=window.__SCHOLARK_V72_CLOUD__,s=c?.currentSession?.(),u=s?.user||{},rows=c?.rememberedAccounts?.()||[],email=String(u.email||'').toLowerCase(),cur=rows.find(x=>x.id===u.id||x.email===email)||{};
     return {id:String(u.id||cur.id||''),email:String(u.email||cur.email||''),name:String(cur.displayName||u.user_metadata?.full_name||u.email?.split('@')[0]||'SCHOLARK'),avatarPath:String(cur.avatarPath||'')};
@@ -93,10 +93,10 @@
   function renderProfileAvatar(el,identity=v55Identity){if(!el)return;el.innerHTML='<span>'+escAccount(accountInitials(identity.name,identity.email))+'</span>';el.title=identity.email||identity.name||'SCHOLARK profile'}
   async function hydrateAccountIdentity(){
     if(!topbar?.isConnected)return;const epoch=++v55HydrateEpoch,c=window.__SCHOLARK_V72_CLOUD__;let identity=accountSnapshot();
-    if(identity.id&&c?.request){try{const r=await c.request('/rest/v1/profiles?select=display_name,avatar_path&user_id=eq.'+encodeURIComponent(identity.id)+'&limit=1',{method:'GET'}),d=await r.json().catch(()=>[]),p=Array.isArray(d)?d[0]:d;if(p){identity.name=String(p.display_name||identity.name||'');identity.avatarPath=String(p.avatar_path||identity.avatarPath||'');c.updateRememberedAccount?.({displayName:identity.name,avatarPath:identity.avatarPath})}}catch{}}
+    const shouldFetch=identity.id&&c?.request&&(identity.id!==v55ProfileFetchedId||Date.now()-v55ProfileFetchedAt>60000);if(shouldFetch){try{const r=await c.request('/rest/v1/profiles?select=display_name,avatar_path&user_id=eq.'+encodeURIComponent(identity.id)+'&limit=1',{method:'GET'}),d=await r.json().catch(()=>[]),p=Array.isArray(d)?d[0]:d;if(p){identity.name=String(p.display_name||identity.name||'');identity.avatarPath=String(p.avatar_path||identity.avatarPath||'');c.updateRememberedAccount?.({displayName:identity.name,avatarPath:identity.avatarPath})}v55ProfileFetchedAt=Date.now();v55ProfileFetchedId=identity.id}catch{}}
     if(epoch!==v55HydrateEpoch||!topbar?.isConnected)return;v55Identity=identity;
     const avatar=$('#v55-profile-avatar',topbar),menuAvatar=$('#v55-menu-avatar',topbar);renderProfileAvatar(avatar,identity);renderProfileAvatar(menuAvatar,identity);
-    if(identity.avatarPath&&c?.profilePhotoUrl){try{const url=await c.profilePhotoUrl(identity.avatarPath);if(epoch!==v55HydrateEpoch||!url)return;if(v55AvatarUrl&&v55AvatarUrl!==url)try{URL.revokeObjectURL(v55AvatarUrl)}catch{}v55AvatarUrl=url;for(const el of [avatar,menuAvatar].filter(Boolean))el.innerHTML='<img src="'+escAccount(url)+'" alt="Profile photo">' }catch{}}
+    if(identity.avatarPath&&v55AvatarUrl&&v55AvatarPath===identity.avatarPath){for(const el of [avatar,menuAvatar].filter(Boolean))el.innerHTML='<img src="'+escAccount(v55AvatarUrl)+'" alt="Profile photo">'}else if(identity.avatarPath&&c?.profilePhotoUrl){try{const url=await c.profilePhotoUrl(identity.avatarPath);if(epoch!==v55HydrateEpoch||!url)return;if(v55AvatarUrl&&v55AvatarUrl!==url)try{URL.revokeObjectURL(v55AvatarUrl)}catch{}v55AvatarUrl=url;v55AvatarPath=identity.avatarPath;for(const el of [avatar,menuAvatar].filter(Boolean))el.innerHTML='<img src="'+escAccount(url)+'" alt="Profile photo">' }catch{}}else if(!identity.avatarPath){if(v55AvatarUrl)try{URL.revokeObjectURL(v55AvatarUrl)}catch{}v55AvatarUrl='';v55AvatarPath=''}
     const name=$('#v55-menu-name',topbar),email=$('#v55-menu-email',topbar);if(name)name.textContent=identity.name||'SCHOLARK';if(email)email.textContent=identity.email||'';
   }
   function accountMenu(){

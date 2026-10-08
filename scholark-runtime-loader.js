@@ -21,9 +21,9 @@
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   const publicHome = () => landingHome() || creditStore();
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
-  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r225'});
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r221'});
 
-  const VERSION = '20261008-r225';
+  const VERSION = '20261007-r221';
   const ASSET_VERSION = file => ({
     'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-profile-r225',
     'scholark-v93-language-learner.js':'20261008-v93-speed-layout-r225',

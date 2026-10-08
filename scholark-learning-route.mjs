@@ -427,7 +427,7 @@ async function pollinations(mode,p){
   const route=learningModels(mode,p),models=[...new Set(route.pollinations.map(String).filter(Boolean))].slice(0,mode==='general_ai'?1:2),failures=[];
   for(const model of models){
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:JSON.stringify(userPayload(mode,p))}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):(mode==='language_learning'||mode==='exam'?65000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+    const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
     try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
     const data=await response.json().catch(()=>({}));
     if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
@@ -445,7 +445,7 @@ async function openai(mode,p){
   if(!/^sk-/.test(key)){const e=new Error('OPENAI_API_KEY is not configured');e.code='OPENAI_NOT_CONFIGURED';throw e}
   const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
   const body={model,store:false,reasoning:{effort},text:{verbosity:mode==='tutor'?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(userPayload(mode,p))}]}]};
-  const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):(mode==='language_learning'||mode==='exam'?65000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
@@ -454,7 +454,7 @@ async function openai(mode,p){
 async function gemini(mode,p){
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):(mode==='language_learning'||mode==='exam'?65000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts:[{text:JSON.stringify(userPayload(mode,p))}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`Gemini HTTP ${response.status}`);e.code='GEMINI_ERROR';throw e}
