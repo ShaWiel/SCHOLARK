@@ -13,7 +13,7 @@
   function tutorName(){const v=clean(localStorage.getItem(TUTOR_NAME_KEY)||'');return v.slice(0,24)||'AI Tutor'}
   function applyTutorName(root=document){
     const name=tutorName(),previous=lastTutorName;lastTutorName=name;
-    for(const sel of ['#v51-sidebar','.v52-head','.v111-live','.v114-connect','#v120-tutorbar','#v52-tutor-send'])for(const host of $(sel,root)){
+    for(const sel of ['#v51-sidebar','.v52-head','.v111-live','.v114-connect','#v120-tutorbar','#v52-tutor-send'])for(const host of $$(sel,root)){
       const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT),nodes=[];while(w.nextNode())nodes.push(w.currentNode);
       for(const n of nodes){let t=n.nodeValue||'';t=t.replace(/Tutor learning loop/g,name+' learning loop').replace(/SCHOLARK Tutor/g,name).replace(/AI Tutor/g,name);if(previous&&previous!=='AI Tutor'&&previous!==name)t=t.replaceAll(previous,name);n.nodeValue=t}
     }
@@ -71,7 +71,7 @@
   }
   function decorateArkiUsers(){
     const api=window.__SCHOLARK_V107_GENERAL_AI__,box=$('#v107-thread');if(!api||!box)return;
-    const chat=api.getCurrent?.(),rows=(chat?.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$('.v107-msg.user',box);
+    const chat=api.getCurrent?.(),rows=(chat?.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$$('.v107-msg.user',box);
     nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120UserIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-arki="'+row.i+'">Edit</button></div>')})
   }
   function startInlineEdit(node,text,onSave,onCancel){
