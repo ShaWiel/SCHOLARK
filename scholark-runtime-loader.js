@@ -36,7 +36,8 @@
     'scholark-v107-general-ai.js':'20261008-v107-edit-r228',
     'scholark-v110-workspace-core.js':'20261008-v110-context-safe-r227',
     'scholark-v120-experience-controls.js':'20261008-v120-tutor-r231',
-    'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232'
+    'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232',
+    'scholark-v86-file-intelligence.js':'20261008-v86-route-r233'
   })[file] || VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',

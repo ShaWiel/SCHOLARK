@@ -1016,6 +1016,12 @@ await page.click('[data-v86="summary"]');
 await page.waitForFunction(()=>{const t=document.querySelector('#v86-output')?.textContent||'';return !/Working/.test(t)&&t.trim().length>20},{timeout:8000});
 check((await page.locator('#v86-output').innerText()).trim().length>20,'Files & Notes AI result stayed empty');
 check((await page.evaluate(()=>window.__SCHOLARK_V86_FILES__?.getState?.().files?.length))===1,'Files & Notes did not retain exactly one uploaded smoke file');
+check(!/gemini|provider|model/i.test(await page.locator('#v86-output').innerText()),'Files & Notes leaked an AI provider/model watermark');
+await route('project','#v51-fallback .v64-projects');
+await route('files','#v51-fallback .v86');
+check(await page.locator('#v51-fallback .v86').count()===1,'Files & Notes duplicated its surface after route reuse');
+check((await page.evaluate(()=>window.__SCHOLARK_V86_FILES__?.getState?.().files?.length))===1,'Files & Notes lost state after leaving and returning');
+check(await page.locator('#v51-fallback .v86').isVisible(),'Files & Notes stayed hidden after route reuse');
 await route('project','#v51-fallback .v64-projects');
 await route('schools','#v50-school.open');
 // Schools Near Me real-location contract: permission allowed must populate a

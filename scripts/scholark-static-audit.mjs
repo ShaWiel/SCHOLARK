@@ -199,6 +199,9 @@ ok(powerTools.includes("$$('[data-v106-minute-step]').forEach")&&powerTools.incl
 ok(experienceControls.includes("nodes=$$('#v52-chat .v52-msg.user').filter"),'Tutor user-message decorator is not null-safe');
 ok(workspaceShell.includes('tutorDisplayName')&&fastTools.includes('tutorDisplayName')&&workspaceExperience.includes('tutorDisplayName')&&orchestrator.includes("toolName=id=>id==='tutor'?tutorDisplayName()"),'Tutor custom name is still presentation-only instead of source-owned');
 ok(!learningApi.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Learning AI still renders provider/model watermarks');
+ok(fileIntelligence.includes("main.hidden=false")&&fileIntelligence.includes("p.hidden=false")&&fileIntelligence.indexOf("main.hidden=false")<fileIntelligence.indexOf("if(!force&&location.hash.toLowerCase()==='#files'"),'Files & Notes route reuse can leave its surface hidden');
+ok(!fileIntelligence.includes("esc(data.provider||'AI')+' · '+esc(data.model||'')"),'Files & Notes still renders provider/model watermarks');
+ok(runtime.includes("'scholark-v86-file-intelligence.js':'20261008-v86-route-r233'"),'Files & Notes cache version is stale');
 ok(credits.includes("addEventListener('scholark:topbar-ready'")&&credits.includes('renderTopbar();queueMicrotask(renderTopbar)'),'Wallet is not synchronized with canonical Home topbar readiness');
 ok(tutorCloud.includes('truncateFromUserText')&&tutorCloud.includes('data-v82-edit-message')&&!tutorCloud.includes("tools.innerHTML='<button class=\"v82-new\""),'Tutor cloud duplicate composer New chat/edit sync is incomplete');
 ok(gemini.includes("prop === 'SCHOLARK_TEST_MODE'")&&gemini.includes("return '0'"),'Gemini adapter does not safely bypass test mode for scoped AI routes');
