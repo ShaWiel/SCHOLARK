@@ -111,7 +111,7 @@
       window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:current.id,context:!!$('#v107-context')?.checked})
     }catch(e){
       const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT';
-      const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again.':String(e?.message||e);
+      const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
       if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
       if(state)state.textContent=timed?'Request timed out — you can retry':'Request failed — you can retry'
     }finally{
