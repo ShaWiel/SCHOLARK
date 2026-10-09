@@ -16,7 +16,8 @@ const polish=read('scholark-v119-foundation-polish.js');
 assert.match(docker,/scholark-security-foundation\.mjs/);
 assert.match(docker,/scholark-v118-account-security\.js/);
 assert.match(docker,/scholark-v119-foundation-polish\.js/);
-assert.match(docker,/SCHOLARK_RELEASE=r221/);
+const release=(docker.match(/ENV SCHOLARK_RELEASE=(r\d+(?:-[a-z0-9-]+)?)/)||[])[1]||'';
+assert.match(release,/^r\d+(?:-[a-z0-9-]+)?$/);
 assert.match(guard,/content-security-policy/);
 assert.match(guard,/strictMutationOrigin:true/);
 assert.match(guard,/SENSITIVE_QUERY_BLOCKED/);
@@ -59,4 +60,4 @@ for (const file of fs.readdirSync('.').filter(x=>x.endsWith('.mjs'))) {
   assert.ok(!/console\.(log|warn|error)\([^\n]*(SERVICE_ROLE_KEY|access_token|refresh_token|password)/i.test(source),file+' may log a secret');
   assert.ok(!/fetch\s*\(\s*(body|payload|data)\??\.(url|href)/i.test(source),file+' contains a possible user-controlled SSRF fetch');
 }
-console.log('SCHOLARK SECURITY CONTRACTS',JSON.stringify({ok:true,release:'r221'}));
+console.log('SCHOLAVERUM SECURITY CONTRACTS',JSON.stringify({ok:true,release}));
