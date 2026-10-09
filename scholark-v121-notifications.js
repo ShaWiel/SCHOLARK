@@ -1,6 +1,6 @@
 (() => {
   if(window.__SCHOLARK_NOTIFICATIONS__)return;
-  const RELEASE='r235-notifications';
+  const RELEASE='r236-notifications';
   const VAPID_PUBLIC='BCZr66dMfGomd-lDQTaglxhFbjYCd4vZ55AKZ_Nwp_p4WC4P-UCCyOG9WL_0Nnes_HD4eCdQIi3igZ2I4kgREqA';
   const ASSIGN_KEY='scholark_v106_assignments',ONBOARD_KEY='scholark_notification_onboarding_pending';
   const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
@@ -30,6 +30,7 @@
   async function ensureReminderDelivery(){
     if(!supported())return {linked:false,message:'This browser cannot receive Web Push, but the reminder can still sync to your other linked devices.'};
     if(Notification.permission==='denied')return {linked:false,message:'Notifications are blocked on this device. The reminder is saved for any other linked devices.'};
+    if(Notification.permission==='default'){try{await linkDevice();return {linked:true,message:' This device is now linked too.'}}catch(e){return {linked:false,message:' '+clean(e?.message||e,220)}}}
     if(await currentDeviceReady())return {linked:true,message:''};
     try{await linkDevice();return {linked:true,message:' This device is now linked too.'}}catch(e){return {linked:false,message:' '+clean(e?.message||e,220)}}
   }

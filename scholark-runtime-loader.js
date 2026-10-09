@@ -38,7 +38,7 @@
     'scholark-v120-experience-controls.js':'20261008-v120-tutor-r231',
     'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232',
     'scholark-v86-file-intelligence.js':'20261008-v86-route-r233',
-    'scholark-v121-notifications.js':'20261009-v121-reminders-r235'
+    'scholark-v121-notifications.js':'20261009-v121-reminders-r236'
   })[file] || VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
