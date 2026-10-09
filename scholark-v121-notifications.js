@@ -1,6 +1,6 @@
 (() => {
   if(window.__SCHOLARK_NOTIFICATIONS__)return;
-  const RELEASE='r242-notifications';
+  const RELEASE='r243-notifications';
   const VAPID_PUBLIC='BCZr66dMfGomd-lDQTaglxhFbjYCd4vZ55AKZ_Nwp_p4WC4P-UCCyOG9WL_0Nnes_HD4eCdQIi3igZ2I4kgREqA';
   const ASSIGN_KEY='scholark_v106_assignments',ONBOARD_KEY='scholark_notification_onboarding_pending',DISMISS_KEY='scholark_notification_device_prompt_until_v2';
   const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
@@ -120,9 +120,11 @@
     const tomorrow=new Date(Date.now()+86400000);$('#v121-date').value=tomorrow.toISOString().slice(0,10);$('#v121-time').value='18:00';
   }
   async function onboardingNeeded(){
-    const x=await ctx();if(!x||!supported())return false;
-    if(await currentDeviceReady())return false;
+    const x=await ctx();if(!x)return false;
     try{const until=Number(localStorage.getItem(DISMISS_KEY)||0);if(until>Date.now())return false;if(localStorage.getItem(ONBOARD_KEY)==='1')return true}catch{}
+    if(isIOS()&&!standalone())return true;
+    if(!supported())return false;
+    if(await currentDeviceReady())return false;
     return Notification.permission!=='denied';
   }
   function offerDeviceLink(){

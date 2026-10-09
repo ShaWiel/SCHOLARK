@@ -42,7 +42,7 @@ async function dispatchCustom(cfg:any){
   const {data:rows}=await sb.from("notification_reminders").select("id,user_id,kind,title,body,url,due_at,dedupe_key").eq("status","pending").lte("due_at",now.toISOString()).order("due_at").limit(300);
   let sent=0;
   for(const r of rows||[]){
-    const p=await prefs(r.user_id);if(p.enabled===false||quiet(p))continue;
+    const p=await prefs(r.user_id),explicit=!String(r.dedupe_key||'').startsWith('local-assignment:');if(p.enabled===false||(!explicit&&quiet(p)))continue;
     if(r.kind==="payment"&&p.payment_reminders===false)continue;
     if(["task","assignment","homework"].includes(r.kind)&&p.task_reminders===false)continue;
     const key=r.dedupe_key||("reminder:"+r.id);
