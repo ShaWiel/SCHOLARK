@@ -22,6 +22,10 @@ check(runtimeRes.ok&&localVersion&&liveVersion===localVersion,'live runtime matc
 
 const homeRes=await fetch(base+'/?live-prelaunch='+Date.now());
 check(homeRes.ok,'live homepage returns HTTP success');
+const pushSwRes=await fetch(base+'/scholark-sw.js?live-prelaunch='+Date.now()),pushSwText=await pushSwRes.text();
+check(pushSwRes.ok&&pushSwText.includes("addEventListener('push'")&&pushSwText.includes("notificationclick"),'live push service worker is shipped');
+const manifestRes=await fetch(base+'/scholark.webmanifest?live-prelaunch='+Date.now()),manifestText=await manifestRes.text();
+check(manifestRes.ok&&manifestText.includes('"display": "standalone"')&&manifestText.includes('"start_url": "/#home"'),'live SCHOLARK web manifest is shipped');
 const csp=String(homeRes.headers.get('content-security-policy')||'');
 check(/frame-ancestors 'none'/.test(csp)&&/base-uri 'self'/.test(csp),'live homepage CSP keeps frame/base protections');
 
@@ -130,6 +134,11 @@ try{
     await page.waitForSelector('#v51-fallback .v93',{state:'visible',timeout:12000});
   }
   check(await page.locator('#v93-build').count()===1&&await page.locator('[data-v93-preset]').count()>=5,'live Language Learner is complete');
+
+  await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('reminders'));
+  await page.waitForSelector('#v51-fallback .v121',{state:'visible',timeout:12000});
+  check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'live Reminders route is present once');
+  check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r234-notifications'),'live Reminders runtime is initialized');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
   await page.waitForSelector('#v50-school.open',{state:'visible',timeout:12000});
