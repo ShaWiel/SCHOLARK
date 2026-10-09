@@ -46,7 +46,7 @@ COPY scholark-sw.js /app/scholark-sw.js
 COPY scholark.webmanifest /app/scholark.webmanifest
 COPY scholaverum-logo.webp /tmp/scholaverum-logo.webp
 COPY scholaverum-icon-512.webp /tmp/scholaverum-icon-512.webp
-COPY scholaverum-logo-compat.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png
+COPY scholaverum-logo-compat.png /tmp/scholaverum-logo-compat.png
 COPY scholaverum-logo-r246.png /tmp/scholaverum-logo-r246.png
 COPY scholaverum-icon-512.png /tmp/scholaverum-icon-512.png
 
@@ -134,7 +134,7 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
     && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261009-r246-foundation-visual\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
     && find /app -type f -name 'scholark-v*.js' ! -name 'scholark-v98-brand-migration.js' -exec sed -i 's#\<SCHOLARK\>#SCHOLAVERUM#g' {} + \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.

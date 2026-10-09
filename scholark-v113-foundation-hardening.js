@@ -68,7 +68,7 @@
   }
   const BRAND_LOGO="/scholaverum-logo-r246.png";
   function ensureBrandAssets(){
-    const imgs=$(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo");
+    const imgs=[...document.querySelectorAll(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo")];
     for(const img of imgs){
       if(img.getAttribute("src")!==BRAND_LOGO)img.setAttribute("src",BRAND_LOGO);
       img.setAttribute("loading","eager");img.setAttribute("decoding","async");
@@ -112,8 +112,8 @@
     const countryApi=window.__SCHOLARK_COUNTRY__,globalCountryRegistry=countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195;
     const globalSchools=r!=="schools"||(window.__SCHOLARK_V50_SCHOOLS__?.global===true&&globalCountryRegistry);
     const coverage=i18n?.coverage?.(620)||null;
-    const brandImgs=$(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo");
-    const brandHealthy=brandImgs.every(img=>img.getAttribute("src")===BRAND_LOGO)&&$("#v55-topbar .v55-brand-logo").length<=1&&$("#v51-sidebar .v51-logo").length<=1;
+    const brandImgs=[...document.querySelectorAll(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo")];
+    const brandHealthy=brandImgs.every(img=>img.getAttribute("src")===BRAND_LOGO)&&document.querySelectorAll("#v55-topbar .v55-brand-logo").length<=1&&document.querySelectorAll("#v51-sidebar .v51-logo").length<=1;
     const result={
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools&&brandHealthy,
       release:"r246",route:r,workspace:work,rootLocked,qualityBadge:quality,brandHealthy,brandAssets:brandImgs.length,unifiedFeature,visualReport,
