@@ -53,18 +53,61 @@ function liveCredentialShapes(){return /^pdl_live_apikey_/.test(LIVE_API_KEY)&&/
 async function verifyLiveCatalogPrice(plan,id,expectedAmount){
   const r=await livePaddle('/prices/'+encodeURIComponent(id)+'?include=product',{method:'GET'}),d=await r.json().catch(()=>({}));
   if(!r.ok)return {ok:false,plan,http:r.status,reason:d?.error?.code||d?.error?.type||'price_read_failed'};
-  const p=d?.data||{},product=p?.product||{},monthly=p?.billing_cycle?.interval==='month'&&Number(p?.billing_cycle?.frequency)===1,hasTrial=!!p?.trial_period,amount=String(p?.unit_price?.amount||''),currency=String(p?.unit_price?.currency_code||''),active=p?.status==='active',legacyBrand=/student\\s*os|studentos/i.test([p?.name,product?.name,product?.description].join(' '));
+  const p=d?.data||{},product=p?.product||{},monthly=p?.billing_cycle?.interval==='month'&&Number(p?.billing_cycle?.frequency)===1,hasTrial=!!p?.trial_period,amount=String(p?.unit_price?.amount||''),currency=String(p?.unit_price?.currency_code||''),active=p?.status==='active',legacyBrand=/student\s*os|studentos|\bscholark\b/i.test([p?.name,product?.name,product?.description].join(' '));
   return {ok:active&&monthly&&!hasTrial&&amount===String(expectedAmount)&&currency==='USD'&&!legacyBrand,plan,id:p?.id||id,productId:product?.id||p?.product_id||'',amount,currency,monthly,hasTrial,active,legacyBrand};
 }
 async function liveBillingPreflight(){
   if(!liveCredentialShapes()){livePreflightHealth={checked:true,ok:false,environment:'production',credentialShapes:false,reason:'live_credentials_not_preloaded'};return livePreflightHealth}
   try{
     const eventTypes=await livePaddle('/event-types',{method:'GET'}),eventData=await eventTypes.json().catch(()=>({}));
+    const brandRepair=await repairCatalogBrandSet(livePaddle,LIVE_PRICES);
     const [plus,pro]=await Promise.all([verifyLiveCatalogPrice('plus',LIVE_PRICES.plus,1499),verifyLiveCatalogPrice('pro',LIVE_PRICES.pro,1999)]);
-    livePreflightHealth={checked:true,ok:eventTypes.ok&&plus.ok&&pro.ok,environment:'production',credentialShapes:true,apiReachable:eventTypes.ok,plus,pro,reason:eventTypes.ok&&plus.ok&&pro.ok?'ready_for_environment_switch':'live_catalog_or_api_check_failed',checkedAt:new Date().toISOString()};
+    livePreflightHealth={checked:true,ok:eventTypes.ok&&brandRepair.ok&&plus.ok&&pro.ok,environment:'production',credentialShapes:true,apiReachable:eventTypes.ok,brandRepair,plus,pro,reason:eventTypes.ok&&brandRepair.ok&&plus.ok&&pro.ok?'ready_for_environment_switch':'live_catalog_or_api_check_failed',checkedAt:new Date().toISOString()};
   }catch(e){livePreflightHealth={checked:true,ok:false,environment:'production',credentialShapes:true,reason:String(e?.message||e),checkedAt:new Date().toISOString()}}
   return livePreflightHealth;
 }
+
+function rebrandCatalogText(value){
+  return String(value??'')
+    .replace(/\bSCHOLARK\b/gi,'SCHOLAVERUM')
+    .replace(/\bStudent\s*OS(?:\s*360)?\b/gi,'SCHOLAVERUM');
+}
+function catalogTextNeedsRebrand(value){
+  return /\bSCHOLARK\b|Student\s*OS(?:\s*360)?/i.test(String(value??''));
+}
+async function repairCatalogItem(request,plan,id){
+  if(!id)return {ok:false,plan,reason:'price_id_missing'};
+  const read=await request('/prices/'+encodeURIComponent(id)+'?include=product',{method:'GET'}),data=await read.json().catch(()=>({}));
+  if(!read.ok)return {ok:false,plan,http:read.status,reason:data?.error?.code||data?.error?.type||'price_read_failed'};
+  const price=data?.data||{},product=price?.product||{},changes=[];
+  if(product?.id){
+    const productPatch={};
+    if(catalogTextNeedsRebrand(product.name))productPatch.name=rebrandCatalogText(product.name);
+    if(product.description!=null&&catalogTextNeedsRebrand(product.description))productPatch.description=rebrandCatalogText(product.description);
+    if(Object.keys(productPatch).length){
+      const pr=await request('/products/'+encodeURIComponent(product.id),{method:'PATCH',body:JSON.stringify(productPatch)}),pd=await pr.json().catch(()=>({}));
+      if(!pr.ok)return {ok:false,plan,http:pr.status,reason:pd?.error?.code||pd?.error?.type||'product_brand_update_failed'};
+      changes.push('product');
+    }
+  }
+  const pricePatch={};
+  if(catalogTextNeedsRebrand(price.name))pricePatch.name=rebrandCatalogText(price.name);
+  if(price.description!=null&&catalogTextNeedsRebrand(price.description))pricePatch.description=rebrandCatalogText(price.description);
+  if(Object.keys(pricePatch).length){
+    const rr=await request('/prices/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify(pricePatch)}),rd=await rr.json().catch(()=>({}));
+    if(!rr.ok)return {ok:false,plan,http:rr.status,reason:rd?.error?.code||rd?.error?.type||'price_brand_update_failed'};
+    changes.push('price');
+  }
+  return {ok:true,plan,repaired:changes.length>0,changes};
+}
+async function repairCatalogBrandSet(request,prices){
+  const [plus,pro]=await Promise.all([
+    repairCatalogItem(request,'plus',prices.plus),
+    repairCatalogItem(request,'pro',prices.pro)
+  ]);
+  return {ok:plus.ok&&pro.ok,repaired:!!plus.repaired||!!pro.repaired,plus,pro};
+}
+
 async function verifyCatalogPrice(plan,id,expectedAmount){
   let brandAudit='ok',r=await paddle('/prices/'+encodeURIComponent(id)+'?include=product',{method:'GET'}),d=await r.json().catch(()=>({}));
   if(!r.ok&&(r.status===401||r.status===403)){
@@ -77,7 +120,7 @@ async function verifyCatalogPrice(plan,id,expectedAmount){
   const hasTrial=!!p?.trial_period,trial7=p?.trial_period?.interval==='day'&&Number(p?.trial_period?.frequency)===7,trialPolicyOk=ENV==='production'?!hasTrial:trial7;
   const amount=String(p?.unit_price?.amount||''),currency=String(p?.unit_price?.currency_code||'');
   const active=p?.status==='active',priceName=String(p?.name||''),productName=String(product?.name||''),productDescription=String(product?.description||'');
-  const legacyBrand=/student\s*os|studentos/i.test([priceName,productName,productDescription].join(' '));
+  const legacyBrand=/student\s*os|studentos|\bscholark\b/i.test([priceName,productName,productDescription].join(' '));
   return {ok:active&&monthly&&trialPolicyOk&&amount===String(expectedAmount)&&currency==='USD'&&!legacyBrand,plan,id:p?.id||id,productId:product?.id||p?.product_id||'',priceName,productName,productDescription,legacyBrand,brandAudit,amount,currency,monthly,hasTrial,trial7,trialPolicyOk,active,requiresPaymentMethod:hasTrial?p?.trial_period?.requires_payment_method!==false:true};
 }
 async function auditCatalogBrandPreview(){
@@ -134,10 +177,11 @@ async function verifyWebhookDestination(){
 async function billingSelftest(){
   if(!checkoutConfigured()){catalogHealth={checked:true,ok:false,environment:ENV,reason:'checkout_credentials_or_prices_missing'};console.warn('[SCHOLAVERUM] Paddle catalog self-test SKIP · checkout credentials incomplete');return catalogHealth}
   try{
+    const brandRepair=await repairCatalogBrandSet(paddle,PRICES);
     const [plus,pro,brandPreview,webhook]=await Promise.all([verifyCatalogPrice('plus',PRICES.plus,1499),verifyCatalogPrice('pro',PRICES.pro,1999),auditCatalogBrandPreview(),verifyWebhookDestination()]);
-    catalogHealth={checked:true,ok:!!plus.ok&&!!pro.ok&&!!brandPreview.ok&&!!webhook.ok,environment:ENV,plus,pro,brandPreview,webhook,checkedAt:new Date().toISOString()};
+    catalogHealth={checked:true,ok:!!brandRepair.ok&&!!plus.ok&&!!pro.ok&&!!brandPreview.ok&&!!webhook.ok,environment:ENV,brandRepair,plus,pro,brandPreview,webhook,checkedAt:new Date().toISOString()};
     const level=catalogHealth.ok?'log':'warn';
-    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?(webhook.created?'CREATED':webhook.repaired?(webhook.reusedLegacy?'REPAIRED_LEGACY':'REPAIRED'):'OK'):(webhook.reason||(!webhook.secretConfigured?'secret_missing':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLAVERUM] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLARK_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
+    const plusPreview=brandPreview?.plans?.plus,proPreview=brandPreview?.plans?.pro;const plusDiag=plusPreview?.legacyBrand?'LEGACY_BRAND:'+plusPreview.productName+'/'+plusPreview.priceName:(plus.ok?'OK':(plus.reason||('http_'+(plus.http||'unknown'))));const proDiag=proPreview?.legacyBrand?'LEGACY_BRAND:'+proPreview.productName+'/'+proPreview.priceName:(pro.ok?'OK':(pro.reason||('http_'+(pro.http||'unknown'))));const webhookDiag=webhook.ok?(webhook.created?'CREATED':webhook.repaired?(webhook.reusedLegacy?'REPAIRED_LEGACY':'REPAIRED'):'OK'):(webhook.reason||(!webhook.secretConfigured?'secret_missing':webhook.missingEvents?.length?'missing_events:'+webhook.missingEvents.join(','):'CHECK'));console[level]('[SCHOLAVERUM] Paddle catalog self-test '+(catalogHealth.ok?'PASS':'WARN')+' · Plus '+plusDiag+' · Pro '+proDiag+' · catalogBrand '+(brandPreview.ok?'SCHOLAVERUM_ONLY':(brandPreview.reason||'CHECK'))+' · webhook '+webhookDiag);
   }catch(e){catalogHealth={checked:true,ok:false,environment:ENV,reason:String(e?.message||e),checkedAt:new Date().toISOString()};console.warn('[SCHOLAVERUM] Paddle catalog self-test WARN · '+catalogHealth.reason)}
   return catalogHealth;
 }
