@@ -336,6 +336,9 @@ check(/Sign out|Uitloggen/i.test(await page.locator('#v55-topbar .v55-menu').inn
 check(!/^(Sign out|Uitloggen)$/i.test((await page.locator('#v55-topbar > .v55-actions').innerText()).trim()),'Standalone top-level Sign out remains visible');
 await page.evaluate(()=>{localStorage.removeItem('scholark_supabase_session_v2');window.__SCHOLARK_V55_TOPBAR__?.syncTopbarCopy?.()});
 await page.keyboard.press('Escape');
+check(await visible('.v116-public-actions',5000),'Public Help & Support control did not mount before idle stability check');
+check(await visible('#v55-topbar .v85-topbar-credit',5000),'Wallet control did not mount before idle stability check');
+await page.waitForTimeout(260);
 const idleTopbarMutations=await page.evaluate(async()=>{
   const bar=document.querySelector('#v55-topbar');if(!bar)return 999;
   let count=0;const o=new MutationObserver(m=>count+=m.length);o.observe(bar,{subtree:true,childList:true,characterData:true,attributes:true});
@@ -1017,7 +1020,7 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'Reminders sidebar route is missing');
 await route('reminders','#v51-fallback .v121');
 check(await page.locator('#v51-fallback .v121').count()===1,'Reminders surface did not mount');
-check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r238-notifications'),'Reminders runtime API did not initialize');
+check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r248-notifications'),'Reminders runtime API did not initialize');
 const reminderSignedIn=await page.locator('#v121-signin').count()===0;
 if(reminderSignedIn){check(await page.locator('#v121-study-time').count()===1,'Daily study reminder time control is missing');check(await page.locator('#v121-payment').count()===1,'Payment reminder preference is missing');check(await page.locator('#v121-link').count()===1,'Device linking action is missing');}
 
