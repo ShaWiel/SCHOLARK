@@ -22,7 +22,7 @@ async function pushUser(uid:string,key:string,payload:any,cfg:any){
   const {data:subs}=await sb.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id",uid).eq("enabled",true).limit(25);
   if(!subs?.length)return {sent:0,noDevices:true};
   webpush.setVapidDetails(SITE,cfg.vapid_public,cfg.vapid_private);
-  let sent=0;
+  let sent=0,failed=0;
   for(const sub of subs){
     try{
       await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify(payload),{TTL:3600,urgency:"normal"});
@@ -31,10 +31,11 @@ async function pushUser(uid:string,key:string,payload:any,cfg:any){
     }catch(e:any){
       const code=Number(e?.statusCode||e?.status||0);
       if(code===404||code===410)await sb.from("push_subscriptions").update({enabled:false,updated_at:new Date().toISOString()}).eq("id",sub.id);
+      failed++;
       await sb.from("notification_delivery_log").insert({user_id:uid,subscription_id:sub.id,dedupe_key:key,status:"failed",error:String(e?.message||e).slice(0,500)});
     }
   }
-  return {sent};
+  return {sent,failed};
 }
 async function dispatchCustom(cfg:any){
   const now=new Date();
@@ -93,12 +94,36 @@ async function dispatchStudy(cfg:any){
   return sent;
 }
 
+async function requestUser(req:Request){
+  const raw=req.headers.get("authorization")||"";
+  const token=raw.replace(/^Bearer\s+/i,"").trim();
+  if(!token)return null;
+  const {data,error}=await sb.auth.getUser(token);
+  return error?null:(data?.user||null);
+}
+
 Deno.serve(async(req)=>{
-  if(req.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":SITE,"access-control-allow-headers":"content-type,x-scholark-dispatch-key"}});
+  if(req.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":SITE,"access-control-allow-headers":"authorization,content-type,x-scholark-dispatch-key"}});
   if(req.method!=="POST")return j({ok:false,code:"METHOD_NOT_ALLOWED"},405);
   try{
-    const cfg=await config(),key=req.headers.get("x-scholark-dispatch-key")||"";
+    const body=await req.json().catch(()=>({})),action=String(body?.action||"dispatch"),cfg=await config();
+    if(action==="test"){
+      const user=await requestUser(req);
+      if(!user)return j({ok:false,code:"UNAUTHORIZED"},401);
+      const key="test:"+user.id+":"+Date.now();
+      const out=await pushUser(user.id,key,{title:"SCHOLAVERUM test notification",body:"Your linked device is ready for reminders.",url:"/#reminders",tag:key,kind:"custom"},cfg);
+      return j({ok:(out.sent||0)>0,...out});
+    }
+    const key=req.headers.get("x-scholark-dispatch-key")||"";
     if(!safeEq(key,String(cfg.dispatch_secret||"")))return j({ok:false,code:"UNAUTHORIZED"},401);
+    if(action==="admin_test"){
+      const uid=String(body?.user_id||"");
+      if(!/^[0-9a-f-]{36}$/i.test(uid))return j({ok:false,code:"INVALID_USER"},400);
+      const dedupe="admin-test:"+uid+":"+Date.now();
+      const out=await pushUser(uid,dedupe,{title:"SCHOLAVERUM reminder test",body:"Push delivery is working on this linked device.",url:"/#reminders",tag:dedupe,kind:"custom"},cfg);
+      return j({ok:(out.sent||0)>0,...out});
+    }
+    if(action!=="dispatch")return j({ok:false,code:"UNKNOWN_ACTION"},400);
     const [custom,planner,payments,study]=await Promise.all([dispatchCustom(cfg),dispatchPlanner(cfg),dispatchPayments(cfg),dispatchStudy(cfg)]);
     return j({ok:true,custom,planner,payments,study,at:new Date().toISOString()});
   }catch(e:any){return j({ok:false,code:"DISPATCH_FAILED",error:String(e?.message||e).slice(0,300)},500)}
