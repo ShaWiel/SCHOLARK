@@ -2,7 +2,7 @@ const safeNotificationUrl=raw=>{try{const u=new URL(String(raw||'/#dashboard'),s
 self.addEventListener('push',event=>{
   let data={};try{data=event.data?event.data.json():{}}catch{try{data={body:event.data?.text?.()||''}}catch{}}
   const title=String(data.title||'SCHOLAVERUM');
-  const options={body:String(data.body||''),tag:String(data.tag||'scholark-reminder'),renotify:false,icon:'/scholaverum-icon-512.webp',badge:'/scholaverum-icon-512.webp',timestamp:Date.now(),data:{url:safeNotificationUrl(data.url),kind:String(data.kind||'reminder')}};
+  const options={body:String(data.body||''),tag:String(data.tag||'scholark-reminder'),renotify:false,icon:'/scholaverum-icon-512.png',badge:'/scholaverum-icon-512.png',timestamp:Date.now(),data:{url:safeNotificationUrl(data.url),kind:String(data.kind||'reminder')}};
   event.waitUntil(self.registration.showNotification(title,options));
 });
 self.addEventListener('notificationclick',event=>{
