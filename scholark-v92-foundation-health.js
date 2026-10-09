@@ -2,7 +2,7 @@
   if(window.__SCHOLARK_V92_FOUNDATION__)return;
   window.__SCHOLARK_V92_FOUNDATION__=true;
   const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],clean=s=>String(s??'').replace(/\s+/g,' ').trim();
-  const modern=new Set(['dashboard','studio','ai','tutor','education','language','planner','focus','flashcards','assignments','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
+  const modern=new Set(['dashboard','studio','ai','tutor','education','language','planner','focus','flashcards','assignments','reminders','progress','goal','project','files','schools','study','book','presentation','webpage','document','report','graphic','social']);
   const inactive=new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const route=()=>String(location.hash||'').replace(/^#/,'').split(/[\/-]/)[0].toLowerCase();
   let inflight=null,lastReport=null,lastRun=0,runtimeReady=false;
@@ -22,6 +22,9 @@
     }else if(r==='book'){
       $('#v25-book')?.classList.remove('open');document.body.classList.remove('v51-pro','v51-study','v51-schools');document.body.classList.add('v51-book');
       setTimeout(()=>{if(!$('.v65-book'))window.__SCHOLARK_V65_BOOK__?.open?.()},120);
+    }else if(r==='reminders'){
+      document.body.classList.remove('v51-pro','v51-study','v51-book','v51-schools');
+      setTimeout(()=>{if(!$('.v121'))window.__SCHOLARK_NOTIFICATIONS__?.open?.()},140);
     }else if(r==='files'){
       document.body.classList.remove('v51-pro','v51-study','v51-book','v51-schools');
       setTimeout(()=>{if(!$('.v86'))$('#v51-sidebar [data-v51-tool="files"]')?.click()},140);

@@ -167,7 +167,7 @@
     }
     if(!document.body.classList.contains('v51-workspace'))return;
     const h=hash();
-    if(!/^#(dashboard|studio|ai|tutor|education|language|planner|focus|flashcards|assignments|progress|goal|project|files|schools|study|book)$/.test(h))return;
+    if(!/^#(dashboard|studio|ai|tutor|education|language|planner|focus|flashcards|assignments|reminders|progress|goal|project|files|schools|study|book)$/.test(h))return;
     const candidates=[$('#v51-main'),$('#v41-studio-workspace'),$('#v50-school'),$('#v25-book'),$('.v93')].filter(Boolean);
     const visible=candidates.some(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>80&&r.height>80});
     if(!visible){

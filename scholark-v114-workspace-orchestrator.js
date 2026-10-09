@@ -7,8 +7,8 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const core=()=>window.__SCHOLARK_WORKSPACE_CORE__;
   const today=()=>new Date().toISOString().slice(0,10);
-  const ROUTES=new Set(['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study']);
-  const NAMES={dashboard:'Dashboard',ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',focus:'Focus Sessions',flashcards:'Flashcards',assignments:'Assignments',progress:'Progress',goal:'Goals',language:'Language Learner',files:'Files & Notes',project:'My Projects',schools:'Schools Near Me',study:'Study Ahead'};
+  const ROUTES=new Set(['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','reminders','progress','goal','language','files','project','schools','study']);
+  const NAMES={dashboard:'Dashboard',ai:'ARKI',tutor:'AI Tutor',education:'Education & Learning',planner:'Planner',focus:'Focus Sessions',flashcards:'Flashcards',assignments:'Assignments',reminders:'Reminders',progress:'Progress',goal:'Goals',language:'Language Learner',files:'Files & Notes',project:'My Projects',schools:'Schools Near Me',study:'Study Ahead'};
   const tutorDisplayName=()=>{try{const v=clean(localStorage.getItem('scholark_tutor_name_v1')||'').replace(/[<>]/g,'').slice(0,24);return v||'AI Tutor'}catch{return'AI Tutor'}};
   const toolName=id=>id==='tutor'?tutorDisplayName():(NAMES[id]||id);
   const HANDOFF='scholark_v114_handoff';
@@ -37,6 +37,7 @@
     if(tool==='ai')return $('#v107-ai');
     if(['tutor','education','planner','progress','goal'].includes(tool))return $('.v52-tool[data-v52-tool="'+tool+'"]');
     if(['focus','flashcards','assignments'].includes(tool))return $('#v106-root[data-tool="'+tool+'"]');
+    if(tool==='reminders')return $('.v121');
     if(tool==='language')return $('.v93');
     if(tool==='files')return $('.v86');
     if(tool==='project')return $('.v64-projects')||$('#v51-fallback');
@@ -209,6 +210,9 @@
       add('focus','Focus first step',()=>{if(!x)return;window.__SCHOLARK_V106_POWER__?.assignments?.plan?.(x);const p=(core()?.data?.planner?.()||[]).find(z=>z.id==='assignment-'+x.id+'-0');prepareFocus({task:p?.text||('Work on · '+x.title),duration:p?.duration||25,linkedPlannerId:p?.id||'',autoComplete:!!p})},{disabled:!x});
       add('progress','Progress',()=>open('progress'));return actions;
     }
+    if(tool==='reminders'){
+      add('assign','Assignments',()=>open('assignments'),{primary:true});add('planner','Planner',()=>open('planner'));return actions;
+    }
     if(tool==='progress'){
       const next=s.next;
       add('next','Do next best action',()=>next?open(next.tool):open('planner'),{primary:true});
@@ -345,7 +349,7 @@
     return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r203',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
-    const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
+    const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','reminders','progress','goal','language','files','project','schools','study'];
     const missing=expected.filter(x=>!ROUTES.has(x)),coreReady=typeof core()?.actions?.prepareFocus==='function',runtimeReady=typeof window.__SCHOLARK_RUNTIME__?.ensure==='function';
     return {ok:ROUTES.size===expected.length&&!missing.length&&coreReady&&runtimeReady,routes:ROUTES.size,missing,coreReady,runtimeReady,lazyFeatureLoading:true,readOnly:true};
   }

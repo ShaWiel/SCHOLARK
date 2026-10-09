@@ -13,6 +13,7 @@
     ['focus','Focus Sessions','Timed focus blocks linked to Planner tasks'],
     ['flashcards','Flashcards','Spaced-repetition decks and due reviews'],
     ['assignments','Assignments','Deadlines, progress, Planner steps and Tutor guidance'],
+    ['reminders','Reminders','Device notifications, homework, task and payment reminders'],
     ['progress','Progress','See what is improving and what is weak'],
     ['goal','Goals','Learning, school and creation goals'],
     ['files','Files & Notes','Upload material and turn it into useful work'],
