@@ -6,7 +6,14 @@ const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const sb=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const SITE="https://scholark-app-shawiel.onrender.com";
-const j=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","cache-control":"no-store"}});
+const CORS_HEADERS={
+  "access-control-allow-origin":SITE,
+  "access-control-allow-headers":"authorization, apikey, x-client-info, content-type, x-retry-count, traceparent, tracestate, baggage, x-scholark-dispatch-key",
+  "access-control-allow-methods":"POST, OPTIONS",
+  "access-control-max-age":"86400",
+  "vary":"Origin"
+};
+const j=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS_HEADERS,"content-type":"application/json","cache-control":"no-store"}});
 
 function safeEq(a:string,b:string){if(!a||!b||a.length!==b.length)return false;let x=0;for(let i=0;i<a.length;i++)x|=a.charCodeAt(i)^b.charCodeAt(i);return x===0}
 function hhmm(v:any){const m=String(v||"").match(/^(\d{1,2}):(\d{2})/);return m?Math.min(1439,Math.max(0,Number(m[1])*60+Number(m[2]))):0}
@@ -103,7 +110,7 @@ async function requestUser(req:Request){
 }
 
 Deno.serve(async(req)=>{
-  if(req.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":SITE,"access-control-allow-headers":"authorization,content-type,x-scholark-dispatch-key"}});
+  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS_HEADERS});
   if(req.method!=="POST")return j({ok:false,code:"METHOD_NOT_ALLOWED"},405);
   try{
     const body=await req.json().catch(()=>({})),action=String(body?.action||"dispatch"),cfg=await config();
