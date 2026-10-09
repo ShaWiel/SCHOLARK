@@ -451,6 +451,8 @@ for(const file of syntaxTargets){
 }
 
 ok(billingRoute.includes('PADDLE_LIVE_API_KEY')&&billingRoute.includes('PADDLE_SANDBOX_API_KEY')&&billingRoute.includes('liveBillingPreflight')&&billingRoute.includes('productionCredentialsPreloaded'),'Paddle dual-environment preload safety is incomplete');
+ok(billingRoute.includes('const commercialCheckoutReady=')&&billingRoute.includes('LIVE_BILLING_PREFLIGHT_PENDING')&&billingRoute.includes('commercialCheckoutReady:commercialCheckoutReady()'),'Live Paddle checkout preflight gate is missing');
+ok(billingRoute.includes("ENV==='production'?!hasTrial:trial7")&&billingRoute.includes("status:ENV==='production'?'active':'trialing'")&&!billingRoute.includes('active&&monthly&&trial7&&amount===String(expectedAmount)'),'Production Paddle catalog still requires or provisions a trial');
 ok(launchRoute.includes('IN_APP_SUPPORT=true')&&launchRoute.includes("'support'")&&launchRoute.includes("supportChannel:SUPPORT_EMAIL?'email':'in-app'")&&launchRoute.includes('m.replyEmail')&&launchRoute.includes('out.replyEmail=replyEmail')&&launchFoundation.includes('function openSupport(')&&launchFoundation.includes('PRIVACY, TERMS & BILLING · 5 OCT 2026')&&launchFoundation.includes('final human legal review'),'Support/legal launch foundation is incomplete');
 ok(launchRoute.includes("legalContentVersion:'2026-10-05'"),'Launch health legal content version is stale');
 ok(supportFeedbackMigration.includes("'support'::text")&&supportFeedbackMigration.includes('feedback_submissions_category_check'),'Support feedback database contract is not migration-backed');
