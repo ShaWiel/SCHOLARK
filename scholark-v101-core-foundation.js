@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r221';
+  const RELEASE = 'r248-device-stability';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, duplicateRepairs:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -50,8 +50,8 @@
   }
 
   const CRITICAL_SINGLETON_IDS = Object.freeze([
-    'v55-topbar','v29-home-layer','v51-sidebar','v51-main','v51-sidebar-actions','v72-modal','v89-account',
-    'v117-credit-store-page','v117-credit-store-button','v117-store-return-home','v117-store-return-workspace','v117-store-dock','v90-language-overlay',
+    'v55-topbar','v29-home-layer','v51-sidebar','v51-main','v51-sidebar-actions','v51-side-toggle','v51-home','v51-help','v51-account','v72-modal','v89-account',
+    'v117-credit-store-page','v117-credit-store-button','v117-store-return-home','v117-store-return-workspace','v117-store-dock','v90-language-overlay','v121-onboard','v114-toast','v114-transition','v120-toast','v53-emergency','v55-workspace-cta',
     'v50-school','v25-study','v25-book','v41-studio-workspace','v58-suite','v57-deck','v57-present'
   ]);
   const CRITICAL_SINGLETON_SELECTORS = Object.freeze([
@@ -64,6 +64,7 @@
     ['#v51-sidebar #v96-side-country','workspace-country-box'],
     ['#v51-sidebar-actions #v116-workspace-help','workspace-help-menu'],
     ['#v51-main #v116-onboarding','workspace-onboarding'],
+    ['#v55-topbar .v116-public-actions','public-help-menu'],
     ['.v114-connect','connected-flow-bar']
   ]);
 
@@ -358,11 +359,42 @@
     return report;
   }
 
+  let singletonObserver=null,singletonRepairQueued=false,viewportRepairTimer=0;
+  function singletonMutationRelevant(muts){
+    const idSelector=CRITICAL_SINGLETON_IDS.map(id=>'#'+CSS.escape(id)).join(',');
+    const selectorList=CRITICAL_SINGLETON_SELECTORS.map(x=>x[0]).join(',');
+    return muts.some(m=>[...m.addedNodes].some(node=>{
+      if(node?.nodeType!==1)return false;
+      const el=node;
+      try{return !!(el.matches?.(idSelector)||el.matches?.(selectorList)||el.querySelector?.(idSelector)||el.querySelector?.(selectorList))}catch{return false}
+    }));
+  }
+  function queueSingletonRepair(){
+    if(singletonRepairQueued)return;
+    singletonRepairQueued=true;
+    queueMicrotask(()=>{
+      singletonRepairQueued=false;
+      const removed=repairCriticalDuplicates(routeInfo());
+      if(removed&&document.body.classList.contains('v51-workspace'))window.__SCHOLARK_WORKSPACE__?.sanitize?.('device-singleton');
+    });
+  }
+  function bindSingletonObserver(){
+    if(singletonObserver||!document.body)return;
+    singletonObserver=new MutationObserver(muts=>{if(singletonMutationRelevant(muts))queueSingletonRepair()});
+    singletonObserver.observe(document.body,{childList:true,subtree:true});
+  }
+  function scheduleViewportStability(){
+    clearTimeout(viewportRepairTimer);
+    viewportRepairTimer=setTimeout(()=>{queueSingletonRepair();schedule('viewport',25,false)},180);
+  }
   addEventListener('hashchange', () => schedule('hashchange',0,true));
   addEventListener('popstate', () => schedule('popstate',0,true));
   addEventListener('pageshow', () => { releaseStaleSelectorLocks(true); schedule('pageshow',20,true); });
   addEventListener('focus', () => { releaseStaleSelectorLocks(false); schedule('focus',60,false); });
   addEventListener('online', () => schedule('online',100,false));
+  addEventListener('resize',scheduleViewportStability,{passive:true});
+  addEventListener('orientationchange',scheduleViewportStability,{passive:true});
+  window.visualViewport?.addEventListener?.('resize',scheduleViewportStability,{passive:true});
   addEventListener('scholark-runtime-ready', () => schedule('runtime-ready',0,true));
   addEventListener('scholark-language-complete', () => schedule('language',50,false));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { releaseStaleSelectorLocks(false); schedule('visible',60,false); } });
@@ -388,6 +420,7 @@
     watchdogTimer=setTimeout(watchdogTick,next);
   }
 
+  bindSingletonObserver();
   watchdogTimer=setTimeout(watchdogTick,7000);
   [0,140,650].forEach((ms,i) => setTimeout(() => schedule('boot-'+i,0,i===2), ms));
 

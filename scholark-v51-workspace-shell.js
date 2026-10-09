@@ -373,6 +373,13 @@
     host.dataset.v51ScrollWired='1';
     host.addEventListener('keydown',e=>{if(!host.classList.contains('v51-levels-suriname')||(e.key!=='ArrowLeft'&&e.key!=='ArrowRight'))return;e.preventDefault();host.scrollBy({left:(e.key==='ArrowRight'?1:-1)*300,behavior:'smooth'})});
   }
+  function syncLevelScrollControls(){
+    const host=$('.v51-levels',main);if(!host)return;
+    wireLevelScroll();
+    if(!host.classList.contains('v51-levels-suriname')){if(host.scrollLeft)host.scrollLeft=0;return}
+    const max=Math.max(0,host.scrollWidth-host.clientWidth);
+    if(host.scrollLeft>max)host.scrollLeft=max;
+  }
   let levelRenderHost=null,levelRenderKey='';
   function renderLevels(){
     if(!side)return;const host=$('.v51-levels',main);if(!host)return;
@@ -639,7 +646,22 @@
 
   addEventListener('hashchange',()=>{if(workspaceRoute())ensureSidebarActions('hashchange');setTimeout(cleanConflicts,40);setTimeout(()=>{refreshLogo();if(workspaceRoute())forceQuality()},220)});
   addEventListener('popstate',()=>{if(workspaceRoute())ensureSidebarActions('popstate');setTimeout(cleanConflicts,40)});
-  addEventListener('resize',()=>setTimeout(cleanConflicts,100),{passive:true});
+  let viewportRepairTimer=0,viewportRepairRaf=0;
+  function scheduleViewportRepair(){
+    clearTimeout(viewportRepairTimer);
+    viewportRepairTimer=setTimeout(()=>{
+      cancelAnimationFrame(viewportRepairRaf);
+      viewportRepairRaf=requestAnimationFrame(()=>{
+        sanitizeWorkspace('viewport');
+        syncLevelScrollControls();
+        if(workspaceRoute())forceQuality();
+        window.__SCHOLARK_FOUNDATION__?.repairDuplicates?.();
+      });
+    },180);
+  }
+  addEventListener('resize',scheduleViewportRepair,{passive:true});
+  addEventListener('orientationchange',()=>{clearTimeout(viewportRepairTimer);viewportRepairTimer=setTimeout(scheduleViewportRepair,220)},{passive:true});
+  window.visualViewport?.addEventListener?.('resize',scheduleViewportRepair,{passive:true});
   let workspaceLanguageTimer=0;
   const scheduleWorkspaceLanguageRefresh=(delay=80)=>{clearTimeout(workspaceLanguageTimer);const run=()=>{if(!workspaceRoute())return;if(document.documentElement.classList.contains('scholark-language-switching')){workspaceLanguageTimer=setTimeout(run,120);return}ensureSidebarActions('language-refresh');renderLevels();syncWorkspaceLanguage(null,true);window.__SCHOLARK_COUNTRY__?.apply?.()};workspaceLanguageTimer=setTimeout(run,delay)};
   addEventListener('scholark-language-applied',()=>scheduleWorkspaceLanguageRefresh(90));
@@ -647,7 +669,6 @@
   addEventListener('scholark-language-complete',()=>scheduleWorkspaceLanguageRefresh(150));
   addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{ensureSidebarActions('runtime-ready');renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
   addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
-  addEventListener('resize',()=>requestAnimationFrame(syncLevelScrollControls));
   const sidebarActionsObserver=new MutationObserver(()=>{
     if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
     document.querySelectorAll('#v51-top-actions').forEach(el=>el.remove());
