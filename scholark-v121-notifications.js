@@ -1,6 +1,6 @@
 (() => {
   if(window.__SCHOLARK_NOTIFICATIONS__)return;
-  const RELEASE='r236-notifications';
+  const RELEASE='r238-notifications';
   const VAPID_PUBLIC='BCZr66dMfGomd-lDQTaglxhFbjYCd4vZ55AKZ_Nwp_p4WC4P-UCCyOG9WL_0Nnes_HD4eCdQIi3igZ2I4kgREqA';
   const ASSIGN_KEY='scholark_v106_assignments',ONBOARD_KEY='scholark_notification_onboarding_pending';
   const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
@@ -119,12 +119,20 @@
     $('#v121-save').onclick=async()=>{await savePrefs({enabled:$('#v121-enabled').checked,task_reminders:$('#v121-task').checked,payment_reminders:$('#v121-payment').checked,study_reminders:$('#v121-study').checked,study_time:$('#v121-study-time').value||'19:00',task_lead_minutes:Number($('#v121-lead').value)||60,quiet_hours_start:$('#v121-quiet-start').value||'22:00',quiet_hours_end:$('#v121-quiet-end').value||'07:00',timezone:timezone()});st.textContent='Notification settings saved.';scheduleAssignmentSync(100)};
     const tomorrow=new Date(Date.now()+86400000);$('#v121-date').value=tomorrow.toISOString().slice(0,10);$('#v121-time').value='18:00';
   }
+  async function onboardingNeeded(){
+    const x=await ctx();if(!x)return false;
+    try{if(localStorage.getItem(ONBOARD_KEY)==='1')return true}catch{}
+    try{
+      const r=await x.c.request('/rest/v1/notification_preferences?select=device_onboarding_done&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1'),d=await r.json().catch(()=>[]);
+      const row=(Array.isArray(d)?d[0]:d)||null;return row?.device_onboarding_done!==true
+    }catch{return false}
+  }
   function offerDeviceLink(){
     clearTimeout(onboardTimer);onboardTimer=setTimeout(async()=>{
-      const x=await ctx();if(!x)return;let pending=false;try{pending=localStorage.getItem(ONBOARD_KEY)==='1'}catch{}if(!pending)return;
+      if(!(await onboardingNeeded()))return;
       let modal=$('#v121-onboard');if(!modal){modal=document.createElement('div');modal.id='v121-onboard';modal.className='v121-onboard';document.body.appendChild(modal)}
-      modal.innerHTML='<div class="v121-onboard-card"><small>SCHOLARK DEVICES</small><h2>Link one or more devices for reminders?</h2><p>Link this device now so SCHOLARK can remind you about homework, assignments, reminders you create yourself and upcoming payments. You can link more phones, tablets, laptops or PCs later by signing in to the same account on each device.</p><div class="v121-actions"><button class="v121-btn" data-v121-onboard-link>Link this device</button><button class="v121-btn alt" data-v121-onboard-later>Not now</button></div><div class="v121-status"></div></div>';modal.classList.add('open');
-      $('[data-v121-onboard-later]',modal).onclick=()=>{try{localStorage.removeItem(ONBOARD_KEY)}catch{};modal.classList.remove('open')};
+      modal.innerHTML='<div class="v121-onboard-card"><small>SCHOLARK DEVICES</small><h2>Link one or more devices for reminders?</h2><p>Link this device now so SCHOLARK can remind you about homework, assignments, reminders you create yourself and upcoming payments. You can link more phones, tablets, laptops or PCs later by signing in to the same account on each device. Compatible smartwatches normally receive the same SCHOLARK alerts through notification mirroring from the linked phone.</p><div class="v121-actions"><button class="v121-btn" data-v121-onboard-link>Link this device</button><button class="v121-btn alt" data-v121-onboard-later>Not now</button></div><div class="v121-status"></div></div>';modal.classList.add('open');
+      $('[data-v121-onboard-later]',modal).onclick=async()=>{try{localStorage.removeItem(ONBOARD_KEY)}catch{};try{await savePrefs({device_onboarding_done:true})}catch{}modal.classList.remove('open')};
       $('[data-v121-onboard-link]',modal).onclick=async e=>{const st=$('.v121-status',modal);e.currentTarget.disabled=true;try{await linkDevice();st.textContent='Device linked.';setTimeout(()=>modal.classList.remove('open'),550)}catch(err){st.textContent=clean(err?.message||err,300);e.currentTarget.disabled=false}};
     },500)
   }
@@ -133,5 +141,5 @@
   addEventListener('scholark:notification-onboarding',()=>offerDeviceLink());
   addEventListener('scholark:auth-changed',e=>{if(e.detail?.signedIn){offerDeviceLink();scheduleAssignmentSync(900)}});
   addEventListener('scholark-runtime-ready',()=>{sw().catch(()=>{});setTimeout(()=>{offerDeviceLink();scheduleAssignmentSync(1600)},900)},{once:true});
-  window.__SCHOLARK_NOTIFICATIONS__={open,linkDevice,currentDeviceReady,offerDeviceLink,syncAssignments,createReminder,release:RELEASE};
+  window.__SCHOLARK_NOTIFICATIONS__={open,linkDevice,currentDeviceReady,offerDeviceLink,onboardingNeeded,syncAssignments,createReminder,release:RELEASE};
 })();
