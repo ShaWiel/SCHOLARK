@@ -33,12 +33,12 @@
     'scholark-v93-language-learner.js':'20261008-v93-hero-r231',
     'scholark-v82-tutor-cloud.js':'20261008-v82-edit-r229',
     'scholark-v106-workspace-power-tools.js':'20261008-v106-focus-stepper-r230',
-    'scholark-v107-general-ai.js':'20261009-v107-render-r237',
+    'scholark-v107-general-ai.js':'20261009-v107-html-r238',
     'scholark-v110-workspace-core.js':'20261008-v110-context-safe-r227',
     'scholark-v120-experience-controls.js':'20261009-v120-arki-r237',
     'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232',
     'scholark-v86-file-intelligence.js':'20261008-v86-route-r233',
-    'scholark-v121-notifications.js':'20261009-v121-reminders-r236'
+    'scholark-v121-notifications.js':'20261009-v121-reminders-r238'
   })[file] || VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',

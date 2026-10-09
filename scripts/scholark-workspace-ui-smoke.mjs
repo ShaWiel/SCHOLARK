@@ -758,6 +758,24 @@ check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scho
 check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
 check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
 await page.click('#v107-new');
+await page.route('**/api/learning/generate',async route=>{
+  let body={};try{body=route.request().postDataJSON()}catch{}
+  if(body.mode!=='general_ai'){await route.continue();return}
+  const html='<!doctype html><html><body><button id="demo">Tap me</button><strong id="out">ready</strong><script>document.querySelector("#demo").onclick=()=>document.querySelector("#out").textContent="worked"<\/script></body></html>';
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,result:{title:'Interactive demo',answer:'Here is the interactive file.\n\n```html\n'+html+'\n```',suggestedFollowUps:[]},usage:{billingMode:'server',serverCharged:false,spent:0}})});
+});
+await page.fill('#v107-q','Create an interactive HTML button demo');
+await page.click('#v107-send');
+await page.waitForSelector('[data-v107-html-open]',{timeout:5000});
+await page.locator('.v107-msg.assistant').last().locator('[data-v107-html-open]').click();
+await page.waitForSelector('.v107-msg.assistant .v107-html-frame',{state:'visible',timeout:3000});
+const sandboxAttr=await page.locator('.v107-msg.assistant').last().locator('.v107-html-frame').getAttribute('sandbox');
+check(/allow-scripts/.test(sandboxAttr||'')&&!/allow-same-origin/.test(sandboxAttr||''),'ARKI HTML preview sandbox can access SCHOLARK origin');
+const previewFrame=page.frameLocator('.v107-msg.assistant .v107-html-frame');
+await previewFrame.locator('#demo').click();
+check((await previewFrame.locator('#out').innerText())==='worked','ARKI interactive HTML preview did not execute inline interaction');
+await page.unroute('**/api/learning/generate');
+await page.click('#v107-new');
 check(await page.locator('.v107-welcome').count()===1,'ARKI new chat did not reset the conversation surface');
 
 // Production-like dead-button regression: strip any element-local click handler by
@@ -999,7 +1017,7 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'Reminders sidebar route is missing');
 await route('reminders','#v51-fallback .v121');
 check(await page.locator('#v51-fallback .v121').count()===1,'Reminders surface did not mount');
-check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r236-notifications'),'Reminders runtime API did not initialize');
+check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r238-notifications'),'Reminders runtime API did not initialize');
 const reminderSignedIn=await page.locator('#v121-signin').count()===0;
 if(reminderSignedIn){check(await page.locator('#v121-study-time').count()===1,'Daily study reminder time control is missing');check(await page.locator('#v121-payment').count()===1,'Payment reminder preference is missing');check(await page.locator('#v121-link').count()===1,'Device linking action is missing');}
 
