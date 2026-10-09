@@ -12,7 +12,7 @@
     #v41-sidebar-pro{display:none!important;visibility:hidden!important;pointer-events:none!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
     #v51-sidebar .v51-quality{display:none!important}
 
-    /* Homepage topbar: SCHOLARK dark navigation chrome. */
+    /* Homepage topbar: SCHOLAVERUM dark navigation chrome. */
     #v55-topbar{
       background:rgba(12,14,19,.97)!important;
       border-bottom:1px solid rgba(255,255,255,.09)!important;
@@ -21,17 +21,10 @@
     }
     #v55-topbar .v55-brand{color:#fff!important}
     #v55-topbar .v55-brand small{color:#9f9aa9!important}
-    #v55-topbar .v55-brand-mark{
-      width:42px!important;height:42px!important;border-radius:0!important;
-      padding:0!important;background:transparent!important;color:transparent!important;
-      overflow:hidden!important;display:grid!important;place-items:center!important;
-      flex:0 0 42px!important;
-    }
-    #v55-topbar .v55-brand-mark img,
-    #v55-topbar .v55-brand-mark svg,
-    #v55-topbar .v55-brand-mark picture,
-    #v55-topbar .v55-brand-mark canvas{
-      display:block!important;max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;
+    #v55-topbar .v55-brand-logo{
+      display:block!important;width:64px!important;height:48px!important;
+      object-fit:contain!important;object-position:center!important;
+      flex:0 0 64px!important;background:transparent!important;
     }
     #v55-topbar .v55-select,#v55-topbar .v55-btn{
       background:#1b1e27!important;color:#f7f6fb!important;border-color:rgba(255,255,255,.11)!important;
@@ -47,24 +40,6 @@
   `;
   document.head.appendChild(style);
 
-  function syncTopbarLogo(){
-    const source=$('#v51-sidebar .v51-logo');
-    const target=$('#v55-topbar .v55-brand-mark');
-    if(!source||!target)return;
-
-    const html=source.innerHTML.trim();
-    if(!html)return;
-
-    const signature=html.replace(/\s+/g,' ');
-    if(target.dataset.v56LogoSignature===signature)return;
-
-    target.innerHTML='';
-    [...source.childNodes].forEach(node=>target.appendChild(node.cloneNode(true)));
-    target.dataset.v56LogoSignature=signature;
-    target.dataset.v56OfficialLogo='1';
-    target.setAttribute('aria-label','SCHOLARK logo');
-  }
-
   function cleanup(){
     const side=$('#v51-sidebar');
     if(side){
@@ -78,7 +53,6 @@
         else if(!brand&&home.parentElement!==side)side.prepend(home);
       }
     }
-    syncTopbarLogo();
   }
 
   cleanup();

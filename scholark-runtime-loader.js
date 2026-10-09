@@ -23,23 +23,8 @@
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r221'});
 
-  const VERSION = '20261009-r242-logo-push';
-  const ASSET_VERSION = file => ({
-    'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-profile-r225',
-    'scholark-v51-workspace-shell.js':'20261008-v51-tutor-name-r231',
-    'scholark-v52-workspace-qa.js':'20261008-v52-tutor-name-r231',
-    'scholark-v111-workspace-experience.js':'20261008-v111-tutor-name-r231',
-    'scholark-v114-workspace-orchestrator.js':'20261008-v114-tutor-name-r231',
-    'scholark-v93-language-learner.js':'20261008-v93-hero-r231',
-    'scholark-v82-tutor-cloud.js':'20261008-v82-edit-r229',
-    'scholark-v106-workspace-power-tools.js':'20261008-v106-focus-stepper-r230',
-    'scholark-v107-general-ai.js':'20261009-v107-html-r238',
-    'scholark-v110-workspace-core.js':'20261008-v110-context-safe-r227',
-    'scholark-v120-experience-controls.js':'20261009-v120-arki-r237',
-    'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232',
-    'scholark-v86-file-intelligence.js':'20261008-v86-route-r233',
-    'scholark-v121-notifications.js':'20261009-v121-reminders-r238'
-  })[file] || VERSION;
+  const VERSION = '20261009-r244-logo-canonical';
+  const ASSET_VERSION = () => VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
     'scholark-v36-workspace-i18n.js','scholark-v41-home-pricing-dashboard.js','scholark-v42-route-guard.js',
