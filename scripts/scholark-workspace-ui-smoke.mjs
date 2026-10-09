@@ -1000,6 +1000,8 @@ check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1
 await route('reminders','#v51-fallback .v121');
 check(await page.locator('#v51-fallback .v121').count()===1,'Reminders surface did not mount');
 check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r234-notifications'),'Reminders runtime API did not initialize');
+const reminderSignedIn=await page.locator('#v121-signin').count()===0;
+if(reminderSignedIn){check(await page.locator('#v121-study-time').count()===1,'Daily study reminder time control is missing');check(await page.locator('#v121-payment').count()===1,'Payment reminder preference is missing');check(await page.locator('#v121-link').count()===1,'Device linking action is missing');}
 
 await route('progress','#v51-fallback .v52-tool');
 try{await page.waitForFunction(()=>/photosynthesis/i.test(document.querySelector('#v51-fallback .v52-tool')?.textContent||''),{timeout:2500})}catch{}
