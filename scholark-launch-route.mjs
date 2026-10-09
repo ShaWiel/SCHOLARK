@@ -9,7 +9,7 @@ const TEST_MODE=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE|
 const PADDLE_ENV=String(process.env.PADDLE_ENV||'sandbox').toLowerCase()==='production'?'production':'sandbox';
 const SUPPORT_EMAIL=String(process.env.SCHOLARK_SUPPORT_EMAIL||'').trim().slice(0,240);
 const IN_APP_SUPPORT=true;
-const LEGAL_NAME=String(process.env.SCHOLARK_LEGAL_NAME||'SCHOLARK').trim().slice(0,240)||'SCHOLARK';
+const LEGAL_NAME=String(process.env.SCHOLARK_LEGAL_NAME||'SCHOLAVERUM').trim().slice(0,240)||'SCHOLAVERUM';
 const PRODUCT_STAGE=cleanEnv(process.env.SCHOLARK_PRODUCT_STAGE||'beta',40)||'beta';
 const DEPLOY_TIER=cleanEnv(process.env.SCHOLARK_DEPLOY_TIER||'unknown',60)||'unknown';
 const CAPACITY_VALIDATED=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_CAPACITY_VALIDATED||''));
@@ -97,7 +97,7 @@ async function exportAccount(user){
   }
   const collab=await collaboratorRows(user.id);data.project_collaborators=collab.rows;if(!collab.ok)failures.push({table:'project_collaborators',status:collab.status});
   return {
-    schema:1,product:'SCHOLARK',release:RELEASE,exportedAt:new Date().toISOString(),
+    schema:1,product:'SCHOLAVERUM',release:RELEASE,exportedAt:new Date().toISOString(),
     account:{id:user.id,email:user.email||null,created_at:user.created_at||null,last_sign_in_at:user.last_sign_in_at||null},
     data,failures,includedTables:Object.keys(data)
   };
@@ -220,12 +220,12 @@ http.Server.prototype.emit=function(type,...args){
       if(TEST_MODE)return json(res,503,{ok:false,code:'ACCOUNT_DELETE_DISABLED_IN_TEST'});
       const billing=await activeBilling(user.id);
       if(billing&&['trialing','active','past_due','paused'].includes(String(billing.status||''))){
-        return json(res,409,{ok:false,code:'ACTIVE_SUBSCRIPTION',error:'Manage or cancel the active subscription before deleting this SCHOLARK account.',manageBilling:true,plan:billing.plan,status:billing.status,currentPeriodEnd:billing.current_period_end||null});
+        return json(res,409,{ok:false,code:'ACTIVE_SUBSCRIPTION',error:'Manage or cancel the active subscription before deleting this SCHOLAVERUM account.',manageBilling:true,plan:billing.plan,status:billing.status,currentPeriodEnd:billing.current_period_end||null});
       }
       const storageResult=await deleteUserStorage(user.id);
-      if(!storageResult.ok)return json(res,500,{ok:false,code:'ACCOUNT_STORAGE_DELETE_FAILED',error:'SCHOLARK could not safely remove cloud media, so the account was not deleted.'});
+      if(!storageResult.ok)return json(res,500,{ok:false,code:'ACCOUNT_STORAGE_DELETE_FAILED',error:'SCHOLAVERUM could not safely remove cloud media, so the account was not deleted.'});
       const result=await deleteAuthUser(user.id);
-      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED',error:'The SCHOLARK account could not be deleted. No database cascade was started.'});
+      if(!result.ok)return json(res,result.status===401||result.status===403?503:500,{ok:false,code:'ACCOUNT_DELETE_FAILED',error:'The SCHOLAVERUM account could not be deleted. No database cascade was started.'});
       json(res,200,{ok:true,deleted:true,dataDeleted:true,storageObjectsDeleted:storageResult.count,billingEventRetention:'provider and detached operational records may remain where required'});
     }).catch(e=>json(res,e?.code==='REQUEST_TOO_LARGE'?413:400,{ok:false,code:e?.code||'ACCOUNT_DELETE_FAILED'}));return true;
   }
@@ -234,4 +234,4 @@ http.Server.prototype.emit=function(type,...args){
 };
 
 setInterval(()=>{const cutoff=Date.now()-10*60*1000;for(const [k,v] of feedbackRate)if(v.at<cutoff)feedbackRate.delete(k)},10*60*1000).unref?.();
-console.log('[SCHOLARK] Launch foundation route ready · release '+RELEASE+' · Paddle '+PADDLE_ENV+' · test '+TEST_MODE);
+console.log('[SCHOLAVERUM] Launch foundation route ready · release '+RELEASE+' · Paddle '+PADDLE_ENV+' · test '+TEST_MODE);

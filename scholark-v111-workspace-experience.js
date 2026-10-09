@@ -36,7 +36,7 @@
     return null;
   }
   function panel(title,desc,body,pill='CONNECTED'){
-    return '<section class="v111-live" data-v111-owner="r176"><div class="v111-top"><div><div class="v111-kicker">SCHOLARK · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div><details class="v111-insights"><summary><span>Connected insights</span><small>Open only when you need the wider workspace context</small></summary><div class="v111-insights-body">'+body+'</div></details></section>';
+    return '<section class="v111-live" data-v111-owner="r176"><div class="v111-top"><div><div class="v111-kicker">SCHOLAVERUM · CONNECTED WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><span class="v111-pill">'+esc(pill)+'</span></div><details class="v111-insights"><summary><span>Connected insights</span><small>Open only when you need the wider workspace context</small></summary><div class="v111-insights-body">'+body+'</div></details></section>';
   }
   function kpi(value,label){return '<div class="v111-kpi"><b>'+esc(value)+'</b><span>'+esc(label)+'</span></div>'}
   function openArki(prompt){
@@ -84,10 +84,10 @@
 
   async function generateCards(subject,topics=[],context=''){
     const api=core();if(!api)return 0;
-    const body={mode:'flashcards',subject:subject||'SCHOLARK Review',topics:Array.isArray(topics)?topics:[topics],count:8,context:clean(context).slice(0,8000),level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||'English'};
+    const body={mode:'flashcards',subject:subject||'SCHOLAVERUM Review',topics:Array.isArray(topics)?topics:[topics],count:8,context:clean(context).slice(0,8000),level:localStorage.getItem('scholark_learning_level')||'student',language:window.__SCHOLARK_I18N__?.languageName?.(localStorage.getItem('scholark_ui_language')||'en')||'English'};
     const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok)throw new Error(d?.error||'Could not generate flashcards');
-    return api.actions.addFlashcards(d.result?.deck||subject||'SCHOLARK Review',d.result?.cards||[]);
+    return api.actions.addFlashcards(d.result?.deck||subject||'SCHOLAVERUM Review',d.result?.cards||[]);
   }
   function weekDays(){
     const out=[];const d=new Date();d.setHours(12,0,0,0);
@@ -163,7 +163,7 @@
     $$('[data-v111-project-plan]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectPlan);if(!p)return;core().actions.addPlan({text:'Work on · '+p.title,type:'study',subject:p.subject||p.title,date:today(),duration:45,priority:'medium'});b.textContent='✓ Planned'});
     $$('[data-v111-project-toggle]',panelEl).forEach(b=>b.onclick=()=>{const p=core()?.data.learningProjects().find(x=>x.id===b.dataset.v111ProjectToggle);if(!p)return;core().actions.updateProject(p.id,{status:p.status==='complete'?'active':'complete'});refresh(true)});
     $$('[data-v111-project-delete]',panelEl).forEach(b=>b.onclick=()=>{core()?.actions.deleteProject(b.dataset.v111ProjectDelete);refresh(true)});
-    $('[data-v111-schools-arki]',panelEl)?.addEventListener('click',()=>{const r=rootFor('schools');openArki('Help me compare the school options currently shown in SCHOLARK. Consider my country, learning level and goals:\n\n'+clean(r?.innerText).slice(0,10000))});
+    $('[data-v111-schools-arki]',panelEl)?.addEventListener('click',()=>{const r=rootFor('schools');openArki('Help me compare the school options currently shown in SCHOLAVERUM. Consider my country, learning level and goals:\n\n'+clean(r?.innerText).slice(0,10000))});
     $('[data-v111-study-plan]',panelEl)?.addEventListener('click',e=>{const r=rootFor('study'),text=clean(r?.innerText).slice(0,140);core()?.actions.addPlan({text:'Continue Study Ahead roadmap',type:'study',subject:text,date:today(),duration:45,priority:'high'});e.currentTarget.textContent='✓ Added to Planner'});
     $('[data-v111-study-arki]',panelEl)?.addEventListener('click',()=>{const r=rootFor('study');openArki('Help me improve and act on this Study Ahead roadmap:\n\n'+clean(r?.innerText).slice(0,10000))});
   }
@@ -193,7 +193,7 @@
       const owned=[...root.querySelectorAll('.v111-live[data-v111-owner]')],old=owned[0]||$('.v111-live',root);
       // A forced refresh used to remove only one panel. If two observers raced,
       // the second panel survived every later refresh and made the Workspace
-      // look permanently duplicated. Collapse every SCHOLARK-owned panel first.
+      // look permanently duplicated. Collapse every SCHOLAVERUM-owned panel first.
       owned.slice(1).forEach(x=>x.remove());
       if(old&&!force){if(old.dataset)old.dataset.v111Tool=tool;augmentTutorMessages();window.dispatchEvent(new CustomEvent('scholark-experience-ready',{detail:{tool,source:'v111',reused:true}}));return}
       busy=true;try{

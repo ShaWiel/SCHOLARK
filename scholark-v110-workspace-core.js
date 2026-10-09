@@ -146,7 +146,7 @@
   function context(){
     let s;
     try{s=compute()}catch(e){
-      console.warn('[SCHOLARK] Workspace context compute recovered safely'+(window.__SCHOLARK_TEST_MODE__?' · '+String(e?.message||e):''));
+      console.warn('[SCHOLAVERUM] Workspace context compute recovered safely'+(window.__SCHOLARK_TEST_MODE__?' · '+String(e?.message||e):''));
       s={goals:{active:[]},planner:{active:[],all:[],completion:0},mastery:{weak:[]},flashcards:{due:[]},assignments:{active:[]},projects:[],focus:{minutes7d:0},activity:{consistency:0},next:null}
     }
     const fileApi=window.__SCHOLARK_V86_FILES__,studyApi=window.__SCHOLARK_V83_STUDY_AHEAD__;
@@ -198,17 +198,17 @@
   }
   async function aiRequest(mode,payload={},opts={}){
     const m=clean(mode).toLowerCase(),feature=AI_FEATURES[m];
-    if(!feature){const e=new Error('Unsupported SCHOLARK AI mode.');e.code='AI_MODE_UNSUPPORTED';throw e}
+    if(!feature){const e=new Error('Unsupported SCHOLAVERUM AI mode.');e.code='AI_MODE_UNSUPPORTED';throw e}
     const test=!!window.__SCHOLARK_TEST_MODE__;
     let session=test?null:await aiSession(false);
     if(!test&&!session?.access_token){
       if(opts.openAuth!==false)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
-      const e=new Error('Sign in to use SCHOLARK AI features and protect your credits.');e.code='AUTH_REQUIRED';throw e;
+      const e=new Error('Sign in to use SCHOLAVERUM AI features and protect your credits.');e.code='AUTH_REQUIRED';throw e;
     }
     if(!test){
       await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
       session=await aiSession(false);
-      if(!session?.access_token){const e=new Error('Your SCHOLARK session expired. Sign in again.');e.code='AUTH_REQUIRED';throw e}
+      if(!session?.access_token){const e=new Error('Your SCHOLAVERUM session expired. Sign in again.');e.code='AUTH_REQUIRED';throw e}
     }
     const requestId=clean(opts.requestId)||(globalThis.crypto?.randomUUID?.()||uid('sch-ai')).replace(/[^a-zA-Z0-9._:-]/g,'');
     const timeoutMs=Math.max(5000,Math.min(120000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?115000:70000):90000)));
@@ -236,7 +236,7 @@
     }
     const {response,data}=attempt;
     if(!response.ok||!data?.ok||!data?.result){
-      const e=new Error(data?.error||'SCHOLARK AI is temporarily unavailable.');e.code=data?.code||('HTTP_'+response.status);e.status=response.status;e.balance=data?.balance;e.needed=data?.needed;throw e;
+      const e=new Error(data?.error||'SCHOLAVERUM AI is temporarily unavailable.');e.code=data?.code||('HTTP_'+response.status);e.status=response.status;e.balance=data?.balance;e.needed=data?.needed;throw e;
     }
     if(data?.usage?.serverCharged||data?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
     return data;

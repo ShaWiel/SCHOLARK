@@ -9,7 +9,7 @@
   let queued=false,repairTimer=null,cacheReloaded=false;
 
   const FIXED={
-    'SCHOLARK WORKSPACE':{nl:'SCHOLARK WERKRUIMTE',en:'SCHOLARK WORKSPACE',es:'ESPACIO DE TRABAJO SCHOLARK',fr:'ESPACE DE TRAVAIL SCHOLARK',de:'SCHOLARK ARBEITSBEREICH',pt:'ESPAÇO DE TRABALHO SCHOLARK',it:'AREA DI LAVORO SCHOLARK'},
+    'SCHOLAVERUM WORKSPACE':{nl:'SCHOLAVERUM WERKRUIMTE',en:'SCHOLAVERUM WORKSPACE',es:'ESPACIO DE TRABAJO SCHOLAVERUM',fr:'ESPACE DE TRAVAIL SCHOLAVERUM',de:'SCHOLAVERUM ARBEITSBEREICH',pt:'ESPAÇO DE TRABALHO SCHOLAVERUM',it:'AREA DI LAVORO SCHOLAVERUM'},
     'LEARNING OS':{nl:'LEER-OS',en:'LEARNING OS',es:'SISTEMA DE APRENDIZAJE',fr:'SYSTÈME D’APPRENTISSAGE',de:'LERNSYSTEM',pt:'SISTEMA DE APRENDIZAGEM',it:'SISTEMA DI APPRENDIMENTO'},
     'Landing pages':{nl:'Landingspagina’s',en:'Landing pages',es:'Páginas de destino',fr:'Pages d’atterrissage',de:'Landingpages',pt:'Páginas de destino',it:'Landing page'},
     'Portfolios':{nl:'Portfolio’s',en:'Portfolios',es:'Portafolios',fr:'Portfolios',de:'Portfolios',pt:'Portfólios',it:'Portfolio'},
@@ -24,7 +24,7 @@
     'Improve':{nl:'Verbeter',en:'Improve',es:'Mejorar',fr:'Améliorer',de:'Verbessern',pt:'Melhorar',it:'Migliora'},
     'Regenerate only what needs work.':{nl:'Genereer alleen opnieuw wat beter moet.',en:'Regenerate only what needs work.',es:'Regenera solo lo que necesita mejorar.',fr:'Régénérez uniquement ce qui doit être amélioré.',de:'Nur das neu generieren, was verbessert werden muss.',pt:'Gere novamente apenas o que precisa melhorar.',it:'Rigenera solo ciò che deve essere migliorato.'},
     'Export':{nl:'Exporteer',en:'Export',es:'Exportar',fr:'Exporter',de:'Exportieren',pt:'Exportar',it:'Esporta'},
-    'Use the result outside SCHOLARK.':{nl:'Gebruik het resultaat buiten SCHOLARK.',en:'Use the result outside SCHOLARK.',es:'Usa el resultado fuera de SCHOLARK.',fr:'Utilisez le résultat en dehors de SCHOLARK.',de:'Nutze das Ergebnis außerhalb von SCHOLARK.',pt:'Use o resultado fora do SCHOLARK.',it:'Usa il risultato fuori da SCHOLARK.'}
+    'Use the result outside SCHOLAVERUM.':{nl:'Gebruik het resultaat buiten SCHOLAVERUM.',en:'Use the result outside SCHOLAVERUM.',es:'Usa el resultado fuera de SCHOLAVERUM.',fr:'Utilisez le résultat en dehors de SCHOLAVERUM.',de:'Nutze das Ergebnis außerhalb von SCHOLAVERUM.',pt:'Use o resultado fora do SCHOLAVERUM.',it:'Usa il risultato fuori da SCHOLAVERUM.'}
   };
   const variants=new Map();
   Object.entries(FIXED).forEach(([source,rows])=>{variants.set(source,source);Object.values(rows).forEach(v=>variants.set(v,source))});
@@ -53,7 +53,7 @@
       if(lc==='en')continue;
       const key='scholark_v90_i18n_v9-global74-resilient-atomic-layout_'+lc;let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
       for(const [source,rows] of Object.entries(FIXED))if(rows[lc])saved[source]=rows[lc];
-      saved['SCHOLARK Free']='SCHOLARK Free';saved['SCHOLARK Plus']='SCHOLARK Plus';saved['SCHOLARK Pro']='SCHOLARK Pro';
+      saved['SCHOLAVERUM Free']='SCHOLAVERUM Free';saved['SCHOLAVERUM Plus']='SCHOLAVERUM Plus';saved['SCHOLAVERUM Pro']='SCHOLAVERUM Pro';
       try{localStorage.setItem(key,JSON.stringify(saved))}catch{}
     }
   }
@@ -80,7 +80,7 @@
     }
   }
   function repairPlanNames(){
-    const plans=$$('#v41-home-pricing .v41-plan');['SCHOLARK Free','SCHOLARK Plus','SCHOLARK Pro'].forEach((name,i)=>{const h3=plans[i]?.querySelector('h3');if(h3&&h3.textContent.trim()!==name)h3.textContent=name});
+    const plans=$$('#v41-home-pricing .v41-plan');['SCHOLAVERUM Free','SCHOLAVERUM Plus','SCHOLAVERUM Pro'].forEach((name,i)=>{const h3=plans[i]?.querySelector('h3');if(h3&&h3.textContent.trim()!==name)h3.textContent=name});
   }
   function visibleRoots(){return [$('#v55-topbar'),$('#v29-home-layer'),$('#v41-home-pricing'),$('#v51-sidebar'),$('#v51-main'),$('#v41-studio-workspace:not([hidden])'),$('#v50-school.open'),$('#v25-study.open'),$('#v51-fallback .v64-projects'),$('#v51-fallback .v65-book')].filter(Boolean)}
   function repairLocalization(){
@@ -141,7 +141,7 @@
     };
     report.ok=report.runtimeErrors.length===0&&report.workspaceLanguage&&report.languageIconClean&&report.projectMounted&&report.projectSidebar&&report.studioMounted&&report.homeOwner&&(!report.home||(report.activeMode===report.previewMode&&report.previewComplete&&report.stageReady&&report.stageModeMatched&&report.statusModeMatched&&report.promptReady&&report.promptMultiline&&report.topbarLanguage&&report.presentersRemoved&&report.futureSchoolLive&&report.futureStudyLive&&report.masteryBars===3&&report.masteryAnimated&&report.languageSwitchSettled&&report.cinematicRunning));
     try{sessionStorage.setItem('scholark_foundation_r194',JSON.stringify(report))}catch{}
-    console[report.ok?'log':'warn']('[SCHOLARK] Foundation R194 '+(report.ok?'PASS':'WARN'),report);if(!report.ok)schedule(60);return report;
+    console[report.ok?'log':'warn']('[SCHOLAVERUM] Foundation R194 '+(report.ok?'PASS':'WARN'),report);if(!report.ok)schedule(60);return report;
   }
 
   document.addEventListener('click',e=>{const tool=e.target.closest?.('[data-v51-tool]')?.dataset?.v51Tool;if(tool==='project'){setTimeout(repairProject,0);setTimeout(repairProject,70);setTimeout(repairProject,200)}if(tool==='studio'&&window.__SCHOLARK_FEATURE_FLAGS__?.studio!==false){prewarmStudio();setTimeout(repairStudio,0);setTimeout(repairStudio,60)}},false);

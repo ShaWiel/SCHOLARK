@@ -44,6 +44,9 @@ COPY scholark-v120-experience-controls.js /tmp/scholark-v120-experience-controls
 COPY scholark-v121-notifications.js /tmp/scholark-v121-notifications.js
 COPY scholark-sw.js /app/scholark-sw.js
 COPY scholark.webmanifest /app/scholark.webmanifest
+COPY scholaverum-logo.webp /tmp/scholaverum-logo.webp
+COPY scholaverum-icon-512.webp /tmp/scholaverum-icon-512.webp
+COPY scholaverum-logo-compat.png /tmp/scholaverum-logo-compat.png
 
 # Active runtime only. Older workspace routers and the retired V97 coordinator are intentionally not loaded.
 COPY scholark-v29-home-overlay.js \
@@ -112,17 +115,22 @@ COPY scholark-v29-home-overlay.js \
 
 RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --check "$f" || exit 1; done \
     && unzip /tmp/scholark.zip -d /app \
+    && cp /tmp/scholaverum-logo.webp /app/scholaverum-logo.webp \
+    && cp /tmp/scholaverum-icon-512.webp /app/scholaverum-icon-512.webp \
+    && cp /tmp/scholaverum-logo-compat.png /app/scholaverum-logo.png \
+    && cp /tmp/scholaverum-logo-compat.png /app/scholark-logo.png \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
     && base64 -d /tmp/scholark_v23_education.gz.b64 | gunzip > /app/education-expansion.js \
     && node -e 'const fs=require("fs"),p="/app/i18n.js";let s=fs.readFileSync(p,"utf8");const re=/function\s+translateNode\s*\(([^)]*)\)\s*\{/;if(!re.test(s))throw new Error("legacy translateNode not found");s=s.replace(re,(m,args)=>{const first=(args.split(",")[0]||"").trim()||"node";return `function translateNode(${args}){/* SCHOLARK_MODERN_WORKSPACE_I18N */if(document.body?.classList?.contains("v51-workspace"))return;const __schLegacyNode=${first};if(__schLegacyNode?.closest?.("#v55-topbar")||__schLegacyNode?.parentElement?.closest?.("#v55-topbar"))return;`});fs.writeFileSync(p,s)' \
     && grep -q 'SCHOLARK_MODERN_WORKSPACE_I18N' /app/i18n.js \
-    && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' -o -name '*.css' -o -name '*.md' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g; s#https://studentos-360-shawiel-7vsm.onrender.com#https://scholark-app-shawiel.onrender.com#g; s#studentos-360-shawiel-7vsm.onrender.com#scholark-app-shawiel.onrender.com#g; s#StudentOS 360#SCHOLARK#g; s#StudentOS#SCHOLARK#g; s#Student OS 360#SCHOLARK#g; s#Student OS#SCHOLARK#g' {} + \
+    && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' -o -name '*.css' -o -name '*.md' \) -exec sed -i 's#http://localhost:3000#https://scholark-app-shawiel.onrender.com#g; s#https://studentos-360-shawiel-7vsm.onrender.com#https://scholark-app-shawiel.onrender.com#g; s#studentos-360-shawiel-7vsm.onrender.com#scholark-app-shawiel.onrender.com#g; s#StudentOS 360#SCHOLAVERUM#g; s#StudentOS#SCHOLAVERUM#g; s#Student OS 360#SCHOLAVERUM#g; s#Student OS#SCHOLAVERUM#g; s#\<SCHOLARK\>#SCHOLAVERUM#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#Billed Monthly. Cancel anytime#g; s#For intensive use and maximum AI quality\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $14.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $19.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#Start Plus free trial#Choose Plus#g; s#Start Pro free trial#Choose Pro#g; s#Start 7-day Plus trial#Choose Plus#g; s#Start 7-day Pro trial#Choose Pro#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261007-r221\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261009-r239-brand\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name 'scholark-v*.js' ! -name 'scholark-v98-brand-migration.js' -exec sed -i 's#\<SCHOLARK\>#SCHOLAVERUM#g' {} + \
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-logo-compat.png
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.
@@ -137,7 +145,7 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev --no-audit --no-fund; el
        sanitize-html@2.18.0
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r221
+ENV SCHOLARK_RELEASE=r239
 ENV SCHOLARK_TEST_MODE=0
 ENV SCHOLARK_FREE_AI_ONLY=1
 ENV SCHOLARK_AI_LIVE=1

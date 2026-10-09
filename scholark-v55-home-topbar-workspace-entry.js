@@ -88,24 +88,24 @@
   let v55AvatarUrl='',v55AvatarPath='',v55Identity={id:'',email:'',name:'',avatarPath:''},v55HydrateEpoch=0,v55ProfileFetchedAt=0,v55ProfileFetchedId='';
   function accountSnapshot(){
     const c=window.__SCHOLARK_V72_CLOUD__,s=c?.currentSession?.(),u=s?.user||{},rows=c?.rememberedAccounts?.()||[],email=String(u.email||'').toLowerCase(),cur=rows.find(x=>x.id===u.id||x.email===email)||{};
-    return {id:String(u.id||cur.id||''),email:String(u.email||cur.email||''),name:String(cur.displayName||u.user_metadata?.full_name||u.email?.split('@')[0]||'SCHOLARK'),avatarPath:String(cur.avatarPath||'')};
+    return {id:String(u.id||cur.id||''),email:String(u.email||cur.email||''),name:String(cur.displayName||u.user_metadata?.full_name||u.email?.split('@')[0]||'SCHOLAVERUM'),avatarPath:String(cur.avatarPath||'')};
   }
-  function renderProfileAvatar(el,identity=v55Identity){if(!el)return;el.innerHTML='<span>'+escAccount(accountInitials(identity.name,identity.email))+'</span>';el.title=identity.email||identity.name||'SCHOLARK profile'}
+  function renderProfileAvatar(el,identity=v55Identity){if(!el)return;el.innerHTML='<span>'+escAccount(accountInitials(identity.name,identity.email))+'</span>';el.title=identity.email||identity.name||'SCHOLAVERUM profile'}
   async function hydrateAccountIdentity(){
     if(!topbar?.isConnected)return;const epoch=++v55HydrateEpoch,c=window.__SCHOLARK_V72_CLOUD__;let identity=accountSnapshot();
     const shouldFetch=identity.id&&c?.request&&(identity.id!==v55ProfileFetchedId||Date.now()-v55ProfileFetchedAt>60000);if(shouldFetch){try{const r=await c.request('/rest/v1/profiles?select=display_name,avatar_path&user_id=eq.'+encodeURIComponent(identity.id)+'&limit=1',{method:'GET'}),d=await r.json().catch(()=>[]),p=Array.isArray(d)?d[0]:d;if(p){identity.name=String(p.display_name||identity.name||'');identity.avatarPath=String(p.avatar_path||identity.avatarPath||'');c.updateRememberedAccount?.({displayName:identity.name,avatarPath:identity.avatarPath})}v55ProfileFetchedAt=Date.now();v55ProfileFetchedId=identity.id}catch{}}
     if(epoch!==v55HydrateEpoch||!topbar?.isConnected)return;v55Identity=identity;
     const avatar=$('#v55-profile-avatar',topbar),menuAvatar=$('#v55-menu-avatar',topbar);renderProfileAvatar(avatar,identity);renderProfileAvatar(menuAvatar,identity);
     if(identity.avatarPath&&v55AvatarUrl&&v55AvatarPath===identity.avatarPath){for(const el of [avatar,menuAvatar].filter(Boolean))el.innerHTML='<img src="'+escAccount(v55AvatarUrl)+'" alt="Profile photo">'}else if(identity.avatarPath&&c?.profilePhotoUrl){try{const url=await c.profilePhotoUrl(identity.avatarPath);if(epoch!==v55HydrateEpoch||!url)return;if(v55AvatarUrl&&v55AvatarUrl!==url)try{URL.revokeObjectURL(v55AvatarUrl)}catch{}v55AvatarUrl=url;v55AvatarPath=identity.avatarPath;for(const el of [avatar,menuAvatar].filter(Boolean))el.innerHTML='<img src="'+escAccount(url)+'" alt="Profile photo">' }catch{}}else if(!identity.avatarPath){if(v55AvatarUrl)try{URL.revokeObjectURL(v55AvatarUrl)}catch{}v55AvatarUrl='';v55AvatarPath=''}
-    const name=$('#v55-menu-name',topbar),email=$('#v55-menu-email',topbar);if(name)name.textContent=identity.name||'SCHOLARK';if(email)email.textContent=identity.email||'';
+    const name=$('#v55-menu-name',topbar),email=$('#v55-menu-email',topbar);if(name)name.textContent=identity.name||'SCHOLAVERUM';if(email)email.textContent=identity.email||'';
   }
   function accountMenu(){
     const c=window.__SCHOLARK_V72_CLOUD__,plan=(window.__SCHOLARK_BILLING__?.plan?.()||'free').toUpperCase(),t=topbarCopy(),on=signedIn(),identity=accountSnapshot(),rows=(c?.rememberedAccounts?.()||[]).filter(x=>x.id!==identity.id&&x.email!==identity.email).slice(0,6);
-    const others=rows.length?rows.map(a=>'<button class="v55-profile-row" data-v55-account="switch" data-v55-key="'+escAccount(a.id||a.email)+'"><span class="v55-row-badge">'+escAccount(accountInitials(a.displayName,a.email))+'</span><span class="v55-row-copy"><strong>'+escAccount(a.displayName||a.email)+'</strong><small>'+escAccount(a.email)+'</small></span></button>').join(''):'<div class="v55-profile-empty">No other SCHOLARK profiles saved on this device yet.</div>';
-    return '<div class="v55-profile-card"><span class="v55-menu-avatar" id="v55-menu-avatar">'+escAccount(accountInitials(identity.name,identity.email))+'</span><span class="v55-profile-meta"><b id="v55-menu-name">'+escAccount(identity.name||'SCHOLARK')+'</b><span id="v55-menu-email">'+escAccount(identity.email||(!on?t.signedOut:''))+'</span><span>'+escAccount(plan)+' plan</span></span></div>'+
+    const others=rows.length?rows.map(a=>'<button class="v55-profile-row" data-v55-account="switch" data-v55-key="'+escAccount(a.id||a.email)+'"><span class="v55-row-badge">'+escAccount(accountInitials(a.displayName,a.email))+'</span><span class="v55-row-copy"><strong>'+escAccount(a.displayName||a.email)+'</strong><small>'+escAccount(a.email)+'</small></span></button>').join(''):'<div class="v55-profile-empty">No other SCHOLAVERUM profiles saved on this device yet.</div>';
+    return '<div class="v55-profile-card"><span class="v55-menu-avatar" id="v55-menu-avatar">'+escAccount(accountInitials(identity.name,identity.email))+'</span><span class="v55-profile-meta"><b id="v55-menu-name">'+escAccount(identity.name||'SCHOLAVERUM')+'</b><span id="v55-menu-email">'+escAccount(identity.email||(!on?t.signedOut:''))+'</span><span>'+escAccount(plan)+' plan</span></span></div>'+
       '<button data-v55-account="manage">Customize profile</button><button data-v55-account="manage">Manage account</button><button data-v55-account="plans">'+t.plans+'</button>'+
-      '<div class="v55-menu-head"><b>Other SCHOLARK profiles</b></div>'+others+
-      '<button data-v55-account="add-profile">＋ Add SCHOLARK profile</button><button data-v55-account="manage">Manage SCHOLARK profiles</button>'+
+      '<div class="v55-menu-head"><b>Other SCHOLAVERUM profiles</b></div>'+others+
+      '<button data-v55-account="add-profile">＋ Add SCHOLAVERUM profile</button><button data-v55-account="manage">Manage SCHOLAVERUM profiles</button>'+
       (on?'<button class="danger" data-v55-account="signout">'+t.signout+'</button>':'<button data-v55-account="signin">'+t.signin+'</button>');
   }
 
@@ -127,7 +127,7 @@
     if(topbar?.isConnected)return;
     topbar=$('#v55-topbar');
     if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);authButton=$('#v55-auth',topbar);return}
-    topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholark-logo.png" alt="SCHOLARK logo"><div>SCHOLARK<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><button type="button" class="v117-store-return" id="v117-store-return-home" aria-label="Return to Homepage"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span></button><button type="button" class="v117-store-return primary" id="v117-store-return-workspace" aria-label="Return to Workspace"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span></button><div class="v55-account-wrap"><button class="v55-btn v55-profile-trigger" id="v55-account" data-sch-i18n-owned="1" aria-haspopup="menu" aria-expanded="false" title="SCHOLARK profile"><span class="v55-profile-avatar" id="v55-profile-avatar"><span>S</span></span><span class="v55-account-label"></span></button><div class="v55-menu" role="menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
+    topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholaverum-logo.webp" alt="SCHOLAVERUM logo"><div>SCHOLAVERUM<small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><button type="button" class="v117-store-return" id="v117-store-return-home" aria-label="Return to Homepage"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span></button><button type="button" class="v117-store-return primary" id="v117-store-return-workspace" aria-label="Return to Workspace"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span></button><div class="v55-account-wrap"><button class="v55-btn v55-profile-trigger" id="v55-account" data-sch-i18n-owned="1" aria-haspopup="menu" aria-expanded="false" title="SCHOLAVERUM profile"><span class="v55-profile-avatar" id="v55-profile-avatar"><span>S</span></span><span class="v55-account-label"></span></button><div class="v55-menu" role="menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
     document.body.appendChild(topbar);pruneTopbarDuplicates();
     queueMicrotask(()=>window.dispatchEvent(new CustomEvent('scholark:topbar-ready')));
     const lang=$('#v55-language',topbar);const saved=localStorage.getItem('scholark_ui_language')||'nl';lang.value=languageRows().some(x=>x[0]===saved)?saved:'nl';lang.onchange=()=>window.__SCHOLARK_I18N__?.changeLanguage?.(lang.value)||applyLanguage(lang.value);
@@ -220,7 +220,7 @@
       if(!on&&(authButton.dataset.v55State!==state||text(authButton)!==expectedAuth)){
         authButton.dataset.v55State=state;
         authButton.innerHTML='<b>'+t.signin+'</b>';
-        authButton.title=expectedAuth+' · SCHOLARK';
+        authButton.title=expectedAuth+' · SCHOLAVERUM';
       }
     }
     if(accountWrap?.classList.contains('open')){
@@ -247,7 +247,7 @@
     let final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',home);
     if(!final){final=$$('section,div',home).filter(el=>/je volgende voorsprong kan vandaag beginnen|your next advantage can start today/i.test(text(el))).sort((a,b)=>a.querySelectorAll('*').length-b.querySelectorAll('*').length)[0]||null}
     if(!final)return;
-    const wrap=document.createElement('section');wrap.id='v55-workspace-cta';wrap.innerHTML=`<button class="v55-entry" type="button"><div><small>SCHOLARK WORKSPACE</small><strong>Go to Workspace</strong><p>Open your dashboard, ARKI, AI Tutor, learning tools, planning, goals and Pro tools.</p></div><span class="v55-entry-arrow">→</span></button>`;$('.v55-entry',wrap).onclick=openWorkspace;final.insertAdjacentElement('afterend',wrap);window.__SCHOLARK_I18N__?.apply?.(wrap);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),40);
+    const wrap=document.createElement('section');wrap.id='v55-workspace-cta';wrap.innerHTML=`<button class="v55-entry" type="button"><div><small>SCHOLAVERUM WORKSPACE</small><strong>Go to Workspace</strong><p>Open your dashboard, ARKI, AI Tutor, learning tools, planning, goals and Pro tools.</p></div><span class="v55-entry-arrow">→</span></button>`;$('.v55-entry',wrap).onclick=openWorkspace;final.insertAdjacentElement('afterend',wrap);window.__SCHOLARK_I18N__?.apply?.(wrap);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),40);
   }
 
   function sync(){

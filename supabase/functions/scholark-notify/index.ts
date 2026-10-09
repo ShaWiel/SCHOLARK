@@ -45,7 +45,7 @@ async function dispatchCustom(cfg:any){
     if(r.kind==="payment"&&p.payment_reminders===false)continue;
     if(["task","assignment","homework"].includes(r.kind)&&p.task_reminders===false)continue;
     const key=r.dedupe_key||("reminder:"+r.id);
-    const out=await pushUser(r.user_id,key,{title:r.title||"SCHOLARK reminder",body:r.body||"",url:safeUrl(r.url),tag:key,kind:r.kind},cfg);
+    const out=await pushUser(r.user_id,key,{title:r.title||"SCHOLAVERUM reminder",body:r.body||"",url:safeUrl(r.url),tag:key,kind:r.kind},cfg);
     if(out.sent>0){sent+=out.sent;await sb.from("notification_reminders").update({status:"sent",sent_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",r.id)}
   }
   return sent;
@@ -72,9 +72,9 @@ async function dispatchPayments(cfg:any){
     const p=await prefs(r.user_id);if(p.enabled===false||p.payment_reminders===false||quiet(p))continue;
     const end=new Date(r.current_period_end).getTime(),remaining=end-now;
     let key="",title="",body="";
-    if(r.status==="past_due"){const day=new Date().toISOString().slice(0,10);key="payment:past-due:"+String(r.paddle_subscription_id||r.user_id)+":"+day;title="SCHOLARK payment needs attention";body="Your "+String(r.plan||"paid")+" plan payment is past due. Open billing to review it."}
-    else if(remaining>0&&remaining<=24*60*60*1000){key="payment:1d:"+String(r.paddle_subscription_id||r.user_id)+":"+r.current_period_end;title="SCHOLARK payment reminder";body="Your "+String(r.plan||"paid")+" plan is scheduled to renew within 24 hours."}
-    else if(remaining>24*60*60*1000&&remaining<=72*60*60*1000){key="payment:3d:"+String(r.paddle_subscription_id||r.user_id)+":"+r.current_period_end;title="SCHOLARK payment reminder";body="Your "+String(r.plan||"paid")+" plan is scheduled to renew within 3 days."}
+    if(r.status==="past_due"){const day=new Date().toISOString().slice(0,10);key="payment:past-due:"+String(r.paddle_subscription_id||r.user_id)+":"+day;title="SCHOLAVERUM payment needs attention";body="Your "+String(r.plan||"paid")+" plan payment is past due. Open billing to review it."}
+    else if(remaining>0&&remaining<=24*60*60*1000){key="payment:1d:"+String(r.paddle_subscription_id||r.user_id)+":"+r.current_period_end;title="SCHOLAVERUM payment reminder";body="Your "+String(r.plan||"paid")+" plan is scheduled to renew within 24 hours."}
+    else if(remaining>24*60*60*1000&&remaining<=72*60*60*1000){key="payment:3d:"+String(r.paddle_subscription_id||r.user_id)+":"+r.current_period_end;title="SCHOLAVERUM payment reminder";body="Your "+String(r.plan||"paid")+" plan is scheduled to renew within 3 days."}
     if(!key)continue;
     const out=await pushUser(r.user_id,key,{title,body,url:"/#home",tag:key,kind:"payment"},cfg);sent+=out.sent||0;
   }
@@ -88,7 +88,7 @@ async function dispatchStudy(cfg:any){
     const local=localParts(p.timezone||"UTC"),target=hhmm(p.study_time||"19:00");
     if(Math.abs(local.minutes-target)>1)continue;
     const key="study:daily:"+p.user_id+":"+local.date;
-    const out=await pushUser(p.user_id,key,{title:"Time to study with SCHOLARK",body:"Your study reminder is here. Open your workspace and continue where you left off.",url:"/#dashboard",tag:key,kind:"study"},cfg);sent+=out.sent||0;
+    const out=await pushUser(p.user_id,key,{title:"Time to study with SCHOLAVERUM",body:"Your study reminder is here. Open your workspace and continue where you left off.",url:"/#dashboard",tag:key,kind:"study"},cfg);sent+=out.sent||0;
   }
   return sent;
 }

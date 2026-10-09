@@ -1,8 +1,8 @@
 const safeNotificationUrl=raw=>{try{const u=new URL(String(raw||'/#dashboard'),self.location.origin);return u.origin===self.location.origin?u.href:new URL('/#dashboard',self.location.origin).href}catch{return new URL('/#dashboard',self.location.origin).href}};
 self.addEventListener('push',event=>{
   let data={};try{data=event.data?event.data.json():{}}catch{try{data={body:event.data?.text?.()||''}}catch{}}
-  const title=String(data.title||'SCHOLARK');
-  const options={body:String(data.body||''),tag:String(data.tag||'scholark-reminder'),renotify:false,icon:'/scholark-logo.png',badge:'/scholark-logo.png',timestamp:Date.now(),data:{url:safeNotificationUrl(data.url),kind:String(data.kind||'reminder')}};
+  const title=String(data.title||'SCHOLAVERUM');
+  const options={body:String(data.body||''),tag:String(data.tag||'scholark-reminder'),renotify:false,icon:'/scholaverum-icon-512.webp',badge:'/scholaverum-icon-512.webp',timestamp:Date.now(),data:{url:safeNotificationUrl(data.url),kind:String(data.kind||'reminder')}};
   event.waitUntil(self.registration.showNotification(title,options));
 });
 self.addEventListener('notificationclick',event=>{
