@@ -69,11 +69,11 @@ async function liveBillingPreflight(){
 
 function rebrandCatalogText(value){
   return String(value??'')
-    .replace(/\bSCHOLARK\b/gi,'SCHOLAVERUM')
+    .replace(/\bscholark\b/gi,'SCHOLAVERUM')
     .replace(/\bStudent\s*OS(?:\s*360)?\b/gi,'SCHOLAVERUM');
 }
 function catalogTextNeedsRebrand(value){
-  return /\bSCHOLARK\b|Student\s*OS(?:\s*360)?/i.test(String(value??''));
+  return /\bscholark\b|Student\s*OS(?:\s*360)?/i.test(String(value??''));
 }
 async function repairCatalogItem(request,plan,id){
   if(!id)return {ok:false,plan,reason:'price_id_missing'};
