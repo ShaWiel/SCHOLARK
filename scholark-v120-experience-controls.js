@@ -217,6 +217,7 @@
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
+  addEventListener('scholark:arki-rendered',()=>{decorateArki();decorateArkiUsers();scrubProviderMarks($('#v107-thread')||document)});
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},60));
   addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},30));
   addEventListener('scholark:tutor-name-changed',()=>setTimeout(()=>applyTutorName(document),0));
@@ -225,5 +226,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r231-experience'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r237-experience'};
 })();
