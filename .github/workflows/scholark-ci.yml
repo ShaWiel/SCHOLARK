@@ -63,7 +63,13 @@ jobs:
           node-version: '22'
           package-manager-cache: false
       - name: Build production image
-        run: docker build --pull -t scholark-ci .
+        run: |
+          for attempt in 1 2 3; do
+            if docker build --pull -t scholark-ci .; then exit 0; fi
+            echo "Docker build attempt $attempt failed; retrying after transient registry/network error..."
+            sleep $((attempt * 12))
+          done
+          exit 1
       - name: Start production container in zero-credit test mode
         run: docker run -d --name scholark-ci-run -e PORT=10000 -e SCHOLARK_AI_LIVE=0 -e SCHOLARK_TEST_MODE=1 -p 10000:10000 scholark-ci
       - name: Wait for SCHOLARK
@@ -153,7 +159,7 @@ jobs:
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
-          grep -q '/scholark-logo.png' /tmp/scholark-home.html
+          grep -q '/scholaverum-logo-r246.png' /tmp/scholark-home.html
           VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
           test -n "$VERSION"
           grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html

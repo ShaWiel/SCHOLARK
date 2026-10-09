@@ -32,6 +32,10 @@ jobs:
           node --check scholark-v118-account-security.js
           node --check scholark-v89-account-settings.js
           node --check scholark-v116-launch-foundation.js
+          node --check scholark-v94-performance-foundation.js
+          node --check scholark-v101-core-foundation.js
+          node --check scholark-v121-notifications.js
+          node --check scripts/scholark-mobile-device-smoke.mjs
           node --check scripts/scholark-account-lifecycle-smoke.mjs
           node --check scripts/scholark-arki-production-smoke.mjs
           node --check scripts/scholark-gemini-router-smoke.mjs
@@ -42,7 +46,13 @@ jobs:
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-security-contracts.mjs
       - name: Build production image
-        run: docker build --pull -t scholark-release-gate .
+        run: |
+          for attempt in 1 2 3; do
+            if docker build --pull -t scholark-release-gate .; then exit 0; fi
+            echo "Docker build attempt $attempt failed; retrying after transient registry/network error..."
+            sleep $((attempt * 12))
+          done
+          exit 1
       - name: Start isolated production container
         run: docker run -d --name scholark-release-gate-run -e PORT=10000 -e SCHOLARK_AI_LIVE=0 -e SCHOLARK_TEST_MODE=1 -p 10000:10000 scholark-release-gate
       - name: Wait for SCHOLARK
@@ -112,7 +122,7 @@ jobs:
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
-          grep -q '/scholark-logo.png' /tmp/scholark-home.html
+          grep -q '/scholaverum-logo-r246.png' /tmp/scholark-home.html
           VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
           test -n "$VERSION"
           grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html

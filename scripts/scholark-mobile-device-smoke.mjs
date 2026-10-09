@@ -197,6 +197,20 @@ for(const profile of profiles){
     await page.reload({waitUntil:'domcontentloaded',timeout:30000});
     check(await visible(page,'#v51-main [data-v51-page="dashboard"].active',12000),profile.name+': Workspace hard refresh failed');
 
+    await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('reminders'));
+    check(await visible(page,'#v51-fallback .v121',9000),profile.name+': Reminders did not mount');
+    check(await page.locator('#v51-fallback .v121').count()===1,profile.name+': Reminders duplicated before viewport change');
+    const originalViewport={...profile.context.viewport};
+    await page.setViewportSize({width:originalViewport.width,height:Math.max(640,originalViewport.height-140)});
+    await page.waitForTimeout(320);
+    await page.evaluate(()=>window.dispatchEvent(new Event('orientationchange')));
+    await page.waitForTimeout(320);
+    await page.setViewportSize(originalViewport);
+    await page.waitForTimeout(320);
+    check(await page.locator('#v51-fallback .v121').count()===1,profile.name+': Reminders duplicated after mobile viewport/orientation recovery');
+    await noCriticalDupes(page,profile.name+' reminders-viewport');
+    check(pageErrors.length===0,profile.name+': Reminders/viewport flow emitted browser errors: '+pageErrors.join(' | '));
+
     locationHash: {
       await page.evaluate(()=>{location.hash='ai'});
       await page.waitForTimeout(900);

@@ -149,7 +149,7 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev --no-audit --no-fund; el
        sanitize-html@2.18.0
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r240
+ENV SCHOLARK_RELEASE=r248-device-stability
 ENV SCHOLARK_TEST_MODE=0
 ENV SCHOLARK_FREE_AI_ONLY=1
 ENV SCHOLARK_AI_LIVE=1
