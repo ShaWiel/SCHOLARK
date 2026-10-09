@@ -44,8 +44,9 @@
   function normalizeSelector(sel){
     if(!sel)return null;
     if(!languageSelectorExact(sel))sel.innerHTML=UI_LANGUAGE_OPTIONS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
-    const current=code();if([...sel.options].some(o=>o.value===current))sel.value=current;
-    sel.removeAttribute('hidden');['display','visibility','opacity','pointer-events'].forEach(p=>sel.style.removeProperty(p));
+    const current=code();if([...sel.options].some(o=>o.value===current)&&sel.value!==current)sel.value=current;
+    if(sel.hasAttribute('hidden'))sel.removeAttribute('hidden');
+    ['display','visibility','opacity','pointer-events'].forEach(p=>{if(sel.style.getPropertyValue(p))sel.style.removeProperty(p)});
     return sel;
   }
   function patchTranslationCaches(){
