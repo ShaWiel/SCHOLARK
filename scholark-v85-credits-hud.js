@@ -156,8 +156,9 @@
   }
   function bindWalletTrigger(trigger){
     if(!trigger)return;
-    trigger.title='Open SCHOLARK Wallet';
-    trigger.setAttribute('aria-label','Wallet · show total, monthly and extra SCHOLARK credits');
+    const title='Open SCHOLAVERUM Wallet',label='Wallet · show total, monthly and extra SCHOLAVERUM credits';
+    if(trigger.title!==title)trigger.title=title;
+    if(trigger.getAttribute('aria-label')!==label)trigger.setAttribute('aria-label',label);
     if(!trigger.hasAttribute('aria-expanded'))trigger.setAttribute('aria-expanded','false');
     if(!boundWalletTriggers.has(trigger)){
       boundWalletTriggers.add(trigger);
@@ -235,7 +236,7 @@
       chip=document.createElement('button');chip.type='button';chip.className='v85-topbar-credit';chip.dataset.schI18nOwned='1';
       const account=$('.v55-account-wrap',actions)||$('#v55-auth',actions);if(account)actions.insertBefore(chip,account);else actions.appendChild(chip);
     }
-    chip.hidden=false;
+    if(chip.hidden)chip.hidden=false;
     if(chip.dataset.v85WalletReady!=='1'){
       chip.innerHTML='<span class="v85-wallet-symbol" aria-hidden="true">$</span><b>Wallet</b>';
       chip.dataset.v85WalletReady='1';
