@@ -24,15 +24,18 @@ function safeUrl(v:any){const s=String(v||"/#dashboard").trim();return s.startsW
 async function config(){const {data,error}=await sb.rpc("get_notification_dispatch_config");if(error||!data)throw new Error("notification_config_unavailable");return data}
 async function prefs(uid:string){const {data}=await sb.from("notification_preferences").select("*").eq("user_id",uid).maybeSingle();return data||{enabled:true,task_reminders:true,payment_reminders:true,timezone:"UTC",task_lead_minutes:60,quiet_hours_start:"22:00",quiet_hours_end:"07:00"}}
 async function alreadySent(uid:string,key:string){const {data}=await sb.from("notification_delivery_log").select("id").eq("user_id",uid).eq("dedupe_key",key).eq("status","sent").limit(1);return !!data?.length}
-async function pushUser(uid:string,key:string,payload:any,cfg:any){
+async function pushUser(uid:string,key:string,payload:any,cfg:any,targetEndpoint=""){
   if(await alreadySent(uid,key))return {sent:0,skipped:true};
-  const {data:subs}=await sb.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id",uid).eq("enabled",true).limit(25);
+  let q=sb.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id",uid).eq("enabled",true);
+  if(targetEndpoint)q=q.eq("endpoint",targetEndpoint);
+  const {data:subs}=await q.limit(25);
   if(!subs?.length)return {sent:0,noDevices:true};
   webpush.setVapidDetails(SITE,cfg.vapid_public,cfg.vapid_private);
   let sent=0,failed=0;
+  const isImmediate=String(payload?.kind||"")==="custom";
   for(const sub of subs){
     try{
-      await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify(payload),{TTL:3600,urgency:"normal"});
+      await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify(payload),{TTL:isImmediate?300:3600,urgency:isImmediate?"high":"normal"});
       sent++;
       await sb.from("notification_delivery_log").insert({user_id:uid,subscription_id:sub.id,dedupe_key:key,status:"sent"});
     }catch(e:any){
@@ -117,9 +120,11 @@ Deno.serve(async(req)=>{
     if(action==="test"){
       const user=await requestUser(req);
       if(!user)return j({ok:false,code:"UNAUTHORIZED"},401);
+      const endpoint=String(body?.endpoint||"").slice(0,2048);
+      if(!endpoint.startsWith("https://"))return j({ok:false,code:"INVALID_ENDPOINT"},400);
       const key="test:"+user.id+":"+Date.now();
-      const out=await pushUser(user.id,key,{title:"SCHOLAVERUM test notification",body:"Your linked device is ready for reminders.",url:"/#reminders",tag:key,kind:"custom"},cfg);
-      return j({ok:(out.sent||0)>0,...out});
+      const out=await pushUser(user.id,key,{title:"SCHOLAVERUM test notification",body:"Your linked device is ready for reminders.",url:"/#reminders",tag:key,kind:"custom"},cfg,endpoint);
+      return j({ok:(out.sent||0)>0,tag:key,targeted:true,...out});
     }
     const key=req.headers.get("x-scholark-dispatch-key")||"";
     if(!safeEq(key,String(cfg.dispatch_secret||"")))return j({ok:false,code:"UNAUTHORIZED"},401);

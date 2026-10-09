@@ -4,7 +4,7 @@
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const clean=s=>String(s??"").replace(/\s+/g," ").trim();
   const route=()=>String(location.hash||"#home").replace(/^#/,"").split(/[?&]/)[0].toLowerCase()||"home";
-  const workspaceRoutes=new Set(["dashboard","ai","tutor","education","planner","focus","flashcards","assignments","progress","goal","language","files","project","schools","study"]);
+  const workspaceRoutes=new Set(["dashboard","ai","tutor","education","planner","focus","flashcards","assignments","reminders","progress","goal","language","files","project","schools","study"]);
   const errors=[];let repairTimer=0,longTasks=0,lastRepair=0,observerRoot=null,observerRebinds=0,repairSchedules=0;
   const style=document.createElement("style");style.id="scholark-v113-style";style.textContent=[
     "html.v113-hidden body.v51-workspace *{animation-play-state:paused!important}",
@@ -116,7 +116,7 @@
     const brandHealthy=brandImgs.every(img=>img.getAttribute("src")===BRAND_LOGO)&&document.querySelectorAll("#v55-topbar .v55-brand-logo").length<=1&&document.querySelectorAll("#v51-sidebar .v51-logo").length<=1;
     const result={
       ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools&&brandHealthy,
-      release:"r246",route:r,workspace:work,rootLocked,qualityBadge:quality,brandHealthy,brandAssets:brandImgs.length,unifiedFeature,visualReport,
+      release:"r247",route:r,workspace:work,rootLocked,qualityBadge:quality,brandHealthy,brandAssets:brandImgs.length,unifiedFeature,visualReport,
       languageControls:lang,countryControls:country,languageRegistry,languageResilience,selectorCounts,selectorsHealthy,globalCountryRegistry,globalSchools,countryCount:Number(countryApi?.countryCount||0),coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,experienceHealthy,experienceReport,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       observerLive:!!observerRoot?.isConnected,
@@ -165,7 +165,7 @@
   addEventListener("scholark-workspace-entry-ready",()=>{startObserver();scheduleRepair(false,45)});
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();scheduleRepair(true,25);scheduleRepair(true,260);
-  const foundationApi={version:"20261009-r246",repair:()=>repair(true),verify,rebindObserver:startObserver,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20261009-r247",repair:()=>repair(true),verify,rebindObserver:startObserver,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_HARDENING__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;
