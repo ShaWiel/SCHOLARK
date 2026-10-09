@@ -3,12 +3,12 @@
   window.__SCHOLARK_V98_BRAND_MIGRATION__=true;
 
   const PRODUCT='SCHOLAVERUM';
-  const LOGO='/scholaverum-logo.png';
+  const LOGO='/scholaverum-logo-r241.png';
   const LEGACY=/\bStudent\s*OS(?:\s*360)?\b/gi;
   const OLD_BRAND=/\bSCHOLARK\b/gi;
   const OLD_HOST=/studentos-360-shawiel-7vsm\.onrender\.com/gi;
   const OLD_MARKER=/\bSCHOLARK\b|Student\s*OS(?:\s*360)?/i;
-  const OLD_LOGO=/student\s*os|studentos|scholark-logo|scholaverum-logo\.webp/i;
+  const OLD_LOGO=/student\s*os|studentos|scholark-logo|scholaverum-logo\.webp|scholaverum-logo\.png/i;
   let queued=false;
 
   function cleanString(value){
@@ -91,5 +91,5 @@
   ]) addEventListener(event,schedule);
 
   [0,40,180,500,1200].forEach(ms=>setTimeout(schedule,ms));
-  window.__SCHOLARK_BRAND__={name:PRODUCT,logo:LOGO,scrub:schedule,release:'r240-transparent-logo'};
+  window.__SCHOLARK_BRAND__={name:PRODUCT,logo:LOGO,scrub:schedule,release:'r241-official-logo'};
 })();

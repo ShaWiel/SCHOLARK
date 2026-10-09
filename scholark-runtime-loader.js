@@ -23,7 +23,7 @@
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
   window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,release:'r221'});
 
-  const VERSION = '20261009-r239-brand';
+  const VERSION = '20261009-r241-official-logo';
   const ASSET_VERSION = file => ({
     'scholark-v55-home-topbar-workspace-entry.js':'20261008-v55-profile-r225',
     'scholark-v51-workspace-shell.js':'20261008-v51-tutor-name-r231',

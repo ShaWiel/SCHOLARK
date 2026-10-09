@@ -9,7 +9,7 @@
   "theme_color": "#17191f",
   "icons": [
     {
-      "src": "/scholaverum-icon-512.png",
+      "src": "/scholaverum-icon-512-r241.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
