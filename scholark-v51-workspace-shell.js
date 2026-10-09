@@ -156,7 +156,7 @@
     for(const label of brands){let cur=label.parentElement;for(let i=0;cur&&cur!==document.body&&i<4;i++,cur=cur.parentElement){const mark=cur.querySelector('img,svg,picture');if(mark)return mark.cloneNode(true)}}
     return null;
   }
-  function refreshLogo(){const host=$('.v51-logo',side);if(!host)return;const expected='/scholaverum-logo-r244.webp';const img=host.querySelector('img');if(img?.getAttribute('src')===expected){host.dataset.ready='1';return}host.innerHTML='<img src="'+expected+'" alt="SCHOLAVERUM logo">';host.dataset.ready='1';}
+  function refreshLogo(){const host=$('.v51-logo',side);if(!host)return;const expected='/scholaverum-logo-r245.png';const img=host.querySelector('img');if(img?.getAttribute('src')===expected){host.dataset.ready='1';return}host.innerHTML='<img src="'+expected+'" alt="SCHOLAVERUM logo">';host.dataset.ready='1';}
 
   function keepSingleton(selector,preferred){
     const rows=document.querySelectorAll(selector),keep=preferred?.isConnected?preferred:(rows[0]||null);
