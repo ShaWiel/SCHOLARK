@@ -184,6 +184,7 @@
       st.textContent=mode==='signin'?'Signing in…':'Creating account…';st.style.color='#6559c9';
       try{
         const d=mode==='signin'?await signIn(email,pass):await signUp(email,pass);
+        if(mode==='signup'){try{localStorage.setItem('scholark_notification_onboarding_pending','1')}catch{};window.dispatchEvent(new CustomEvent('scholark:notification-onboarding',{detail:{source:'signup'}}))}
         if(mode==='signup'&&!d?.access_token){st.textContent='Account created. Check your email to confirm it, then sign in.';return}
         st.textContent='Connected to SCHOLARK Cloud.';
         authModalCloseTimer=setTimeout(()=>{

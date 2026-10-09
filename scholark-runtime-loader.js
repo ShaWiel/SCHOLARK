@@ -37,7 +37,8 @@
     'scholark-v110-workspace-core.js':'20261008-v110-context-safe-r227',
     'scholark-v120-experience-controls.js':'20261008-v120-tutor-r231',
     'scholark-v85-credits-hud.js':'20261008-v85-wallet-r232',
-    'scholark-v86-file-intelligence.js':'20261008-v86-route-r233'
+    'scholark-v86-file-intelligence.js':'20261008-v86-route-r233',
+    'scholark-v121-notifications.js':'20261009-v121-reminders-r234'
   })[file] || VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
@@ -54,11 +55,11 @@
     'scholark-v85-credits-hud.js','scholark-v86-file-intelligence.js','scholark-v87-exam-mastery.js','scholark-v88-learning-engine.js',
     'scholark-v89-account-settings.js','scholark-v90-i18n-engine.js','scholark-v91-workspace-polish.js','scholark-v92-foundation-health.js',
     'scholark-v93-language-learner.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js','scholark-v110-workspace-core.js','scholark-v106-workspace-power-tools.js','scholark-v107-general-ai.js','scholark-v108-workspace-upgrade.js','scholark-v111-workspace-experience.js','scholark-v112-workspace-visual-system.js','scholark-v114-workspace-orchestrator.js','scholark-v113-foundation-hardening.js','scholark-v109-home-owner.js',
-    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js','scholark-v120-experience-controls.js'
+    'scholark-v98-brand-migration.js','scholark-v99-home-foundation.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js','scholark-v120-experience-controls.js','scholark-v121-notifications.js'
   ];
   const BASE = new Set([
     'scholark-v42-route-guard.js',
-    'scholark-v72-cloud-projects.js','scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
+    'scholark-v72-cloud-projects.js','scholark-v121-notifications.js','scholark-v81-stability-foundation.js','scholark-v85-credits-hud.js','scholark-v90-i18n-engine.js',
     'scholark-v92-foundation-health.js','scholark-v94-performance-foundation.js','scholark-v95-experience-polish.js','scholark-v96-country-education.js',
     'scholark-v98-brand-migration.js','scholark-v115-billing.js','scholark-v116-launch-foundation.js','scholark-v118-account-security.js','scholark-v119-foundation-polish.js'
   ]);
@@ -85,7 +86,8 @@
     book:[],
     focus:['scholark-v106-workspace-power-tools.js'],
     flashcards:['scholark-v106-workspace-power-tools.js'],
-    assignments:['scholark-v106-workspace-power-tools.js']
+    assignments:['scholark-v106-workspace-power-tools.js'],
+    reminders:['scholark-v121-notifications.js']
   };
   const STUDIO_CORE = [];
   const STUDIO_HEAVY = [];
@@ -109,7 +111,7 @@
     const h = String(hash || '').toLowerCase().replace(/^#/, '').split(/[?&]/)[0];
     if (!h || h === 'home' || h === 'pricing' || h === 'start' || h === 'credit-store') return 'home';
     if (/^(presentation|webpage|document|report|graphic|social|studio)/.test(h)) return 'studio';
-    for (const key of ['schools','study','book','ai','tutor','education','language','files','project','planner','focus','flashcards','assignments','progress','goal']) if (h.startsWith(key)) return key;
+    for (const key of ['schools','study','book','ai','tutor','education','language','files','project','planner','focus','flashcards','assignments','reminders','progress','goal']) if (h.startsWith(key)) return key;
     return 'dashboard';
   }
 
