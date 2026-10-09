@@ -10,7 +10,8 @@ const j=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers
 
 function safeEq(a:string,b:string){if(!a||!b||a.length!==b.length)return false;let x=0;for(let i=0;i<a.length;i++)x|=a.charCodeAt(i)^b.charCodeAt(i);return x===0}
 function hhmm(v:any){const m=String(v||"").match(/^(\d{1,2}):(\d{2})/);return m?Math.min(1439,Math.max(0,Number(m[1])*60+Number(m[2]))):0}
-function localMinutes(tz:string){try{const parts=new Intl.DateTimeFormat("en-GB",{timeZone:tz||"UTC",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());return Number(parts.find(x=>x.type==="hour")?.value||0)*60+Number(parts.find(x=>x.type==="minute")?.value||0)}catch{return new Date().getUTCHours()*60+new Date().getUTCMinutes()}}
+function localParts(tz:string){try{const parts=new Intl.DateTimeFormat("en-CA",{timeZone:tz||"UTC",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()),get=(k:string)=>parts.find(x=>x.type===k)?.value||"";return {minutes:Number(get("hour")||0)*60+Number(get("minute")||0),date:get("year")+"-"+get("month")+"-"+get("day")}}catch{const d=new Date();return {minutes:d.getUTCHours()*60+d.getUTCMinutes(),date:d.toISOString().slice(0,10)}}}
+function localMinutes(tz:string){return localParts(tz).minutes}
 function quiet(p:any){const now=localMinutes(p?.timezone||"UTC"),a=hhmm(p?.quiet_hours_start||"22:00"),b=hhmm(p?.quiet_hours_end||"07:00");return a===b?false:(a<b?now>=a&&now<b:now>=a||now<b)}
 function safeUrl(v:any){const s=String(v||"/#dashboard").trim();return s.startsWith("/")&&!s.startsWith("//")?s:"/#dashboard"}
 async function config(){const {data,error}=await sb.rpc("get_notification_dispatch_config");if(error||!data)throw new Error("notification_config_unavailable");return data}
@@ -79,6 +80,18 @@ async function dispatchPayments(cfg:any){
   }
   return sent;
 }
+async function dispatchStudy(cfg:any){
+  const {data:rows}=await sb.from("notification_preferences").select("user_id,enabled,study_reminders,study_time,timezone,quiet_hours_start,quiet_hours_end").eq("enabled",true).eq("study_reminders",true).limit(500);
+  let sent=0;
+  for(const p of rows||[]){
+    if(quiet(p))continue;
+    const local=localParts(p.timezone||"UTC"),target=hhmm(p.study_time||"19:00");
+    if(Math.abs(local.minutes-target)>1)continue;
+    const key="study:daily:"+p.user_id+":"+local.date;
+    const out=await pushUser(p.user_id,key,{title:"Time to study with SCHOLARK",body:"Your study reminder is here. Open your workspace and continue where you left off.",url:"/#dashboard",tag:key,kind:"study"},cfg);sent+=out.sent||0;
+  }
+  return sent;
+}
 
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response(null,{headers:{"access-control-allow-origin":SITE,"access-control-allow-headers":"content-type,x-scholark-dispatch-key"}});
@@ -86,7 +99,7 @@ Deno.serve(async(req)=>{
   try{
     const cfg=await config(),key=req.headers.get("x-scholark-dispatch-key")||"";
     if(!safeEq(key,String(cfg.dispatch_secret||"")))return j({ok:false,code:"UNAUTHORIZED"},401);
-    const [custom,planner,payments]=await Promise.all([dispatchCustom(cfg),dispatchPlanner(cfg),dispatchPayments(cfg)]);
-    return j({ok:true,custom,planner,payments,at:new Date().toISOString()});
+    const [custom,planner,payments,study]=await Promise.all([dispatchCustom(cfg),dispatchPlanner(cfg),dispatchPayments(cfg),dispatchStudy(cfg)]);
+    return j({ok:true,custom,planner,payments,study,at:new Date().toISOString()});
   }catch(e:any){return j({ok:false,code:"DISPATCH_FAILED",error:String(e?.message||e).slice(0,300)},500)}
 });
