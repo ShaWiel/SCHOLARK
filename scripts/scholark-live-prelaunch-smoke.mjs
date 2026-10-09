@@ -138,7 +138,8 @@ try{
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('reminders'));
   await page.waitForSelector('#v51-fallback .v121',{state:'visible',timeout:12000});
   check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'live Reminders route is present once');
-  check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r236-notifications'),'live Reminders runtime is initialized');
+  check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r238-notifications'),'live Reminders runtime is initialized');
+  check(await page.evaluate(()=>window.__SCHOLARK_V107_GENERAL_AI__?.version==='20261009-r238'),'live ARKI interactive HTML runtime is initialized');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
   await page.waitForSelector('#v50-school.open',{state:'visible',timeout:12000});
