@@ -116,7 +116,8 @@ if(billingHealth&&billingConfig){
     check(billingHealth.webhookConfigured===true,'Live Paddle webhook is not configured');
     check(billingHealth.credentialEnvironmentMatches===true,'Live Paddle credentials do not match the selected environment');
     check(billingHealth.catalog?.checked===true,'Live Paddle catalog audit has not completed');
-    check(billingHealth.catalog?.ok===true,'Live Paddle catalog/webhook audit is not green');
+    if(String(billingHealth.environment||'')==='production')check(billingHealth.catalog?.ok===true,'Production Paddle catalog/webhook audit is not green');
+    else if(billingHealth.catalog?.ok!==true)console.warn('  ! Sandbox Paddle catalog audit is not green; production switch validation will use the live catalog preflight.');
     check(billingConfig.configured===true,'Live billing config is not checkout-ready');
     check(/^pri_[a-z\d]{26}$/.test(String(billingConfig.priceIds?.plus||'')),'Live Plus Paddle price ID missing/invalid');
     check(/^pri_[a-z\d]{26}$/.test(String(billingConfig.priceIds?.pro||'')),'Live Pro Paddle price ID missing/invalid');
