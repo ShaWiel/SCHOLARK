@@ -987,6 +987,7 @@ check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('schol
 await route('assignments','#v106-root');
 check(await page.locator('#v106-a-add').count()===1,'Assignment add button missing');
 check(await page.locator('#v106-a-priority').count()===1,'Assignment priority control missing');
+check(await page.locator('#v106-a-type option[value="homework"]').count()===1,'Homework assignment type is missing');
 await page.selectOption('#v106-a-priority','high');
 await page.fill('#v106-a-title','Workspace smoke assignment');
 await page.fill('#v106-a-subject','Biology');
@@ -994,6 +995,11 @@ await page.click('#v106-a-add');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]').some(x=>x.title==='Workspace smoke assignment'&&x.priority==='high')}catch{return false}}),'Assignment priority did not persist');
 await page.click('[data-a-plan]');
 check(await page.evaluate(()=>{try{return JSON.parse(localStorage.getItem('scholark_v51_planner')||'[]').some(x=>String(x.id||'').startsWith('assignment-'))}catch{return false}}),'Assignment did not create Planner steps');
+
+check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'Reminders sidebar route is missing');
+await route('reminders','#v51-fallback .v121');
+check(await page.locator('#v51-fallback .v121').count()===1,'Reminders surface did not mount');
+check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r234-notifications'),'Reminders runtime API did not initialize');
 
 await route('progress','#v51-fallback .v52-tool');
 try{await page.waitForFunction(()=>/photosynthesis/i.test(document.querySelector('#v51-fallback .v52-tool')?.textContent||''),{timeout:2500})}catch{}

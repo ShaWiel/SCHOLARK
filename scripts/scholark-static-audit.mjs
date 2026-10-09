@@ -53,6 +53,12 @@ const foundationHealth=read('scholark-v92-foundation-health.js');
 const powerTools=read('scholark-v106-workspace-power-tools.js');
 const generalAi=read('scholark-v107-general-ai.js');
 const experienceControls=read('scholark-v120-experience-controls.js');
+const notifications=read('scholark-v121-notifications.js');
+const serviceWorker=read('scholark-sw.js');
+const webmanifest=read('scholark.webmanifest');
+const notificationFunction=read('supabase/functions/scholark-notify/index.ts');
+const notificationMigration=read('supabase/migrations/20261009_reminders_notifications_r234.sql');
+const notificationCron=read('supabase/migrations/20261009_notification_dispatch_cron_r234.sql');
 const accountSettings=read('scholark-v89-account-settings.js');
 const accountSecurity=read('scholark-v118-account-security.js');
 const performance=read('scholark-v94-performance-foundation.js');
@@ -217,7 +223,7 @@ ok(gemini.includes(`ROUTER_VERSION = '${ROUTER}'`),'Gemini resilience router ver
 ok(gemini.includes('cooldownUntil')&&gemini.includes('markFailure')&&gemini.includes('markSuccess'),'Gemini circuit breaker is missing');
 ok(gemini.includes('emergencyPollinations')&&gemini.includes('syntheticGeminiResponse'),'Emergency provider fallback is missing');
 ok(prepaint.includes("p==='/index.html'")||prepaint.includes("p === '/index.html'"),'prepaint lacks static-page/app-path guard');
-ok(/language\|planner/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
+ok(/language\|planner/.test(prepaint)&&/assignments\|reminders\|progress/.test(prepaint)&&/project\|files\|schools/.test(prepaint),'prepaint workspace route list is incomplete');
 ok(runtime.includes("path !== '/' && path !== '/index.html'"),'runtime lacks non-app path guard');
 ok(foundation.includes("p === '/' || p === '/index.html'"),'foundation lacks non-app path guard');
 ok(quiz.includes("const VERSION = '20261007-language-choice-v4'")&&quiz.includes("querySelectorAll('.v93-choice')")&&quiz.includes('onChoiceClick')&&quiz.includes("feedback.textContent = '✓ Correct'")&&quiz.includes("scholark:language-choice")&&quiz.includes("addEventListener('scholark-language-lesson-rendered'")&&!quiz.includes('MutationObserver'),'Language Learner choices/adaptive events are incomplete');
@@ -360,23 +366,31 @@ ok(launchFoundation.includes('launchMutationRelevant')&&launchFoundation.include
 ok(performance.includes("const candidates=$$("),'Performance text fitting must iterate a collection safely');
 ok(languageLearner.includes('Exercise accuracy')&&languageLearner.includes('adaptive=accuracy==null')&&languageLearner.includes("addEventListener('scholark:language-choice'"),'Language Learner is not adapting to exercise performance');
 ok(learningRoute.includes("const testMode=/^(1|true|yes|on)$/i")&&learningRoute.includes("if(remaining.length&&!testMode)")&&learningRoute.includes("freeUiTranslate(remaining,languageCode)")&&learningRoute.includes("slice(0,8)"),'Adaptive UI translation is not model-first with bounded public fallback');
-ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']"),'New workspace tools are missing from navigation');
+ok(workspaceShell.includes("['focus','◷','Focus Sessions']")&&workspaceShell.includes("['flashcards','▤','Flashcards']")&&workspaceShell.includes("['assignments','✓','Assignments']")&&workspaceShell.includes("['reminders','◴','Reminders']"),'New workspace tools are missing from navigation');
 ok(workspaceShell.includes("const $=(s,r=document)=>r?.querySelector?.(s)||null")&&workspaceShell.includes("const qsa=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[]")&&!workspaceShell.includes("const $=(s,r=document)=>r?.querySelectorAll"),'Workspace DOM query helpers are not null-safe during route remounts');
-ok(workspaceShell.includes("card('focus','◷','Focus Sessions'")&&workspaceShell.includes("card('flashcards','▤','Flashcards'")&&workspaceShell.includes("card('assignments','✓','Assignments'"),'New workspace tools are missing from Dashboard cards');
-ok(runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("flashcards:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'Power tools are not lazy-routed through runtime');
-ok(prepaint.includes('focus|flashcards|assignments'),'Prepaint does not recognize new workspace routes');
-ok(docker.includes('scholark-v106-workspace-power-tools.js'),'Workspace power tools are not copied into production');
+ok(workspaceShell.includes("card('focus','◷','Focus Sessions'")&&workspaceShell.includes("card('flashcards','▤','Flashcards'")&&workspaceShell.includes("card('assignments','✓','Assignments'")&&workspaceShell.includes("card('reminders','◴','Reminders'"),'New workspace tools are missing from Dashboard cards');
+ok(runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("flashcards:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("reminders:['scholark-v121-notifications.js']"),'Workspace tools are not lazy-routed through runtime');
+ok(prepaint.includes('focus|flashcards|assignments|reminders'),'Prepaint does not recognize new workspace routes');
+ok(docker.includes('scholark-v106-workspace-power-tools.js')&&docker.includes('scholark-v121-notifications.js')&&docker.includes('scholark-sw.js')&&docker.includes('scholark.webmanifest'),'Workspace power tools/reminders are not copied into production');
 ok(powerTools.includes("version:'20260921-r176'")&&powerTools.includes("FOCUS_KEY='scholark_v106_focus'")&&powerTools.includes("CARD_KEY='scholark_v106_flashcards'")&&powerTools.includes("ASSIGN_KEY='scholark_v106_assignments'"),'Workspace power tools version/storage contract is incomplete');
 ok(powerTools.includes('v106-focus-custom')&&powerTools.includes('data-v106-minute-step')&&powerTools.includes('v106-minute-control')&&powerTools.includes('v106-card-export')&&powerTools.includes('v106-card-shuffle')&&powerTools.includes('v106-a-priority'),'Workspace power-tool/focus stepper expansion is incomplete');
 ok(fastTools.includes('v52-plan-csv')&&fastTools.includes('v52-plan-ics')&&fastTools.includes('v52-plan-clear')&&fastTools.includes('v52-progress-export'),'Planner/Progress export expansion is incomplete');
 ok(powerTools.includes('setInterval(syncFocusView,1000)')&&powerTools.includes('clearInterval(focusTicker)'),'Focus timer lifecycle guard is missing');
 ok(powerTools.includes('scheduleCard(card,rating)')&&powerTools.includes("rating==='again'")&&powerTools.includes("rating==='good'")&&powerTools.includes("rating==='easy'"),'Flashcard spaced scheduling is incomplete');
-ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'"),'Assignments are not integrated with Planner + AI Tutor');
-ok(dashboardBootstrap.includes('focus|flashcards|assignments')&&dashboardBootstrap.includes('data-v53-tool="focus"')&&dashboardBootstrap.includes('data-v53-tool="assignments"'),'Dashboard bootstrap can misclassify new workspace routes');
-ok(stabilityFoundation.includes('planner|focus|flashcards|assignments|progress'),'Stability foundation does not recognize new workspace routes');
-ok(foundationHealth.includes("'planner','focus','flashcards','assignments','progress'"),'Foundation health does not treat new workspace routes as modern');
-ok(workspacePolish.includes("['focus','Focus Sessions'")&&workspacePolish.includes("['flashcards','Flashcards'")&&workspacePolish.includes("['assignments','Assignments'"),'Workspace polish metadata is missing power tools');
+ok(powerTools.includes('Break into Planner')&&powerTools.includes('assignmentTutor(a)')&&powerTools.includes("id='assignment-'")&&powerTools.includes('<option value="homework">Homework</option>')&&powerTools.includes('scholark:assignments-changed'),'Assignments/homework are not integrated with Planner + Tutor + reminder sync');
+ok(dashboardBootstrap.includes('focus|flashcards|assignments|reminders')&&dashboardBootstrap.includes('data-v53-tool="focus"')&&dashboardBootstrap.includes('data-v53-tool="assignments"')&&dashboardBootstrap.includes('data-v53-tool="reminders"'),'Dashboard bootstrap can misclassify new workspace routes');
+ok(stabilityFoundation.includes('planner|focus|flashcards|assignments|reminders|progress'),'Stability foundation does not recognize new workspace routes');
+ok(foundationHealth.includes("'planner','focus','flashcards','assignments','reminders','progress'"),'Foundation health does not treat new workspace routes as modern');
+ok(workspacePolish.includes("['focus','Focus Sessions'")&&workspacePolish.includes("['flashcards','Flashcards'")&&workspacePolish.includes("['assignments','Assignments'")&&workspacePolish.includes("['reminders','Reminders'"),'Workspace polish metadata is missing reminders');
 ok(i18n.includes('[data-v106-user="1"]')&&powerTools.includes('data-v106-user="1"'),'User flashcard/assignment content is not isolated from UI translation');
+ok(notifications.includes("const RELEASE='r234-notifications'")&&notifications.includes('Notification.requestPermission()')&&notifications.includes("navigator.serviceWorker.register('/scholark-sw.js'")&&notifications.includes('push_subscriptions')&&notifications.includes('payment_reminders')&&notifications.includes('scholark:assignments-changed')&&notifications.includes('Link this device'),'Reminders/device-linking client foundation is incomplete');
+ok(cloudProjects.includes("scholark_notification_onboarding_pending")&&cloudProjects.includes("scholark:notification-onboarding"),'Signup does not offer notification device linking');
+ok(serviceWorker.includes("addEventListener('push'")&&serviceWorker.includes("addEventListener('notificationclick'")&&serviceWorker.includes("clients.openWindow"),'Push service worker is incomplete');
+ok(webmanifest.includes('"display": "standalone"')&&webmanifest.includes('"start_url": "/#home"')&&prepaint.includes('rel="manifest"'),'PWA manifest/install foundation is incomplete');
+ok(notificationFunction.includes('npm:web-push@3.6.7')&&notificationFunction.includes('x-scholark-dispatch-key')&&notificationFunction.includes('planner_tasks')&&notificationFunction.includes('billing_subscriptions')&&notificationFunction.includes('payment_reminders'),'Notification dispatcher is incomplete');
+ok(notificationMigration.includes('payment_reminders boolean not null default true')&&notificationMigration.includes('device_onboarding_done boolean not null default false')&&notificationMigration.includes('private.notification_config')&&notificationMigration.includes('get_notification_dispatch_config'),'Notification database/security migration is incomplete');
+ok(notificationCron.includes("'scholark-notification-dispatch'")&&notificationCron.includes("'* * * * *'")&&notificationCron.includes('/functions/v1/scholark-notify'),'Notification scheduler migration is incomplete');
+ok(orchestrator.includes("'reminders'")&&orchestrator.includes("if(tool==='reminders')return $('.v121')")&&orchestrator.includes("add('assign','Assignments'"),'Workspace orchestrator does not recognize Reminders');
 ok(fastTools.includes('Assignment Coach')&&fastTools.includes('Prioritise all my assignments')&&fastTools.includes('data-tutor-assignment'),'AI Tutor does not expose saved Assignment coaching');
 ok(learningApi.includes('assignmentContextFor(prompt)')&&learningApi.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'AI Tutor does not pass live Assignment context to backend');
 ok(learningApi.includes("window.__SCHOLARK_COUNTRY__?.surinameTracks?.[track]")&&learningApi.includes("sr.title+' · '+sr.description+' · '+sr.group"),'AI learning context does not receive the exact Suriname track');
@@ -437,10 +451,10 @@ const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
 ok(active.length>40,'could not parse active runtime modules');
 for(const file of active) ok(fs.existsSync(path.join(root,file)),`active runtime file missing: ${file}`);
-for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
+for(const file of ['scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v121-notifications.js','scholark-sw.js','scholark.webmanifest','scholark-v116-launch-foundation.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs']) ok(fs.existsSync(path.join(root,file)),`direct runtime file missing: ${file}`);
 
 const syntaxTargets=[...new Set([
-  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
+  'scholark-runtime-loader.js','scholark-v100-home-cinematics.js','scholark-v101-core-foundation.js','scholark-v102-language-quiz.js','scholark-v103-language-next-lesson.js','scholark-v104-school-filter-guard.js','scholark-v105-school-vwo.js','scholark-v106-workspace-power-tools.js','scholark-v121-notifications.js','scholark-sw.js','scholark-v117-credit-store.js','scholark-api-guard.mjs','scholark-gemini-primary.mjs','scholark-school-resilience.mjs','scholark-school-strict.mjs',
   'server-key-shim.mjs','studio-ai-route.mjs','studio-media-route.mjs','studio-export-route.mjs','studio-reference-route.mjs','studio-research-route.mjs','studio-public-page-route.mjs','studio-public-artifact-route.mjs','scholark-learning-route.mjs','scholark-school-route.mjs','scholark-billing-route.mjs','scholark-launch-route.mjs',
   ...active
 ])];
