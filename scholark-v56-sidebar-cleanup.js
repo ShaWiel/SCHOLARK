@@ -22,9 +22,9 @@
     #v55-topbar .v55-brand{color:#fff!important}
     #v55-topbar .v55-brand small{color:#9f9aa9!important}
     #v55-topbar .v55-brand-logo{
-      display:block!important;width:64px!important;height:48px!important;
+      display:block!important;width:58px!important;height:44px!important;
       object-fit:contain!important;object-position:center!important;
-      flex:0 0 64px!important;background:transparent!important;
+      flex:0 0 58px!important;background:transparent!important;
     }
     #v55-topbar .v55-select,#v55-topbar .v55-btn{
       background:#1b1e27!important;color:#f7f6fb!important;border-color:rgba(255,255,255,.11)!important;

@@ -66,6 +66,16 @@
       if(t==="AI QUALITY MAX"||t==="QUALITY MAX"||t==="PRIORITY MAX")el.remove();
     });
   }
+  const BRAND_LOGO="/scholaverum-logo-r246.png";
+  function ensureBrandAssets(){
+    const imgs=$(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo");
+    for(const img of imgs){
+      if(img.getAttribute("src")!==BRAND_LOGO)img.setAttribute("src",BRAND_LOGO);
+      img.setAttribute("loading","eager");img.setAttribute("decoding","async");
+      try{img.fetchPriority="high"}catch{}
+    }
+    return imgs.length;
+  }
   function ensureScroll(){
     const r=route(),work=workspaceRoutes.has(r)||document.body.classList.contains("v51-workspace");
     document.documentElement.classList.toggle("v51-workspace-root",work);
@@ -75,7 +85,7 @@
     const now=Date.now();if(!force&&now-lastRepair<90)return;lastRepair=now;
     if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering'))return;
     startObserver();
-    const scope=$("#v51-main")||document.body;ensureScroll();removeDuplicateControls();scrubQuality(scope);
+    const scope=$("#v51-main")||document.body;ensureScroll();ensureBrandAssets();removeDuplicateControls();scrubQuality(scope);
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,40));idle(()=>secureLinks(scope),{timeout:180});
     if(document.body.classList.contains("v51-workspace")){
       if(!$("#v90-language"))window.__SCHOLARK_I18N__?.upgradeSelectors?.();
@@ -102,9 +112,11 @@
     const countryApi=window.__SCHOLARK_COUNTRY__,globalCountryRegistry=countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195;
     const globalSchools=r!=="schools"||(window.__SCHOLARK_V50_SCHOOLS__?.global===true&&globalCountryRegistry);
     const coverage=i18n?.coverage?.(620)||null;
+    const brandImgs=$(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo");
+    const brandHealthy=brandImgs.every(img=>img.getAttribute("src")===BRAND_LOGO)&&$("#v55-topbar .v55-brand-logo").length<=1&&$("#v51-sidebar .v51-logo").length<=1;
     const result={
-      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools,
-      release:"r203",route:r,workspace:work,rootLocked,qualityBadge:quality,unifiedFeature,visualReport,
+      ok:rootLocked&&!quality&&lang<=1&&country<=1&&visual&&unifiedFeature&&orchestration&&eventOwnership&&connectedSurfaceHealthy&&experienceHealthy&&languageRegistry&&languageResilience&&selectorsHealthy&&globalCountryRegistry&&globalSchools&&brandHealthy,
+      release:"r246",route:r,workspace:work,rootLocked,qualityBadge:quality,brandHealthy,brandAssets:brandImgs.length,unifiedFeature,visualReport,
       languageControls:lang,countryControls:country,languageRegistry,languageResilience,selectorCounts,selectorsHealthy,globalCountryRegistry,globalSchools,countryCount:Number(countryApi?.countryCount||0),coverage,visual,orchestration,eventOwnership,connectedBars,connectedSurfaceHealthy,experienceHealthy,experienceReport,longTasks,errorFree:errors.filter(x=>Date.now()-x.at<300000).length===0,runtimeErrors:errors.filter(x=>Date.now()-x.at<300000).slice(0,8),
       runtimeFailures:window.__SCHOLARK_RUNTIME__?.errors?.()||[],
       observerLive:!!observerRoot?.isConnected,
@@ -131,7 +143,7 @@
     },Math.max(0,delay));
   }
   function startObserver(){
-    const desired=$("#v51-main")||document.body;
+    const desired=document.body;
     if(observer&&observerRoot===desired&&desired?.isConnected)return;
     observer?.disconnect();
     observer=new MutationObserver(muts=>{if(mutationRelevant(muts))scheduleRepair(false,125)});
@@ -153,7 +165,7 @@
   addEventListener("scholark-workspace-entry-ready",()=>{startObserver();scheduleRepair(false,45)});
   addEventListener("online",()=>setTimeout(()=>window.__SCHOLARK_RUNTIME__?.retry?.(),250));
   startObserver();scheduleRepair(true,25);scheduleRepair(true,260);
-  const foundationApi={version:"20261006-r218",repair:()=>repair(true),verify,rebindObserver:startObserver,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
+  const foundationApi={version:"20261009-r246",repair:()=>repair(true),verify,rebindObserver:startObserver,errors:()=>errors.filter(x=>Date.now()-x.at<300000).slice(),safeStorage,fetchJson};
   window.__SCHOLARK_HARDENING__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R176__=foundationApi;
   window.__SCHOLARK_FOUNDATION_R175__=foundationApi;

@@ -56,7 +56,7 @@ function securityHeaders(res) {
     if (!res.hasHeader('x-frame-options')) res.setHeader('x-frame-options','DENY');
     if (!res.hasHeader('cross-origin-opener-policy')) res.setHeader('cross-origin-opener-policy','same-origin-allow-popups');
     if (!res.hasHeader('cross-origin-resource-policy')) res.setHeader('cross-origin-resource-policy','same-origin');
-    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(), usb=()');
+    if (!res.hasHeader('permissions-policy')) res.setHeader('permissions-policy','geolocation=(self), camera=(), microphone=(self), usb=()');
     if (!res.hasHeader('x-permitted-cross-domain-policies')) res.setHeader('x-permitted-cross-domain-policies','none');
     if (!res.hasHeader('x-dns-prefetch-control')) res.setHeader('x-dns-prefetch-control','off');
     if (!res.hasHeader('x-download-options')) res.setHeader('x-download-options','noopen');
@@ -66,6 +66,16 @@ function securityHeaders(res) {
   } catch {}
 }
 
+function applyStaticCachePolicy(req,res,url){
+  if(res.headersSent||url.pathname.startsWith('/api/'))return;
+  const p=url.pathname.toLowerCase();
+  const versioned=/-(?:r\d+|v\d+)(?:[._-]|$)/.test(p)||url.searchParams.has('v');
+  const asset=/\.(?:js|mjs|css|png|webp|svg|ico|woff2?|ttf|json|webmanifest)$/.test(p);
+  if(versioned&&asset){if(!res.hasHeader('cache-control'))res.setHeader('cache-control','public, max-age=31536000, immutable');return}
+  if(p==='/'||p.endsWith('.html')||p.endsWith('/scholark-runtime-loader.js')){
+    if(!res.hasHeader('cache-control'))res.setHeader('cache-control','no-cache, max-age=0, must-revalidate');
+  }
+}
 function json(res,status,obj,extra={}) {
   if (res.headersSent) return;
   securityHeaders(res);
@@ -129,6 +139,7 @@ http.Server.prototype.emit = function(type,...args) {
   let url;
   try { url = new URL(req.url || '/','http://localhost'); }
   catch { return previousEmit.call(this,type,...args); }
+  applyStaticCachePolicy(req,res,url);
 
   // Render needs a dependency-free liveness signal as soon as the Node server
   // accepts requests. Keep this endpoint intentionally local: no Supabase,
@@ -139,7 +150,7 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,expensiveBurstGuard:true,apiNoStore:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,expensiveBurstGuard:true,apiNoStore:true,staticVersionCache:true,htmlRevalidation:true,sameOriginMicrophone:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
