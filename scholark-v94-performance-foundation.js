@@ -40,8 +40,10 @@
   function tuneImages(root=activeRoot()){
     const scope=root?.querySelectorAll?root:document;
     $$('img',scope).forEach(img=>{if(!img.decoding)img.decoding='async';if(!img.loading)img.loading='lazy'});
-    $$('.v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo').forEach(img=>{
-      img.loading='eager';img.decoding='async';try{img.fetchPriority='high'}catch{}
+    $('.v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo').forEach(img=>{
+      if(img.getAttribute('loading')!=='eager')img.setAttribute('loading','eager');
+      if(img.getAttribute('decoding')!=='async')img.setAttribute('decoding','async');
+      if(img.getAttribute('fetchpriority')!=='high')img.setAttribute('fetchpriority','high');
     });
   }
   function fitText(root=activeRoot(),force=false){
