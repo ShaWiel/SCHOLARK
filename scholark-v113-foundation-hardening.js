@@ -71,8 +71,9 @@
     const imgs=[...document.querySelectorAll(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo")];
     for(const img of imgs){
       if(img.getAttribute("src")!==BRAND_LOGO)img.setAttribute("src",BRAND_LOGO);
-      img.setAttribute("loading","eager");img.setAttribute("decoding","async");
-      try{img.fetchPriority="high"}catch{}
+      if(img.getAttribute("loading")!=="eager")img.setAttribute("loading","eager");
+      if(img.getAttribute("decoding")!=="async")img.setAttribute("decoding","async");
+      if(img.getAttribute("fetchpriority")!=="high")img.setAttribute("fetchpriority","high");
     }
     return imgs.length;
   }
