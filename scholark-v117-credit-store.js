@@ -68,6 +68,7 @@
     const pages=[...document.querySelectorAll('#v117-credit-store-page')];pages.slice(1).forEach(el=>el.remove());
     window.__SCHOLARK_FOUNDATION__?.repairDuplicates?.();
   }
+  function setAriaCurrent(el,value){if(el&&el.getAttribute('aria-current')!==value)el.setAttribute('aria-current',value)}
   function exitStoreSurface(target=''){
     renderEpoch++;busyPack='';statusMessage='';statusError='';routeActive=false;
     document.documentElement.classList.remove('v117-credit-store-route');
@@ -75,7 +76,7 @@
     if(page?.isConnected){page.hidden=true;page.setAttribute('aria-hidden','true')}
     restoreParkedTopbarControls();
     dedupeStoreTransitionSurface();
-    if(target!=='store')button?.setAttribute('aria-current','false');
+    if(target!=='store')setAriaCurrent(button,'false');
     window.dispatchEvent(new CustomEvent('scholark:credit-store-exit',{detail:{target}}));
   }
   function routeHome(){
@@ -109,12 +110,14 @@
     }
     home.onclick=routeHome;workspace.onclick=routeWorkspace;
     const storeButton=$('#v117-credit-store-button',actions);
-    if(storeButton){
-      actions.insertBefore(home,storeButton);
-      actions.insertBefore(workspace,storeButton);
-    }else{
-      const credit=$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions);
-      if(credit){actions.insertBefore(home,credit);actions.insertBefore(workspace,credit)}else{actions.append(home,workspace)}
+    const before=storeButton||$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions)||null;
+    const alreadyPlaced=home.parentNode===actions&&workspace.parentNode===actions&&home.nextElementSibling===workspace&&workspace.nextElementSibling===before;
+    if(!alreadyPlaced){
+      if(before){actions.insertBefore(home,before);actions.insertBefore(workspace,before)}
+      else{
+        if(home.parentNode!==actions)actions.appendChild(home);
+        if(workspace.parentNode!==actions||home.nextElementSibling!==workspace)actions.insertBefore(workspace,home.nextElementSibling);
+      }
     }
   }
 
@@ -169,7 +172,7 @@
     page.hidden=false;
     page.removeAttribute('hidden');page.removeAttribute('aria-hidden');
     ['display','visibility','opacity','pointer-events'].forEach(p=>page.style.removeProperty(p));
-    button?.setAttribute('aria-current','page');
+    setAriaCurrent(button,'page');
   }
 
   function ensureButton(){
@@ -189,7 +192,7 @@
       const before=$('.v85-topbar-credit',actions)||$('.v55-account-wrap',actions)||$('#v55-auth',actions);
       before?actions.insertBefore(button,before):actions.appendChild(button);
     }
-    button.setAttribute('aria-current','false');
+    setAriaCurrent(button,'false');
     return button;
   }
 
@@ -241,7 +244,7 @@
     document.documentElement.classList.toggle('v117-credit-store-route',store);
     document.body?.classList.toggle('v117-credit-store-route',store);
     page.hidden=!store;
-    button?.setAttribute('aria-current',store?'page':'false');
+    setAriaCurrent(button,store?'page':'false');
     syncStoreTopbar();
     if(store){
       render();
