@@ -339,12 +339,34 @@ await page.keyboard.press('Escape');
 check(await visible('.v116-public-actions',5000),'Public Help & Support control did not mount before idle stability check');
 check(await visible('#v55-topbar .v85-topbar-credit',5000),'Wallet control did not mount before idle stability check');
 await page.waitForTimeout(260);
-const idleTopbarMutations=await page.evaluate(async()=>{
-  const bar=document.querySelector('#v55-topbar');if(!bar)return 999;
-  let count=0;const o=new MutationObserver(m=>count+=m.length);o.observe(bar,{subtree:true,childList:true,characterData:true,attributes:true});
-  await new Promise(r=>setTimeout(r,700));o.disconnect();return count;
+const idleTopbarAudit=await page.evaluate(async()=>{
+  const bar=document.querySelector('#v55-topbar');if(!bar)return{count:999,details:[{error:'topbar-missing'}]};
+  const describe=target=>{
+    const el=target?.nodeType===1?target:target?.parentElement;
+    if(!el)return String(target?.nodeName||'unknown');
+    const id=el.id?'#'+el.id:'',cls=String(el.className||'').trim().split(/\\s+/).filter(Boolean).slice(0,3).map(x=>'.'+x).join('');
+    return String(el.tagName||'').toLowerCase()+id+cls;
+  };
+  let count=0;const details=[];
+  const o=new MutationObserver(muts=>{
+    count+=muts.length;
+    for(const m of muts.slice(0,12-details.length)){
+      const el=m.target?.nodeType===1?m.target:m.target?.parentElement;
+      details.push({
+        type:m.type,
+        target:describe(m.target),
+        attribute:m.attributeName||null,
+        oldValue:m.oldValue??null,
+        newValue:m.type==='attributes'&&el&&m.attributeName?el.getAttribute(m.attributeName):m.type==='characterData'?String(m.target?.nodeValue||''):null,
+        added:m.addedNodes?.length||0,
+        removed:m.removedNodes?.length||0
+      });
+    }
+  });
+  o.observe(bar,{subtree:true,childList:true,characterData:true,attributes:true,attributeOldValue:true,characterDataOldValue:true});
+  await new Promise(r=>setTimeout(r,700));o.disconnect();return{count,details};
 });
-check(idleTopbarMutations<=1,`Homepage topbar kept mutating while idle: ${idleTopbarMutations} mutations`);
+check(idleTopbarAudit.count<=1,`Homepage topbar kept mutating while idle: ${idleTopbarAudit.count} mutations · ${JSON.stringify(idleTopbarAudit.details)}`);
 check(await visible('.v116-public-actions',5000),'Public Help & Support control did not mount');
 check(await page.locator('.v116-public-help-toggle').count()===1,'Public Help & Support toggle should be a singleton');
 check(await page.locator('[data-v116-public-support],[data-v116-public-feedback],[data-v116-public-privacy]').count()===0,'Legacy standalone public support/privacy/feedback actions remain');
