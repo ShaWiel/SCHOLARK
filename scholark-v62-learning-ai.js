@@ -57,7 +57,7 @@
   async function call(mode,payload={}) {
     const request=window.__SCHOLARK_WORKSPACE_CORE__?.ai?.request;
     if(!request)throw new Error('SCHOLARK AI foundation is not ready yet.');
-    return request(mode,{level:level(),language:language(),...payload},{timeoutMs:mode==='tutor'?120000:90000});
+    return request(mode,{level:level(),language:language(),...payload},{timeoutMs:mode==='tutor'?210000:90000});
   }
 
   function busy(btn,on,label){
@@ -67,7 +67,7 @@
   }
   function error(host,e){
     if(!host)return;
-    const msg=e?.name==='AbortError'?'The AI request took too long. Try again.':clean(e?.message||'Something went wrong.');
+    const msg=e?.name==='AbortError'?'The request reached its maximum processing time. Your question can be tried again.':clean(e?.message||'Something went wrong.');
     host.innerHTML='<div class="v62-error"><b>Could not finish this request.</b><br>'+esc(msg)+'</div>';
   }
   function list(items,ordered=false){const a=(items||[]).filter(Boolean);if(!a.length)return'';return '<'+(ordered?'ol':'ul')+'>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</'+(ordered?'ol':'ul')+'>';}
@@ -152,11 +152,24 @@
     if(q)q.value='';
     const wait=document.createElement('div');wait.className='v52-msg ai';wait.innerHTML='<span class="v62-loading"><i class="v62-spin"></i>SCHOLARK is thinking…</span>';chat?.appendChild(wait);
     busy(btn,true,'Thinking…');
+    const progressTimers=[],progressSteps=[
+      [18000,'Our systems are still thinking a bit about this request'],
+      [50000,'Our systems are still thinking a bit about this request · Organizing the explanation carefully…'],
+      [105000,'Our systems are still thinking a bit about this request · More complex lessons can take longer.'],
+      [160000,'Our systems are still thinking a bit about this request · Please keep this chat open.']
+    ];
+    for(const [delay,message] of progressSteps)progressTimers.push(setTimeout(()=>{
+      if(!wait.isConnected)return;
+      const label=wait.querySelector('.v62-loading');
+      if(label){label.textContent=message;label.setAttribute('role','status')}
+      if(btn&&btn.disabled)btn.textContent='Still thinking…';
+    },delay));
     try{
       const hist=readTutorHistory();
       const context=hist.slice(-6).map(x=>x.role+': '+String(x.text||'').slice(0,x.role==='assistant'?4200:1800)).join('\n');
       const assignment=assignmentContextFor(prompt);
-      const data=await call('tutor',{prompt,context,attachments,tutorMode:assignment.intent?'assignment_coach':'teach',assignmentContext:assignment.rows});
+      const tutorMode=assignment.intent?'assignment_coach':(/(?:check my|review my|grade my|mark my|correct my|controleer mijn|beoordeel mijn)/i.test(prompt)?'review_work':/(?:quiz me|test me|practice questions|oefentoets|toets me)/i.test(prompt)?'quiz_coach':/(?:study plan|revision schedule|studieplan|leerplanning)/i.test(prompt)?'study_planner':'teach');
+      const data=await call('tutor',{prompt,context,attachments,tutorMode,assignmentContext:assignment.rows});
       const r=data.result,full=tutorPlain(r);
       wait.innerHTML=tutorHtml(r,data);attachmentApi?.clear?.('tutor');
       hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist);
@@ -166,7 +179,7 @@
       const limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
       else{const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}
-    }finally{busy(btn,false);window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false)}
+    }finally{for(const timer of progressTimers)clearTimeout(timer);busy(btn,false);window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false)}
   }
 
   async function runCurriculum(){
