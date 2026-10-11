@@ -461,7 +461,7 @@ if(!live){
     check(learn.includes("const live=$('.v62-study',h)")&&learn.includes("if(live&&$('#v62-field',live))"),'live Study Ahead idempotent mount is missing');
     check(tools.includes('Assignment Coach')&&tools.includes('Prioritise all my assignments')&&tools.includes('data-tutor-assignment'),'live AI Tutor Assignment Coach UI is missing');
     check(tools.includes('BEST FOR')&&tools.includes("example:'Biology example:")&&tools.includes("practice:{name:'Practice Testing'")&&tools.includes("elaborate:{name:'Elaborative Interrogation'"),'live Study Methods examples/subject guidance is incomplete');
-    check(learn.includes('assignmentContextFor(prompt)')&&learn.includes("tutorMode:assignment.intent?'assignment_coach':'teach'"),'live Tutor does not attach Assignment context');
+    check(learn.includes('assignmentContextFor(prompt)')&&learn.includes("tutorMode,assignmentContext:assignment.rows")&&learn.includes('Our systems are still thinking a bit about this request'),'live Tutor does not attach Assignment context');
     check(langRes.r.ok&&lang.includes('Exercise accuracy')&&lang.includes('adaptive=accuracy==null'),'live Language Learner adaptation is missing');
     check(quizRes.r.ok&&quiz.includes("20261007-language-choice-v4")&&quiz.includes('scholark:language-choice'),'live Language Learner choice telemetry is stale');
     check(nextRes.r.ok&&next.includes("20260918-language-next-v2")&&!next.includes('MutationObserver'),'live next-lesson compatibility helper is stale or observer-heavy');
