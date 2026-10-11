@@ -971,7 +971,12 @@ await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.ai').length>=
 check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept a user question');
 check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
 check(await page.locator('.v52-msg.user .v120-msg-attachment').count()>=1,'AI Tutor sent message lost its file attachment badge');
-check(await page.locator('[data-v120-attach-tray="tutor"] .v120-attach-chip').count()===0,'Tutor attachment tray did not clear after send');
+await page.waitForFunction(()=>{
+  const loading=document.querySelector('#v52-chat .v62-loading');
+  const attached=window.__SCHOLARK_CHAT_ATTACHMENTS__?.get?.('tutor')||[];
+  return !loading&&attached.length===0;
+},null,{timeout:8000}).catch(()=>{});
+check(await page.locator('[data-v120-attach-tray="tutor"] .v120-attach-chip').count()===0,'Tutor attachment tray did not clear after successful response');
 await page.waitForFunction(()=>document.querySelector('[data-v120-edit-tutor]')||document.querySelector('[data-v82-edit-message]'),null,{timeout:2000});
 check((await page.locator('[data-v120-edit-tutor],[data-v82-edit-message]').count())>=1,'Tutor user-message Edit action missing');
 await page.evaluate(()=>{localStorage.removeItem('scholark_tutor_name_v1');window.__SCHOLARK_TUTOR_PROFILE__?.apply?.(document)});
