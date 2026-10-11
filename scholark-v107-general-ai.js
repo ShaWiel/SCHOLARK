@@ -33,6 +33,7 @@
     }
   }
   function rich(s){const p=String(s??'').split('```');return p.map((x,i)=>i%2?'<pre><code>'+esc(x.replace(/^[a-z0-9_+#.-]+\n/i,''))+'</code></pre>':esc(x).replace(/\n/g,'<br>')).join('')}
+  function attachmentTags(items=[]){return Array.isArray(items)&&items.length?'<div class="v120-msg-attachments">'+items.slice(0,4).map(x=>'<span class="v120-msg-attachment">'+(x.kind==='image'?'▧':'⌕')+' '+esc(x.name||'attachment')+'</span>').join('')+'</div>':''}
   function extractHtmlArtifact(source){
     const parts=String(source??'').split('```');
     for(let i=1;i<parts.length;i+=2){
@@ -76,7 +77,7 @@
     if(current?.id===id)current=updated;drawHistory();return true
   }
   function drawHistory(){const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-rename" data-v107-rename="'+esc(x.id)+'" aria-label="Rename chat" title="Rename chat">✎</button><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del],[data-v107-rename]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()});$$('[data-v107-rename]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();renameChat(b.dataset.v107Rename)});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread();syncDraftInput()})}
-  function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Explain something clearly','Help me write something','Help me code or debug','Brainstorm ideas','Make me a plan'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
+  function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Explain something clearly','Help me write something','Help me code or debug','Brainstorm ideas','Make me a plan'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='user'?attachmentTags(m.attachments||[]):'')+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
   const withTimeout=(promise,ms,label='request')=>Promise.race([
     Promise.resolve(promise),
     new Promise((_,reject)=>setTimeout(()=>{const e=new Error(label+' timed out');e.code='CLIENT_TIMEOUT';reject(e)},ms))
@@ -103,8 +104,10 @@
     }finally{clearTimeout(timer)}
   }
   async function send(){
-    const input=$('#v107-q'),button=$('#v107-send'),state=$('#v107-state'),prompt=input?.value.trim();
-    if(!prompt)return input?.focus();
+    const input=$('#v107-q'),button=$('#v107-send'),state=$('#v107-state'),attachmentApi=window.__SCHOLARK_CHAT_ATTACHMENTS__,attachments=attachmentApi?.get?.('arki')||[],attachmentMeta=attachmentApi?.meta?.('arki')||[],typedPrompt=input?.value.trim()||'';
+    if(attachmentApi?.busy?.('arki')){if(state)state.textContent='Wait for the attachment to finish preparing…';return}
+    if(!typedPrompt&&!attachments.length)return input?.focus();
+    const prompt=typedPrompt||'Analyze the attached material. Explain what you can see or read and answer in a useful way.';
     if(busy){if(state)state.textContent='ARKI is already working on your previous message…';return}
     busy=true;
     if(button)button.disabled=true;if(input)input.disabled=true;
@@ -124,8 +127,9 @@
       // be slow or temporarily unavailable and previously made ARKI appear dead.
       // Refresh the HUD opportunistically after the server responds instead.
       const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
-      current=update(current.id,x=>{if(!x.messages.length)x.title=prompt.slice(0,64);x.messages.push({role:'user',content:prompt,createdAt:new Date().toISOString()})})||current;
-      if(input)input.value='';writeDraft(current.id,'');drawHistory();drawThread();
+      const visiblePrompt=typedPrompt||'Attached material';
+      current=update(current.id,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})})||current;
+      if(input)input.value='';writeDraft(current.id,'');attachmentApi?.clear?.('arki');drawHistory();drawThread();
       const thread=$('#v107-thread');
       if(thread){
         const thinking=document.createElement('div');thinking.className='v107-msg assistant';thinking.id='v107-thinking';thinking.innerHTML='<span class="v107-thinking"><i></i><i></i><i></i></span>';thread.appendChild(thinking)
@@ -134,7 +138,7 @@
 
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
-      const payload={mode:'general_ai',prompt,history,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload()};
+      const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload()};
       const timeoutMs=deep?55000:35000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
 
@@ -182,5 +186,5 @@
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261010-r252'};
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r254'};
 })();

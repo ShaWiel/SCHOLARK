@@ -758,6 +758,12 @@ await route('ai','#v107-ai');
 check(await page.locator('#v107-q').count()===1,'ARKI prompt missing');
 check(await page.locator('#v107-new').count()===1,'ARKI new-chat action missing');
 check(await page.locator('#v107-deep').count()===1,'ARKI deep-answer control missing');
+await page.waitForSelector('#v120-attach-arki',{state:'visible',timeout:4000});
+check(await page.locator('[data-v120-attach-pick^="arki:"]').count()===3,'ARKI + menu should expose Photos, Camera and Files');
+check((await page.locator('[data-v120-attach-input="arki:camera"]').getAttribute('capture'))==='environment','ARKI Camera option is not wired to device capture');
+await page.locator('[data-v120-attach-input="arki:photos"]').setInputFiles({name:'math-photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlWlH0AAAAASUVORK5CYII=','base64')});
+await page.waitForFunction(()=>document.querySelectorAll('[data-v120-attach-tray="arki"] .v120-attach-chip').length===1,null,{timeout:4000});
+check((await page.locator('[data-v120-attach-tray="arki"]').innerText()).includes('math-photo.png'),'ARKI photo attachment did not appear in composer');
 await page.fill('#v107-q','Draft survives route changes');
 await page.waitForTimeout(120);
 await route('dashboard','#v51-main [data-v51-page="dashboard"].active');
@@ -782,6 +788,8 @@ try{
 check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
 check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
 check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
+check(await page.locator('.v107-msg.user .v120-msg-attachment').count()>=1,'ARKI sent message lost its image attachment badge');
+check(await page.locator('[data-v120-attach-tray="arki"] .v120-attach-chip').count()===0,'ARKI attachment tray did not clear after send');
 await page.click('#v107-new');
 await page.route('**/api/learning/generate',async route=>{
   let body={};try{body=route.request().postDataJSON()}catch{}
@@ -928,6 +936,12 @@ check(tutorBarHealth.buttons.every(x=>x.w>=70&&x.h>=38&&x.h<=46&&x.writing==='ho
 check(await page.locator('.v82-tools .v82-new').count()===0,'Duplicate small Tutor New chat button still exists above composer');
 check(await page.locator('#v120-tutor-rename').count()===1,'Tutor Rename chat control missing');
 check(await page.locator('#v120-tutor-name').count()===1,'Tutor custom-name control missing');
+check(await page.locator('#v120-attach-tutor').count()===1,'Tutor + attachment control missing');
+check(await page.locator('[data-v120-attach-pick^="tutor:"]').count()===3,'Tutor + menu should expose Photos, Camera and Files');
+check((await page.locator('[data-v120-attach-input="tutor:camera"]').getAttribute('capture'))==='environment','Tutor Camera option is not wired to device capture');
+await page.locator('[data-v120-attach-input="tutor:files"]').setInputFiles({name:'lesson-notes.txt',mimeType:'text/plain',buffer:Buffer.from('A chloroplast contains chlorophyll and is the main site of photosynthesis in plant cells.','utf8')});
+await page.waitForFunction(()=>document.querySelectorAll('[data-v120-attach-tray="tutor"] .v120-attach-chip').length===1,null,{timeout:4000});
+check((await page.locator('[data-v120-attach-tray="tutor"]').innerText()).includes('lesson-notes.txt'),'Tutor file attachment did not appear in composer');
 check(await page.evaluate(()=>window.__SCHOLARK_TUTOR_PROFILE__?.set?.('Nova')===true),'Tutor custom name could not be saved');
 await page.waitForFunction(()=>document.querySelector('#v120-tutor-name')?.textContent?.includes('Nova'),null,{timeout:2000});
 check((await page.locator('#v120-tutor-name').innerText()).includes('Nova'),'Tutor custom name did not update UI');
@@ -942,6 +956,8 @@ await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.user').length
 await page.waitForFunction(()=>document.querySelectorAll('.v52-msg.ai').length>=2,{timeout:3000}).catch(()=>{});
 check((await page.locator('.v52-msg.user').count())===1,'AI Tutor did not accept a user question');
 check((await page.locator('.v52-msg.ai').count())>=2,'AI Tutor did not prepare a response state');
+check(await page.locator('.v52-msg.user .v120-msg-attachment').count()>=1,'AI Tutor sent message lost its file attachment badge');
+check(await page.locator('[data-v120-attach-tray="tutor"] .v120-attach-chip').count()===0,'Tutor attachment tray did not clear after send');
 await page.waitForFunction(()=>document.querySelector('[data-v120-edit-tutor]')||document.querySelector('[data-v82-edit-message]'),null,{timeout:2000});
 check((await page.locator('[data-v120-edit-tutor],[data-v82-edit-message]').count())>=1,'Tutor user-message Edit action missing');
 await page.evaluate(()=>{localStorage.removeItem('scholark_tutor_name_v1');window.__SCHOLARK_TUTOR_PROFILE__?.apply?.(document)});

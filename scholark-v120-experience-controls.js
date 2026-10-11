@@ -35,6 +35,8 @@
   const style=document.createElement('style');style.id='scholark-v120-style';style.textContent=`
     .v120-actions{display:flex;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap}.v120-action{width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:#5d5864;display:grid;place-items:center;font:850 13px Inter;cursor:pointer}.v120-action:hover,.v120-action.active{background:#eceaf2;color:#292631}.v120-menu-wrap{position:relative}.v120-menu{position:absolute;left:0;top:34px;z-index:30;width:205px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:14px;box-shadow:0 18px 55px rgba(25,20,55,.18);padding:6px;display:none}.v120-menu.open{display:block}.v120-menu button{width:100%;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:800 8px Inter;color:#322e38;cursor:pointer}.v120-menu button:hover{background:#f2f0f6}
     .v120-tutorbar{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content max-content;gap:8px;align-items:center;width:100%;min-width:0;margin-bottom:12px}.v120-tutorbar>*{min-width:0;writing-mode:horizontal-tb!important;word-break:normal!important;overflow-wrap:normal!important}.v120-tutorbar select,.v120-tutorbar button{height:40px;border:1px solid rgba(23,25,31,.11);border-radius:11px;background:#fff;padding:0 12px;font:850 9px Inter;white-space:nowrap!important}.v120-tutorbar button{max-width:180px;overflow:hidden;text-overflow:ellipsis}.v120-tutorbar select{width:100%;font-size:11.5px;font-weight:950;color:#17191f;text-overflow:ellipsis;overflow:hidden;box-shadow:0 5px 18px rgba(31,27,63,.035)}.v120-tutor-progress{grid-column:1/-1;font:750 8px/1.4 Inter;color:#5f5967;text-align:right;min-width:0;white-space:normal}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-user-actions{display:flex;justify-content:flex-end;margin-top:5px}.v120-edit-user{border:0;background:transparent;color:inherit;opacity:.68;padding:2px 4px;font:850 7px Inter;cursor:pointer}.v120-editbox{display:grid;gap:7px;min-width:min(520px,70vw)}.v120-editbox textarea{width:100%;min-height:90px;box-sizing:border-box;border:1px solid rgba(23,25,31,.14);border-radius:11px;padding:10px;font:650 10px/1.5 Inter;resize:vertical}.v120-edit-actions{display:flex;gap:6px;justify-content:flex-end}.v120-edit-actions button{border:0;border-radius:9px;padding:7px 10px;font:850 7px Inter;cursor:pointer}.v120-edit-actions .save{background:#17191f;color:#c9ff6a}.v120-provider-hidden{display:none!important}
+    .v120-attach-wrap{position:relative;display:flex;align-items:center;gap:7px;min-width:0}.v120-attach-plus{width:38px;height:38px;flex:0 0 38px;border:1px solid rgba(23,25,31,.12);border-radius:50%;background:#fff;color:#17191f;font:500 23px/1 Inter;display:grid;place-items:center;cursor:pointer}.v120-attach-plus:hover,.v120-attach-plus[aria-expanded="true"]{background:#f1efff;border-color:rgba(109,93,252,.28);color:#5d4fd0}.v120-attach-menu{position:absolute;left:0;bottom:46px;z-index:80;display:none;min-width:210px;padding:7px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:16px;box-shadow:0 20px 60px rgba(25,20,55,.2)}.v120-attach-menu.open{display:grid;gap:3px}.v120-attach-menu button{border:0;background:transparent;border-radius:10px;padding:10px 11px;text-align:left;font:850 9px Inter;color:#2f2b35;cursor:pointer;white-space:nowrap!important}.v120-attach-menu button:hover{background:#f3f1f7}.v120-attach-menu b{display:inline-grid;place-items:center;width:23px;height:23px;margin-right:7px;border-radius:8px;background:#efedff;color:#5d4fd0;font:950 11px Inter}.v120-attach-input{display:none!important}.v120-attach-tray{display:flex;gap:6px;flex-wrap:wrap;min-width:0}.v120-attach-chip{display:inline-flex;align-items:center;gap:6px;max-width:210px;padding:5px 7px;border-radius:11px;background:#f2f0f7;border:1px solid rgba(23,25,31,.07);font:800 7.5px Inter;color:#4d4757}.v120-attach-chip img{width:28px;height:28px;border-radius:7px;object-fit:cover}.v120-attach-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v120-attach-chip button{border:0;background:transparent;color:#716b78;font:950 11px Inter;cursor:pointer;padding:0 2px}.v120-tutor-attachbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}.v120-tutor-attachbar .v120-attach-tray{flex:1}.v120-attach-status{font:750 7px Inter;color:#756e7d}.v120-msg-attachments{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.v120-msg-attachment{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:9px;background:rgba(255,255,255,.12);font:800 7px Inter}.v52-msg.ai .v120-msg-attachment{background:#ebe8ff;color:#51466a}.v107-msg.user .v120-msg-attachment{background:rgba(255,255,255,.12);color:#fff}#v107-ai .v107-composebar{flex-wrap:wrap}#v107-ai .v107-composebar .v107-state{min-width:120px}
+    @media(max-width:620px){.v120-attach-menu{position:fixed;left:16px;right:16px;bottom:88px;min-width:0}.v120-tutor-attachbar{align-items:flex-start}.v120-attach-tray{flex-basis:calc(100% - 48px)}}
     .v120-toast{position:fixed;right:18px;bottom:18px;z-index:2147483646;background:#17191f;color:#fff;border-radius:12px;padding:10px 13px;font:800 8px Inter;box-shadow:0 16px 45px rgba(0,0,0,.24)}
     @media(max-width:900px){.v120-tutorbar{grid-template-columns:1fr 1fr}.v120-tutorbar select{grid-column:1/-1}.v120-tutorbar button{width:100%;max-width:none}.v120-tutorbar #v120-tutor-name{grid-column:1/-1}.v120-tutor-progress{grid-column:1/-1;text-align:left}}@media(max-width:620px){.v120-tutorbar{gap:7px}.v120-tutorbar select{font-size:11px}.v120-tutorbar select,.v120-tutorbar button{height:44px}.v120-tutor-progress{font-size:7.5px}}
   `;document.head.appendChild(style);
@@ -43,6 +45,70 @@
   async function copyText(text){try{await navigator.clipboard.writeText(String(text||''));toast('Copied')}catch{toast('Could not copy')}}
   function speak(text){if(!('speechSynthesis'in window)||!text)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(text));u.lang=document.documentElement.lang||'en';speechSynthesis.speak(u)}catch{}}
   async function shareText(text,title='SCHOLARK'){const t=String(text||'');try{if(navigator.share){await navigator.share({title,text:t})}else await copyText(t)}catch{}}
+
+  const ATTACHMENT_LIMIT=4,ATTACHMENT_IMAGE_CHARS=680000;
+  const attachmentState={arki:{items:[],pending:0},tutor:{items:[],pending:0}};
+  const attachmentExt=f=>String(f?.name||'').split('.').pop().toLowerCase();
+  const attachmentTextFile=f=>String(f?.type||'').startsWith('text/')||['txt','md','markdown','csv','json','html','htm','xml'].includes(attachmentExt(f));
+  const attachmentBase64=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const v=String(r.result||''),i=v.indexOf(',');resolve(i>=0?v.slice(i+1):v)};r.onerror=()=>reject(r.error||new Error('Could not read file'));r.readAsDataURL(f)});
+  const loadImage=f=>new Promise((resolve,reject)=>{const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('This image format could not be opened.'))};img.src=url});
+  async function attachmentImage(file){
+    if(file.size>15*1024*1024)throw new Error(file.name+' is over the 15 MB image limit.');
+    const img=await loadImage(file),max=1500,ratio=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round((img.naturalWidth||1)*ratio));canvas.height=Math.max(1,Math.round((img.naturalHeight||1)*ratio));
+    const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Image processing is unavailable in this browser.');
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    let url='',data='';for(const q of [.84,.72,.6,.5]){url=canvas.toDataURL('image/jpeg',q);data=url.slice(url.indexOf(',')+1);if(data.length<=ATTACHMENT_IMAGE_CHARS)break}
+    if(data.length>ATTACHMENT_IMAGE_CHARS)throw new Error(file.name+' is still too large after safe compression.');
+    return{kind:'image',name:String(file.name||'photo.jpg').slice(0,180),type:'image/jpeg',data,preview:url,detail:canvas.width+'×'+canvas.height}
+  }
+  async function attachmentDocument(file){
+    if(file.size>10*1024*1024)throw new Error(file.name+' is over the 10 MB file limit.');
+    const ext=attachmentExt(file),name=String(file.name||'file').slice(0,180),type=String(file.type||ext).slice(0,120);
+    if(attachmentTextFile(file)){const text=(await file.text()).slice(0,30000);return{kind:'file',name,type,text,detail:text.length+' characters'}}
+    if(['pdf','docx','pptx'].includes(ext)){
+      const r=await fetch('/api/studio/reference/extract',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name,type,size:file.size,data:await attachmentBase64(file)})});
+      const d=await r.json().catch(()=>({}));if(!r.ok||!d?.ok||!String(d.text||'').trim())throw new Error(d?.error||('Could not read '+name));
+      const text=String(d.text||'').slice(0,30000);return{kind:'file',name,type,text,detail:d.pages?d.pages+' pages':d.slides?d.slides+' slides':text.length+' characters'}
+    }
+    if(String(file.type||'').startsWith('image/'))return attachmentImage(file);
+    throw new Error('Unsupported file: '+name)
+  }
+  const attachmentPublic=x=>x?{kind:x.kind,name:x.name,type:x.type,...(x.kind==='image'?{data:x.data}:{text:x.text})}:null;
+  const attachmentMeta=x=>x?{kind:x.kind,name:x.name,type:x.type,detail:x.detail||''}:null;
+  function attachmentMessageMarkup(items=[]){return items.length?'<div class="v120-msg-attachments">'+items.map(x=>'<span class="v120-msg-attachment">'+(x.kind==='image'?'▧':'⌕')+' '+esc(x.name||'attachment')+'</span>').join('')+'</div>':''}
+  function attachmentRoot(scope){return scope==='arki'?$('#v107-ai .v107-composebar'):$('#v52-tutor-q')?.closest('.v52-form')}
+  function renderAttachmentTray(scope){
+    const root=attachmentRoot(scope),tray=root?.querySelector?.('[data-v120-attach-tray="'+scope+'"]'),status=root?.querySelector?.('[data-v120-attach-status="'+scope+'"]'),st=attachmentState[scope];if(!tray||!st)return;
+    tray.innerHTML=st.items.map((x,i)=>'<span class="v120-attach-chip">'+(x.preview?'<img alt="" src="'+esc(x.preview)+'">':'<b>'+(x.kind==='image'?'▧':'⌕')+'</b>')+'<span>'+esc(x.name)+'</span><button type="button" data-v120-attach-remove="'+scope+':'+i+'" aria-label="Remove '+esc(x.name)+'">×</button></span>').join('');
+    if(status)status.textContent=st.pending?'Preparing '+st.pending+' attachment'+(st.pending===1?'':'s')+'…':(st.items.length?st.items.length+'/'+ATTACHMENT_LIMIT+' attached':'')
+  }
+  function attachmentMarkup(scope){
+    const wrap=document.createElement('div');wrap.className='v120-attach-wrap';wrap.id='v120-attach-'+scope;
+    wrap.innerHTML='<button type="button" class="v120-attach-plus" data-v120-attach-plus="'+scope+'" aria-label="Add photos, camera or files" aria-expanded="false">+</button><div class="v120-attach-menu" data-v120-attach-menu="'+scope+'"><button type="button" data-v120-attach-pick="'+scope+':photos"><b>▧</b>Photos</button><button type="button" data-v120-attach-pick="'+scope+':camera"><b>◉</b>Camera</button><button type="button" data-v120-attach-pick="'+scope+':files"><b>⌕</b>Files</button></div><input class="v120-attach-input" data-v120-attach-input="'+scope+':photos" type="file" accept="image/*" multiple><input class="v120-attach-input" data-v120-attach-input="'+scope+':camera" type="file" accept="image/*" capture="environment"><input class="v120-attach-input" data-v120-attach-input="'+scope+':files" type="file" accept=".pdf,.docx,.pptx,.txt,.md,.markdown,.csv,.json,.html,.htm,.xml,text/*">';
+    wrap.querySelectorAll('[data-v120-attach-input]').forEach(input=>input.onchange=async()=>{
+      const files=[...(input.files||[])],st=attachmentState[scope];input.value='';if(!files.length||!st)return;
+      const room=Math.max(0,ATTACHMENT_LIMIT-st.items.length-st.pending);if(!room){toast('Maximum '+ATTACHMENT_LIMIT+' attachments');return}
+      const selected=files.slice(0,room);st.pending+=selected.length;renderAttachmentTray(scope);
+      for(const file of selected){try{const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);st.items.push(item)}catch(err){toast(clean(err?.message||err))}finally{st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
+    });
+    return wrap
+  }
+  function ensureAttachmentUi(scope){
+    if(scope==='arki'){
+      const bar=$('#v107-ai .v107-composebar');if(!bar)return;if(!$('#v120-attach-arki',bar))bar.insertBefore(attachmentMarkup('arki'),bar.firstChild);
+      let tray=$('[data-v120-attach-tray="arki"]',bar);if(!tray){tray=document.createElement('div');tray.className='v120-attach-tray';tray.dataset.v120AttachTray='arki';bar.insertBefore(tray,$('#v107-state',bar)||$('#v107-send',bar))}
+      if(!$('[data-v120-attach-status="arki"]',bar)){const st=document.createElement('span');st.className='v120-attach-status';st.dataset.v120AttachStatus='arki';bar.insertBefore(st,$('#v107-state',bar)||$('#v107-send',bar))}
+    }else{
+      const q=$('#v52-tutor-q'),form=q?.closest('.v52-form');if(!form)return;
+      if(!$('#v120-tutor-attachbar',form)){const row=document.createElement('div');row.id='v120-tutor-attachbar';row.className='v120-tutor-attachbar';row.appendChild(attachmentMarkup('tutor'));const tray=document.createElement('div');tray.className='v120-attach-tray';tray.dataset.v120AttachTray='tutor';row.appendChild(tray);const st=document.createElement('span');st.className='v120-attach-status';st.dataset.v120AttachStatus='tutor';row.appendChild(st);form.insertBefore(row,$('#v52-tutor-send',form))}
+    }
+    renderAttachmentTray(scope)
+  }
+  function clearAttachments(scope){const st=attachmentState[scope];if(st){st.items=[];renderAttachmentTray(scope)}}
+  function attachmentApiGet(scope){return (attachmentState[scope]?.items||[]).map(attachmentPublic).filter(Boolean)}
+  function attachmentApiMeta(scope){return (attachmentState[scope]?.items||[]).map(attachmentMeta).filter(Boolean)}
+  window.__SCHOLARK_CHAT_ATTACHMENTS__={get:attachmentApiGet,meta:attachmentApiMeta,clear:clearAttachments,busy:scope=>(attachmentState[scope]?.pending||0)>0,ensure:ensureAttachmentUi,messageMarkup:attachmentMessageMarkup};
 
   const FEEDBACK='scholark_v120_answer_feedback';
   function feedback(){try{return JSON.parse(localStorage.getItem(FEEDBACK)||'{}')||{}}catch{return{}}}
@@ -64,6 +130,7 @@
   function latestUserTextBefore(host){let n=host?.previousElementSibling;while(n){if(n.classList?.contains('user'))return clean(n.textContent);n=n.previousElementSibling}return''}
 
   function decorateArki(){
+    ensureAttachmentUi('arki');
     const api=window.__SCHOLARK_V107_GENERAL_AI__,box=$('#v107-thread');if(!api||!box)return;
     const chat=api.getCurrent?.(),assistants=(chat?.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='assistant');
     const nodes=$$('.v107-msg.assistant',box).filter(x=>x.id!=='v107-thinking');
@@ -124,13 +191,13 @@
   function renderTutorChat(chat=currentTutor()){
     const box=$('#v52-chat');if(!box)return;
     if(!(chat.messages||[]).length){box.innerHTML='<div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div>';return}
-    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div><div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
+    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
     const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText()
   }
   function decorateTutor(){
-    const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;
+    const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;ensureAttachmentUi('tutor');
     if(!$('#v120-tutorbar',form)){
       const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-rename">Rename chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
       $('#v120-tutor-select',bar).onchange=e=>{setTutorActive(e.target.value);const c=currentTutor();syncTutorBackend(c);renderTutorChat(c);refreshTutorBar()};
@@ -187,6 +254,10 @@
   },true);
 
   document.addEventListener('click',e=>{
+    const plus=e.target.closest?.('[data-v120-attach-plus]');if(plus){const scope=plus.dataset.v120AttachPlus,menu=document.querySelector('[data-v120-attach-menu="'+scope+'"]'),open=!menu?.classList.contains('open');document.querySelectorAll('.v120-attach-menu.open').forEach(x=>x.classList.remove('open'));document.querySelectorAll('[data-v120-attach-plus]').forEach(x=>x.setAttribute('aria-expanded','false'));menu?.classList.toggle('open',open);plus.setAttribute('aria-expanded',open?'true':'false');return}
+    const pick=e.target.closest?.('[data-v120-attach-pick]');if(pick){const [scope,kind]=String(pick.dataset.v120AttachPick||'').split(':'),root=attachmentRoot(scope),input=root?.querySelector?.('[data-v120-attach-input="'+scope+':'+kind+'"]');root?.querySelector?.('[data-v120-attach-menu="'+scope+'"]')?.classList.remove('open');root?.querySelector?.('[data-v120-attach-plus="'+scope+'"]')?.setAttribute('aria-expanded','false');input?.click();return}
+    const remove=e.target.closest?.('[data-v120-attach-remove]');if(remove){const [scope,index]=String(remove.dataset.v120AttachRemove||'').split(':'),st=attachmentState[scope];if(st){st.items.splice(Number(index)||0,1);renderAttachmentTray(scope)}return}
+    if(!e.target.closest?.('.v120-attach-wrap')){document.querySelectorAll('.v120-attach-menu.open').forEach(x=>x.classList.remove('open'));document.querySelectorAll('[data-v120-attach-plus]').forEach(x=>x.setAttribute('aria-expanded','false'))}
     const ea=e.target.closest?.('[data-v120-edit-arki]');if(ea){editArkiUser(Number(ea.dataset.v120EditArki),ea.closest('.v107-msg.user'));return}
     const et=e.target.closest?.('[data-v120-edit-tutor]');if(et){editTutorUser(Number(et.dataset.v120EditTutor),et.closest('.v52-msg.user'));return}
     const a=e.target.closest?.('[data-v120-do]');if(a){const host=a.closest('.v120-actions');if(!host)return;const scope=host.dataset.v120Scope;if(scope==='arki')arkiAction(host,a.dataset.v120Do);else tutorAction(host,a.dataset.v120Do);return}
@@ -195,7 +266,7 @@
   },true);
 
   addEventListener('scholark:tutor-user',e=>{
-    const prompt=clean(e.detail?.prompt);if(!prompt)return;updateTutor(x=>{if(!x.messages.length)x.title=prompt.slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
+    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,4):[];if(!prompt&&!attachments.length)return;updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
   });
   addEventListener('scholark:tutor-assistant',e=>{
     const text=multiline(e.detail?.answer),topic=clean(e.detail?.result?.topic)||clean(e.detail?.prompt).slice(0,80)||'General';if(!text)return;
@@ -234,5 +305,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r237-experience'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r254-chat-attachments'};
 })();

@@ -337,6 +337,13 @@ if(!live){
     check(d.provider==='scholark-public-facts','ARKI public profiles should use the deterministic product-facts path');
   },15000);
 
+  await post('/api/learning/generate',{mode:'general_ai',prompt:'Describe the attached test image.',history:[],attachments:[{kind:'image',name:'pixel.png',type:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlWlH0AAAAASUVORK5CYII='}],deep:false,level:'student',language:'English'},'learning:chat_image_attachment',d=>{
+    check(d?.ok===true,'ARKI image attachment request did not complete');
+  },15000);
+  await post('/api/learning/generate',{mode:'tutor',prompt:'Teach from the attached note.',attachments:[{kind:'file',name:'notes.txt',type:'text/plain',text:'Photosynthesis uses light energy to help plants make glucose from carbon dioxide and water.'}],level:'student',language:'English'},'learning:tutor_file_attachment',d=>{
+    check(d?.ok===true,'Tutor file attachment request did not complete');
+  },15000);
+
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');
   check(geminiHealth?.configured===true,'Live Gemini key is not configured');

@@ -142,18 +142,21 @@
     return {intent,rows:intent?rows.slice(0,10):[]};
   }
   async function runTutor(){
-    const q=$('#v52-tutor-q'),chat=$('#v52-chat'),btn=$('#v52-tutor-send');
-    const prompt=multiline(q?.value); if(!prompt){q?.focus();return}
-    chat?.insertAdjacentHTML('beforeend','<div class="v52-msg user">'+esc(prompt)+'</div>');
-    window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt}}));
-    if(q)q.value='';
+    const q=$('#v52-tutor-q'),chat=$('#v52-chat'),btn=$('#v52-tutor-send'),attachmentApi=window.__SCHOLARK_CHAT_ATTACHMENTS__,attachments=attachmentApi?.get?.('tutor')||[],attachmentMeta=attachmentApi?.meta?.('tutor')||[],typedPrompt=multiline(q?.value);
+    if(attachmentApi?.busy?.('tutor')){q?.focus();return}
+    if(!typedPrompt&&!attachments.length){q?.focus();return}
+    const prompt=typedPrompt||'Analyze the attached material and teach me what I need to understand from it.';
+    const visiblePrompt=typedPrompt||'Attached material',attachmentHtml=attachmentApi?.messageMarkup?.(attachmentMeta)||'';
+    chat?.insertAdjacentHTML('beforeend','<div class="v52-msg user">'+esc(visiblePrompt)+attachmentHtml+'</div>');
+    window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt:visiblePrompt,attachments:attachmentMeta}}));
+    if(q)q.value='';attachmentApi?.clear?.('tutor');
     const wait=document.createElement('div');wait.className='v52-msg ai';wait.innerHTML='<span class="v62-loading"><i class="v62-spin"></i>SCHOLARK is thinking…</span>';chat?.appendChild(wait);
     busy(btn,true,'Thinking…');
     try{
       const hist=readTutorHistory();
       const context=hist.slice(-6).map(x=>x.role+': '+String(x.text||'').slice(0,x.role==='assistant'?4200:1800)).join('\n');
       const assignment=assignmentContextFor(prompt);
-      const data=await call('tutor',{prompt,context,tutorMode:assignment.intent?'assignment_coach':'teach',assignmentContext:assignment.rows});
+      const data=await call('tutor',{prompt,context,attachments,tutorMode:assignment.intent?'assignment_coach':'teach',assignmentContext:assignment.rows});
       const r=data.result,full=tutorPlain(r);
       wait.innerHTML=tutorHtml(r,data);
       hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist);
