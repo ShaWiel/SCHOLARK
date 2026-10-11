@@ -81,6 +81,16 @@ for(const cfg of engines){
     await page.fill('#v107-q','What is 2 + 2?');
     await page.click('#v107-send');
     try{
+      await page.waitForFunction(()=>document.querySelector('.v107-msg.user')||document.querySelector('#v107-thinking'),null,{timeout:2500});
+    }catch{
+      const untouched=await page.evaluate(()=>({
+        value:document.querySelector('#v107-q')?.value||'',
+        users:document.querySelectorAll('.v107-msg.user').length,
+        thinking:!!document.querySelector('#v107-thinking')
+      }));
+      if(untouched.value.trim()&&!untouched.users&&!untouched.thinking)await page.click('#v107-send');
+    }
+    try{
       await page.waitForFunction(()=>document.querySelector('.v107-msg.assistant')&&!document.querySelector('#v107-thinking'),null,{timeout:15000});
     }catch{}
     const arki=await page.evaluate(()=>({
