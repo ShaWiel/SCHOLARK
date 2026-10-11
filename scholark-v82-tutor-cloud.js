@@ -3,6 +3,7 @@
   window.__SCHOLARK_V82_TUTOR_CLOUD__=true;
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
+  const multiline=s=>String(s??'').replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const cloud=()=>window.__SCHOLARK_V72_CLOUD__;
   const ACTIVE='scholark_v82_tutor_chat';
@@ -113,7 +114,7 @@
   }
 
   async function saveMessage(role,content,meta={}){
-    const text=clean(content);if(!text)return;
+    const text=role==='assistant'?multiline(content):clean(content);if(!text)return;
     try{
       const x=await ctx();if(!x)return;
       const id=await ensureActive(role==='user'?text:'');if(!id)return;
