@@ -57,7 +57,7 @@
   async function call(mode,payload={}) {
     const request=window.__SCHOLARK_WORKSPACE_CORE__?.ai?.request;
     if(!request)throw new Error('SCHOLARK AI foundation is not ready yet.');
-    return request(mode,{level:level(),language:language(),...payload},{timeoutMs:90000});
+    return request(mode,{level:level(),language:language(),...payload},{timeoutMs:mode==='tutor'?120000:90000});
   }
 
   function busy(btn,on,label){
