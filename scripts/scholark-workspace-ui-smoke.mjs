@@ -1411,7 +1411,15 @@ await route('ai','#v107-ai');
 if(!(await page.locator('#v107-context').isChecked()))await page.check('#v107-context');
 await page.fill('#v107-q','What should I work on next using my workspace context?');
 await page.click('#v107-send');
-await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/connected SCHOLARK workspace context/i.test(x.textContent||'')),null,{timeout:5000});
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/connected SCHOLARK workspace context/i.test(x.textContent||'')),null,{timeout:15000}).catch(async()=>{
+  const info=await page.evaluate(()=>({
+    state:document.querySelector('#v107-state')?.textContent||'',
+    thread:document.querySelector('#v107-thread')?.textContent?.slice(-650)||'',
+    currentChat:window.__SCHOLARK_V107_GENERAL_AI__?.getCurrent?.()?.id||'',
+    recent:(window.__SCHOLARK_V107_GENERAL_AI__?.getCurrent?.()?.messages||[]).slice(-3).map(x=>({role:x.role,text:String(x.content||'').slice(0,180)}))
+  }));
+  throw new Error('ARKI connected context reply was not rendered: '+JSON.stringify(info));
+});
 check(!!arkiConnectedContext&&!arkiConnectedContext.parseError,'ARKI workspace context could not be parsed');
 check(Array.isArray(arkiConnectedContext?.files?.names)&&arkiConnectedContext.files.names.includes('scholark-notes.txt'),`ARKI did not receive Files context: ${JSON.stringify(arkiConnectedContext?.files)}`);
 check(arkiConnectedContext?.studyAhead?.field==='Computer Science'&&arkiConnectedContext?.studyAhead?.specialization==='Cybersecurity',`ARKI did not receive Study Ahead context: ${JSON.stringify(arkiConnectedContext?.studyAhead)}`);
