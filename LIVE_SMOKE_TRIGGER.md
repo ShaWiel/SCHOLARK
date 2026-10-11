@@ -1,7 +1,7 @@
-# SCHOLAVERUM post-deploy smoke marker
+# SCHOLAVERUM r257 post-deploy validation
 
-Production deploy: `3a47f87eb53034a46a6a35e2481546c3e31d24df` (ARKI / AI Tutor deadline and Gemini fallback resilience).
+Production runtime: `2c3a87fae1d4846387206831af08bbb6e82187ce` (`r257-ai-thinking`).
 
-Release Gate, normal CI and CodeQL passed before production deployment. Render deploy `dep-db5tqgp42hec73a6j48g` is live.
+Render deployment `dep-db60omvavr4c73abp1b0` is live. Release Gate, CI and CodeQL passed. Validate current production endpoints, ARKI and Tutor behavior, public security and browser/workspace integrity.
 
-QA-only marker: trigger authenticated-boundary, public health and browser smoke against the production instance.
+This marker is QA-only and does not change the deployed runtime.
