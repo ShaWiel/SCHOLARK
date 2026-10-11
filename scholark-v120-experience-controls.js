@@ -268,6 +268,28 @@
       $('#v120-tutor-rename',bar).onclick=renameTutorChat;$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;
       renderTutorChat();refreshTutorBar();syncTutorBackend();applyTutorName(document);
     }
+    if(!$('#v120-tutor-tasks',form)){
+      const tasks=document.createElement('div');tasks.id='v120-tutor-tasks';
+      tasks.setAttribute('aria-label','Tutor learning activities');
+      tasks.style.cssText='display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 10px';
+      const options=[
+        ['Teach step by step','Explain this topic step by step at my level, with a worked example: '],
+        ['Check my work','Review my work. Identify mistakes, explain why, and help me correct them: '],
+        ['Quiz me','Quiz me on this topic, then explain my mistakes after I answer: '],
+        ['Study plan','Create a realistic study plan with milestones and review sessions for: '],
+        ['Exam practice','Prepare me for an exam with practice questions and worked solutions about: ']
+      ];
+      tasks.innerHTML=options.map(([title],i)=>'<button type="button" data-v120-tutor-task="'+i+'" style="border:1px solid #dcd9ea;border-radius:999px;background:#f8f7ff;color:#423765;padding:7px 10px;cursor:pointer;font:750 10px Inter,system-ui">'+esc(title)+'</button>').join('');
+      tasks.addEventListener('click',event=>{
+        const button=event.target.closest('[data-v120-tutor-task]');if(!button)return;
+        const selected=options[Number(button.dataset.v120TutorTask)];if(!selected)return;
+        const current=String(q.value||'').trim();
+        q.value=selected[1]+current;
+        q.dispatchEvent(new Event('input',{bubbles:true}));
+        q.focus();
+      });
+      form.insertBefore(tasks,q);
+    }
   }
   async function editTutorUser(index,node){
     const chat=currentTutor(),msg=chat.messages?.[index];if(!msg||msg.role!=='user')return;const oldText=String(msg.text||'');
