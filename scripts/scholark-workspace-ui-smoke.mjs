@@ -793,11 +793,11 @@ check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count
 check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
 check(await page.locator('.v107-msg.user .v120-msg-attachment').count()>=1,'ARKI sent message lost its image attachment badge');
 check(await page.locator('[data-v120-attach-tray="arki"] .v120-attach-chip').count()===0,'ARKI attachment tray did not clear after send');
-await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:20,chatRemaining:0,attachmentLimit:30,attachmentUsed:12,attachmentRemaining:18,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_CHAT_LIMIT',0));
+await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:20,chatRemaining:0,attachmentLimit:15,attachmentUsed:12,attachmentRemaining:3,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_CHAT_LIMIT',0));
 await page.waitForSelector('[data-v120-quota="arki"]:not([hidden])',{timeout:2000});
 check(/Free daily chat limit reached/i.test(await page.locator('[data-v120-quota="arki"]').innerText()),'ARKI Free daily-limit banner missing');
 check(await page.locator('#v107-send').isDisabled(),'ARKI send button is not disabled at the Free daily chat limit');
-await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:5,chatRemaining:15,attachmentLimit:30,attachmentUsed:30,attachmentRemaining:0,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_ATTACHMENT_LIMIT',0));
+await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:5,chatRemaining:15,attachmentLimit:15,attachmentUsed:15,attachmentRemaining:0,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_ATTACHMENT_LIMIT',0));
 check(await page.locator('[data-v120-attach-plus="arki"]').isDisabled(),'ARKI attachment + button is not disabled at the Free upload limit');
 check(!(await page.locator('#v107-send').isDisabled()),'ARKI text chat should remain available when only the upload limit is exhausted');
 await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:false,plan:'pro',chatLimit:null,chatUsed:null,chatRemaining:null,attachmentLimit:null,attachmentUsed:null,attachmentRemaining:null,resetAt:null},'',0));

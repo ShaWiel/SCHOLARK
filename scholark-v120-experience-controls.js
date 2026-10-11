@@ -145,7 +145,7 @@
     }else if(chatBlocked){
       html='<strong>Free daily chat limit reached.</strong> Free includes '+esc(q?.chatLimit??20)+' ARKI / AI Tutor messages per 24-hour window.'+resetText+'<button type="button" class="v120-quota-upgrade" data-v120-upgrade>View plans</button>';blocked=true
     }else if(attachmentBlocked){
-      html='<strong>Free attachment limit reached.</strong> Free includes '+esc(q?.attachmentLimit??30)+' photo, camera or file uploads per 24-hour window. You can keep chatting without uploads.'+resetText+'<button type="button" class="v120-quota-upgrade" data-v120-upgrade>View plans</button>';blocked=true
+      html='<strong>Free attachment limit reached.</strong> Free includes '+esc(q?.attachmentLimit??15)+' photo, camera or file uploads per 24-hour window. You can keep chatting without uploads.'+resetText+'<button type="button" class="v120-quota-upgrade" data-v120-upgrade>View plans</button>';blocked=true
     }else if(limited&&((Number.isFinite(chatRemaining)&&chatRemaining<=3)||(Number.isFinite(attachmentRemaining)&&attachmentRemaining<=5))){
       html='<strong>Free usage remaining:</strong> '+Math.max(0,chatRemaining)+' chat message'+(chatRemaining===1?'':'s')+' · '+Math.max(0,attachmentRemaining)+' upload'+(attachmentRemaining===1?'':'s')+'.'+resetText
     }
@@ -371,5 +371,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r255-free-quota-html'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r256-free-attachment-15'};
 })();

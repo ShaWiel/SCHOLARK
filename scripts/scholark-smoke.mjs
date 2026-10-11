@@ -275,7 +275,7 @@ if(!live){
   check(studioHealth?.testMode===true,'Local Studio smoke must run in test mode');
   check(learningHealth?.testMode===true,'Local Learning smoke must run in test mode');
   check(learningHealth?.serverCredits===true&&learningHealth?.creditIdempotency===true,'Learning server-credit protection is not active');
-  check(learningHealth?.freeDailyQuota?.chatMessages===20&&learningHealth?.freeDailyQuota?.attachments===30&&learningHealth?.freeDailyQuota?.windowHours===24&&learningHealth?.freeDailyQuota?.maxAttachmentsPerMessage===10,'Learning Free-plan quota/attachment contract is not active');
+  check(learningHealth?.freeDailyQuota?.chatMessages===20&&learningHealth?.freeDailyQuota?.attachments===15&&learningHealth?.freeDailyQuota?.windowHours===24&&learningHealth?.freeDailyQuota?.maxAttachmentsPerMessage===10,'Learning Free-plan quota/attachment contract is not active');
   check(learningHealth?.authRequiredForAI===false,'Local test mode should not require AI authentication');
   const quotaHealth=await get('/api/learning/quota-status');
   check(quotaHealth?.quota?.limited===false,'Local test-mode quota status should be unlimited');

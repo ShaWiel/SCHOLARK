@@ -27,12 +27,12 @@ const supabase=http.createServer((req,res)=>{
   if(u.pathname==='/rest/v1/rpc/free_ai_quota_status'){
     quotaAttempts++;
     if(quotaAttempts===1){req.socket.destroy();return}
-    return reply(res,200,{ok:true,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:1,chatRemaining:19,attachmentLimit:30,attachmentUsed:0,attachmentRemaining:30,resetAt:new Date(Date.now()+86400000).toISOString()}});
+    return reply(res,200,{ok:true,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:1,chatRemaining:19,attachmentLimit:15,attachmentUsed:0,attachmentRemaining:15,resetAt:new Date(Date.now()+86400000).toISOString()}});
   }
   if(u.pathname==='/rest/v1/rpc/consume_free_ai_quota_once'){
     quotaConsumeAttempts++;
     if(quotaConsumeAttempts===1){req.socket.destroy();return}
-    return reply(res,200,{ok:true,idempotent:false,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:2,chatRemaining:18,attachmentLimit:30,attachmentUsed:0,attachmentRemaining:30,resetAt:new Date(Date.now()+86400000).toISOString()}});
+    return reply(res,200,{ok:true,idempotent:false,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:2,chatRemaining:18,attachmentLimit:15,attachmentUsed:0,attachmentRemaining:15,resetAt:new Date(Date.now()+86400000).toISOString()}});
   }
   if(u.pathname==='/rest/v1/rpc/consume_feature_credits_once'){
     chargeAttempts++;
