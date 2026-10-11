@@ -126,6 +126,23 @@ try{
   await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000});
   check(await page.locator('#v107-q').count()===1&&await page.locator('#v107-send').count()===1,'live ARKI UI is mounted and Ask action is available');
 
+  const htmlProbe='<!doctype html><html><body><button id="live-html-demo">Run</button><strong id="live-html-out">ready</strong><script>document.querySelector("#live-html-demo").onclick=()=>document.querySelector("#live-html-out").textContent="worked"<\\/script></body></html>';
+  await page.evaluate(html=>{
+    const id='live-html-smoke',now=new Date().toISOString();
+    localStorage.setItem('scholark_v107_general_ai_chats',JSON.stringify([{id,title:'Live HTML smoke',createdAt:now,updatedAt:now,messages:[{role:'assistant',content:'HTML preview smoke.\\n\\n```html\\n'+html+'\\n```',createdAt:now,followUps:[]}]}]));
+    localStorage.setItem('scholark_v107_general_ai_active',id);
+    window.__SCHOLARK_V107_GENERAL_AI__?.open?.();
+  },htmlProbe);
+  await page.waitForSelector('[data-v107-html-open]',{state:'visible',timeout:6000});
+  check(/Open website in chat/i.test(await page.locator('[data-v107-html-open]').innerText()),'live ARKI HTML artifact exposes the in-chat preview action');
+  await page.click('[data-v107-html-open]');
+  await page.waitForSelector('.v107-html-frame',{state:'visible',timeout:5000});
+  const liveHtmlSandbox=await page.locator('.v107-html-frame').getAttribute('sandbox');
+  check(/allow-scripts/.test(liveHtmlSandbox||'')&&!/allow-same-origin/.test(liveHtmlSandbox||''),'live ARKI HTML preview remains origin-isolated');
+  const liveHtmlFrame=page.frameLocator('.v107-html-frame');
+  await liveHtmlFrame.locator('#live-html-demo').click();
+  check((await liveHtmlFrame.locator('#live-html-out').innerText())==='worked','live ARKI interactive HTML executes inside the chat sandbox');
+
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('language'));
   try{
     await page.waitForSelector('#v51-fallback .v93',{state:'visible',timeout:12000});
@@ -139,7 +156,6 @@ try{
   await page.waitForSelector('#v51-fallback .v121',{state:'visible',timeout:12000});
   check(await page.locator('#v51-sidebar [data-v51-tool="reminders"]').count()===1,'live Reminders route is present once');
   check(await page.evaluate(()=>window.__SCHOLARK_NOTIFICATIONS__?.release==='r248-notifications'),'live Reminders runtime is initialized');
-  check(await page.evaluate(()=>window.__SCHOLARK_V107_GENERAL_AI__?.version==='20261009-r238'),'live ARKI interactive HTML runtime is initialized');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
   await page.waitForSelector('#v50-school.open',{state:'visible',timeout:12000});
