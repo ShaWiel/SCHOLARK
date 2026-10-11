@@ -126,7 +126,7 @@ try{
   await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000});
   check(await page.locator('#v107-q').count()===1&&await page.locator('#v107-send').count()===1,'live ARKI UI is mounted and Ask action is available');
 
-  const htmlProbe='<!doctype html><html><body><button id="live-html-demo">Run</button><strong id="live-html-out">ready</strong><script>document.querySelector("#live-html-demo").onclick=()=>document.querySelector("#live-html-out").textContent="worked"<\\/script></body></html>';
+  const htmlProbe='<!doctype html><html><body><button id="live-html-demo">Run</button><strong id="live-html-out">ready</strong><script>document.querySelector("#live-html-demo").onclick=()=>document.querySelector("#live-html-out").textContent="worked"</script></body></html>';
   await page.evaluate(html=>{
     const id='live-html-smoke',now=new Date().toISOString();
     localStorage.setItem('scholark_v107_general_ai_chats',JSON.stringify([{id,title:'Live HTML smoke',createdAt:now,updatedAt:now,messages:[{role:'assistant',content:'HTML preview smoke.\\n\\n```html\\n'+html+'\\n```',createdAt:now,followUps:[]}]}]));
