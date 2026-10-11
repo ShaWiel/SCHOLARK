@@ -94,7 +94,9 @@ try{
   check(arki.status===200&&arki.data?.ok===true,'ARKI did not recover from transient credit preflight failure: '+JSON.stringify(arki));
   check(arki.data?.provider==='gemini','ARKI resilience smoke expected a validated Gemini response');
   check(costAttempts>=2&&walletAttempts>=2&&quotaAttempts>=2,'Credit/quota preflight did not retry all transient network failures');
-  check(quotaConsumeAttempts>=2,'Zero-credit ARKI quota consumption did not retry after transient network failure');
+  const freeInfo=await call('general_ai','How long did building SCHOLAVERUM take?','credit-resilience-product-001');
+  check(freeInfo.status===200&&freeInfo.data?.provider==='scholark-public-facts','Free public-information request failed credit recovery');
+  check(quotaConsumeAttempts>=2,'Free public-information quota consumption did not recover from transient network failure');
 
   const tutor=await call('tutor','Test resilient credit charge','credit-resilience-tutor-001');
   check(tutor.status===200&&tutor.data?.ok===true,'Tutor did not recover from transient credit charge failure: '+JSON.stringify(tutor));
