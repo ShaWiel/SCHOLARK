@@ -528,7 +528,7 @@ async function pollinations(mode,p){
   for(const model of models){
     const payloadText=JSON.stringify(userPayload(mode,p)),images=attachmentImages(p),userContent=images.length?[{type:'text',text:payloadText},...images.map(x=>({type:'image_url',image_url:{url:`data:${x.type};base64,${x.data}`}}))]:payloadText;
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:userContent}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const timeoutMs=mode==='general_ai'?(p.deep===true?25000:18000):mode==='tutor'?28000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+    const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?40000:30000):mode==='tutor'?45000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
     try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
     const data=await response.json().catch(()=>({}));
     if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
@@ -547,7 +547,7 @@ async function openai(mode,p){
   const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
   const images=attachmentImages(p),userContent=[{type:'input_text',text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.data}`}))];
   const body={model,store:false,reasoning:{effort},text:{verbosity:mode==='tutor'?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:userContent}]};
-  const timeoutMs=mode==='general_ai'?(p.deep===true?25000:22000):mode==='tutor'?38000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?50000:40000):mode==='tutor'?55000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
@@ -556,7 +556,7 @@ async function openai(mode,p){
 async function gemini(mode,p){
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?65000:60000):mode==='tutor'?65000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const route=learningModels(mode,p),model=route.gemini,timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?108000:103000):mode==='tutor'?108000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   const images=attachmentImages(p),parts=[{text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({inlineData:{mimeType:x.type,data:x.data}}))];
   try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
@@ -1017,6 +1017,31 @@ function scholarkTestFallback(mode,p){
   }};
 }
 
+function providerTimeBudget(p,desiredMs){
+  const deadline=Number(p?._providerDeadlineAt);
+  if(!Number.isFinite(deadline)||deadline<=0)return desiredMs;
+  return Math.max(1200,Math.min(desiredMs,deadline-Date.now()-1000));
+}
+
+function validateGeneratedAnswer(mode,p,result){
+  if(mode!=='general_ai'&&mode!=='tutor')return true;
+  const answer=String(result?.answer||'').trim();
+  if(!answer||typeof result!=='object'){
+    const e=new Error('Provider returned no usable answer');e.code='AI_INCOMPLETE_RESPONSE';throw e;
+  }
+  if(mode==='tutor'){
+    if(!Array.isArray(result.steps)||!result.steps.some(x=>String(x||'').trim())){
+      const e=new Error('Tutor response lacked a step-by-step explanation');e.code='AI_INCOMPLETE_RESPONSE';throw e;
+    }
+  }
+  const prompt=String(p?.prompt||'');
+  const wantsHtml=mode==='general_ai'&&/(?:make|create|build|generate|design|maak|bouw|cre[eë]er|schrijf)\b[\s\S]{0,100}\b(?:html|website|webpage|web page|webpagina|mini-site|interactive page)\b/i.test(prompt);
+  if(wantsHtml&&!/\`\`\`html\s*[\s\S]*<\s*(?:!doctype|html|head|body|style|main|div|section)\b/i.test(answer)){
+    const e=new Error('HTML request did not include a usable in-chat artifact');e.code='AI_INCOMPLETE_HTML';throw e;
+  }
+  return true;
+}
+
 async function generate(mode,p){
   if(mode==='general_ai'&&!normalizeAttachments(p.attachments).length){
     const publicFact=scholarkPublicFactResult(p);
@@ -1037,11 +1062,23 @@ async function generate(mode,p){
   if(/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE||''))&&mode!=='translate_ui')return finalize(scholarkTestFallback(mode,p),STUDY_CACHE_LOCAL_TTL);
   const route=learningModels(mode,p),freeOnly=/^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_FREE_AI_ONLY||'')),hasGemini=Boolean(String(process.env.GEMINI_API_KEY||'').trim()),hasPollinations=isSecret(process.env.POLLINATIONS_API_KEY),hasOpenAI=!freeOnly&&/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),errors=[];
   const hasImages=attachmentImages(p).length>0;
-  const order=hasImages?[[hasGemini,gemini],[hasOpenAI,openai],[hasPollinations,pollinations]]:(route.tier==='light'?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasGemini,gemini],[hasOpenAI,openai]]);
+  const deadline=Date.now()+(mode==='general_ai'?160000:mode==='tutor'?170000:180000);
+  const order=hasImages?[[hasGemini,gemini],[hasOpenAI,openai],[hasPollinations,pollinations]]:((mode==='general_ai'||mode==='tutor'||route.tier==='light')?[[hasGemini,gemini],[hasPollinations,pollinations],[hasOpenAI,openai]]:[[hasPollinations,pollinations],[hasGemini,gemini],[hasOpenAI,openai]]);
   for(const [ok,fn] of order){
     if(!ok)continue;
-    try{return finalize(await fn(mode,p))}
-    catch(e){if(e?.name==='AbortError')throw e;errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}
+    if(Date.now()>deadline-2000)break;
+    try{
+      const result=await fn(mode,{...p,_providerDeadlineAt:deadline});
+      validateGeneratedAnswer(mode,p,result.result);
+      return finalize(result);
+    }catch(e){if(e?.name==='AbortError'&&String(e?.message||'').includes('cancelled'))throw e;errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}
+  }
+  // A fake successful answer would consume credits without completing the task.
+  // Real ARKI and Tutor failures return a service error so the user can retry.
+  if(mode==='general_ai'||mode==='tutor'){
+    const failure=new Error('Our AI systems could not complete this request right now. Your message remains available; please try again.');
+    failure.code='AI_PROVIDER_UNAVAILABLE';failure.details=errors.slice(-3);
+    throw failure;
   }
   if(mode!=='translate_ui'){
     const fallback=scholarkTestFallback(mode,p);
@@ -1067,7 +1104,7 @@ http.Server.prototype.emit = function(event,...args){
     return true;
   }
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,freeDailyQuota:{chatMessages:20,attachments:15,windowHours:24,maxAttachmentsPerMessage:CHAT_ATTACHMENT_LIMIT},pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:20000,deep:35000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true,geminiRouterBudgetMs:52000,tutorFallbackBudgeted:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
+    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,freeDailyQuota:{chatMessages:20,attachments:15,windowHours:24,maxAttachmentsPerMessage:CHAT_ATTACHMENT_LIMIT},pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:103000,deep:108000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true,geminiRouterBudgetMs:52000,tutorFallbackBudgeted:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname==='/api/learning/quota-status'){
@@ -1145,7 +1182,7 @@ http.Server.prototype.emit = function(event,...args){
       if(!charged.ok)return json(res,charged.http||500,{ok:false,code:charged.code,error:charged.error,balance:charged.balance,needed:charged.needed,quota:charged.quota||authorized.quota||null});
       json(res,200,{...out,usage:{...(charged.usage||{}),quota:charged.usage?.quota||authorized.quota||null}});
     }catch(e){
-      const status=e.code==='AI_ENGINE_UNAVAILABLE'||e.code==='CREDIT_SERVICE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
+      const status=e.code==='AI_ENGINE_UNAVAILABLE'||e.code==='AI_PROVIDER_UNAVAILABLE'||e.code==='CREDIT_SERVICE_UNAVAILABLE'?503:e.code==='REQUEST_TOO_LARGE'?413:e.code==='INVALID_JSON'?400:500;
       if(mode==='general_ai')console.warn('[SCHOLAVERUM] ARKI request failed · '+String(e.code||'LEARNING_ERROR')+' · '+networkCode(e)+(TEST_MODE?' · '+String(e?.stack||e):''));
       json(res,status,{ok:false,code:e.code||'LEARNING_ERROR',error:e.code==='CREDIT_SERVICE_UNAVAILABLE'?'SCHOLAVERUM is reconnecting to account services. Please try ARKI again in a moment.':e.message,details:e.details||undefined});
     }
