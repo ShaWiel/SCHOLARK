@@ -211,7 +211,7 @@
       if(!session?.access_token){const e=new Error('Your SCHOLAVERUM session expired. Sign in again.');e.code='AUTH_REQUIRED';throw e}
     }
     const requestId=clean(opts.requestId)||(globalThis.crypto?.randomUUID?.()||uid('sch-ai')).replace(/[^a-zA-Z0-9._:-]/g,'');
-    const timeoutMs=Math.max(5000,Math.min(120000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?115000:70000):90000)));
+    const timeoutMs=Math.max(5000,Math.min(220000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?210000:190000):m==='tutor'?210000:90000)));
     const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';
     const body={
       mode:m,
