@@ -264,9 +264,9 @@ if(schoolResilience){
   check(Array.isArray(schoolResilience.providers)&&schoolResilience.providers.some(x=>/Photon/i.test(x)),'School Photon fallback missing');
 }
 if(geminiHealth){
-  check(geminiHealth.routerVersion==='20260917-gemini-resilience-v3','Gemini router version mismatch');
+  check(geminiHealth.routerVersion==='20261011-gemini-deadline-v4','Gemini router version mismatch');
   check(geminiHealth.primaryModel==='gemini-3.8-flash','Gemini primary model mismatch');
-  check(Array.isArray(geminiHealth.fallbackModels)&&geminiHealth.fallbackModels.length>=3,'Gemini fallback chain incomplete');
+  check(Array.isArray(geminiHealth.fallbackModels)&&geminiHealth.fallbackModels.includes('gemini-3.5-flash-lite')&&!geminiHealth.fallbackModels.includes('gemini-3.7-flash'),'Gemini fallback chain incomplete');
   check(geminiHealth.modelHealth&&typeof geminiHealth.modelHealth==='object','Gemini circuit-breaker health missing');
   check(geminiHealth.emergencyProviders&&typeof geminiHealth.emergencyProviders==='object','Emergency provider health missing');
 }
