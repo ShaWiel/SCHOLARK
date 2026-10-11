@@ -1,6 +1,6 @@
 (() => {
   if(window.__SCHOLARK_NOTIFICATIONS__)return;
-  const RELEASE='r248-notifications',SW_VERSION='20261009-r247-push';
+  const RELEASE='r250-notifications',SW_VERSION='20261009-r247-push';
   const VAPID_PUBLIC='BCZr66dMfGomd-lDQTaglxhFbjYCd4vZ55AKZ_Nwp_p4WC4P-UCCyOG9WL_0Nnes_HD4eCdQIi3igZ2I4kgREqA';
   const ASSIGN_KEY='scholark_v106_assignments',ONBOARD_KEY='scholark_notification_onboarding_pending',DISMISS_KEY='scholark_notification_device_prompt_until_v2';
   const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
@@ -26,7 +26,23 @@
   async function req(path,opts={}){const x=await ctx();if(!x)throw new Error('Sign in to SCHOLAVERUM first.');const r=await x.c.request(path,opts),d=await r.json().catch(()=>null);if(!r.ok)throw new Error(d?.message||d?.error||'Notification request failed.');return {x,d,r}}
   async function sw(){if(!supported())throw new Error('Push notifications are not supported in this browser.');const reg=await navigator.serviceWorker.register('/scholark-sw.js?v='+encodeURIComponent(SW_VERSION),{scope:'/',updateViaCache:'none'});try{await reg.update()}catch{}return navigator.serviceWorker.ready}
   async function subscription(){if(!supported())return null;try{return(await navigator.serviceWorker.ready).pushManager.getSubscription()}catch{return null}}
-  async function currentDeviceReady(){if(!supported()||Notification.permission!=='granted')return false;return !!(await subscription())}
+  async function serverDeviceReady(sub){
+    const endpoint=String(sub?.endpoint||'');if(!endpoint)return false;
+    const x=await ctx();if(!x)return false;
+    try{
+      const r=await x.c.request('/rest/v1/push_subscriptions?select=id,enabled&user_id=eq.'+encodeURIComponent(x.uid)+'&endpoint=eq.'+encodeURIComponent(endpoint)+'&limit=1');
+      if(!r.ok)return false;
+      const rows=await r.json().catch(()=>[]);
+      return Array.isArray(rows)&&rows.some(row=>row?.enabled!==false);
+    }catch{return false}
+  }
+  async function currentDeviceReady(){
+    if(!supported()||Notification.permission!=='granted')return false;
+    const sub=await subscription();if(!sub?.endpoint)return false;
+    if(navigator.onLine===false)return true;
+    return serverDeviceReady(sub);
+  }
+  function blockingDialogOpen(){return !!document.querySelector('#v72-modal.open,#v116-dialog.open,[role="dialog"][aria-modal="true"]:not([aria-hidden="true"])')}
   function waitForPushAck(since=Date.now(),timeout=5500){
     return new Promise(resolve=>{
       let done=false,timer=0;
@@ -78,7 +94,7 @@
     const x=await ctx();if(!x)return null;
     const [p,d,r]=await Promise.all([
       x.c.request('/rest/v1/notification_preferences?select=*&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1'),
-      x.c.request('/rest/v1/push_subscriptions?select=id,device_label,platform,enabled,last_seen_at,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&order=last_seen_at.desc'),
+      x.c.request('/rest/v1/push_subscriptions?select=id,endpoint,device_label,platform,enabled,last_seen_at,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&order=last_seen_at.desc'),
       x.c.request('/rest/v1/notification_reminders?select=id,kind,title,body,url,due_at,status,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending&order=due_at.asc&limit=100')
     ]);
     const pd=await p.json().catch(()=>[]),dd=await d.json().catch(()=>[]),rd=await r.json().catch(()=>[]);
@@ -94,7 +110,19 @@
   }
   function safeUrl(v){const s=String(v||'/#reminders');return s.startsWith('/')&&!s.startsWith('//')?s:'/#reminders'}
   async function cancelReminder(id){const x=await ctx();if(!x)return;await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})})}
-  async function unlinkDevice(id){const x=await ctx();if(!x)return;await x.c.request('/rest/v1/push_subscriptions?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}})}
+  async function unlinkDevice(id){
+    const x=await ctx();if(!x)return;
+    let endpoint='';
+    try{
+      const q=await x.c.request('/rest/v1/push_subscriptions?select=id,endpoint&user_id=eq.'+encodeURIComponent(x.uid)+'&id=eq.'+encodeURIComponent(id)+'&limit=1');
+      if(q.ok){const rows=await q.json().catch(()=>[]);endpoint=String(Array.isArray(rows)?rows[0]?.endpoint||'':'')}
+    }catch{}
+    const r=await x.c.request('/rest/v1/push_subscriptions?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    if(!r.ok)throw new Error('Could not unlink this device.');
+    const sub=await subscription();
+    if(endpoint&&sub?.endpoint===endpoint){try{await sub.unsubscribe()}catch{}}
+    try{localStorage.setItem(DISMISS_KEY,String(Date.now()+86400000))}catch{}
+  }
   function localAssignments(){try{const a=JSON.parse(localStorage.getItem(ASSIGN_KEY)||'[]');return Array.isArray(a)?a:[]}catch{return[]}}
   async function syncAssignments(){
     clearTimeout(syncTimer);
@@ -168,6 +196,7 @@
   function offerDeviceLink(){
     clearTimeout(onboardTimer);onboardTimer=setTimeout(async()=>{
       if(!(await onboardingNeeded()))return;
+      if(blockingDialogOpen()){onboardTimer=setTimeout(offerDeviceLink,1200);return}
       let modal=$('#v121-onboard');if(!modal){modal=document.createElement('div');modal.id='v121-onboard';modal.className='v121-onboard';document.body.appendChild(modal)}
       modal.innerHTML='<div class="v121-onboard-card"><small>SCHOLAVERUM DEVICES</small><h2>Link one or more devices for reminders?</h2><p>Link this device now so SCHOLAVERUM can remind you about homework, assignments, reminders you create yourself and upcoming payments. You can link more phones, tablets, laptops or PCs later by signing in to the same account on each device. Compatible smartwatches normally receive the same SCHOLAVERUM alerts through notification mirroring from the linked phone.</p><div class="v121-actions"><button class="v121-btn" data-v121-onboard-link>Link this device</button><button class="v121-btn alt" data-v121-onboard-later>Not now</button></div><div class="v121-status"></div></div>';modal.classList.add('open');
       $('[data-v121-onboard-later]',modal).onclick=async()=>{try{localStorage.removeItem(ONBOARD_KEY);localStorage.setItem(DISMISS_KEY,String(Date.now()+86400000))}catch{}modal.classList.remove('open')};

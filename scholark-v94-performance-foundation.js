@@ -39,7 +39,7 @@
   };
   function tuneImages(root=activeRoot()){
     const scope=root?.querySelectorAll?root:document;
-    $$('img',scope).forEach(img=>{if(!img.decoding)img.decoding='async';if(!img.loading)img.loading='lazy'});
+    $('img',scope).forEach(img=>{if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy')});
     document.querySelectorAll('.v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo').forEach(img=>{
       if(img.getAttribute('loading')!=='eager')img.setAttribute('loading','eager');
       if(img.getAttribute('decoding')!=='async')img.setAttribute('decoding','async');
@@ -99,5 +99,5 @@
   idle(()=>{tuneImages();fitText(activeRoot(),true)});
   setTimeout(routeTransition,350);
 
-  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r248'};
+  window.__SCHOLARK_PERF__={state,fitText,routeTransition,enableSafeMode,release:'r250'};
 })();
