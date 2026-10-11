@@ -1074,12 +1074,14 @@ http.Server.prototype.emit = function(event,...args){
     if(req.method!=='GET'){json(res,405,{ok:false,error:'Method not allowed'});return true}
     if(TEST_MODE){json(res,200,{ok:true,quota:{limited:false,plan:'test',chatLimit:null,chatUsed:null,chatRemaining:null,attachmentLimit:null,attachmentUsed:null,attachmentRemaining:null,resetAt:null}});return true}
     const token=bearer(req);if(!token){json(res,401,{ok:false,code:'AUTH_REQUIRED',error:'Sign in to view your SCHOLAVERUM chat limit.'});return true}
-    try{
-      const q=await fetchFreeQuotaStatus(token,0);
-      json(res,200,{ok:true,quota:q?.quota||null,code:q?.code||null});
-    }catch(e){
-      json(res,e?.http||503,{ok:false,code:e?.code||'CREDIT_SERVICE_UNAVAILABLE',error:e?.message||'Could not check the SCHOLAVERUM daily limit.'})
-    }
+    (async()=>{
+      try{
+        const q=await fetchFreeQuotaStatus(token,0);
+        json(res,200,{ok:true,quota:q?.quota||null,code:q?.code||null});
+      }catch(e){
+        json(res,e?.http||503,{ok:false,code:e?.code||'CREDIT_SERVICE_UNAVAILABLE',error:e?.message||'Could not check the SCHOLAVERUM daily limit.'})
+      }
+    })();
     return true
   }
   if(url.pathname!=='/api/learning/generate') return originalEmit.call(this,event,...args);
