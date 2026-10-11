@@ -139,7 +139,7 @@
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
       const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload()};
-      const timeoutMs=deep?55000:35000;
+      const timeoutMs=deep?120000:105000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
 
       if(!test&&attempt.response.status===401){
@@ -163,7 +163,7 @@
       window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:current.id,context:!!$('#v107-context')?.checked})
     }catch(e){
       const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT',limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
-      const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
+      const msg=timed?'ARKI could not finish within the response window. Please retry; your message remains in this chat.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
       else if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
       if(state)state.textContent=limited?'Free / rate limit reached':(timed?'Request timed out — you can retry':'Request failed — you can retry')
