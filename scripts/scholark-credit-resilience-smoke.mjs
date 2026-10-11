@@ -11,7 +11,7 @@ const reply=(res,status,body)=>{
   res.end(JSON.stringify(body));
 };
 
-let costAttempts=0,walletAttempts=0,chargeAttempts=0;
+let costAttempts=0,walletAttempts=0,quotaAttempts=0,quotaConsumeAttempts=0,chargeAttempts=0;
 const supabase=http.createServer((req,res)=>{
   const u=new URL(req.url,'http://127.0.0.1');
   if(u.pathname==='/rest/v1/ai_feature_costs'){
@@ -23,6 +23,16 @@ const supabase=http.createServer((req,res)=>{
     walletAttempts++;
     if(walletAttempts===1){req.socket.destroy();return}
     return reply(res,200,[{balance:100,plan:'free',monthly_allowance:100}]);
+  }
+  if(u.pathname==='/rest/v1/rpc/free_ai_quota_status'){
+    quotaAttempts++;
+    if(quotaAttempts===1){req.socket.destroy();return}
+    return reply(res,200,{ok:true,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:1,chatRemaining:19,attachmentLimit:30,attachmentUsed:0,attachmentRemaining:30,resetAt:new Date(Date.now()+86400000).toISOString()}});
+  }
+  if(u.pathname==='/rest/v1/rpc/consume_free_ai_quota_once'){
+    quotaConsumeAttempts++;
+    if(quotaConsumeAttempts===1){req.socket.destroy();return}
+    return reply(res,200,{ok:true,idempotent:false,quota:{limited:true,plan:'free',chatLimit:20,chatUsed:2,chatRemaining:18,attachmentLimit:30,attachmentUsed:0,attachmentRemaining:30,resetAt:new Date(Date.now()+86400000).toISOString()}});
   }
   if(u.pathname==='/rest/v1/rpc/consume_feature_credits_once'){
     chargeAttempts++;
@@ -63,13 +73,14 @@ try{
   const arki=await call('general_ai','Test resilient ARKI credit preflight','credit-resilience-arki-001');
   check(arki.status===200&&arki.data?.ok===true,'ARKI did not recover from transient credit preflight failure: '+JSON.stringify(arki));
   check(arki.data?.provider==='scholark-local-fallback','ARKI resilience smoke expected local provider fallback without configured AI keys');
-  check(costAttempts>=2&&walletAttempts>=2,'Credit preflight did not retry both transient network failures');
+  check(costAttempts>=2&&walletAttempts>=2&&quotaAttempts>=2,'Credit/quota preflight did not retry all transient network failures');
+  check(quotaConsumeAttempts>=2,'Zero-credit ARKI quota consumption did not retry after transient network failure');
 
   const tutor=await call('tutor','Test resilient credit charge','credit-resilience-tutor-001');
   check(tutor.status===200&&tutor.data?.ok===true,'Tutor did not recover from transient credit charge failure: '+JSON.stringify(tutor));
   check(chargeAttempts>=2,'Credit charge did not retry after transient network failure');
 
-  console.log('SCHOLARK CREDIT RESILIENCE SMOKE PASS',JSON.stringify({costAttempts,walletAttempts,chargeAttempts}));
+  console.log('SCHOLARK CREDIT RESILIENCE SMOKE PASS',JSON.stringify({costAttempts,walletAttempts,quotaAttempts,quotaConsumeAttempts,chargeAttempts}));
 }finally{
   await close(app);
   await close(supabase);
