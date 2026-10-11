@@ -528,7 +528,7 @@ async function pollinations(mode,p){
   for(const model of models){
     const payloadText=JSON.stringify(userPayload(mode,p)),images=attachmentImages(p),userContent=images.length?[{type:'text',text:payloadText},...images.map(x=>({type:'image_url',image_url:{url:`data:${x.type};base64,${x.data}`}}))]:payloadText;
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:userContent}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+    const timeoutMs=mode==='general_ai'?(p.deep===true?25000:18000):mode==='tutor'?28000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
     try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
     const data=await response.json().catch(()=>({}));
     if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
@@ -547,7 +547,7 @@ async function openai(mode,p){
   const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
   const images=attachmentImages(p),userContent=[{type:'input_text',text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.data}`}))];
   const body={model,store:false,reasoning:{effort},text:{verbosity:mode==='tutor'?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:userContent}]};
-  const timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const timeoutMs=mode==='general_ai'?(p.deep===true?25000:22000):mode==='tutor'?38000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
@@ -556,7 +556,7 @@ async function openai(mode,p){
 async function gemini(mode,p){
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?35000:20000):90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const route=learningModels(mode,p),model=route.gemini,timeoutMs=mode==='general_ai'?(p.deep===true?65000:60000):mode==='tutor'?65000:90000,ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
   const images=attachmentImages(p),parts=[{text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({inlineData:{mimeType:x.type,data:x.data}}))];
   try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
   const data=await response.json().catch(()=>({}));
@@ -1041,7 +1041,7 @@ async function generate(mode,p){
   for(const [ok,fn] of order){
     if(!ok)continue;
     try{return finalize(await fn(mode,p))}
-    catch(e){errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}
+    catch(e){if(e?.name==='AbortError')throw e;errors.push({provider:fn.name,code:e.code||'ERROR',message:e.message})}
   }
   if(mode!=='translate_ui'){
     const fallback=scholarkTestFallback(mode,p);
@@ -1067,7 +1067,7 @@ http.Server.prototype.emit = function(event,...args){
     return true;
   }
   if(url.pathname==='/api/learning/health'){
-    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,freeDailyQuota:{chatMessages:20,attachments:15,windowHours:24,maxAttachmentsPerMessage:CHAT_ATTACHMENT_LIMIT},pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:20000,deep:35000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
+    json(res,200,{ok:true,testMode:TEST_MODE,authRequiredForAI:!TEST_MODE,serverCredits:true,creditPreflight:true,creditIdempotency:true,freeDailyQuota:{chatMessages:20,attachments:15,windowHours:24,maxAttachmentsPerMessage:CHAT_ATTACHMENT_LIMIT},pollinations:isSecret(process.env.POLLINATIONS_API_KEY),openai:/^sk-/.test(String(process.env.OPENAI_API_KEY||'')),gemini:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),routing:{fast:{pollinations:String(process.env.POLLINATIONS_FAST_MODEL||'openai-fast'),openai:String(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'),gemini:String(process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash')},balanced:{pollinations:String(process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra'),openai:String(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra')}},generalAi:{providerTimeoutMs:{light:20000,deep:35000},singlePollinationsModelPerAttempt:true,sessionRefreshAwareClient:true,geminiRouterBudgetMs:52000,tutorFallbackBudgeted:true},translationCache:translationMemory.size,studyAhead:{fallbackVersion:'local-study-v2',cacheEntries:STUDY_CACHE.size,normalized:true,branchDetails:true}});
     return true;
   }
   if(url.pathname==='/api/learning/quota-status'){
