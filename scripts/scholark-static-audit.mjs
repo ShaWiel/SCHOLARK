@@ -87,6 +87,7 @@ const creditRefundMigration=read('supabase/migrations/20261007_credit_refund_rev
 const loadSmoke=read('scripts/scholark-load-smoke.mjs');
 const capacitySmoke=read('scripts/scholark-capacity-smoke.mjs');
 const apiSmoke=read('scripts/scholark-smoke.mjs');
+const workspaceUiSmoke=read('scripts/scholark-workspace-ui-smoke.mjs');
 const mobileDeviceSmoke=read('scripts/scholark-mobile-device-smoke.mjs');
 const creditResilienceSmoke=read('scripts/scholark-credit-resilience-smoke.mjs');
 const accountSwitcherSmoke=read('scripts/scholark-account-switcher-smoke.mjs');
@@ -206,6 +207,7 @@ ok(learningRoute.includes('complete runnable document in one fenced code block l
 ok(generalAi.includes("$('[data-v107-follow]',box).forEach"),'ARKI follow-up selector is not using the null-safe multi-selector');
 ok(generalAi.includes("scholark_v107_general_ai_chats")&&generalAi.includes("suggestedFollowUps")&&runtime.includes("scholark-v120-experience-controls.js"),'General SCHOLARK AI chat history/follow-up/actions are incomplete');
 ok(experienceControls.includes('Branch in new chat')&&experienceControls.includes('Retry')&&experienceControls.includes('Search the web')&&experienceControls.includes('Read aloud')&&experienceControls.includes('scholark_v120_tutor_chats')&&experienceControls.includes('Review topic')&&experienceControls.includes('Rename chat')&&experienceControls.includes('function renameTutorChat()')&&experienceControls.includes('scholark_tutor_name_v1')&&experienceControls.includes('data-v120-edit-arki')&&experienceControls.includes('data-v120-edit-tutor')&&experienceControls.includes('requestAnimationFrame(flushObserver)')&&experienceControls.includes("addEventListener('scholark:arki-rendered'"),'Tutor naming/chat/rename/edit/action/progress controls are incomplete');
+ok(experienceControls.includes('grid-template-columns:minmax(0,1fr) max-content max-content max-content')&&experienceControls.includes('writing-mode:horizontal-tb!important')&&experienceControls.includes('#v120-tutor-name{grid-column:1/-1}')&&workspaceUiSmoke.includes('Tutor controls collapsed into vertical/unreadable buttons')&&workspaceUiSmoke.includes('Tutor layout overflows'),'AI Tutor responsive control-bar regression guard is incomplete');
 ok(experienceControls.includes("for(const host of $$(sel,root))")&&experienceControls.includes("nodes=$$('.v107-msg.user',box)")&&!experienceControls.includes('id="v120-tutor-new"')&&experienceControls.includes('characterData:true')&&experienceControls.includes('scholark-language-ready')&&experienceControls.includes('scholark-language-applied'),'Tutor naming/edit persistence or duplicate composer New chat regressed');
 ok(tutorCloud.includes("$$('[data-v82-edit-message]',chat).forEach"),'Tutor cloud edit selector regressed');
 ok(powerTools.includes("$$('[data-v106-minute-step]').forEach")&&powerTools.includes('grid-template-rows:29px 29px')&&!powerTools.includes('contain:layout paint'),'Focus custom-minute stepper stability/visibility regressed');

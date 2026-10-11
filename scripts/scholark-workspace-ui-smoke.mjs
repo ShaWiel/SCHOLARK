@@ -918,7 +918,15 @@ check(await page.locator('#v52-tutor-q').count()===1,'AI Tutor input missing');
 await page.waitForSelector('#v120-tutorbar',{state:'visible',timeout:5000});
 check(await page.locator('#v120-tutor-select').count()===1,'Tutor chat selector missing');
 check((await page.locator('#v120-tutor-select').evaluate(el=>el.getBoundingClientRect().width))>=220,'Tutor chat selector is still too narrow');
+const tutorBarHealth=await page.evaluate(()=>{
+  const bar=document.querySelector('#v120-tutorbar'),body=document.querySelector('.v82-chatbody'),buttons=[...document.querySelectorAll('#v120-tutorbar button')],select=document.querySelector('#v120-tutor-select');
+  const br=bar?.getBoundingClientRect(),sr=select?.getBoundingClientRect();
+  return {barWidth:br?.width||0,barHeight:br?.height||0,barScroll:bar?.scrollWidth||0,bodyWidth:body?.clientWidth||0,bodyScroll:body?.scrollWidth||0,selectWidth:sr?.width||0,buttons:buttons.map(x=>({id:x.id,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height,writing:getComputedStyle(x).writingMode,white:getComputedStyle(x).whiteSpace}))};
+});
+check(tutorBarHealth.barScroll<=tutorBarHealth.barWidth+4&&tutorBarHealth.bodyScroll<=tutorBarHealth.bodyWidth+4,'Tutor control bar overflows its chat column: '+JSON.stringify(tutorBarHealth));
+check(tutorBarHealth.buttons.every(x=>x.w>=70&&x.h>=38&&x.h<=46&&x.writing==='horizontal-tb'&&x.white==='nowrap'),'Tutor controls collapsed into vertical/unreadable buttons: '+JSON.stringify(tutorBarHealth));
 check(await page.locator('.v82-tools .v82-new').count()===0,'Duplicate small Tutor New chat button still exists above composer');
+check(await page.locator('#v120-tutor-rename').count()===1,'Tutor Rename chat control missing');
 check(await page.locator('#v120-tutor-name').count()===1,'Tutor custom-name control missing');
 check(await page.evaluate(()=>window.__SCHOLARK_TUTOR_PROFILE__?.set?.('Nova')===true),'Tutor custom name could not be saved');
 await page.waitForFunction(()=>document.querySelector('#v120-tutor-name')?.textContent?.includes('Nova'),null,{timeout:2000});
@@ -1525,6 +1533,16 @@ for(const cfg of [
     const baseLayout=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,w:innerWidth,main:document.querySelectorAll('#v51-main').length,sidebar:document.querySelectorAll('#v51-sidebar').length}));
     check(baseLayout.sw<=baseLayout.w+4,`${cfg.name} dashboard has horizontal overflow: ${JSON.stringify(baseLayout)}`);
     check(baseLayout.main===1&&baseLayout.sidebar===1,`${cfg.name} dashboard duplicated Workspace shell`);
+
+    await p.click('#v51-sidebar [data-v51-tool="tutor"]');
+    await p.waitForSelector('#v120-tutorbar',{state:'visible',timeout:10000});
+    const tutorLayout=await p.evaluate(()=>{
+      const bar=document.querySelector('#v120-tutorbar'),body=document.querySelector('.v82-chatbody'),select=document.querySelector('#v120-tutor-select'),buttons=[...document.querySelectorAll('#v120-tutorbar button')];
+      const br=bar?.getBoundingClientRect(),sr=select?.getBoundingClientRect();
+      return {doc:document.documentElement.scrollWidth,w:innerWidth,bar:br?.width||0,barScroll:bar?.scrollWidth||0,body:body?.clientWidth||0,bodyScroll:body?.scrollWidth||0,select:sr?.width||0,rename:document.querySelectorAll('#v120-tutor-rename').length,name:document.querySelectorAll('#v120-tutor-name').length,buttons:buttons.map(x=>({w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height,writing:getComputedStyle(x).writingMode}))};
+    });
+    check(tutorLayout.doc<=tutorLayout.w+4&&tutorLayout.barScroll<=tutorLayout.bar+4&&tutorLayout.bodyScroll<=tutorLayout.body+4,`${cfg.name} Tutor layout overflows: ${JSON.stringify(tutorLayout)}`);
+    check(tutorLayout.rename===1&&tutorLayout.name===1&&tutorLayout.buttons.every(x=>x.w>=64&&x.h>=38&&x.h<=48&&x.writing==='horizontal-tb'),`${cfg.name} Tutor controls collapsed/duplicated: ${JSON.stringify(tutorLayout)}`);
 
     await p.click('#v51-sidebar [data-v51-tool="schools"]');
     await p.waitForSelector('#v50-school.open',{state:'visible',timeout:10000});
