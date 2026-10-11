@@ -1,2 +1,2 @@
-SCHOLAVERUM release candidate r257-ai-thinking
-All production release markers synchronized. ARKI and Tutor long-request UX, extended bounded retries, validated responses and safe credit behavior.
+SCHOLAVERUM r257-ai-thinking: final browser diagnostics and release candidate.
+Scope: long-running AI progress, bounded retries, guided Tutor tasks, validated outputs, credit integrity and cache-busting.
