@@ -528,9 +528,11 @@ async function pollinations(mode,p){
   for(const model of models){
     const payloadText=JSON.stringify(userPayload(mode,p)),images=attachmentImages(p),userContent=images.length?[{type:'text',text:payloadText},...images.map(x=>({type:'image_url',image_url:{url:`data:${x.type};base64,${x.data}`}}))]:payloadText;
     const body={model,stream:false,messages:[{role:'system',content:instructions(mode,p)},{role:'user',content:userContent}],response_format:{type:'json_schema',json_schema:{name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}}};
-    const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?40000:30000):mode==='tutor'?45000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
-    try{response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
-    const data=await response.json().catch(()=>({}));
+    const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?40000:30000):mode==='tutor'?45000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response,data;
+    try{
+      response=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+      data=await response.json().catch(()=>({}));
+    }finally{clearTimeout(timer)}
     if(!response.ok){const e=new Error(data?.error?.message||data?.message||`Pollinations HTTP ${response.status}`);e.code=response.status===402?'POLLINATIONS_BALANCE':response.status===429?'POLLINATIONS_RATE_LIMIT':'POLLINATIONS_ERROR';failures.push({model,code:e.code,message:e.message});if(e.code==='POLLINATIONS_BALANCE')break;continue}
     try{return{ok:true,provider:'pollinations',model,tier:route.tier,result:parseText(data?.choices?.[0]?.message?.content,`Pollinations ${model}`)}}catch(e){failures.push({model,code:'POLLINATIONS_PARSE',message:e.message})}
   }
@@ -547,19 +549,23 @@ async function openai(mode,p){
   const route=learningModels(mode,p),model=route.openai,effort=route.tier==='light'?'low':'medium';
   const images=attachmentImages(p),userContent=[{type:'input_text',text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({type:'input_image',image_url:`data:${x.type};base64,${x.data}`}))];
   const body={model,store:false,reasoning:{effort},text:{verbosity:mode==='tutor'?'high':'medium',format:{type:'json_schema',name:`scholark_${mode}`,strict:true,schema:schemaFor(mode)}},input:[{role:'developer',content:[{type:'input_text',text:instructions(mode,p)}]},{role:'user',content:userContent}]};
-  const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?50000:40000):mode==='tutor'?55000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
-  try{response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal})}finally{clearTimeout(timer)}
-  const data=await response.json().catch(()=>({}));
+  const timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?50000:40000):mode==='tutor'?55000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response,data;
+  try{
+    response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+    data=await response.json().catch(()=>({}));
+  }finally{clearTimeout(timer)}
   if(!response.ok){const e=new Error(data?.error?.message||`OpenAI HTTP ${response.status}`);e.code=data?.error?.code||'OPENAI_ERROR';throw e}
   return{ok:true,provider:'openai',model,tier:route.tier,result:parseText(extractOpenAI(data),'OpenAI')};
 }
 async function gemini(mode,p){
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key){const e=new Error('GEMINI_API_KEY is not configured');e.code='GEMINI_NOT_CONFIGURED';throw e}
-  const route=learningModels(mode,p),model=route.gemini,timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?108000:103000):mode==='tutor'?108000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response;
+  const route=learningModels(mode,p),model=route.gemini,timeoutMs=providerTimeBudget(p,mode==='general_ai'?(p.deep===true?108000:103000):mode==='tutor'?108000:90000),ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);let response,data;
   const images=attachmentImages(p),parts=[{text:JSON.stringify(userPayload(mode,p))},...images.map(x=>({inlineData:{mimeType:x.type,data:x.data}}))];
-  try{response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal})}finally{clearTimeout(timer)}
-  const data=await response.json().catch(()=>({}));
+  try{
+    response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'x-goog-api-key':key,'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions(mode,p)}]},contents:[{role:'user',parts}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:schemaFor(mode)}}),signal:ctrl.signal});
+    data=await response.json().catch(()=>({}));
+  }finally{clearTimeout(timer)}
   if(!response.ok){const e=new Error(data?.error?.message||`Gemini HTTP ${response.status}`);e.code='GEMINI_ERROR';throw e}
   const text=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
   return{ok:true,provider:'gemini',model,tier:route.tier,result:parseText(text,'Gemini')};
