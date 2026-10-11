@@ -1,7 +1,7 @@
-# SCHOLAVERUM r257 post-deploy validation
+# SCHOLAVERUM r257 post-deploy QA
 
-Production runtime: `2c3a87fae1d4846387206831af08bbb6e82187ce` (`r257-ai-thinking`).
+Production deployed commit: `2c3a87fae1d4846387206831af08bbb6e82187ce`.
+Render deployment: `dep-db60omvavr4c73abp1b0` (live).
 
-Render deployment `dep-db60omvavr4c73abp1b0` is live. Release Gate, CI and CodeQL passed. Validate current production endpoints, ARKI and Tutor behavior, public security and browser/workspace integrity.
-
-This marker is QA-only and does not change the deployed runtime.
+Check the real production AI router, ARKI/AI Tutor flow, cache-busted r257 workspace assets, account boundaries and in-chat HTML preview.
+QA-only marker; changes no application behavior.
