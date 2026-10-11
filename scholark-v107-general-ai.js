@@ -115,7 +115,7 @@
     if(button)button.disabled=true;if(input)input.disabled=true;
     if(state)state.textContent='Preparing ARKI…';
     const test=!!window.__SCHOLARK_TEST_MODE__;
-    let session=null,waitTimers=[];
+    let session=null,waitTimers=[],responseChatId='';
     try{
       session=test?null:await resolvedSession(false);
       if(!test&&!session?.access_token){
@@ -130,7 +130,8 @@
       // Refresh the HUD opportunistically after the server responds instead.
       const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
       const visiblePrompt=typedPrompt||'Attached material';
-      current=update(current.id,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})})||current;
+      responseChatId=current.id;
+      current=update(responseChatId,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})})||current;
       if(input)input.value='';writeDraft(current.id,'');drawHistory();drawThread();
       const thread=$('#v107-thread');
       if(thread){
@@ -167,7 +168,7 @@
         const e=new Error(d?.error||'ARKI is temporarily unavailable');e.code=d?.code||('HTTP_'+r.status);e.quota=d?.quota||null;e.retryAfter=Math.max(0,Number(r.headers.get('retry-after'))||0);window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e.quota,e.code,e.retryAfter);throw e
       }
       const answer=String(d.result?.answer||'').trim();if(!answer)throw new Error('ARKI returned an empty answer');
-      current=update(current.id,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}))||current;
+      const completed=update(responseChatId,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}));if(current?.id===responseChatId)current=completed||current;
       attachmentApi?.clear?.('arki');window.__SCHOLARK_CHAT_QUOTA__?.apply?.(d?.usage?.quota||null,'',0);
       if(state)state.textContent='Ready';
       window.__SCHOLARK_CREDITS__?.load?.();
@@ -176,7 +177,7 @@
       const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT',limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       const msg=timed?'ARKI reached the maximum processing time. Your message is saved; you can retry without losing your question.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
-      else if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
+      else if(responseChatId){const failed=update(responseChatId,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}));if(current?.id===responseChatId)current=failed||current;}
       if(state)state.textContent=limited?'Free / rate limit reached':(timed?'Request timed out — you can retry':'Request failed — you can retry')
     }finally{
       for(const timer of waitTimers)clearTimeout(timer);
