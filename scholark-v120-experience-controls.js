@@ -35,8 +35,9 @@
   const style=document.createElement('style');style.id='scholark-v120-style';style.textContent=`
     .v120-actions{display:flex;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap}.v120-action{width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:#5d5864;display:grid;place-items:center;font:850 13px Inter;cursor:pointer}.v120-action:hover,.v120-action.active{background:#eceaf2;color:#292631}.v120-menu-wrap{position:relative}.v120-menu{position:absolute;left:0;top:34px;z-index:30;width:205px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:14px;box-shadow:0 18px 55px rgba(25,20,55,.18);padding:6px;display:none}.v120-menu.open{display:block}.v120-menu button{width:100%;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:800 8px Inter;color:#322e38;cursor:pointer}.v120-menu button:hover{background:#f2f0f6}
     .v120-tutorbar{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content max-content;gap:8px;align-items:center;width:100%;min-width:0;margin-bottom:12px}.v120-tutorbar>*{min-width:0;writing-mode:horizontal-tb!important;word-break:normal!important;overflow-wrap:normal!important}.v120-tutorbar select,.v120-tutorbar button{height:40px;border:1px solid rgba(23,25,31,.11);border-radius:11px;background:#fff;padding:0 12px;font:850 9px Inter;white-space:nowrap!important}.v120-tutorbar button{max-width:180px;overflow:hidden;text-overflow:ellipsis}.v120-tutorbar select{width:100%;font-size:11.5px;font-weight:950;color:#17191f;text-overflow:ellipsis;overflow:hidden;box-shadow:0 5px 18px rgba(31,27,63,.035)}.v120-tutor-progress{grid-column:1/-1;font:750 8px/1.4 Inter;color:#5f5967;text-align:right;min-width:0;white-space:normal}.v120-tutor-msg{margin-top:7px}.v120-tutor-answer{white-space:pre-wrap}.v120-user-actions{display:flex;justify-content:flex-end;margin-top:5px}.v120-edit-user{border:0;background:transparent;color:inherit;opacity:.68;padding:2px 4px;font:850 7px Inter;cursor:pointer}.v120-editbox{display:grid;gap:7px;min-width:min(520px,70vw)}.v120-editbox textarea{width:100%;min-height:90px;box-sizing:border-box;border:1px solid rgba(23,25,31,.14);border-radius:11px;padding:10px;font:650 10px/1.5 Inter;resize:vertical}.v120-edit-actions{display:flex;gap:6px;justify-content:flex-end}.v120-edit-actions button{border:0;border-radius:9px;padding:7px 10px;font:850 7px Inter;cursor:pointer}.v120-edit-actions .save{background:#17191f;color:#c9ff6a}.v120-provider-hidden{display:none!important}
-    .v120-attach-wrap{position:relative;display:flex;align-items:center;gap:7px;min-width:0}.v120-attach-plus{width:38px;height:38px;flex:0 0 38px;border:1px solid rgba(23,25,31,.12);border-radius:50%;background:#fff;color:#17191f;font:500 23px/1 Inter;display:grid;place-items:center;cursor:pointer}.v120-attach-plus:hover,.v120-attach-plus[aria-expanded="true"]{background:#f1efff;border-color:rgba(109,93,252,.28);color:#5d4fd0}.v120-attach-menu{position:absolute;left:0;bottom:46px;z-index:80;display:none;min-width:210px;padding:7px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:16px;box-shadow:0 20px 60px rgba(25,20,55,.2)}.v120-attach-menu.open{display:grid;gap:3px}.v120-attach-menu button{border:0;background:transparent;border-radius:10px;padding:10px 11px;text-align:left;font:850 9px Inter;color:#2f2b35;cursor:pointer;white-space:nowrap!important}.v120-attach-menu button:hover{background:#f3f1f7}.v120-attach-menu b{display:inline-grid;place-items:center;width:23px;height:23px;margin-right:7px;border-radius:8px;background:#efedff;color:#5d4fd0;font:950 11px Inter}.v120-attach-input{display:none!important}.v120-attach-tray{display:flex;gap:6px;flex-wrap:wrap;min-width:0}.v120-attach-chip{display:inline-flex;align-items:center;gap:6px;max-width:210px;padding:5px 7px;border-radius:11px;background:#f2f0f7;border:1px solid rgba(23,25,31,.07);font:800 7.5px Inter;color:#4d4757}.v120-attach-chip img{width:28px;height:28px;border-radius:7px;object-fit:cover}.v120-attach-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v120-attach-chip button{border:0;background:transparent;color:#716b78;font:950 11px Inter;cursor:pointer;padding:0 2px}.v120-tutor-attachbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}.v120-tutor-attachbar .v120-attach-tray{flex:1}.v120-attach-status{font:750 7px Inter;color:#756e7d}.v120-msg-attachments{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.v120-msg-attachment{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:9px;background:rgba(255,255,255,.12);font:800 7px Inter}.v52-msg.ai .v120-msg-attachment{background:#ebe8ff;color:#51466a}.v107-msg.user .v120-msg-attachment{background:rgba(255,255,255,.12);color:#fff}#v107-ai .v107-composebar{flex-wrap:wrap}#v107-ai .v107-composebar .v107-state{min-width:120px}
-    @media(max-width:620px){.v120-attach-menu{position:fixed;left:16px;right:16px;bottom:88px;min-width:0}.v120-tutor-attachbar{align-items:flex-start}.v120-attach-tray{flex-basis:calc(100% - 48px)}}
+    .v120-attach-wrap{position:relative;display:flex;align-items:center;gap:7px;min-width:0}.v120-attach-plus{width:38px;height:38px;flex:0 0 38px;border:1px solid rgba(23,25,31,.12);border-radius:50%;background:#fff;color:#17191f;font:500 23px/1 Inter;display:grid;place-items:center;cursor:pointer}.v120-attach-plus:hover,.v120-attach-plus[aria-expanded="true"]{background:#f1efff;border-color:rgba(109,93,252,.28);color:#5d4fd0}.v120-attach-plus:disabled{opacity:.42;cursor:not-allowed;background:#f4f3f5;color:#8e8993}.v120-attach-menu{position:absolute;left:0;bottom:46px;z-index:80;display:none;min-width:210px;padding:7px;background:#fff;border:1px solid rgba(23,25,31,.1);border-radius:16px;box-shadow:0 20px 60px rgba(25,20,55,.2)}.v120-attach-menu.open{display:grid;gap:3px}.v120-attach-menu button{border:0;background:transparent;border-radius:10px;padding:10px 11px;text-align:left;font:850 9px Inter;color:#2f2b35;cursor:pointer;white-space:nowrap!important}.v120-attach-menu button:hover{background:#f3f1f7}.v120-attach-menu b{display:inline-grid;place-items:center;width:23px;height:23px;margin-right:7px;border-radius:8px;background:#efedff;color:#5d4fd0;font:950 11px Inter}.v120-attach-input{display:none!important}.v120-attach-tray{display:flex;gap:6px;flex-wrap:wrap;min-width:0}.v120-attach-chip{display:inline-flex;align-items:center;gap:6px;max-width:210px;padding:5px 7px;border-radius:11px;background:#f2f0f7;border:1px solid rgba(23,25,31,.07);font:800 7.5px Inter;color:#4d4757}.v120-attach-chip img{width:28px;height:28px;border-radius:7px;object-fit:cover}.v120-attach-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v120-attach-chip button{border:0;background:transparent;color:#716b78;font:950 11px Inter;cursor:pointer;padding:0 2px}.v120-tutor-attachbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}.v120-tutor-attachbar .v120-attach-tray{flex:1}.v120-attach-status{font:750 7px Inter;color:#756e7d}.v120-msg-attachments{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.v120-msg-attachment{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border-radius:9px;background:rgba(255,255,255,.12);font:800 7px Inter}.v52-msg.ai .v120-msg-attachment{background:#ebe8ff;color:#51466a}.v107-msg.user .v120-msg-attachment{background:rgba(255,255,255,.12);color:#fff}#v107-ai .v107-composebar{flex-wrap:wrap}#v107-ai .v107-composebar .v107-state{min-width:120px}
+    .v120-quota-banner{margin:9px 0 0;padding:10px 12px;border-radius:12px;background:#f5f3ff;border:1px solid rgba(109,93,252,.18);color:#4f4766;font:750 8.5px/1.45 Inter}.v120-quota-banner strong{color:#2f2943;font-weight:950}.v120-quota-banner.blocked{background:#fff4ee;border-color:#ffd8c5;color:#78462f}.v120-quota-banner[hidden]{display:none!important}.v120-quota-banner .v120-quota-upgrade{border:0;background:transparent;color:#5e50d6;font:900 8px Inter;padding:0 0 0 6px;cursor:pointer;text-decoration:underline}.v120-quota-note{opacity:.82}
+    @media(max-width:620px){.v120-attach-menu{position:fixed;left:16px;right:16px;bottom:88px;min-width:0}.v120-tutor-attachbar{align-items:flex-start}.v120-attach-tray{flex-basis:calc(100% - 48px)}.v120-quota-banner{font-size:8px}}
     .v120-toast{position:fixed;right:18px;bottom:18px;z-index:2147483646;background:#17191f;color:#fff;border-radius:12px;padding:10px 13px;font:800 8px Inter;box-shadow:0 16px 45px rgba(0,0,0,.24)}
     @media(max-width:900px){.v120-tutorbar{grid-template-columns:1fr 1fr}.v120-tutorbar select{grid-column:1/-1}.v120-tutorbar button{width:100%;max-width:none}.v120-tutorbar #v120-tutor-name{grid-column:1/-1}.v120-tutor-progress{grid-column:1/-1;text-align:left}}@media(max-width:620px){.v120-tutorbar{gap:7px}.v120-tutorbar select{font-size:11px}.v120-tutorbar select,.v120-tutorbar button{height:44px}.v120-tutor-progress{font-size:7.5px}}
   `;document.head.appendChild(style);
@@ -46,7 +47,7 @@
   function speak(text){if(!('speechSynthesis'in window)||!text)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(text));u.lang=document.documentElement.lang||'en';speechSynthesis.speak(u)}catch{}}
   async function shareText(text,title='SCHOLARK'){const t=String(text||'');try{if(navigator.share){await navigator.share({title,text:t})}else await copyText(t)}catch{}}
 
-  const ATTACHMENT_LIMIT=4,ATTACHMENT_IMAGE_CHARS=680000;
+  const ATTACHMENT_LIMIT=10,ATTACHMENT_IMAGE_CHARS=540000;
   const attachmentState={arki:{items:[],pending:0},tutor:{items:[],pending:0}};
   const attachmentExt=f=>String(f?.name||'').split('.').pop().toLowerCase();
   const attachmentTextFile=f=>String(f?.type||'').startsWith('text/')||['txt','md','markdown','csv','json','html','htm','xml'].includes(attachmentExt(f));
@@ -54,11 +55,15 @@
   const loadImage=f=>new Promise((resolve,reject)=>{const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('This image format could not be opened.'))};img.src=url});
   async function attachmentImage(file){
     if(file.size>15*1024*1024)throw new Error(file.name+' is over the 15 MB image limit.');
-    const img=await loadImage(file),max=1500,ratio=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),canvas=document.createElement('canvas');
-    canvas.width=Math.max(1,Math.round((img.naturalWidth||1)*ratio));canvas.height=Math.max(1,Math.round((img.naturalHeight||1)*ratio));
-    const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Image processing is unavailable in this browser.');
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    let url='',data='';for(const q of [.84,.72,.6,.5]){url=canvas.toDataURL('image/jpeg',q);data=url.slice(url.indexOf(',')+1);if(data.length<=ATTACHMENT_IMAGE_CHARS)break}
+    const img=await loadImage(file),max=1600,baseRatio=Math.min(1,max/Math.max(img.naturalWidth||1,img.naturalHeight||1)),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx)throw new Error('Image processing is unavailable in this browser.');
+    let url='',data='';
+    for(const shrink of [1,.88,.76,.66,.56,.48]){
+      canvas.width=Math.max(1,Math.round((img.naturalWidth||1)*baseRatio*shrink));canvas.height=Math.max(1,Math.round((img.naturalHeight||1)*baseRatio*shrink));
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      for(const q of [.82,.7,.58,.48]){url=canvas.toDataURL('image/jpeg',q);data=url.slice(url.indexOf(',')+1);if(data.length<=ATTACHMENT_IMAGE_CHARS)break}
+      if(data.length<=ATTACHMENT_IMAGE_CHARS)break
+    }
     if(data.length>ATTACHMENT_IMAGE_CHARS)throw new Error(file.name+' is still too large after safe compression.');
     return{kind:'image',name:String(file.name||'photo.jpg').slice(0,180),type:'image/jpeg',data,preview:url,detail:canvas.width+'×'+canvas.height}
   }
@@ -88,8 +93,9 @@
     wrap.innerHTML='<button type="button" class="v120-attach-plus" data-v120-attach-plus="'+scope+'" aria-label="Add photos, camera or files" aria-expanded="false">+</button><div class="v120-attach-menu" data-v120-attach-menu="'+scope+'"><button type="button" data-v120-attach-pick="'+scope+':photos"><b>▧</b>Photos</button><button type="button" data-v120-attach-pick="'+scope+':camera"><b>◉</b>Camera</button><button type="button" data-v120-attach-pick="'+scope+':files"><b>⌕</b>Files</button></div><input class="v120-attach-input" data-v120-attach-input="'+scope+':photos" type="file" accept="image/*" multiple><input class="v120-attach-input" data-v120-attach-input="'+scope+':camera" type="file" accept="image/*" capture="environment"><input class="v120-attach-input" data-v120-attach-input="'+scope+':files" type="file" accept=".pdf,.docx,.pptx,.txt,.md,.markdown,.csv,.json,.html,.htm,.xml,text/*">';
     wrap.querySelectorAll('[data-v120-attach-input]').forEach(input=>input.onchange=async()=>{
       const files=[...(input.files||[])],st=attachmentState[scope];input.value='';if(!files.length||!st)return;
-      const room=Math.max(0,ATTACHMENT_LIMIT-st.items.length-st.pending);if(!room){toast('Maximum '+ATTACHMENT_LIMIT+' attachments');return}
-      const selected=files.slice(0,room);st.pending+=selected.length;renderAttachmentTray(scope);
+      const perMessageRoom=Math.max(0,ATTACHMENT_LIMIT-st.items.length-st.pending),dailyRemaining=quotaState.quota?.limited?Math.max(0,Number(quotaState.quota?.attachmentRemaining)||0):ATTACHMENT_LIMIT,room=Math.max(0,Math.min(perMessageRoom,dailyRemaining));
+      if(!room){toast(quotaState.quota?.limited&&dailyRemaining<=0?'Free attachment limit reached for this 24-hour window':'Maximum '+ATTACHMENT_LIMIT+' attachments per message');applyQuotaScope(scope);return}
+      const selected=files.slice(0,room);if(files.length>room)toast('Only the first '+room+' file'+(room===1?'':'s')+' fit — maximum '+ATTACHMENT_LIMIT+' per message and within your remaining upload allowance');st.pending+=selected.length;renderAttachmentTray(scope);
       for(const file of selected){try{const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);st.items.push(item)}catch(err){toast(clean(err?.message||err))}finally{st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
     });
     return wrap
@@ -103,12 +109,70 @@
       const q=$('#v52-tutor-q'),form=q?.closest('.v52-form');if(!form)return;
       if(!$('#v120-tutor-attachbar',form)){const row=document.createElement('div');row.id='v120-tutor-attachbar';row.className='v120-tutor-attachbar';row.appendChild(attachmentMarkup('tutor'));const tray=document.createElement('div');tray.className='v120-attach-tray';tray.dataset.v120AttachTray='tutor';row.appendChild(tray);const st=document.createElement('span');st.className='v120-attach-status';st.dataset.v120AttachStatus='tutor';row.appendChild(st);form.insertBefore(row,$('#v52-tutor-send',form))}
     }
-    renderAttachmentTray(scope)
+    renderAttachmentTray(scope);ensureQuotaBanner(scope);applyQuotaScope(scope);refreshQuota(false)
   }
   function clearAttachments(scope){const st=attachmentState[scope];if(st){st.items=[];renderAttachmentTray(scope)}}
   function attachmentApiGet(scope){return (attachmentState[scope]?.items||[]).map(attachmentPublic).filter(Boolean)}
   function attachmentApiMeta(scope){return (attachmentState[scope]?.items||[]).map(attachmentMeta).filter(Boolean)}
-  window.__SCHOLARK_CHAT_ATTACHMENTS__={get:attachmentApiGet,meta:attachmentApiMeta,clear:clearAttachments,busy:scope=>(attachmentState[scope]?.pending||0)>0,ensure:ensureAttachmentUi,messageMarkup:attachmentMessageMarkup};
+  window.__SCHOLARK_CHAT_ATTACHMENTS__={get:attachmentApiGet,meta:attachmentApiMeta,clear:clearAttachments,busy:scope=>(attachmentState[scope]?.pending||0)>0,ensure:ensureAttachmentUi,messageMarkup:attachmentMessageMarkup,limit:ATTACHMENT_LIMIT};
+
+  const quotaState={quota:null,code:'',retryUntil:0,lastLoaded:0,loading:null,timer:0};
+  function quotaResetText(value){const t=Date.parse(String(value||''));if(!Number.isFinite(t))return'';return new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'}).format(new Date(t))}
+  function quotaDisabled(el,blocked){
+    if(!el)return;
+    if(blocked){if(!el.disabled)el.dataset.v120QuotaDisabled='1';el.disabled=true}
+    else if(el.dataset.v120QuotaDisabled==='1'){delete el.dataset.v120QuotaDisabled;el.disabled=false}
+  }
+  function ensureQuotaBanner(scope){
+    if(scope==='arki'){
+      const compose=$('#v107-ai .v107-compose');if(!compose)return null;let b=$('[data-v120-quota="arki"]',compose);if(!b){b=document.createElement('div');b.className='v120-quota-banner';b.dataset.v120Quota='arki';b.hidden=true;compose.appendChild(b)}return b
+    }
+    const form=$('#v52-tutor-q')?.closest('.v52-form');if(!form)return null;let b=$('[data-v120-quota="tutor"]',form);if(!b){b=document.createElement('div');b.className='v120-quota-banner';b.dataset.v120Quota='tutor';b.hidden=true;form.appendChild(b)}return b
+  }
+  function applyQuotaScope(scope){
+    const q=quotaState.quota,code=String(quotaState.code||''),temporary=quotaState.retryUntil>Date.now(),banner=ensureQuotaBanner(scope);
+    const chatRemaining=Number(q?.chatRemaining),attachmentRemaining=Number(q?.attachmentRemaining),limited=!!q?.limited;
+    const chatBlocked=temporary||code==='FREE_DAILY_CHAT_LIMIT'||(limited&&Number.isFinite(chatRemaining)&&chatRemaining<=0);
+    const attachmentBlocked=chatBlocked||code==='FREE_DAILY_ATTACHMENT_LIMIT'||(limited&&Number.isFinite(attachmentRemaining)&&attachmentRemaining<=0);
+    const send=scope==='arki'?$('#v107-send'):$('#v52-tutor-send'),plus=$('[data-v120-attach-plus="'+scope+'"]');
+    quotaDisabled(send,chatBlocked);quotaDisabled(plus,attachmentBlocked);
+    if(!banner)return;
+    const reset=quotaResetText(q?.resetAt),resetText=reset?' <span class="v120-quota-note">Resets '+esc(reset)+'.</span>':'';
+    let html='',blocked=false;
+    if(temporary){
+      const seconds=Math.max(1,Math.ceil((quotaState.retryUntil-Date.now())/1000));
+      html='<strong>Too many requests right now.</strong> Try again in about '+Math.max(1,Math.ceil(seconds/60))+' minute'+(seconds>60?'s':'')+'.';blocked=true
+    }else if(chatBlocked){
+      html='<strong>Free daily chat limit reached.</strong> Free includes '+esc(q?.chatLimit??20)+' ARKI / AI Tutor messages per 24-hour window.'+resetText+'<button type="button" class="v120-quota-upgrade" data-v120-upgrade>View plans</button>';blocked=true
+    }else if(attachmentBlocked){
+      html='<strong>Free attachment limit reached.</strong> Free includes '+esc(q?.attachmentLimit??30)+' photo, camera or file uploads per 24-hour window. You can keep chatting without uploads.'+resetText+'<button type="button" class="v120-quota-upgrade" data-v120-upgrade>View plans</button>';blocked=true
+    }else if(limited&&((Number.isFinite(chatRemaining)&&chatRemaining<=3)||(Number.isFinite(attachmentRemaining)&&attachmentRemaining<=5))){
+      html='<strong>Free usage remaining:</strong> '+Math.max(0,chatRemaining)+' chat message'+(chatRemaining===1?'':'s')+' · '+Math.max(0,attachmentRemaining)+' upload'+(attachmentRemaining===1?'':'s')+'.'+resetText
+    }
+    banner.hidden=!html;banner.classList.toggle('blocked',blocked);banner.innerHTML=html;
+    banner.querySelector('[data-v120-upgrade]')?.addEventListener('click',()=>{location.hash='#pricing'})
+  }
+  function applyQuota(quota,code='',retryAfter=0){
+    if(quota&&typeof quota==='object')quotaState.quota=quota;
+    quotaState.code=String(code||'').toUpperCase();
+    const temporaryCodes=new Set(['USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT']);
+    quotaState.retryUntil=temporaryCodes.has(quotaState.code)&&Number(retryAfter)>0?Date.now()+Number(retryAfter)*1000:0;
+    for(const scope of ['arki','tutor'])applyQuotaScope(scope);
+    clearTimeout(quotaState.timer);
+    if(quotaState.retryUntil>Date.now())quotaState.timer=setTimeout(()=>{quotaState.code='';quotaState.retryUntil=0;for(const scope of ['arki','tutor'])applyQuotaScope(scope)},Math.max(250,quotaState.retryUntil-Date.now()+250))
+  }
+  async function refreshQuota(force=false){
+    if(window.__SCHOLARK_TEST_MODE__)return;
+    const nowMs=Date.now();if(!force&&quotaState.lastLoaded&&nowMs-quotaState.lastLoaded<60000)return;if(quotaState.loading)return quotaState.loading;
+    quotaState.loading=(async()=>{
+      try{
+        const session=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||await window.__SCHOLARK_V72_CLOUD__?.session?.();if(!session?.access_token)return;
+        const r=await fetch('/api/learning/quota-status',{headers:{authorization:'Bearer '+session.access_token,accept:'application/json'}});
+        const d=await r.json().catch(()=>({}));if(r.ok&&d?.ok){quotaState.lastLoaded=Date.now();applyQuota(d.quota||null,d.code||'',Number(r.headers.get('retry-after'))||0)}
+      }catch{}finally{quotaState.loading=null}
+    })();return quotaState.loading
+  }
+  window.__SCHOLARK_CHAT_QUOTA__={apply:applyQuota,refresh:refreshQuota,sync:()=>{for(const scope of ['arki','tutor'])applyQuotaScope(scope)},state:()=>({...quotaState}),limits:{attachmentsPerMessage:ATTACHMENT_LIMIT}};
 
   const FEEDBACK='scholark_v120_answer_feedback';
   function feedback(){try{return JSON.parse(localStorage.getItem(FEEDBACK)||'{}')||{}}catch{return{}}}
@@ -262,14 +326,16 @@
     const et=e.target.closest?.('[data-v120-edit-tutor]');if(et){editTutorUser(Number(et.dataset.v120EditTutor),et.closest('.v52-msg.user'));return}
     const a=e.target.closest?.('[data-v120-do]');if(a){const host=a.closest('.v120-actions');if(!host)return;const scope=host.dataset.v120Scope;if(scope==='arki')arkiAction(host,a.dataset.v120Do);else tutorAction(host,a.dataset.v120Do);return}
     const m=e.target.closest?.('[data-v120-menu]');if(m){const host=m.closest('.v120-actions');if(host?.dataset.v120Scope==='arki')arkiMenu(host,m.dataset.v120Menu);else tutorMenu(host,m.dataset.v120Menu);return}
+    if(e.target.closest?.('[data-v120-upgrade]')){location.hash='#pricing';return}
     if(e.target.closest?.('#v120-tutor-progress'))startTutorReview();
   },true);
 
   addEventListener('scholark:tutor-user',e=>{
-    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,4):[];if(!prompt&&!attachments.length)return;updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
+    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[];if(!prompt&&!attachments.length)return;updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
   });
   addEventListener('scholark:tutor-assistant',e=>{
     const text=multiline(e.detail?.answer),topic=clean(e.detail?.result?.topic)||clean(e.detail?.prompt).slice(0,80)||'General';if(!text)return;
+    if(e.detail?.quota)applyQuota(e.detail.quota,'',0);
     updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}));noteTutorProgress(topic,0,false);syncTutorBackend();decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
   });
 
@@ -305,5 +371,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r254-chat-attachments'};
+  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r255-free-quota-html'};
 })();

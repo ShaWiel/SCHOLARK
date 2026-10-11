@@ -275,7 +275,10 @@ if(!live){
   check(studioHealth?.testMode===true,'Local Studio smoke must run in test mode');
   check(learningHealth?.testMode===true,'Local Learning smoke must run in test mode');
   check(learningHealth?.serverCredits===true&&learningHealth?.creditIdempotency===true,'Learning server-credit protection is not active');
+  check(learningHealth?.freeDailyQuota?.chatMessages===20&&learningHealth?.freeDailyQuota?.attachments===30&&learningHealth?.freeDailyQuota?.windowHours===24&&learningHealth?.freeDailyQuota?.maxAttachmentsPerMessage===10,'Learning Free-plan quota/attachment contract is not active');
   check(learningHealth?.authRequiredForAI===false,'Local test mode should not require AI authentication');
+  const quotaHealth=await get('/api/learning/quota-status');
+  check(quotaHealth?.quota?.limited===false,'Local test-mode quota status should be unlimited');
   const studioModes=['presentation','webpage','document','social','graphic'];
   for(const mode of studioModes){
     await post('/api/studio/generate',{mode,prompt:`SCHOLARK smoke test for ${mode}`,count:mode==='presentation'?3:2,language:'English'},`studio:${mode}`,d=>{
@@ -343,6 +346,13 @@ if(!live){
   await post('/api/learning/generate',{mode:'tutor',prompt:'Teach from the attached note.',attachments:[{kind:'file',name:'notes.txt',type:'text/plain',text:'Photosynthesis uses light energy to help plants make glucose from carbon dioxide and water.'}],level:'student',language:'English'},'learning:tutor_file_attachment',d=>{
     check(d?.ok===true,'Tutor file attachment request did not complete');
   },15000);
+
+  try{
+    const tooMany=Array.from({length:11},(_,i)=>({kind:'file',name:'note-'+(i+1)+'.txt',type:'text/plain',text:'attachment '+(i+1)}));
+    const {r:limitResponse,data:limitData}=await request('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'general_ai',prompt:'Read these.',attachments:tooMany,level:'student',language:'English'})},15000);
+    check(limitResponse.status===400&&limitData?.code==='TOO_MANY_ATTACHMENTS','Learning route did not reject more than 10 chat attachments');
+    results.push('learning:max_10_attachments '+limitResponse.status);
+  }catch(e){failures.push('learning:max_10_attachments threw '+(e?.message||e))}
 
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');

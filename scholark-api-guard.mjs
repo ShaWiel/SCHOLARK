@@ -20,7 +20,7 @@ const rules = [
   { match:(m,p)=>m==='POST' && p==='/api/studio/generate', limit:testMode?80:30, maxBytes:3*1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p==='/api/studio/image', limit:testMode?100:40, maxBytes:25*1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p==='/api/studio/research', limit:testMode?80:30, maxBytes:2*1024*1024, expensive:true },
-  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:1024*1024, expensive:true },
+  { match:(m,p)=>m==='POST' && p.startsWith('/api/learning/'), limit:testMode?240:120, maxBytes:8*1024*1024, expensive:true },
   { match:(m,p)=>m==='POST' && p==='/api/feedback', limit:testMode?80:12, maxBytes:16*1024, expensive:false },
   { match:(m,p)=>m==='POST' && p==='/api/security/step-up', limit:testMode?100:20, maxBytes:4*1024, expensive:false },
   { match:(m,p)=>m==='GET' && p==='/api/account/export', limit:testMode?30:3, maxBytes:1024, expensive:true },

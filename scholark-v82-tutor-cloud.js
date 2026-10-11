@@ -5,6 +5,7 @@
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
   const multiline=s=>String(s??'').replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const attachmentMetaMarkup=meta=>Array.isArray(meta?.attachments)&&meta.attachments.length?'<div class="v120-msg-attachments">'+meta.attachments.slice(0,10).map(x=>'<span class="v120-msg-attachment">'+(x?.kind==='image'?'▧':'⌕')+' '+esc(x?.name||'attachment')+'</span>').join('')+'</div>':'';
   const cloud=()=>window.__SCHOLARK_V72_CLOUD__;
   const ACTIVE='scholark_v82_tutor_chat';
   let chats=[],loading=false,activePromise=null;
@@ -77,7 +78,7 @@
       const x=await ctx();if(!x)return;setCurrent(id);renderHistory();
       const r=await x.c.request('/rest/v1/ai_messages?select=id,role,content,meta,created_at&chat_id=eq.'+encodeURIComponent(id)+'&order=created_at.asc&limit=200',{method:'GET'});
       const d=await r.json().catch(()=>[]);if(!r.ok)throw new Error(d?.message||'Could not load messages');
-      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v82-message-id="'+esc(m.id)+'"><div class="v82-message-text">'+esc(m.content).replace(/\n/g,'<br>')+'</div>'+(m.role==='user'?'<button type="button" class="v82-msg-edit" data-v82-edit-message="'+esc(m.id)+'">Edit</button>':'')+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight;$$('[data-v82-edit-message]',chat).forEach(b=>b.onclick=()=>startCloudMessageEdit(b.closest('.v52-msg'),rows.find(x=>x.id===b.dataset.v82EditMessage)))}
+      const rows=Array.isArray(d)?d:[],chat=$('#v52-chat');if(chat){chat.innerHTML=rows.length?rows.map(m=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v82-message-id="'+esc(m.id)+'"><div class="v82-message-text">'+esc(m.content).replace(/\n/g,'<br>')+'</div>'+(m.role==='user'?attachmentMetaMarkup(m.meta)+'<button type="button" class="v82-msg-edit" data-v82-edit-message="'+esc(m.id)+'">Edit</button>':'')+'</div>').join(''):'<div class="v52-msg ai">This chat has no messages yet.</div>';chat.scrollTop=chat.scrollHeight;$$('[data-v82-edit-message]',chat).forEach(b=>b.onclick=()=>startCloudMessageEdit(b.closest('.v52-msg'),rows.find(x=>x.id===b.dataset.v82EditMessage)))}
       const hist=rows.filter(m=>m.role==='user'||m.role==='assistant').slice(-12).map(m=>({role:m.role,text:m.content}));localStorage.setItem('scholark_v62_tutor_history',JSON.stringify(hist));
     }catch(e){console.warn('[SCHOLARK] Open Tutor chat:',clean(e?.message||e))}
   }
@@ -131,7 +132,7 @@
     }catch(e){console.warn('[SCHOLARK] Save Tutor message:',clean(e?.message||e))}
   }
 
-  addEventListener('scholark:tutor-user',e=>saveMessage('user',e.detail?.prompt||''));
+  addEventListener('scholark:tutor-user',e=>saveMessage('user',e.detail?.prompt||'',{attachments:Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[]}));
   addEventListener('scholark:tutor-assistant',e=>saveMessage('assistant',e.detail?.answer||'',{provider:e.detail?.provider||'',model:e.detail?.model||'',topic:e.detail?.result?.topic||''}));
 
   function enhance(){

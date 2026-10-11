@@ -761,9 +761,12 @@ check(await page.locator('#v107-deep').count()===1,'ARKI deep-answer control mis
 await page.waitForSelector('#v120-attach-arki',{state:'visible',timeout:4000});
 check(await page.locator('[data-v120-attach-pick^="arki:"]').count()===3,'ARKI + menu should expose Photos, Camera and Files');
 check((await page.locator('[data-v120-attach-input="arki:camera"]').getAttribute('capture'))==='environment','ARKI Camera option is not wired to device capture');
-await page.locator('[data-v120-attach-input="arki:photos"]').setInputFiles({name:'math-photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlWlH0AAAAASUVORK5CYII=','base64')});
-await page.waitForFunction(()=>document.querySelectorAll('[data-v120-attach-tray="arki"] .v120-attach-chip').length===1,null,{timeout:4000});
+const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlWlH0AAAAASUVORK5CYII=','base64');
+const arkiAttachmentBatch=Array.from({length:11},(_,i)=>({name:i===0?'math-photo.png':'extra-'+i+'.png',mimeType:'image/png',buffer:tinyPng}));
+await page.locator('[data-v120-attach-input="arki:photos"]').setInputFiles(arkiAttachmentBatch);
+await page.waitForFunction(()=>document.querySelectorAll('[data-v120-attach-tray="arki"] .v120-attach-chip').length===10,null,{timeout:8000});
 check((await page.locator('[data-v120-attach-tray="arki"]').innerText()).includes('math-photo.png'),'ARKI photo attachment did not appear in composer');
+check(await page.evaluate(()=>window.__SCHOLARK_CHAT_ATTACHMENTS__?.limit===10),'ARKI/Tutor attachment API does not enforce a 10-per-message maximum');
 await page.fill('#v107-q','Draft survives route changes');
 await page.waitForTimeout(120);
 await route('dashboard','#v51-main [data-v51-page="dashboard"].active');
@@ -790,6 +793,15 @@ check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count
 check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
 check(await page.locator('.v107-msg.user .v120-msg-attachment').count()>=1,'ARKI sent message lost its image attachment badge');
 check(await page.locator('[data-v120-attach-tray="arki"] .v120-attach-chip').count()===0,'ARKI attachment tray did not clear after send');
+await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:20,chatRemaining:0,attachmentLimit:30,attachmentUsed:12,attachmentRemaining:18,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_CHAT_LIMIT',0));
+await page.waitForSelector('[data-v120-quota="arki"]:not([hidden])',{timeout:2000});
+check(/Free daily chat limit reached/i.test(await page.locator('[data-v120-quota="arki"]').innerText()),'ARKI Free daily-limit banner missing');
+check(await page.locator('#v107-send').isDisabled(),'ARKI send button is not disabled at the Free daily chat limit');
+await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:true,plan:'free',chatLimit:20,chatUsed:5,chatRemaining:15,attachmentLimit:30,attachmentUsed:30,attachmentRemaining:0,resetAt:new Date(Date.now()+3600000).toISOString()},'FREE_DAILY_ATTACHMENT_LIMIT',0));
+check(await page.locator('[data-v120-attach-plus="arki"]').isDisabled(),'ARKI attachment + button is not disabled at the Free upload limit');
+check(!(await page.locator('#v107-send').isDisabled()),'ARKI text chat should remain available when only the upload limit is exhausted');
+await page.evaluate(()=>window.__SCHOLARK_CHAT_QUOTA__?.apply?.({limited:false,plan:'pro',chatLimit:null,chatUsed:null,chatRemaining:null,attachmentLimit:null,attachmentUsed:null,attachmentRemaining:null,resetAt:null},'',0));
+check(!(await page.locator('#v107-send').isDisabled()),'ARKI send button did not recover after quota reset/paid plan state');
 await page.click('#v107-new');
 await page.route('**/api/learning/generate',async route=>{
   let body={};try{body=route.request().postDataJSON()}catch{}
@@ -800,6 +812,7 @@ await page.route('**/api/learning/generate',async route=>{
 await page.fill('#v107-q','Create an interactive HTML button demo');
 await page.click('#v107-send');
 await page.waitForSelector('[data-v107-html-open]',{timeout:5000});
+check(/Open website in chat/i.test(await page.locator('.v107-msg.assistant').last().locator('[data-v107-html-open]').innerText()),'ARKI HTML artifact does not offer an in-chat website preview');
 await page.locator('.v107-msg.assistant').last().locator('[data-v107-html-open]').click();
 await page.waitForSelector('.v107-msg.assistant .v107-html-frame',{state:'visible',timeout:3000});
 const sandboxAttr=await page.locator('.v107-msg.assistant').last().locator('.v107-html-frame').getAttribute('sandbox');
@@ -937,6 +950,7 @@ check(await page.locator('.v82-tools .v82-new').count()===0,'Duplicate small Tut
 check(await page.locator('#v120-tutor-rename').count()===1,'Tutor Rename chat control missing');
 check(await page.locator('#v120-tutor-name').count()===1,'Tutor custom-name control missing');
 check(await page.locator('#v120-attach-tutor').count()===1,'Tutor + attachment control missing');
+check(await page.evaluate(()=>window.__SCHOLARK_CHAT_ATTACHMENTS__?.limit===10),'Tutor does not expose the 10-attachment per-message limit');
 check(await page.locator('[data-v120-attach-pick^="tutor:"]').count()===3,'Tutor + menu should expose Photos, Camera and Files');
 check((await page.locator('[data-v120-attach-input="tutor:camera"]').getAttribute('capture'))==='environment','Tutor Camera option is not wired to device capture');
 await page.locator('[data-v120-attach-input="tutor:files"]').setInputFiles({name:'lesson-notes.txt',mimeType:'text/plain',buffer:Buffer.from('A chloroplast contains chlorophyll and is the main site of photosynthesis in plant cells.','utf8')});

@@ -215,6 +215,13 @@ for(const profile of profiles){
       await page.evaluate(()=>{location.hash='ai'});
       await page.waitForTimeout(900);
       check(await page.locator('#v51-main').count()===1,profile.name+': ARKI route damaged Workspace shell');
+      check(await visible(page,'#v120-attach-arki',5000),profile.name+': ARKI mobile attachment + control missing');
+      check(await page.locator('[data-v120-attach-pick^="arki:"]').count()===3,profile.name+': ARKI mobile + menu does not expose Photos, Camera and Files');
+      check(await page.evaluate(()=>window.__SCHOLARK_CHAT_ATTACHMENTS__?.limit===10),profile.name+': ARKI mobile attachment limit is not 10');
+      await page.click('[data-v120-attach-plus="arki"]');
+      check(await page.locator('[data-v120-attach-menu="arki"].open').count()===1,profile.name+': ARKI mobile attachment menu did not open');
+      await page.keyboard.press('Escape').catch(()=>{});
+      await checkViewport(page,profile.name+' ARKI attachments');
       check(pageErrors.length===0,profile.name+': ARKI route emitted browser errors: '+pageErrors.join(' | '));
     }
 

@@ -236,9 +236,12 @@
     }
     const {response,data}=attempt;
     if(!response.ok||!data?.ok||!data?.result){
-      const e=new Error(data?.error||'SCHOLAVERUM AI is temporarily unavailable.');e.code=data?.code||('HTTP_'+response.status);e.status=response.status;e.balance=data?.balance;e.needed=data?.needed;throw e;
+      const e=new Error(data?.error||'SCHOLAVERUM AI is temporarily unavailable.');e.code=data?.code||('HTTP_'+response.status);e.status=response.status;e.balance=data?.balance;e.needed=data?.needed;e.quota=data?.quota||null;e.retryAfter=Math.max(0,Number(response.headers.get('retry-after'))||0);
+      window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e.quota,e.code,e.retryAfter);
+      throw e;
     }
     if(data?.usage?.serverCharged||data?.usage?.billingMode==='server')window.__SCHOLARK_CREDITS__?.load?.();
+    if(data?.usage?.quota)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(data.usage.quota,'',0);
     return data;
   }
 

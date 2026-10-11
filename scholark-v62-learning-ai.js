@@ -149,7 +149,7 @@
     const visiblePrompt=typedPrompt||'Attached material',attachmentHtml=attachmentApi?.messageMarkup?.(attachmentMeta)||'';
     chat?.insertAdjacentHTML('beforeend','<div class="v52-msg user">'+esc(visiblePrompt)+attachmentHtml+'</div>');
     window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt:visiblePrompt,attachments:attachmentMeta}}));
-    if(q)q.value='';attachmentApi?.clear?.('tutor');
+    if(q)q.value='';
     const wait=document.createElement('div');wait.className='v52-msg ai';wait.innerHTML='<span class="v62-loading"><i class="v62-spin"></i>SCHOLARK is thinking…</span>';chat?.appendChild(wait);
     busy(btn,true,'Thinking…');
     try{
@@ -158,10 +158,15 @@
       const assignment=assignmentContextFor(prompt);
       const data=await call('tutor',{prompt,context,attachments,tutorMode:assignment.intent?'assignment_coach':'teach',assignmentContext:assignment.rows});
       const r=data.result,full=tutorPlain(r);
-      wait.innerHTML=tutorHtml(r,data);
+      wait.innerHTML=tutorHtml(r,data);attachmentApi?.clear?.('tutor');
       hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist);
-      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:full,result:r,provider:data.provider||'',model:data.model||''}}));
-    }catch(e){wait.remove();const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}finally{busy(btn,false)}
+      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:full,result:r,provider:data.provider||'',model:data.model||'',quota:data?.usage?.quota||null}}));
+    }catch(e){
+      wait.remove();
+      const limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
+      if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
+      else{const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}
+    }finally{busy(btn,false);window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false)}
   }
 
   async function runCurriculum(){

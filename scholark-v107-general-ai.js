@@ -33,7 +33,7 @@
     }
   }
   function rich(s){const p=String(s??'').split('```');return p.map((x,i)=>i%2?'<pre><code>'+esc(x.replace(/^[a-z0-9_+#.-]+\n/i,''))+'</code></pre>':esc(x).replace(/\n/g,'<br>')).join('')}
-  function attachmentTags(items=[]){return Array.isArray(items)&&items.length?'<div class="v120-msg-attachments">'+items.slice(0,4).map(x=>'<span class="v120-msg-attachment">'+(x.kind==='image'?'▧':'⌕')+' '+esc(x.name||'attachment')+'</span>').join('')+'</div>':''}
+  function attachmentTags(items=[]){return Array.isArray(items)&&items.length?'<div class="v120-msg-attachments">'+items.slice(0,10).map(x=>'<span class="v120-msg-attachment">'+(x.kind==='image'?'▧':'⌕')+' '+esc(x.name||'attachment')+'</span>').join('')+'</div>':''}
   function extractHtmlArtifact(source){
     const parts=String(source??'').split('```');
     for(let i=1;i<parts.length;i+=2){
@@ -51,15 +51,15 @@
     if(/<html\b[^>]*>/i.test(html))return html.replace(/<html\b[^>]*>/i,m=>m+'<head>'+csp+meta+'</head>');
     return '<!doctype html><html><head>'+csp+meta+'</head><body>'+html+'</body></html>'
   }
-  function htmlPreviewAction(message,index){return extractHtmlArtifact(message?.content)?'<div class="v107-html-action"><button type="button" data-v107-html-open="'+index+'">↗ Open interactive HTML</button><span>Protected in-chat preview</span></div>':''}
+  function htmlPreviewAction(message,index){return extractHtmlArtifact(message?.content)?'<div class="v107-html-action"><button type="button" data-v107-html-open="'+index+'">↗ Open website in chat</button><span>Runs safely inside SCHOLAVERUM · no external browser needed</span></div>':''}
   function bindHtmlPreviews(box){
     $$('[data-v107-html-open]',box).forEach(button=>button.onclick=()=>{
       const index=Number(button.dataset.v107HtmlOpen),msg=current?.messages?.[index],source=extractHtmlArtifact(msg?.content),node=button.closest('.v107-msg');if(!source||!node)return;
-      const old=$('.v107-html-panel',node);if(old){old.remove();button.textContent='↗ Open interactive HTML';return}
-      const panel=document.createElement('div');panel.className='v107-html-panel';panel.innerHTML='<div class="v107-html-toolbar"><b>Interactive HTML preview</b><div><button type="button" class="v107-html-reset">Reset</button><button type="button" class="v107-html-close">Close</button></div></div><iframe class="v107-html-frame" title="ARKI interactive HTML preview"></iframe>';
-      const frame=$('.v107-html-frame',panel);frame.setAttribute('sandbox','allow-scripts allow-forms allow-modals');frame.referrerPolicy='no-referrer';frame.srcdoc=previewDocument(source);node.appendChild(panel);button.textContent='Close interactive preview';
+      const old=$('.v107-html-panel',node);if(old){old.remove();button.textContent='↗ Open website in chat';return}
+      const panel=document.createElement('div');panel.className='v107-html-panel';panel.innerHTML='<div class="v107-html-toolbar"><b>Website preview inside SCHOLAVERUM</b><div><button type="button" class="v107-html-reset">Reset</button><button type="button" class="v107-html-close">Close</button></div></div><iframe class="v107-html-frame" title="ARKI website preview"></iframe>';
+      const frame=$('.v107-html-frame',panel);frame.setAttribute('sandbox','allow-scripts allow-forms allow-modals');frame.referrerPolicy='no-referrer';frame.srcdoc=previewDocument(source);node.appendChild(panel);button.textContent='Close website preview';
       $('.v107-html-reset',panel).onclick=()=>{frame.srcdoc=previewDocument(source)};
-      $('.v107-html-close',panel).onclick=()=>{panel.remove();button.textContent='↗ Open interactive HTML'}
+      $('.v107-html-close',panel).onclick=()=>{panel.remove();button.textContent='↗ Open website in chat'}
     })
   }
   function notifyThreadRendered(){try{window.dispatchEvent(new CustomEvent('scholark:arki-rendered',{detail:{chatId:current?.id||'',messages:(current?.messages||[]).length}}))}catch{}}
@@ -129,7 +129,7 @@
       const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
       const visiblePrompt=typedPrompt||'Attached material';
       current=update(current.id,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})})||current;
-      if(input)input.value='';writeDraft(current.id,'');attachmentApi?.clear?.('arki');drawHistory();drawThread();
+      if(input)input.value='';writeDraft(current.id,'');drawHistory();drawThread();
       const thread=$('#v107-thread');
       if(thread){
         const thinking=document.createElement('div');thinking.className='v107-msg assistant';thinking.id='v107-thinking';thinking.innerHTML='<span class="v107-thinking"><i></i><i></i><i></i></span>';thread.appendChild(thinking)
@@ -153,23 +153,25 @@
 
       const r=attempt.response,d=attempt.data;
       if(!r.ok||!d?.ok){
-        const e=new Error(d?.error||'ARKI is temporarily unavailable');e.code=d?.code||('HTTP_'+r.status);throw e
+        const e=new Error(d?.error||'ARKI is temporarily unavailable');e.code=d?.code||('HTTP_'+r.status);e.quota=d?.quota||null;e.retryAfter=Math.max(0,Number(r.headers.get('retry-after'))||0);window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e.quota,e.code,e.retryAfter);throw e
       }
       const answer=String(d.result?.answer||'').trim();if(!answer)throw new Error('ARKI returned an empty answer');
       current=update(current.id,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}))||current;
+      attachmentApi?.clear?.('arki');window.__SCHOLARK_CHAT_QUOTA__?.apply?.(d?.usage?.quota||null,'',0);
       if(state)state.textContent='Ready';
       window.__SCHOLARK_CREDITS__?.load?.();
       window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:current.id,context:!!$('#v107-context')?.checked})
     }catch(e){
-      const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT';
+      const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT',limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       const msg=timed?'ARKI took too long to answer. The request was stopped safely; try again.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
-      if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
-      if(state)state.textContent=timed?'Request timed out — you can retry':'Request failed — you can retry'
+      if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
+      else if(current?.id)current=update(current.id,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}))||current;
+      if(state)state.textContent=limited?'Free / rate limit reached':(timed?'Request timed out — you can retry':'Request failed — you can retry')
     }finally{
       busy=false;
       const liveButton=$('#v107-send'),liveInput=$('#v107-q');
       if(liveButton)liveButton.disabled=false;if(liveInput){liveInput.disabled=false;liveInput.focus()}
-      $('#v107-thinking')?.remove();drawHistory();drawThread();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
+      $('#v107-thinking')?.remove();drawHistory();drawThread();window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false);window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
     }
   }
   function open(){const h=host();if(!h)return;current=getCurrent();h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
@@ -186,5 +188,5 @@
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r254'};
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r255'};
 })();
