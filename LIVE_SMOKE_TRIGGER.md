@@ -1,7 +1,7 @@
-# SCHOLARK post-deploy smoke marker
+# SCHOLAVERUM post-deploy smoke marker
 
-Production runtime under verification: `493d00b649a4b858ad0ef188ab67c4f7805b4107`.
+Production runtime under verification: `c9b888ee48c6dc61ec0a6149f42c6f665e01ffc2` (`r249-launch-stability`).
 
-QA infrastructure validated through `fab1e8d9362a6d574532926150ebfe0bb2052c34`.
+Release Gate 458, normal CI 1441, and CodeQL 212 passed before this live verification.
 
-This file is QA-only. It does not change SCHOLARK runtime behavior; its commit message triggers the post-deploy live smoke against the Render production service.
+This file is QA-only. It does not change SCHOLAVERUM runtime behavior; its commit message triggers the post-deploy live smoke against the Render production service.
