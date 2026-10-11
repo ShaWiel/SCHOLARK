@@ -198,7 +198,7 @@ jobs:
         run: |
           for i in {1..90}; do
             if curl --fail --silent --show-error https://scholark-app-shawiel.onrender.com/api/gemini/health >/tmp/gemini-health.json; then
-              if grep -q '"ok":true' /tmp/gemini-health.json && grep -q '"configured":true' /tmp/gemini-health.json && grep -q '"routerVersion":"20260917-gemini-resilience-v3"' /tmp/gemini-health.json; then
+              if grep -q '"ok":true' /tmp/gemini-health.json && grep -q '"configured":true' /tmp/gemini-health.json && grep -q '"routerVersion":"20261011-gemini-deadline-v4"' /tmp/gemini-health.json; then
                 cat /tmp/gemini-health.json
                 exit 0
               fi
