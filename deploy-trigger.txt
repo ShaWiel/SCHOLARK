@@ -1,2 +1,2 @@
-SCHOLAVERUM release candidate r257
-Scope: ARKI and AI Tutor timeout resilience; Gemini fallback deadlines and cancellation.
+SCHOLAVERUM ARKI + AI Tutor release candidate
+Purpose: progressive 'still thinking' updates, safer long-request budgets, answer-quality validation, practical Tutor activities and chat preservation.
