@@ -6,23 +6,23 @@ const originalEnv = process.env;
 const context = new AsyncLocalStorage();
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
-const ROUTER_VERSION = '20260917-gemini-resilience-v3';
+const ROUTER_VERSION = '20261011-gemini-deadline-v4';
 const liveEnabled = /^(1|true|yes|on)$/i.test(String(originalEnv.SCHOLARK_AI_LIVE || ''));
 const provider = String(originalEnv.SCHOLARK_AI_PROVIDER || 'gemini').trim().toLowerCase();
 const primaryModel = String(originalEnv.GEMINI_PRIMARY_MODEL || originalEnv.GEMINI_FAST_MODEL || 'gemini-3.8-flash').trim() || 'gemini-3.8-flash';
 const fallbackModels = [...new Set(
-  String(originalEnv.GEMINI_FALLBACK_MODELS || 'gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash-lite')
+  String(originalEnv.GEMINI_FALLBACK_MODELS || 'gemini-3.5-flash-lite,gemini-3.6-flash')
     .split(/[\s,]+/)
     .map(x => x.trim())
     .filter(Boolean)
-    .filter(x => x !== primaryModel)
+    .filter(x => x !== primaryModel && x !== 'gemini-3.7-flash')
 )];
 const modelChain = [primaryModel, ...fallbackModels];
 const geminiConfigured = Boolean(String(originalEnv.GEMINI_API_KEY || '').trim());
 const pollinationsKey = String(originalEnv.POLLINATIONS_API_KEY || '').trim();
 const pollinationsConfigured = Boolean(pollinationsKey && pollinationsKey !== 'false' && pollinationsKey !== 'sync: false' && pollinationsKey !== 'snyc: false');
 const pollinationsModel = String(originalEnv.POLLINATIONS_BALANCED_MODEL || originalEnv.POLLINATIONS_MODEL || 'gpt-5.6-terra').trim() || 'gpt-5.6-terra';
-const retryableStatuses = new Set([400, 404, 408, 409, 422, 425, 429, 500, 502, 503, 504]);
+const retryableStatuses = new Set([400, 403, 404, 408, 409, 422, 425, 429, 500, 502, 503, 504]);
 const modelState = new Map();
 const BASE_COOLDOWN_MS = 45_000;
 const MAX_COOLDOWN_MS = 5 * 60_000;
@@ -55,7 +55,7 @@ function geminiUrlForModel(raw, model) {
 
 function timeoutFor(store, index) {
   const studio = store?.pathname === '/api/studio/generate';
-  const schedule = studio ? [42_000, 36_000, 32_000, 28_000] : [28_000, 24_000, 20_000, 18_000];
+  const schedule = studio ? [28_000, 18_000, 14_000] : [12_000, 15_000, 12_000];
   return schedule[Math.min(index, schedule.length - 1)];
 }
 
@@ -77,15 +77,21 @@ function markFailure(model, reason) {
   s.failures = Math.min(8, (s.failures || 0) + 1);
   s.lastReason = reason;
   s.lastFailureAt = Date.now();
-  const transient = reason === 'timeout' || reason === 'network_error' || /^http_(408|425|429|5\d\d)$/.test(reason);
-  if (transient) s.cooldownUntil = Date.now() + Math.min(MAX_COOLDOWN_MS, BASE_COOLDOWN_MS * Math.max(1, 2 ** (s.failures - 1)));
+  const unavailable = /^http_(403|404)$/.test(reason);
+  const transient = reason === 'timeout' || reason === 'network_error' || /^http_(400|408|422|425|429|5\d\d)$/.test(reason);
+  if (unavailable) s.cooldownUntil = Date.now() + 10 * 60_000;
+  else if (transient) s.cooldownUntil = Date.now() + Math.min(MAX_COOLDOWN_MS, BASE_COOLDOWN_MS * Math.max(1, 2 ** (s.failures - 1)));
 }
 
 function availableChain(requestedModel) {
   const raw = [requestedModel, ...fallbackModels.filter(model => model !== requestedModel)];
   const now = Date.now();
   const active = raw.filter(model => stateFor(model).cooldownUntil <= now);
-  return active.length ? active : raw.slice().sort((a,b) => stateFor(a).cooldownUntil - stateFor(b).cooldownUntil);
+  // Reuse a recently successful model before retrying a rate-limited primary.
+  const healthy = active.filter(model => stateFor(model).lastSuccessAt > now - 10 * 60_000)
+    .sort((a,b) => stateFor(b).lastSuccessAt - stateFor(a).lastSuccessAt);
+  return active.length ? [...healthy, ...active.filter(model => !healthy.includes(model))]
+    : raw.slice().sort((a,b) => stateFor(a).cooldownUntil - stateFor(b).cooldownUntil).slice(0,1);
 }
 
 function parseInitBody(init) {
@@ -107,8 +113,13 @@ async function emergencyPollinations(init, store) {
   const system = (geminiBody.systemInstruction?.parts || []).map(p => p?.text || '').filter(Boolean).join('\n');
   const user = (geminiBody.contents || []).flatMap(c => c?.parts || []).map(p => p?.text || '').filter(Boolean).join('\n');
   const schema = geminiBody.generationConfig?.responseJsonSchema;
+  const remaining = Math.max(0, (store?.deadlineAt || 0) - Date.now());
+  if (remaining < 1200 || store?.sourceSignal?.aborted) return null;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), store?.pathname === '/api/studio/generate' ? 55_000 : 35_000);
+  const relayAbort = () => controller.abort(store.sourceSignal.reason);
+  store.sourceSignal?.addEventListener?.('abort', relayAbort, { once:true });
+  if (store.sourceSignal?.aborted) relayAbort();
+  const timer = setTimeout(() => controller.abort(), Math.min(remaining, 17_000));
   store.emergencyAttempted = true;
   try {
     const body = {
@@ -144,6 +155,7 @@ async function emergencyPollinations(init, store) {
     return null;
   } finally {
     clearTimeout(timer);
+    store.sourceSignal?.removeEventListener?.('abort', relayAbort);
   }
 }
 
@@ -152,7 +164,13 @@ globalThis.fetch = async function scholarkGeminiFetch(input, init) {
   const info = geminiRequestInfo(input);
   if (!store?.geminiPrimary || !liveEnabled || provider !== 'gemini' || !info) return nativeFetch(input, init);
 
+  const sourceSignal = init?.signal;
+  if (sourceSignal?.aborted) throw Object.assign(new Error('AI request cancelled'), {name:'AbortError'});
   const requestedModel = info.model || primaryModel;
+  // Cap the complete Gemini fallback chain (including emergency recovery).
+  // The original caller abort signal must remain authoritative.
+  store.deadlineAt = Date.now() + (store.pathname === '/api/studio/generate' ? 85_000 : 52_000);
+  store.sourceSignal = sourceSignal;
   const chain = availableChain(requestedModel);
   store.attemptedModels = [];
   store.actualGeminiModel = '';
@@ -164,8 +182,13 @@ globalThis.fetch = async function scholarkGeminiFetch(input, init) {
   for (let index = 0; index < chain.length; index += 1) {
     const model = chain[index];
     const target = geminiUrlForModel(info.raw, model);
-    const timeoutMs = timeoutFor(store, index);
+    const remaining = store.deadlineAt - Date.now();
+    if (remaining < 1200) break;
+    const timeoutMs = Math.min(timeoutFor(store, index), Math.max(1000, remaining - (pollinationsConfigured ? 10_000 : 500)));
     const controller = new AbortController();
+    const relayAbort = () => controller.abort(sourceSignal.reason);
+    sourceSignal?.addEventListener?.('abort', relayAbort, {once:true});
+    if (sourceSignal?.aborted) relayAbort();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     store.attemptedModels.push(model);
 
@@ -189,6 +212,7 @@ globalThis.fetch = async function scholarkGeminiFetch(input, init) {
       store.fallbackReason = reason;
       await response.arrayBuffer().catch(() => {});
     } catch (error) {
+      if (sourceSignal?.aborted) throw Object.assign(new Error('AI request cancelled'), {name:'AbortError'});
       const timedOut = controller.signal.aborted;
       const reason = timedOut ? 'timeout' : 'network_error';
       store.failures.push({ model, provider:'gemini', reason, message:timedOut ? `Timed out after ${Math.round(timeoutMs / 1000)}s` : String(error?.message || 'Network error') });
@@ -196,12 +220,15 @@ globalThis.fetch = async function scholarkGeminiFetch(input, init) {
       store.fallbackReason = reason;
     } finally {
       clearTimeout(timer);
+      sourceSignal?.removeEventListener?.('abort', relayAbort);
     }
 
     if (index < chain.length - 1) await sleep(Math.min(700, 120 * (2 ** index)));
   }
 
+  if (sourceSignal?.aborted) throw Object.assign(new Error('AI request cancelled'), {name:'AbortError'});
   const emergency = await emergencyPollinations(init, store);
+  if (sourceSignal?.aborted) throw Object.assign(new Error('AI request cancelled'), {name:'AbortError'});
   if (emergency) return emergency;
 
   const error = new Error('All Gemini models and emergency providers failed');
