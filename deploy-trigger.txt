@@ -1,2 +1,2 @@
-SCHOLAVERUM r257-ai-thinking
-Release scope: ARKI and Tutor progress while processing, bounded extended AI retries, accurate response validation, guided learning tasks, original-chat persistence, credit resilience, cache-busted browser assets.
+SCHOLAVERUM release candidate r257-ai-thinking
+All production release markers synchronized. ARKI and Tutor long-request UX, extended bounded retries, validated responses and safe credit behavior.
