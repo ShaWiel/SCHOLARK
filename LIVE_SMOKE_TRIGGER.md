@@ -1,7 +1,7 @@
 # SCHOLAVERUM post-deploy smoke marker
 
-Production runtime under verification: `896ee0b71b06e8c63e7cc75b6385d33473420614` (`r255-free-quota-html`).
+Production deploy: `3a47f87eb53034a46a6a35e2481546c3e31d24df` (ARKI / AI Tutor deadline and Gemini fallback resilience).
 
-Release Gate 486, normal CI 1468, and CodeQL 239 passed before this live verification.
+Release Gate, normal CI and CodeQL passed before production deployment. Render deploy `dep-db5tqgp42hec73a6j48g` is live.
 
-This file is QA-only. It does not change SCHOLAVERUM runtime behavior; its commit message triggers the post-deploy live smoke against the Render production service.
+QA-only marker: trigger authenticated-boundary, public health and browser smoke against the production instance.
