@@ -46,9 +46,29 @@ const supaPort=await listen(supabase);
 process.env.SCHOLARK_TEST_MODE='0';
 process.env.SUPABASE_URL='http://127.0.0.1:'+supaPort;
 process.env.SUPABASE_PUBLISHABLE_KEY='pk_credit_resilience_test';
-delete process.env.GEMINI_API_KEY;
+process.env.GEMINI_API_KEY='mock-gemini-provider-key';
 delete process.env.OPENAI_API_KEY;
 delete process.env.POLLINATIONS_API_KEY;
+
+// Exercise the real credits pipeline with a simulated *valid* AI response.
+// Production must not count an offline placeholder as a successful paid answer.
+const nativeFetch=globalThis.fetch.bind(globalThis);
+globalThis.fetch=async(input,options={})=>{
+  if(String(input).startsWith('https://generativelanguage.googleapis.com/')){
+    const payload=JSON.parse(String(options.body||'{}'));
+    let mode='general_ai';
+    try{mode=JSON.parse(payload.contents?.[0]?.parts?.[0]?.text||'{}').mode||mode}catch{}
+    const result=mode==='tutor'?{
+      answer:'Review the requested lesson in stages and explain how to check each step.',
+      summary:'Mock guided lesson for credit resilience',
+      steps:['Understand the problem','Work through the evidence','Check the conclusion'],
+      examples:[],keyPoints:['Verify each stage'],commonMistakes:['Skipping validation'],
+      checks:['What does the result mean?'],followUp:'Try an example.',topic:'Credit resilience lesson'
+    }:{title:'Credit resilience check',answer:'The mock Gemini response completed successfully, with a useful answer and the normal credit path.',suggestedFollowUps:['Explain the result']};
+    return new Response(JSON.stringify({candidates:[{content:{parts:[{text:JSON.stringify(result)}]}}]}),{status:200,headers:{'content-type':'application/json'}});
+  }
+  return nativeFetch(input,options);
+};
 
 await import('../scholark-learning-route.mjs?credit-resilience='+Date.now());
 
@@ -72,7 +92,7 @@ const call=async(mode,prompt,id)=>{
 try{
   const arki=await call('general_ai','Test resilient ARKI credit preflight','credit-resilience-arki-001');
   check(arki.status===200&&arki.data?.ok===true,'ARKI did not recover from transient credit preflight failure: '+JSON.stringify(arki));
-  check(arki.data?.provider==='scholark-local-fallback','ARKI resilience smoke expected local provider fallback without configured AI keys');
+  check(arki.data?.provider==='gemini','ARKI resilience smoke expected a validated Gemini response');
   check(costAttempts>=2&&walletAttempts>=2&&quotaAttempts>=2,'Credit/quota preflight did not retry all transient network failures');
   check(quotaConsumeAttempts>=2,'Zero-credit ARKI quota consumption did not retry after transient network failure');
 
