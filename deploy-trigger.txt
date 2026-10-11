@@ -1,3 +1,2 @@
-SCHOLARK deploy trigger
-Purpose: deploy resilient Gemini model failover.
-Commit target: 87221afdfe350390140ebf15661e40295bace88e
+SCHOLAVERUM release candidate r257
+Scope: ARKI and AI Tutor timeout resilience; Gemini fallback deadlines and cancellation.
