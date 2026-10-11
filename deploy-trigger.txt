@@ -1,2 +1,2 @@
-SCHOLAVERUM AI long-response release
-Quality gate: real validated AI answers, truthful outages, 15 free uploads/day preserved, progress messages, ARKI original-chat safety, Tutor activities.
+SCHOLAVERUM r257-ai-thinking
+Release scope: ARKI and Tutor progress while processing, bounded extended AI retries, accurate response validation, guided learning tasks, original-chat persistence, credit resilience, cache-busted browser assets.
