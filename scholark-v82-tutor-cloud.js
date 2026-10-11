@@ -53,6 +53,13 @@
     $$('[data-v82-more]',aside).forEach(b=>b.onclick=e=>{e.stopPropagation();chatMenu(b.dataset.v82More)});
   }
 
+  async function renameChat(id,preferredTitle=null){
+    const chat=chats.find(c=>c.id===id);if(!chat)return false;
+    const raw=preferredTitle==null?prompt('Rename chat',chat.title||'New chat'):preferredTitle;if(raw==null)return false;
+    const title=clean(raw).replace(/[<>]/g,'').slice(0,120);if(!title)return false;
+    try{const x=await ctx();if(!x)return false;const r=await x.c.request('/rest/v1/ai_chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({title,updated_at:new Date().toISOString()})});if(!r.ok)return false;await loadChats();return true}catch{return false}
+  }
+  async function renameCurrent(title){const id=current();return id?renameChat(id,title):false}
   async function chatMenu(id){
     const chat=chats.find(c=>c.id===id);if(!chat)return;
     const action=prompt('Type R to rename this chat or D to delete it.','R');
@@ -62,8 +69,7 @@
       try{const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/ai_chats?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});if(r.ok){if(current()===id)newChat();await loadChats()}}catch{}
       return;
     }
-    const title=prompt('Rename chat',chat.title||'New chat');if(!clean(title))return;
-    try{const x=await ctx();if(!x)return;const r=await x.c.request('/rest/v1/ai_chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({title:clean(title).slice(0,120),updated_at:new Date().toISOString()})});if(r.ok)await loadChats()}catch{}
+    await renameChat(id)
   }
 
   async function openChat(id){
@@ -138,5 +144,5 @@
   addEventListener('hashchange',()=>{setTimeout(enhance,100);setTimeout(enhance,320)});
   addEventListener('scholark:tutor-user',()=>setTimeout(enhance,50));
   [250,700].forEach(ms=>setTimeout(enhance,ms));
-  window.__SCHOLARK_V82_TUTOR_CLOUD_API__={newChat,loadChats,openChat,truncateFromUserText};
+  window.__SCHOLARK_V82_TUTOR_CLOUD_API__={newChat,loadChats,openChat,renameChat,renameCurrent,truncateFromUserText};
 })();

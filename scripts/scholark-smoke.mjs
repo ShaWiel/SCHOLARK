@@ -329,6 +329,14 @@ if(!live){
     check(/do not share|can only share|only share/.test(answer),'ARKI privacy response does not refuse extra personal data');
   },15000);
 
+  await post('/api/learning/generate',{mode:'general_ai',prompt:'Where can I find more information about Shakur or SCHOLAVERUM on social media?',history:[],deep:false,level:'student',language:'English'},'learning:arki_public_profiles',d=>{
+    const answer=String(d.result?.answer||'');
+    check(/@sportsking2k0/i.test(answer),'ARKI public profiles omitted @sportsking2k0');
+    check(/@SCHOLAVERUM\.AI/i.test(answer),'ARKI public profiles omitted @SCHOLAVERUM.AI');
+    check(/@seww_2010/i.test(answer),'ARKI public profiles omitted @seww_2010');
+    check(d.provider==='scholark-public-facts','ARKI public profiles should use the deterministic product-facts path');
+  },15000);
+
 }else{
   check(geminiHealth?.liveEnabled===true,'Live Gemini router is not enabled');
   check(geminiHealth?.configured===true,'Live Gemini key is not configured');
