@@ -55,7 +55,7 @@ function geminiUrlForModel(raw, model) {
 
 function timeoutFor(store, index) {
   const studio = store?.pathname === '/api/studio/generate';
-  const schedule = studio ? [28_000, 18_000, 14_000] : [12_000, 15_000, 12_000];
+  const schedule = studio ? [28_000, 18_000, 14_000] : [22_000, 25_000, 20_000];
   return schedule[Math.min(index, schedule.length - 1)];
 }
 
@@ -169,7 +169,7 @@ globalThis.fetch = async function scholarkGeminiFetch(input, init) {
   const requestedModel = info.model || primaryModel;
   // Cap the complete Gemini fallback chain (including emergency recovery).
   // The original caller abort signal must remain authoritative.
-  store.deadlineAt = Date.now() + (store.pathname === '/api/studio/generate' ? 85_000 : 52_000);
+  store.deadlineAt = Date.now() + (store.pathname === '/api/studio/generate' ? 85_000 : 83_000);
   store.sourceSignal = sourceSignal;
   const chain = availableChain(requestedModel);
   store.attemptedModels = [];
