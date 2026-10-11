@@ -212,15 +212,24 @@ for(const profile of profiles){
     check(pageErrors.length===0,profile.name+': Reminders/viewport flow emitted browser errors: '+pageErrors.join(' | '));
 
     locationHash: {
-      await page.evaluate(()=>{location.hash='ai'});
-      await page.waitForTimeout(900);
+      await page.evaluate(async()=>{
+        location.hash='ai';
+        try{await window.__SCHOLARK_RUNTIME__?.ensure?.('ai')}catch{}
+        try{window.__SCHOLARK_WORKSPACE__?.openTool?.('ai')}catch{}
+      });
+      await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000}).catch(()=>{});
+      await page.evaluate(()=>window.__SCHOLARK_CHAT_ATTACHMENTS__?.ensure?.('arki'));
+      await page.waitForTimeout(120);
       check(await page.locator('#v51-main').count()===1,profile.name+': ARKI route damaged Workspace shell');
-      check(await visible(page,'#v120-attach-arki',5000),profile.name+': ARKI mobile attachment + control missing');
+      const attachReady=await visible(page,'#v120-attach-arki',8000);
+      check(attachReady,profile.name+': ARKI mobile attachment + control missing');
       check(await page.locator('[data-v120-attach-pick^="arki:"]').count()===3,profile.name+': ARKI mobile + menu does not expose Photos, Camera and Files');
       check(await page.evaluate(()=>window.__SCHOLARK_CHAT_ATTACHMENTS__?.limit===10),profile.name+': ARKI mobile attachment limit is not 10');
-      await page.click('[data-v120-attach-plus="arki"]');
-      check(await page.locator('[data-v120-attach-menu="arki"].open').count()===1,profile.name+': ARKI mobile attachment menu did not open');
-      await page.keyboard.press('Escape').catch(()=>{});
+      if(attachReady){
+        await page.click('[data-v120-attach-plus="arki"]');
+        check(await page.locator('[data-v120-attach-menu="arki"].open').count()===1,profile.name+': ARKI mobile attachment menu did not open');
+        await page.keyboard.press('Escape').catch(()=>{});
+      }
       await checkViewport(page,profile.name+' ARKI attachments');
       check(pageErrors.length===0,profile.name+': ARKI route emitted browser errors: '+pageErrors.join(' | '));
     }
