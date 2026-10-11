@@ -1,2 +1,2 @@
-SCHOLAVERUM ARKI + AI Tutor release candidate
-Purpose: progressive 'still thinking' updates, safer long-request budgets, answer-quality validation, practical Tutor activities and chat preservation.
+SCHOLAVERUM AI long-response release
+Quality gate: real validated AI answers, truthful outages, 15 free uploads/day preserved, progress messages, ARKI original-chat safety, Tutor activities.
