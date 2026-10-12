@@ -1,2 +1,3 @@
-SCHOLAVERUM r257-ai-thinking: final browser diagnostics and release candidate.
-Scope: long-running AI progress, bounded retries, guided Tutor tasks, validated outputs, credit integrity and cache-busting.
+SCHOLAVERUM r258-native-connect release candidate
+Independent Connect feature: private friends and chat; authenticated 4-seat WebRTC meeting/study rooms; screen share; whiteboard; host controls; Supabase RLS and abuse limits. Phase 3 ARKI/Tutor meeting integration deferred in SCHOLAVERUM_CONNECT_ROADMAP.md.
+Production deployment requires passing CI, browser smoke, release gate and security review. TURN/SFU scale intentionally not claimed.
