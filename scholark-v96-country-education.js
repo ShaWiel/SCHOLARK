@@ -658,8 +658,12 @@
     return country;
   }
   function countryOptions(selected){
+    // Sort by the actual localized names users see, not internal English IDs.
+    // Keep the stable country value and selected education system unchanged.
     const known=[...countryList];
-    if(selected&&!known.includes(selected))known.unshift(selected);
+    if(selected&&!known.includes(selected))known.push(selected);
+    const lang=uiLang()==='cmn'?'zh-CN':uiLang();
+    known.sort((a,b)=>countryName(a).localeCompare(countryName(b),lang,{sensitivity:'base',numeric:true})||a.localeCompare(b,'en'));
     return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+countryName(c)+'</option>').join('');
   }
   function ensureSidebarCountry(){
