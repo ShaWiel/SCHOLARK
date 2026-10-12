@@ -18,7 +18,7 @@ const allowed = new Set([BASE_SITE, ...(Deno.env.get("CONNECT_TURN_ALLOWED_ORIGI
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TTL_SECONDS = 14400; // four hours; browser renews well before expiry
 
-function cors(origin: string): HeadersInit {
+function cors(origin: string): Record<string,string> {
   return {
     "access-control-allow-origin": allowed.has(origin) ? origin : BASE_SITE,
     "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
