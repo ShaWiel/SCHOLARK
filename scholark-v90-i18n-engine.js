@@ -114,7 +114,7 @@
     ['For everyday learning, practice and planning.','Voor dagelijks leren, oefenen en plannen.','Para aprender, practicar y planificar cada día.','Pour apprendre, pratiquer et planifier au quotidien.','Für tägliches Lernen, Üben und Planen.','Para aprender, praticar e planejar todos os dias.','Per imparare, esercitarsi e pianificare ogni giorno.'],
     ['Everything in Free','Alles uit Gratis','Todo lo de Gratis','Tout ce qui est inclus dans Gratuit','Alles aus Kostenlos','Tudo do Grátis','Tutto di Gratis'],
     ['Everything in Plus','Alles uit Plus','Todo lo de Plus','Tout ce qui est inclus dans Plus','Alles aus Plus','Tudo do Plus','Tutto di Plus'],
-    ['74-language interface','Interface in 74 talen','Interfaz en 74 idiomas','Interface en 74 langues','Oberfläche in 74 Sprachen','Interface em 74 idiomas','Interfaccia in 74 lingue'],
+    ['75-language interface','Interface in 75 talen','Interfaz en 75 idiomas','Interface en 75 langues','Oberfläche in 75 Sprachen','Interface em 75 idiomas','Interfaccia in 75 lingue'],
     ['/ month','/ maand','/ mes','/ mois','/ Monat','/ mês','/ mese'],
     ['Ask Tutor','Vraag Tutor','Preguntar al Tutor','Demander au tuteur','Tutor fragen','Perguntar ao Tutor','Chiedi al Tutor'],
     ['Use my files','Gebruik mijn bestanden','Usar mis archivos','Utiliser mes fichiers','Meine Dateien verwenden','Usar meus arquivos','Usa i miei file'],
@@ -543,8 +543,8 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLAVERUM | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v10-global75-mandarin-alphabetic';
-  const LEGACY_CACHE_VERSIONS=['v9-global74-resilient-atomic-layout','v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
+  const CACHE_VERSION='v9-global74-resilient-atomic-layout';
+  const LEGACY_CACHE_VERSIONS=['v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
@@ -607,7 +607,7 @@
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null,activeTransitionFailsafe=0;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
-  const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
+  const DEVICE_LANGS=new Set(['ar','bg','bn','cmn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
   function primeDeviceTranslator(target,onProgress){
     // CI/local smoke runs must stay deterministic and must never wait for
