@@ -116,7 +116,7 @@ begin
   -- A client cannot request all matches in a giant batch.
   delete from public.connect_contact_lookup_quota;
   begin
-    select count(*) into matches from public.connect_find_contacts(array_fill('person13@example.test',array[31]),array[]::text[]);
+    select count(*) into matches from public.connect_find_contacts(array_fill('person13@example.test'::text,array[31]),array[]::text[]);
   exception when others then
     if sqlerrm like 'Select up to 30%' then cap_denied:=true;else raise;end if;
   end;
