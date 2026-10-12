@@ -1,6 +1,19 @@
 (() => {
   'use strict';
   if (window.__SCHOLARK_CONNECT__) return;
+  // Release r263: preserve implementation for later, but prohibit launching
+  // profiles, messages or meetings until Connect is deliberately released.
+  // This is a code-level availability gate, not a user-toggleable flag.
+  const CONNECT_AVAILABILITY='coming-soon';
+  if(CONNECT_AVAILABILITY!=='live'){
+    window.__SCHOLARK_CONNECT__={
+      open:()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('connect'),
+      leaveRoom:async()=>{},
+      version:'r263-coming-soon',
+      getState:()=>({available:false,comingSoon:true,signedIn:false,profile:false,friends:0,meeting:false,participants:0})
+    };
+    return;
+  }
   const SB='https://yhafbwdnnpvuedycdkll.supabase.co';
   const KEY='sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A';
   const $=(s,r=document)=>r.querySelector(s);
