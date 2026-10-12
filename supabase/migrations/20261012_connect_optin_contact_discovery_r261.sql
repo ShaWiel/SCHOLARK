@@ -68,7 +68,7 @@ begin
 
   insert into public.connect_contact_lookup_quota(user_id,lookup_day,attempts)
     values(caller_id,today_utc,1)
-  on conflict(user_id,lookup_day) do update
+  on conflict on constraint connect_contact_lookup_quota_pkey do update
     set attempts=public.connect_contact_lookup_quota.attempts+1
     where public.connect_contact_lookup_quota.attempts<3
   returning attempts into hits;
