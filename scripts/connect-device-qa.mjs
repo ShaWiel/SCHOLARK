@@ -8,7 +8,7 @@ const source=fs.readFileSync(new URL('../scholark-v122-connect.js',import.meta.u
 const anchor='  window.__SCHOLARK_CONNECT__={';
 assert.ok(source.includes(anchor),'Connect test hook anchor changed');
 const program=source.replace(anchor,
-  '  window.__TEST_CONNECT__={readVCF,readCSV,phoneE164,addDeviceContacts,clearDeviceContacts,wireDeviceContactDiscovery,runContactLookup,peer,shareScreen,stopScreen,state};\n'+anchor);
+  '  window.__TEST_CONNECT__={readVCF,readCSV,phoneE164,addDeviceContacts,clearDeviceContacts,wireDeviceContactDiscovery,runContactLookup,peer,shareScreen,stopScreen,enableIncomingAudio,state};\n'+anchor);
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const elem=(id)=>({
   id,value:'',innerHTML:'',textContent:'',hidden:false,disabled:false,checked:false,dataset:{},
@@ -17,6 +17,7 @@ const elem=(id)=>({
 });
 const dom=new Map(),$=s=>{if(!dom.has(s))dom.set(s,elem(s));return dom.get(s)};
 const calls=[],senders=[],videos=[],errors=[];
+const incomingAudio=[];
 let deferredContactResponse=null;
 const mediaTrack={kind:'video',enabled:true,stop(){this.stopped=true}};
 const capture={getVideoTracks:()=>[mediaTrack],getTracks:()=>[mediaTrack]};
@@ -58,7 +59,7 @@ const sandbox={
   window:{__SCHOLARK_TEST_MODE__:true,
     __SCHOLARK_V72_CLOUD__:{currentSession:()=>({access_token:'QA_ONLY_TEST_SESSION',user:{id:uuid(1)}})},
     addEventListener(){}},
-  document:{head:{appendChild(){}},createElement:()=>elem('created'),querySelector:$,querySelectorAll:()=>[],addEventListener(){}},
+  document:{head:{appendChild(){}},createElement:()=>elem('created'),querySelector:$,querySelectorAll:selector=>selector==='audio[id^="v122-audio-"]'?incomingAudio:[],addEventListener(){}},
   navigator:fakeNavigator,console:{warn:(...args)=>errors.push(args.join(' '))},
   fetch:mockFetch,MediaStream:class{constructor(tracks){this.tracks=tracks}},
   RTCPeerConnection:FakePeer,URL,URLSearchParams,Date,Map,Set,Promise,
@@ -166,5 +167,16 @@ assert.equal([...test.state.peers.values()].filter(pc=>pc.__sender.track===media
 test.stopScreen();
 assert.equal(test.state.screen,null);
 assert.equal([...test.state.peers.values()].filter(pc=>pc.__sender.track!==null).length,0);
+
+// A blocked autoplay stream must be recoverable through an explicit call action.
+let soundPlays=0;
+incomingAudio.push({play:async()=>{soundPlays++}});
+assert.equal(await test.enableIncomingAudio(),true);
+assert.equal(soundPlays,1,'Explicit enable-sound action did not retry remote audio');
+assert.match($('#v122-status').textContent,/Incoming audio enabled/);
+incomingAudio[0].play=async()=>{throw Error('Autoplay denied')};
+assert.equal(await test.enableIncomingAudio(),false);
+assert.match($('#v122-status').textContent,/remains blocked/);
+incomingAudio.length=0;
 
 console.log('CONNECT ISOLATED DEVICE QA PASS: Android picker simulation; iOS/Desktop vCard/CSV; privacy selection and stale-response isolation; mocked 9-seat audio and 8 screen recipients.');
