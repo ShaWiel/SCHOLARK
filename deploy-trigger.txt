@@ -1,1 +1,3 @@
 SCHOLAVERUM r258-native-connect FINAL QA. Native independent Connect friends and messaging; opt-in private profile discovery, abuse reporting/blocking; authenticated invitation-code meetings and study rooms (4 participants), WebRTC video/audio, mobile/audio-only screen share fallback, room chat, host controls and whiteboard. Supabase RLS, strict RPC and throttling. Phase 3 ARKI and AI Tutor room integration remains deferred. Requires full tests before manual Render deploy; no Google Meet/Teams/Skype integration.
+
+Regression check accepts automatically localized SCHOLAVERUM branding for ARKI context replies.
