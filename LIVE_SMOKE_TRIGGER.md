@@ -1,7 +1,6 @@
-# SCHOLAVERUM r257 post-deploy QA
+# SCHOLAVERUM Connect r258 live verification
 
-Production deployed commit: `2c3a87fae1d4846387206831af08bbb6e82187ce`.
-Render deployment: `dep-db60omvavr4c73abp1b0` (live).
+Production commit: 32bf52120dba97abba64e97c7e6cf20e9b5de9a5
+Render deploy: dep-db62msdckfvc73bts1h0
 
-Check the real production AI router, ARKI/AI Tutor flow, cache-busted r257 workspace assets, account boundaries and in-chat HTML preview.
-QA-only marker; changes no application behavior.
+Verify live SCHOLAVERUM production health, browser routes, ARKI/Tutor regressions, native Connect asset and workspace navigation. TURN/SFU readiness is explicitly not asserted. QA-only documentation update, no application code change.
