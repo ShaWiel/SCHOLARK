@@ -8,7 +8,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const clean=s=>String(s??'').trim();
   const uid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
-  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
+  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],contacts:[],contactPicked:new Set(),contactMatches:[],contactBusy:false,room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
   const own=()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||null;
   const header=()=>{const s=own();if(!s?.access_token)throw Error('Sign in to use SCHOLAVERUM Connect.');return {apikey:KEY,authorization:'Bearer '+s.access_token,accept:'application/json','content-type':'application/json'}};
   async function request(path,method='GET',body){
@@ -54,7 +54,7 @@
   const profileMarkup=()=>'<div class="v122-panel" style="max-width:560px"><h2>Create your Connect profile</h2><p>Choose a unique handle. People can find you by your handle only if you allow it. Your email is never shown.</p>' +
     '<div class="v122-field"><label for="v122-handle">Username</label><input id="v122-handle" class="v122-input" maxlength="24" placeholder="e.g. studybuddy_12" autocomplete="off"></div>' +
     '<div class="v122-field"><label for="v122-name">Display name</label><input id="v122-name" class="v122-input" maxlength="60" placeholder="Your name"></div>' +
-    '<label class="v122-row"><input type="checkbox" id="v122-searchable"> Let other users find me</label><div class="v122-row" style="margin-top:15px"><button class="v122-btn lime" id="v122-register">Create Connect profile</button></div></div>';
+    '<label class="v122-row"><input type="checkbox" id="v122-searchable"> Let other users find me by username</label><label class="v122-row"><input type="checkbox" id="v122-contact-optin-profile"> Allow friends who know my verified email or phone to find me</label><div class="v122-row" style="margin-top:15px"><button class="v122-btn lime" id="v122-register">Create Connect profile</button></div></div>';
   function showProfile(){
     const mount=$('#v122-body');if(!mount)return;mount.innerHTML=profileMarkup();
     $('#v122-name').value=clean(state.me?.user_metadata?.full_name||'').slice(0,60);
@@ -64,13 +64,14 @@
         if(!/^[a-z0-9_]{3,24}$/.test(h))throw Error('Username must have 3–24 lowercase letters, numbers or underscores.');
         if(!n||n.length>60)throw Error('Enter a display name.');
         state.profile=await rpc('connect_register',{p_handle:h,p_name:n,p_searchable:$('#v122-searchable').checked});
+        state.profile.contact_discovery_enabled=await rpc('connect_set_contact_discovery',{p_enabled:$('#v122-contact-optin-profile').checked});
         await refresh();renderApp();status('Your private Connect profile is ready.');
       }catch(e){handleError(e)}
     };
   }
   function renderBase(){
     const host=$('#v51-fallback');if(!host)return false;
-    host.innerHTML='<section id="v122-connect"><div class="v122-row v122-between"><div><span class="v122-quiet">SCHOLAVERUM WORKSPACE</span><h1>Connect</h1><p>Friends, private messages, voice calls, screen sharing and study rooms — all inside SCHOLAVERUM.</p></div><span class="v122-warning">Native calls · up to 4 people · no external meeting apps</span></div><div id="v122-status" role="status" aria-live="polite"></div><div id="v122-body"></div></section>';
+    host.innerHTML='<section id="v122-connect"><div class="v122-row v122-between"><div><span class="v122-quiet">SCHOLAVERUM WORKSPACE</span><h1>Connect</h1><p>Friends, private messages, voice calls, screen sharing and study rooms — all inside SCHOLAVERUM.</p></div><span class="v122-warning">Voice calls · up to 9 people · no external meeting apps</span></div><div id="v122-status" role="status" aria-live="polite"></div><div id="v122-body"></div></section>';
     return true;
   }
   async function people(ids){
@@ -95,7 +96,7 @@
     el.innerHTML=(state.requests.length?'<h2>Friend requests</h2>'+state.requests.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>Wants to connect</small></div><div class="v122-row"><button class="v122-btn lime" data-friend-accept="'+esc(x.id)+'">Accept</button><button class="v122-btn alt" data-friend-reject="'+esc(x.id)+'">Decline</button></div></div></div>').join(''):'')+
       '<h2>Your friends</h2>'+(state.friends.length?state.friends.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>@'+esc(state.identities.get(peerId(x))?.handle||'friend')+'</small></div><div class="v122-row"><button class="v122-btn alt" data-chat="'+esc(peerId(x))+'">Message</button><button class="v122-btn alt" data-friend-remove="'+esc(x.id)+'">Remove</button><button class="v122-btn alt" data-friend-report="'+esc(peerId(x))+'">Report</button><button class="v122-btn danger" data-friend-block="'+esc(peerId(x))+'">Block</button></div></div></div>').join(''):'<p>No friends yet. Search for classmates by username.</p>')+
       (state.pending.length?'<h2>Sent requests</h2>'+state.pending.map(x=>'<div class="v122-entry"><b>'+esc(who(peerId(x)))+'</b><small> · Pending</small><button class="v122-btn alt" data-friend-cancel="'+esc(x.id)+'" style="margin-left:9px">Cancel</button></div>').join(''):'');
-    $('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block],[data-friend-report]',el).forEach(btn=>btn.onclick=async()=>{
+    $$('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block],[data-friend-report]',el).forEach(btn=>btn.onclick=async()=>{
       try{
         const id=btn.dataset.friendAccept||btn.dataset.friendReject||btn.dataset.friendRemove||btn.dataset.friendCancel;
         if(btn.dataset.friendReport){await reportUser(btn.dataset.friendReport,'message');return}
@@ -124,17 +125,151 @@
       $$('[data-add]',host).forEach(btn=>btn.onclick=async()=>{try{await rpc('connect_friend_request',{p_target:btn.dataset.add});await refresh();renderFriends();status('Friend request sent.')}catch(e){handleError(e)}});
     }catch(e){handleError(e)}
   }
+
+  // Consent-only lookup: selected identifiers are compared transiently by RPC.
+  const emailOk=t=>/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(t)&&t.length<=254;
+  function phoneE164(number,prefix){
+    let n=clean(number).replace(/[\s()\-\.]/g,'');
+    if(n.startsWith('00'))n='+'+n.slice(2);
+    if(!n.startsWith('+')&&prefix)n=prefix+n.replace(/^0+/,'');
+    return /^\+[1-9]\d{7,14}$/.test(n)?n:'';
+  }
+  function clearDeviceContacts(){
+    state.contacts=[];state.contactPicked.clear();state.contactMatches=[];
+    const c=$('#v122-contact-candidates'),m=$('#v122-contact-matches');
+    if(c)c.textContent='';if(m)m.textContent='';
+  }
+  function addDeviceContacts(rows){
+    state.contacts=[];state.contactPicked.clear();state.contactMatches=[];
+    for(const person of rows||[]){
+      const many=x=>Array.isArray(x)?x:(x?[x]:[]);
+      const emails=many(person.email||person.emails).map(x=>clean(x).toLowerCase()).filter(emailOk);
+      const phones=many(person.tel||person.phone).map(clean).filter(Boolean);
+      if(!emails.length&&!phones.length)continue;
+      state.contacts.push({name:clean(many(person.name)[0]||emails[0]||phones[0]).slice(0,90),emails,phones});
+      if(state.contacts.length>=500)break;
+    }
+    renderDeviceContacts();
+    status(state.contacts.length+' contacts loaded privately. Select up to 30 to check.');
+  }
+  function readVCF(source){
+    const out=[];
+    for(const block of source.replace(/\r?\n[ \t]/g,'').split(/BEGIN:VCARD/i).slice(1,501)){
+      const lines=(block.split(/END:VCARD/i)[0]||'').split(/\r?\n/);
+      const val=key=>lines.filter(x=>new RegExp('^(?:item\\d+\\.)?'+key+'(?:;[^:]*)?:','i').test(x))
+        .map(x=>x.slice(x.indexOf(':')+1).replace(/\\n/gi,' '));
+      out.push({name:val('FN')[0]||'',email:val('EMAIL'),tel:val('TEL')});
+    }
+    return out;
+  }
+  function readCSV(source){
+    const rows=[];let row=[],field='',quoted=false;
+    for(let i=0;i<source.length&&rows.length<502;i++){
+      const c=source[i];
+      if(c==='"'&&quoted&&source[i+1]==='"'){field+='"';i++;continue}
+      if(c==='"'){quoted=!quoted;continue}
+      if(c===','&&!quoted){row.push(field);field='';continue}
+      if((c==='\r'||c==='\n')&&!quoted){if(c==='\r'&&source[i+1]==='\n')i++;row.push(field);rows.push(row);row=[];field='';continue}
+      field+=c;
+    }
+    if(row.length||field){row.push(field);rows.push(row)}
+    if(!rows.length)return[];
+    const columns=rows.shift().map(x=>clean(x).toLowerCase());
+    const inds=re=>columns.flatMap((c,i)=>re.test(c)?[i]:[]);
+    const em=inds(/e-?mail/),ph=inds(/phone|mobile|telephone|tel/),nm=inds(/^(name|full name|display name|first name)$/);
+    if(!em.length&&!ph.length)throw Error('CSV needs an Email or Phone column');
+    return rows.map(x=>({name:x[nm[0]]||'',email:em.map(i=>x[i]||''),tel:ph.map(i=>x[i]||'')})).slice(0,500);
+  }
+  function renderDeviceContacts(){
+    const target=$('#v122-contact-candidates');if(!target)return;
+    const q=clean($('#v122-contact-filter')?.value||'').toLowerCase();
+    const visible=state.contacts.map((c,i)=>({c,i})).filter(({c})=>!q||(c.name+' '+c.emails.join(' ')+' '+c.phones.join(' ')).toLowerCase().includes(q)).slice(0,70);
+    target.innerHTML=visible.map(({c,i})=>'<label class="v122-entry v122-row"><input type="checkbox" data-contact="'+i+'" '+(state.contactPicked.has(i)?'checked':'')+'><span><b>'+esc(c.name)+'</b><small> · '+esc(c.emails[0]||c.phones[0]||'')+'</small></span></label>').join('')+
+      '<p class="v122-quiet">'+state.contactPicked.size+' selected · '+state.contacts.length+' available · showing '+visible.length+'</p>';
+    $$('[data-contact]',target).forEach(box=>box.onchange=()=>{
+      const i=Number(box.dataset.contact);
+      if(box.checked&&state.contactPicked.size>=30){box.checked=false;status('Select no more than 30 contacts.',true);return}
+      if(box.checked)state.contactPicked.add(i);else state.contactPicked.delete(i);
+      renderDeviceContacts();
+    });
+  }
+  function renderContactMatches(){
+    const host=$('#v122-contact-matches');if(!host)return;
+    host.innerHTML='<h3>Matching accounts</h3>'+(state.contactMatches.length?
+      state.contactMatches.map(p=>'<div class="v122-entry v122-row v122-between"><span><b>'+esc(p.display_name)+'</b><small> @'+esc(p.handle)+'</small></span><button class="v122-btn lime" data-contact-add="'+esc(p.user_id)+'">Add friend</button></div>').join(''):
+      '<p>No eligible matching profiles found. Your contacts might not use SCHOLAVERUM or might have discovery off.</p>');
+    $$('[data-contact-add]',host).forEach(b=>b.onclick=async()=>{
+      try{b.disabled=true;await rpc('connect_friend_request',{p_target:b.dataset.contactAdd});
+        state.contactMatches=state.contactMatches.filter(p=>p.user_id!==b.dataset.contactAdd);
+        await refresh();renderFriends();renderContactMatches();status('Friend request sent.')}
+      catch(e){b.disabled=false;handleError(e)}
+    });
+  }
+  async function runContactLookup(){
+    if(state.contactBusy)return;
+    const entries=[...state.contactPicked].map(i=>state.contacts[i]).filter(Boolean);
+    if(!entries.length){status('Choose contacts before searching.',true);return}
+    const prefix=clean($('#v122-phone-prefix')?.value||'');
+    if(prefix&&!/^\+[1-9]\d{0,3}$/.test(prefix)){status('Use a country code like +597 or leave the field empty.',true);return}
+    const emails=new Set(),phones=new Set();
+    for(const p of entries){
+      for(const x of p.emails)if(emails.size+phones.size<30)emails.add(x);
+      for(const x of p.phones){const value=phoneE164(x,prefix);
+        if(value&&emails.size+phones.size<30)phones.add(value)}
+    }
+    if(!emails.size&&!phones.size){status('No valid email or international phone numbers selected.',true);return}
+    if(!confirm('Securely compare '+(emails.size+phones.size)+' selected contact identifiers with opted-in SCHOLAVERUM accounts? This is a one-time check, not a background sync.'))return;
+    state.contactBusy=true;const b=$('#v122-search-contacts');if(b)b.disabled=true;
+    try{
+      const found=await rpc('connect_find_contacts',{p_emails:[...emails],p_phones:[...phones]});
+      state.contactMatches=Array.isArray(found)?found:[];
+      state.contacts=[];state.contactPicked.clear();
+      renderDeviceContacts();renderContactMatches();
+      status(state.contactMatches.length+' matching Connect account(s). Your selected contacts were cleared from this session.');
+    }catch(e){handleError(e)}finally{state.contactBusy=false;if(b)b.disabled=false}
+  }
+  function wireDeviceContactDiscovery(){
+    const toggle=$('#v122-contacts-visible');
+    toggle.checked=!!state.profile?.contact_discovery_enabled;
+    toggle.onchange=async()=>{
+      toggle.disabled=true;
+      try{const enabled=await rpc('connect_set_contact_discovery',{p_enabled:toggle.checked});
+        state.profile.contact_discovery_enabled=enabled;status(enabled?'You can now be found by contacts with your verified details.':'Contact discovery is off.')}
+      catch(e){toggle.checked=!!state.profile?.contact_discovery_enabled;handleError(e)}
+      finally{toggle.disabled=false}
+    };
+    $('#v122-pick').onclick=async()=>{
+      if(!navigator.contacts?.select){status('Your browser cannot open device contacts. Please import a .vcf or .csv file.',true);return}
+      try{const rows=await navigator.contacts.select(['name','email','tel'],{multiple:true});
+        if(rows?.length)addDeviceContacts(rows)}
+      catch(e){if(e?.name!=='AbortError')handleError(e)}
+    };
+    $('#v122-import').onclick=()=>$('#v122-file')?.click();
+    $('#v122-file').onchange=async e=>{
+      const file=e.target.files?.[0];e.target.value='';if(!file)return;
+      if(file.size>1024*1024){status('Maximum contact file size is 1 MB.',true);return}
+      try{const content=await file.text();const parsed=/\.vcf$/i.test(file.name)?readVCF(content):/\.csv$/i.test(file.name)?readCSV(content):[];
+        if(!parsed.length)throw Error('No valid .vcf or .csv contacts found');addDeviceContacts(parsed)}
+      catch(err){handleError(err)}
+    };
+    $('#v122-contact-filter').oninput=renderDeviceContacts;
+    $('#v122-clear-contacts').onclick=()=>{clearDeviceContacts();renderDeviceContacts();status('Contact data cleared from this session.')};
+    $('#v122-search-contacts').onclick=()=>void runContactLookup();
+    renderDeviceContacts();
+  }
+
   function renderApp(){
     if(!state.profile)return showProfile();
     const root=$('#v122-body');if(!root)return;
     root.innerHTML='<div class="v122-row v122-between"><div class="v122-quiet">Signed in as @'+esc(state.profile.handle)+'</div><button class="v122-btn alt" id="v122-edit-profile">Edit profile</button></div>'+
     '<div class="v122-tabs"><button class="v122-btn active" data-tab="friends">Friends & messages</button><button class="v122-btn alt" data-tab="meetings">Meetings & study rooms</button></div>'+
-    '<div id="v122-friends-tab"><div class="v122-grid"><aside class="v122-panel v122-scroll"><h2>Find people</h2><div class="v122-formrow"><input class="v122-input" id="v122-search" placeholder="Username or name" maxlength="32"><button class="v122-btn" id="v122-find">Search</button></div><div id="v122-results"></div><div id="v122-friends-list" style="margin-top:18px"></div></aside><section class="v122-panel"><h2 id="v122-dm-title">Private messages</h2><p class="v122-quiet">Choose an accepted friend to start a private conversation.</p><div class="v122-chat" id="v122-dm"></div><form id="v122-dm-form" class="v122-compose"><input class="v122-input" id="v122-dm-input" maxlength="2000" placeholder="Your private message…" required disabled><button class="v122-btn" id="v122-dm-send" disabled>Send</button></form></section></div></div>'+
+    '<div id="v122-friends-tab"><div class="v122-grid"><aside class="v122-panel v122-scroll"><h2>Find people</h2><div class="v122-formrow"><input class="v122-input" id="v122-search" placeholder="Username or name" maxlength="32"><button class="v122-btn" id="v122-find">Search</button></div><div id="v122-results"></div><div class="v122-entry" id="v122-sync"><h3>Find friends from contacts</h3><p class="v122-quiet">Choose contacts from your device on supported browsers or import a .vcf/.csv contact file. No background sync; only identifiers you select are sent for matching.</p><label class="v122-row"><input id="v122-contacts-visible" type="checkbox"> Allow people with my verified contact details to find me</label><div class="v122-row" style="margin-top:9px"><button class="v122-btn alt" id="v122-pick" type="button">Choose device contacts</button><button class="v122-btn alt" id="v122-import" type="button">Import .vcf / .csv</button><button class="v122-btn alt" id="v122-clear-contacts" type="button">Clear contacts</button><input id="v122-file" type="file" accept=".vcf,.csv,text/vcard,text/csv" hidden></div><div class="v122-field"><label for="v122-phone-prefix">Country code for local numbers (optional)</label><input class="v122-input" id="v122-phone-prefix" placeholder="e.g. +597" maxlength="5" inputmode="tel"></div><input class="v122-input" id="v122-contact-filter" placeholder="Filter contacts on this device" maxlength="100"><div class="v122-scroll" id="v122-contact-candidates"></div><button class="v122-btn lime" id="v122-search-contacts" type="button">Find matching Connect accounts</button><div id="v122-contact-matches" aria-live="polite"></div><p class="v122-quiet">Other accounts must opt in and verify an email or phone. No unmatched contacts are stored. Maximum 30 identifiers per search and 3 searches per day.</p></div><div id="v122-friends-list" style="margin-top:18px"></div></aside><section class="v122-panel"><h2 id="v122-dm-title">Private messages</h2><p class="v122-quiet">Choose an accepted friend to start a private conversation.</p><div class="v122-chat" id="v122-dm"></div><form id="v122-dm-form" class="v122-compose"><input class="v122-input" id="v122-dm-input" maxlength="2000" placeholder="Your private message…" required disabled><button class="v122-btn" id="v122-dm-send" disabled>Send</button></form></section></div></div>'+
     '<div id="v122-meetings-tab" hidden><div id="v122-meeting-content"></div></div>';
     $$('[data-tab]',root).forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+    wireDeviceContactDiscovery();
     $('#v122-find').onclick=lookup;$('#v122-search').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();lookup()}};
     $('#v122-dm-form').onsubmit=async e=>{e.preventDefault();const input=$('#v122-dm-input'),body=clean(input.value);if(!state.selected||!body)return;try{await rpc('connect_send_message',{p_target:state.selected,p_body:body});input.value='';await loadDM()}catch(err){handleError(err)}};
-    $('#v122-edit-profile').onclick=()=>{showProfile();$('#v122-handle').value=state.profile.handle;$('#v122-name').value=state.profile.display_name;$('#v122-searchable').checked=state.profile.searchable};
+    $('#v122-edit-profile').onclick=()=>{showProfile();$('#v122-handle').value=state.profile.handle;$('#v122-name').value=state.profile.display_name;$('#v122-searchable').checked=state.profile.searchable;$('#v122-contact-optin-profile').checked=!!state.profile.contact_discovery_enabled};
     renderFriends();renderMeeting();setTab(state.tab);
     if(state.selected&&state.friends.some(x=>peerId(x)===state.selected))selectFriend(state.selected);
   }
@@ -433,12 +568,12 @@
     if(state.room&&state.me?.id===s?.user?.id&&$('#v122-videos')?.isConnected)return;
     if(!renderBase())return;if(!s?.access_token||!s?.user?.id){
       if(state.room)await leaveRoom(false);
-      state.me=null;state.profile=null;state.selected=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[];
+      clearDeviceContacts();state.me=null;state.profile=null;state.selected=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[];
       $('#v122-body').innerHTML='<div class="v122-panel"><h2>Sign in to Connect</h2><p>Meetings, friend requests and chat require a verified SCHOLAVERUM account.</p><button class="v122-btn lime" id="v122-signin">Sign in</button></div>';
       $('#v122-signin').onclick=()=>window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return;
     }
     const previous=state.me?.id;state.me=s.user;
-    if(previous&&previous!==state.me.id){await leaveRoom(false);state.selected=null;state.profile=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[]}
+    if(previous&&previous!==state.me.id){clearDeviceContacts();await leaveRoom(false);state.selected=null;state.profile=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[]}
     try{
       const rows=await request('connect_identities?select=user_id,handle,display_name,searchable&user_id=eq.'+state.me.id+'&limit=1');
       state.profile=rows?.[0]||null;
@@ -452,7 +587,7 @@
   }
   window.addEventListener('scholark:auth-changed',()=>{if(location.hash.startsWith('#connect'))void open();else if(state.room)void leaveRoom(false)});
   window.addEventListener('scholark-workspace-change',e=>{if(state.room&&e.detail?.to!=='connect')void leaveRoom()});
-  window.addEventListener('pagehide',()=>{stopTimers();stopScreen();for(const pc of state.peers.values())pc.close();for(const track of state.local?.getTracks()||[])track.stop()});
+  window.addEventListener('pagehide',()=>{clearDeviceContacts();stopTimers();stopScreen();for(const pc of state.peers.values())pc.close();for(const track of state.local?.getTracks()||[])track.stop()});
   window.addEventListener('hashchange',()=>{if(state.room&&!location.hash.startsWith('#connect'))void leaveRoom()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.selected&&location.hash.startsWith('#connect'))void loadDM()});
   // Poll private social data conservatively; room signaling uses a faster, bounded cycle.
