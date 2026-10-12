@@ -17,6 +17,7 @@ const elem=(id)=>({
 });
 const dom=new Map(),$=s=>{if(!dom.has(s))dom.set(s,elem(s));return dom.get(s)};
 const calls=[],senders=[],videos=[],errors=[];
+let deferredContactResponse=null;
 const mediaTrack={kind:'video',enabled:true,stop(){this.stopped=true}};
 const capture={getVideoTracks:()=>[mediaTrack],getTracks:()=>[mediaTrack]};
 const fakeNavigator={
@@ -46,7 +47,10 @@ class FakePeer{
 const response=body=>({ok:true,status:200,json:async()=>body});
 const mockFetch=async(url,opts)=>{
   calls.push({url:String(url),method:opts?.method||'GET',body:opts?.body});
-  if(String(url).endsWith('/rpc/connect_find_contacts'))return response([{user_id:uuid(13),handle:'student13',display_name:'Student Thirteen'}]);
+  if(String(url).endsWith('/rpc/connect_find_contacts')){
+    if(deferredContactResponse)return deferredContactResponse;
+    return response([{user_id:uuid(13),handle:'student13',display_name:'Student Thirteen'}]);
+  }
   if(String(url).endsWith('/rpc/connect_screen_share'))return response(true);
   return response([]);
 };
@@ -105,6 +109,44 @@ assert.equal(test.state.contactMatches.length,1,'Expected opted-in match from mo
 test.clearDeviceContacts();
 assert.equal(test.state.contactMatches.length,0,'Clear must remove display matches');
 
+// A lookup response arriving AFTER clearing data must never restore contact matches.
+test.state.me={id:uuid(1)};
+test.addDeviceContacts([{name:['Old account contact'],email:['old@example.test']}]);
+test.state.contactPicked.add(0);
+let resolveResponse;
+deferredContactResponse=new Promise(resolve=>{resolveResponse=resolve});
+const pendingCleared=test.runContactLookup();
+assert.equal(test.state.contactBusy,true);
+test.clearDeviceContacts();
+resolveResponse(response([{user_id:uuid(99),handle:'stale',display_name:'Stale Contact'}]));
+await pendingCleared;
+assert.equal(test.state.contacts.length,0);
+assert.equal(test.state.contactMatches.length,0,'Delayed contact results leaked after clear');
+assert.equal(test.state.contactBusy,false,'Clear should release lookup busy state');
+deferredContactResponse=null;
+
+// A response from the previous account must be ignored after switching profiles.
+test.addDeviceContacts([{name:['Previous user'],email:['previous@example.test']}]);
+test.state.contactPicked.add(0);
+deferredContactResponse=new Promise(resolve=>{resolveResponse=resolve});
+const pendingSwitch=test.runContactLookup();
+test.state.me={id:uuid(2)};
+resolveResponse(response([{user_id:uuid(98),handle:'old_account',display_name:'Old Account Match'}]));
+await pendingSwitch;
+assert.equal(test.state.contactMatches.length,0,'Prior account matches surfaced after account switch');
+test.clearDeviceContacts();
+test.state.me={id:uuid(1)};
+deferredContactResponse=null;
+
+// Delayed device picker completion after leaving Connect must not restore contacts.
+let releasePicker;
+fakeNavigator.contacts.select=()=>new Promise(resolve=>{releasePicker=resolve});
+const delayedPicker=$('#v122-pick').onclick();
+test.clearDeviceContacts();
+releasePicker([{name:['Sensitive old contact'],email:['sensitive@example.test']}]);
+await delayedPicker;
+assert.equal(test.state.contacts.length,0,'Picker exposed contacts after workspace data was cleared');
+
 // One simulated participant with eight mocked peers (nine seats including self).
 test.state.room={id:uuid(99)};
 test.state.me={id:uuid(1)};
@@ -125,4 +167,4 @@ test.stopScreen();
 assert.equal(test.state.screen,null);
 assert.equal([...test.state.peers.values()].filter(pc=>pc.__sender.track!==null).length,0);
 
-console.log('CONNECT ISOLATED DEVICE QA PASS: Android picker simulation; iOS/Desktop vCard/CSV; privacy selection; mocked 9-seat audio and 8 screen recipients.');
+console.log('CONNECT ISOLATED DEVICE QA PASS: Android picker simulation; iOS/Desktop vCard/CSV; privacy selection and stale-response isolation; mocked 9-seat audio and 8 screen recipients.');
