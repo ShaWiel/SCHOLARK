@@ -28,7 +28,7 @@ requireAll(ui,['getUserMedia({','video:false','audio:{echoCancellation:true','ge
 for(const forbidden of ['id="v122-camera"','getVideoTracks()?.[0]||null','video:true})','VIDEO MEETING','up to four participants']){
   assert.ok(!ui.includes(forbidden),'Camera UI or old four-person text found: '+forbidden);
 }
-requireAll(ui,["$('[data-report]',host).forEach","$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
+requireAll(ui,["$$('[data-report]',host).forEach","$$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
 requireAll(roadmap,['Priority 3','ARKI','AI Tutor','SFU','TURN'],'Deferred plans');
 for(const forbidden of ['meet.google.com','teams.microsoft.com','join.skype.com','sdk.daily.co','livekit-client']){
   assert.ok(!ui.includes(forbidden),'Connect must not embed a third-party meeting application: '+forbidden);
