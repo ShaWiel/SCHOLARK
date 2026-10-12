@@ -18,7 +18,7 @@ Connect is an **independent SCHOLAVERUM Workspace feature**. Do not redirect or 
 - **No automatic/background sync, no cross-device access without an export, and no persistent address book**. The browser must never silently access the phone's contacts. Selected identifiers only travel via authenticated TLS RPC for a one-time exact match; names and unmatched identifiers are not stored in Connect's tables.
 - Matching requires an independently verified Supabase Auth email or international-format phone number and **separate target opt-in**, default OFF; target email and phone are never returned.
 - RLS-protected usage counter only stores user ID, UTC day, attempts. Maximum 30 identifiers/request and three lookup requests/day, with blocks and existing/pending friend relationships excluded. Authenticated RPCs only.
-- Only user-approved matches get an **Add friend** action; friend requests stay protected by existing block checks and throttling.
+- Only user-approved matches get an **Add friend** action; private contact-only profiles also require an expiring 10-minute server-issued matching grant, so a UUID alone cannot bypass contacts discovery. Existing block checks and throttling still apply.
 - Imported contacts remain in in-memory browser state only; clear on account switch, sign-out and page exit. A native OS-level periodic contacts sync would require separate mobile permissions/integration and is NOT promised in web.
 - Verify Android picker API permission and format, iOS fallback, CSV quoting, folded vCards, verified phone normalization (+country code), opt-in revocation, private RLS, search throttles and cross-account contamination before deploy.
 
