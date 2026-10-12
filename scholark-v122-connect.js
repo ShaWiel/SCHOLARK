@@ -500,7 +500,7 @@
   async function enableIncomingAudio(){
     // Browser autoplay policies can block remote microphone streams until a
     // user gesture. The action is explicitly initiated by the listener.
-    const streams=$('audio[id^="v122-audio-"]');
+    const streams=$$('audio[id^="v122-audio-"]');
     if(!streams.length){status('No incoming audio streams yet.');return false}
     const results=await Promise.allSettled(streams.map(audio=>audio.play()));
     const failed=results.filter(x=>x.status==='rejected').length;
