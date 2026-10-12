@@ -110,7 +110,7 @@ begin
     if sqlerrm like 'Daily contacts search limit%' then quota_denied:=true; else raise; end if;
   end;
   if not quota_denied then raise exception 'Contact enumeration rate limit failed';end if;
-  select attempts into attempts from public.connect_contact_lookup_quota where user_id='00000000-0000-4000-8000-000000000011';
+  select q.attempts into attempts from public.connect_contact_lookup_quota q where q.user_id='00000000-0000-4000-8000-000000000011';
   if attempts<>3 then raise exception 'Contact lookup quota counted % attempts, expected three',attempts;end if;
 
   -- A client cannot request all matches in a giant batch.
