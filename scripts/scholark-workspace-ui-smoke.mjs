@@ -758,7 +758,7 @@ await route('connect','#v122-connect');
 check(await page.locator('#v51-sidebar [data-v51-tool="connect"]').count()===1,'Connect must have one canonical sidebar entry');
 check(await page.locator('#v122-connect').count()===1,'Connect must mount inside the existing Workspace');
 check((await page.locator('#v122-connect').innerText()).includes('Connect'),'Native Connect workspace title missing');
-check(await page.evaluate(()=>window.__SCHOLARK_CONNECT__?.version==='r258-native-connect'),'Connect client did not load through its own route');
+check(await page.evaluate(()=>window.__SCHOLARK_CONNECT__?.version==='r260-audio-nine-connect'),'Connect client did not load through its own route');
 check(await page.locator('iframe[src*="meet.google"],iframe[src*="teams.microsoft"],iframe[src*="skype"]').count()===0,'Connect embeds an external meeting service');
 await route('ai','#v107-ai');
 check(await page.locator('#v107-q').count()===1,'ARKI prompt missing');

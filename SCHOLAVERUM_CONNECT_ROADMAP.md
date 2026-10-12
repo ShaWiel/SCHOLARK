@@ -14,15 +14,25 @@ Connect is an **independent SCHOLAVERUM Workspace feature**. Do not redirect or 
 - Follow-up improvements: native push notifications, typing state, online/offline presence, unread counts, report/moderation workflow, parental and school safeguards
 
 ## Priority 2 — Native meetings and Study Rooms
-Implemented initial small-group **WebRTC mesh**:
-- Create/join using a private, strong invitation code; up to 4 participants
-- Camera and microphone with browser permissions; screen share on supported browsers
+Initial release r258 was a 4-person camera/microphone WebRTC mesh. The proposed r260 transition (not deployed until approved) is **voice-only mesh with optional screen sharing**:
+- Create/join using a private, strong invitation code; up to 9 participants including the host for newly created calls
+- Microphone with browser permissions; **do not request or transmit webcam video**
+- Screen sharing is optional and uses a separate display-media video track; a private room-level 45s lease with 15s renewal lets only one cooperative browser share at once. The token expires after lost connections; a malicious modified browser is outside this guarantee
+- Existing active rooms retain their original cap; new-room default becomes 9 after the r260 database migration
 - Meeting chat, study-room format, collaborative whiteboard and host remove/end controls
 - No automatic recording or AI analysis
 - Only signed-in users with valid invite codes may join; meeting membership governs access
 - WebRTC connectivity currently uses a STUN discovery endpoint. **No dedicated TURN relay or SFU is configured.** Some networks will fail media connectivity even when the room/chat loads.
 - Important next reliability milestone: privately operated or managed TURN, ICE diagnostics, reconnect/rejoin, background resource cleanup, WebSocket-based signaling, multi-device testing and server capacity monitoring.
-- Google Meet-class parity is **not** claimed. For large, reliable group meetings, build a dedicated authenticated SFU media tier, moderation, waiting rooms, participant controls, breakouts, captions, scheduling, consent-based recording, moderation and abuse protection. Design all capacity limits and pricing before relaxing the 4-person cap.
+- Google Meet-class parity is **not** claimed. For large, reliable group meetings, build a dedicated authenticated SFU media tier, moderation, waiting rooms, participant controls, breakouts, captions, scheduling, consent-based recording, moderation and abuse protection. A nine-person audio call with one screensharer still requires up to eight upstream screen streams from the sharer; this is an experimental maximum, not an SLA.
+
+### r260 verification gate
+- Apply the DB migration and frontend release together only after CI/static audit checks.
+- Use at least 9 independent authenticated browsers/devices to test admission: 9th joins, 10th denied, host kick/end, leave/rejoin, duplicate joins.
+- Validate audio-only capture (no camera permission), mute/unmute, browser autoplay restrictions, and one sender's screen reaching eight receivers.
+- Run network tests across desktop/mobile, restricted networks, weak uplinks and NATs; without TURN, some calls will not connect.
+- Measure upstream bandwidth, packet loss, CPU and screen text readability at 7–9 participants.
+- Roll back frontend and reset the new-room default/constraint if serious issues appear; never market 9 as a guaranteed reliable capacity before tests.
 
 ## Priority 3 — Remember for a future phase; do not build now
 The user explicitly requested this phase to be remembered and deferred:
