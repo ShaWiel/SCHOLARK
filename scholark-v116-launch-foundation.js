@@ -88,7 +88,7 @@
       ['study','4 · Study Ahead','Prepare for a field, branch or specialization.',false],
       ['schools','5 · Schools','Find institutions using country-aware public sources.',false]
     ];
-    box.innerHTML='<div class="v116-onboarding-head"><div><h3>Finish setting up SCHOLAVERUM.</h3><p>Five quick steps make the Workspace more useful. Studio AI and Book Studio stay Coming Soon.</p></div><button class="v116-close" type="button" aria-label="Dismiss setup" data-v116-dismiss>×</button></div><div class="v116-steps">'+steps.map(x=>'<button type="button" class="v116-step '+(x[3]?'done':'')+'" data-v116-step="'+x[0]+'"><b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>').join('')+'</div>';
+    box.innerHTML='<div class="v116-onboarding-head"><div><h3>Finish setting up SCHOLAVERUM.</h3><p>Five quick steps make the Workspace more useful. Connect, Studio AI and Book Studio are Coming Soon.</p></div><button class="v116-close" type="button" aria-label="Dismiss setup" data-v116-dismiss>×</button></div><div class="v116-steps">'+steps.map(x=>'<button type="button" class="v116-step '+(x[3]?'done':'')+'" data-v116-step="'+x[0]+'"><b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>').join('')+'</div>';
     $('[data-v116-dismiss]',box).onclick=markOnboardingDone;
     $$('[data-v116-step]',box).forEach(b=>b.onclick=()=>{
       const k=b.dataset.v116Step;
