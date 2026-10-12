@@ -16,6 +16,11 @@ alter table public.connect_rooms
   add column if not exists screen_share_owner uuid,
   add column if not exists screen_share_expires_at timestamptz;
 
+-- Being kicked is not equivalent to leaving voluntarily. A removed participant
+-- must not be able to reclaim their previous seat with the same invite code.
+alter table public.connect_room_members
+  add column if not exists removed_by_host boolean not null default false;
+
 -- Keep the old authenticated invite, active membership, concurrency and
 -- per-room admission checks. The room is row-locked to stop race overfilling.
 create or replace function public.connect_join_room(p_room uuid,p_code text)
@@ -27,6 +32,10 @@ begin
   select * into r from public.connect_rooms where id=p_room for update;
   if r.id is null or not r.active or r.expires_at<=now() or r.invite_code<>p_code then
     raise exception 'Meeting link expired or invalid';
+  end if;
+  if exists(select 1 from public.connect_room_members
+    where room_id=r.id and user_id=u and removed_by_host) then
+    raise exception 'The host removed you from this meeting';
   end if;
   select exists(select 1 from public.connect_room_members where room_id=r.id and user_id=u and left_at is null) into present;
   if not present and (select count(*) from public.connect_room_members where room_id=r.id and left_at is null)>=r.max_participants then
@@ -40,6 +49,32 @@ end $$;
 
 revoke all on function public.connect_join_room(uuid,text) from public,anon;
 grant execute on function public.connect_join_room(uuid,text) to authenticated;
+
+create or replace function public.connect_end_room(p_room uuid,p_kick uuid default null)
+returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
+declare u uuid:=auth.uid();
+begin
+  if u is null or not exists(select 1 from public.connect_rooms
+    where id=p_room and owner_id=u and active and expires_at>now()) then
+    raise exception 'Host only';
+  end if;
+  if p_kick is null then
+    update public.connect_rooms set active=false,screen_share_owner=null,
+      screen_share_expires_at=null where id=p_room;
+  else
+    if p_kick=u then raise exception 'Host cannot remove self; end meeting';end if;
+    update public.connect_room_members
+      set left_at=now(),removed_by_host=true
+      where room_id=p_room and user_id=p_kick and left_at is null;
+    update public.connect_rooms
+      set screen_share_owner=null,screen_share_expires_at=null
+      where id=p_room and screen_share_owner=p_kick;
+  end if;
+  return true;
+end $$;
+
+revoke all on function public.connect_end_room(uuid,uuid) from public,anon;
+grant execute on function public.connect_end_room(uuid,uuid) to authenticated;
 
 -- Room-scoped screen sharing lease: one cooperative, authenticated client
 -- receives the right to publish its display-media track at any moment.
