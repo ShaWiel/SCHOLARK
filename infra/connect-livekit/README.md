@@ -59,16 +59,20 @@ files, browser JS, public tables or screenshots:
 - CONNECT_LIVEKIT_API_SECRET=(generated in livekit.yaml)
 - CONNECT_ALLOWED_ORIGINS=(optional additional allowed exact HTTPS origins)
 
-The Supabase runtime provides SUPABASE_URL + SUPABASE_ANON_KEY. Deploy
-supabase/functions/connect-media-token/index.ts as an Edge Function with
-verify_jwt=true. Do not activate the rollout just because tokens are generated.
+The Supabase runtime provides SUPABASE_URL + SUPABASE_ANON_KEY. Deploy both supabase/functions/connect-media-token/index.ts and
+supabase/functions/connect-media-admin/index.ts as Edge Functions with
+verify_jwt=true. The host moderation function calls LiveKit Twirp RemoveParticipant
+or DeleteRoom with server-side-only admin permissions. Do not activate the rollout just because tokens are generated.
 
 ## Required blockers before live SFU rollout
 1. Provision/verify DNS, TLS, TURN over UDP + TLS; real multi-network calling.
 2. Integrate LiveKit browser track handling (camera/mic/screen, reconnect, remote audio).
-3. **Server-side host moderation**: host removing a participant must call LiveKit
-   RemoveParticipant; ending a room must call DeleteRoom. A database membership change
-   alone cannot immediately eject a malicious WebRTC client, so this is mandatory.
+3. **Server-side host moderation** is staged using the connect-media-admin endpoint,
+   which authenticates the room host and invokes LiveKit RemoveParticipant or
+   DeleteRoom. Verify behavior on the actual self-hosted LiveKit version, including
+   network failures and token reuse. A database membership change alone cannot
+   eject a malicious WebRTC client; a previous 120-second token may still briefly
+   allow reconnection after a kick on self-hosted LiveKit.
 4. Ensure join credentials stop after membership revoked and after room end; validate
    room expiry during ongoing sessions (idle/room cleanup). Rate limit token issuance.
 5. Verify working audio/video with 2–4 devices from separate ISPs, then 10/25/50
