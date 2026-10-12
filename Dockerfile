@@ -43,6 +43,12 @@ COPY scholark-v119-foundation-polish.js /tmp/scholark-v119-foundation-polish.js
 COPY scholark-v120-experience-controls.js /tmp/scholark-v120-experience-controls.js
 COPY scholark-v121-notifications.js /tmp/scholark-v121-notifications.js
 COPY scholark-v122-connect.js /tmp/scholark-v122-connect.js
+COPY scholark-v123-connect-livekit.js /tmp/scholark-v123-connect-livekit.js
+# Package pinned browser SDK locally; never load executable meeting code from a public CDN.
+RUN npm install --prefix /tmp/scholark-livekit --no-save --ignore-scripts --no-audit --no-fund livekit-client@2.22.4 esbuild@0.25.12 \
+    && printf 'import * as LivekitClient from "livekit-client";window.LivekitClient=LivekitClient;\n' > /tmp/scholark-livekit/connect-browser-entry.mjs \
+    && /tmp/scholark-livekit/node_modules/.bin/esbuild /tmp/scholark-livekit/connect-browser-entry.mjs --bundle --minify --platform=browser --format=iife --outfile=/tmp/scholark-livekit-client.umd.min.js \
+    && node --check /tmp/scholark-livekit-client.umd.min.js
 COPY scholark-sw.js /app/scholark-sw.js
 COPY scholark.webmanifest /app/scholark.webmanifest
 COPY scholaverum-logo.webp /tmp/scholaverum-logo.webp
@@ -133,9 +139,9 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#Billed Monthly. Cancel anytime#g; s#For intensive use and maximum AI quality\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $14.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $19.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#Start Plus free trial#Choose Plus#g; s#Start Pro free trial#Choose Pro#g; s#Start 7-day Plus trial#Choose Plus#g; s#Start 7-day Pro trial#Choose Pro#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261011-r258-native-connect\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; cp /tmp/scholark-livekit-client.umd.min.js "$dir/scholark-livekit-client.umd.min.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261011-r258-native-connect\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
     && find /app -type f -name 'scholark-v*.js' ! -name 'scholark-v98-brand-migration.js' -exec sed -i 's#\<SCHOLARK\>#SCHOLAVERUM#g' {} + \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-livekit-client.umd.min.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.
