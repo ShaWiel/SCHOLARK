@@ -72,8 +72,10 @@ jobs:
             -e POSTGRES_DB=connect_qa \
             postgres:16-alpine
           for i in {1..50}; do
-            if docker exec scholark-connect-test-postgres pg_isready -U postgres -d connect_qa >/dev/null 2>&1; then
-              exit 0
+            if docker exec scholark-connect-test-postgres pg_isready -U postgres -d connect_qa >/dev/null 2>&1 \
+              && docker exec scholark-connect-test-postgres psql -AtX -U postgres -d connect_qa -c 'select 1' >/dev/null 2>&1; then
+              sleep 3
+              docker exec scholark-connect-test-postgres psql -AtX -U postgres -d connect_qa -c 'select 1' >/dev/null 2>&1 && exit 0
             fi
             sleep 1
           done
