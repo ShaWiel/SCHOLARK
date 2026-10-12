@@ -53,7 +53,7 @@
   const profileMarkup=()=>'<div class="v122-panel" style="max-width:560px"><h2>Create your Connect profile</h2><p>Choose a unique handle. People can find you by your handle only if you allow it. Your email is never shown.</p>' +
     '<div class="v122-field"><label for="v122-handle">Username</label><input id="v122-handle" class="v122-input" maxlength="24" placeholder="e.g. studybuddy_12" autocomplete="off"></div>' +
     '<div class="v122-field"><label for="v122-name">Display name</label><input id="v122-name" class="v122-input" maxlength="60" placeholder="Your name"></div>' +
-    '<label class="v122-row"><input type="checkbox" id="v122-searchable" checked> Let other users find me</label><div class="v122-row" style="margin-top:15px"><button class="v122-btn lime" id="v122-register">Create Connect profile</button></div></div>';
+    '<label class="v122-row"><input type="checkbox" id="v122-searchable"> Let other users find me</label><div class="v122-row" style="margin-top:15px"><button class="v122-btn lime" id="v122-register">Create Connect profile</button></div></div>';
   function showProfile(){
     const mount=$('#v122-body');if(!mount)return;mount.innerHTML=profileMarkup();
     $('#v122-name').value=clean(state.me?.user_metadata?.full_name||'').slice(0,60);
@@ -344,13 +344,13 @@
     if(!renderBase())return;
     const s=own();if(!s?.access_token||!s?.user?.id){
       if(state.room)await leaveRoom(false);
-      state.me=null;state.profile=null;state.selected=null;state.identities.clear();
+      state.me=null;state.profile=null;state.selected=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[];
       $('#v122-body').innerHTML='<div class="v122-panel"><h2>Sign in to Connect</h2><p>Meetings, friend requests and chat require a verified SCHOLAVERUM account.</p><button class="v122-btn lime" id="v122-signin">Sign in</button></div>';
       $('#v122-signin').onclick=()=>window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return;
     }
     if(state.room&&$('#v122-videos')?.isConnected&&state.me?.id===s.user.id)return;
     const previous=state.me?.id;state.me=s.user;
-    if(previous&&previous!==state.me.id){await leaveRoom(false);state.selected=null;state.profile=null}
+    if(previous&&previous!==state.me.id){await leaveRoom(false);state.selected=null;state.profile=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[]}
     try{
       const rows=await request('connect_identities?select=user_id,handle,display_name,searchable&user_id=eq.'+state.me.id+'&limit=1');
       state.profile=rows?.[0]||null;
