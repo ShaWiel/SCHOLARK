@@ -5,6 +5,7 @@ declare
   room_id uuid:='10000000-0000-4000-8000-000000000001';
   uid uuid; ninth_denied boolean:=false; tenth_denied boolean:=false;
   kicked_denied boolean:=false; quota_denied boolean:=false; cap_denied boolean:=false;
+  private_invite_denied boolean:=false;
 begin
   -- Existing rooms must retain four seats; new rooms default to nine.
   if (select max_participants from public.connect_rooms where id=room_id)<>4 then
@@ -79,6 +80,33 @@ begin
   select count(*) into matches from public.connect_find_contacts(array['person12@example.test'],array[]::text[]);
   if matches<>0 then raise exception 'Unverified target email was disclosed';end if;
 
+  -- Private contact-only profiles cannot be friended by UUID guessing.
+  delete from public.connect_contact_lookup_quota;
+  perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000015',true);
+  perform public.connect_set_contact_discovery(true);
+  perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',true);
+  begin
+    perform public.connect_friend_request('00000000-0000-4000-8000-000000000015');
+  exception when others then
+    if sqlerrm like 'Person not available%' then private_invite_denied:=true;else raise;end if;
+  end;
+  if not private_invite_denied then raise exception 'Private profile request did not require a contacts match';end if;
+  select count(*) into matches from public.connect_find_contacts(
+    array[]::text[],array['+5978110015']::text[]);
+  if matches<>1 then raise exception 'Verified opted-in phone not found';end if;
+  if public.connect_friend_request('00000000-0000-4000-8000-000000000015') is null then
+    raise exception 'Recent verified contact was not addable';
+  end if;
+  if not exists(select 1 from public.connect_contact_match_grants g
+      where g.requester='00000000-0000-4000-8000-000000000011'
+        and g.target='00000000-0000-4000-8000-000000000015'
+        and g.expires_at>now()) then
+    raise exception 'Private contacts match grant missing';
+  end if;
+  if not (select relrowsecurity from pg_class where oid='public.connect_contact_match_grants'::regclass) then
+    raise exception 'Contacts match grants not private';
+  end if;
+
   -- Reset QA quota (simulating next day) for additional security cases.
   delete from public.connect_contact_lookup_quota;
   insert into public.connect_blocks(blocker,blocked)
@@ -134,5 +162,5 @@ begin
   if not (select relrowsecurity from pg_class where oid='public.connect_contact_lookup_quota'::regclass) then
     raise exception 'Contact quota table has RLS disabled';
   end if;
-  raise notice 'CONNECT 9+CONTACT PRIVACY QA PASS: 9 admitted, 10 denied, kicked user rejected, single sharer, verified opt-in, block, revocation, rate limit';
+  raise notice 'CONNECT 9+CONTACT PRIVACY QA PASS: 9 admitted, 10 denied, kicked user rejected, single sharer, verified opt-in, private invitation grant, block, revocation, rate limit';
 end $qa$;
