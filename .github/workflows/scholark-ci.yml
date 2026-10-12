@@ -51,6 +51,7 @@ jobs:
           node --check scripts/scholark-security-smoke.mjs
           node --check scripts/scholark-security-contracts.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
 
   docker-build-and-smoke:
