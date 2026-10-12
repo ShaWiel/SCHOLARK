@@ -41,7 +41,7 @@
     '.v122-compose{display:flex;gap:8px}.v122-compose .v122-input{flex:1}.v122-quiet{font-size:11px;color:#817b8e}' +
     '.v122-videos{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:14px 0}' +
     '.v122-video{background:#17191f;color:#fff;border-radius:16px;overflow:hidden;min-height:180px;position:relative;display:grid;place-items:center}' +
-    '.v122-video video{display:block;width:100%;height:100%;max-height:330px;object-fit:cover;background:#151821}' +
+    '.v122-video video{display:block;width:100%;height:100%;max-height:330px;object-fit:contain;background:#151821}.v122-video video[hidden]{display:none!important}.v122-videos:has(video:not([hidden])) .v122-video:has(video:not([hidden])){grid-column:1/-1;min-height:260px}' +
     '.v122-video span{position:absolute;bottom:8px;left:9px;background:#0009;padding:4px 7px;border-radius:7px;font-size:10px}' +
     '.v122-meetcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:15px}' +
     '.v122-board{width:100%;height:230px;background:#fff;border:1px solid #ddd;border-radius:12px;touch-action:none;cursor:crosshair}' +
@@ -69,7 +69,7 @@
   }
   function renderBase(){
     const host=$('#v51-fallback');if(!host)return false;
-    host.innerHTML='<section id="v122-connect"><div class="v122-row v122-between"><div><span class="v122-quiet">SCHOLAVERUM WORKSPACE</span><h1>Connect</h1><p>Friends, private messages, video meetings and study rooms — all inside SCHOLAVERUM.</p></div><span class="v122-warning">Native calls · up to 4 people · no external meeting apps</span></div><div id="v122-status" role="status" aria-live="polite"></div><div id="v122-body"></div></section>';
+    host.innerHTML='<section id="v122-connect"><div class="v122-row v122-between"><div><span class="v122-quiet">SCHOLAVERUM WORKSPACE</span><h1>Connect</h1><p>Friends, private messages, voice calls and screen sharing — all inside SCHOLAVERUM.</p></div><span class="v122-warning">Voice & screen sharing · up to 4 people · no external apps</span></div><div id="v122-status" role="status" aria-live="polite"></div><div id="v122-body"></div></section>';
     return true;
   }
   async function people(ids){
@@ -94,7 +94,7 @@
     el.innerHTML=(state.requests.length?'<h2>Friend requests</h2>'+state.requests.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>Wants to connect</small></div><div class="v122-row"><button class="v122-btn lime" data-friend-accept="'+esc(x.id)+'">Accept</button><button class="v122-btn alt" data-friend-reject="'+esc(x.id)+'">Decline</button></div></div></div>').join(''):'')+
       '<h2>Your friends</h2>'+(state.friends.length?state.friends.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>@'+esc(state.identities.get(peerId(x))?.handle||'friend')+'</small></div><div class="v122-row"><button class="v122-btn alt" data-chat="'+esc(peerId(x))+'">Message</button><button class="v122-btn alt" data-friend-remove="'+esc(x.id)+'">Remove</button><button class="v122-btn alt" data-friend-report="'+esc(peerId(x))+'">Report</button><button class="v122-btn danger" data-friend-block="'+esc(peerId(x))+'">Block</button></div></div></div>').join(''):'<p>No friends yet. Search for classmates by username.</p>')+
       (state.pending.length?'<h2>Sent requests</h2>'+state.pending.map(x=>'<div class="v122-entry"><b>'+esc(who(peerId(x)))+'</b><small> · Pending</small><button class="v122-btn alt" data-friend-cancel="'+esc(x.id)+'" style="margin-left:9px">Cancel</button></div>').join(''):'');
-    $('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block],[data-friend-report]',el).forEach(btn=>btn.onclick=async()=>{
+    $$('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block],[data-friend-report]',el).forEach(btn=>btn.onclick=async()=>{
       try{
         const id=btn.dataset.friendAccept||btn.dataset.friendReject||btn.dataset.friendRemove||btn.dataset.friendCancel;
         if(btn.dataset.friendReport){await reportUser(btn.dataset.friendReport,'message');return}
@@ -175,34 +175,32 @@
     const host=$('#v122-meeting-content');if(!host)return;
     if(!state.room){
       const qp=new URLSearchParams(location.hash.split('?')[1]||'');
-      host.innerHTML='<div class="v122-grid"><section class="v122-panel"><h2>Create a native meeting</h2><p>Invite people using a private SCHOLAVERUM link. Camera, microphone and screen sharing use your browser’s WebRTC.</p><div class="v122-field"><label>Meeting title</label><input id="v122-room-title" class="v122-input" maxlength="100" value="Study together"></div><div class="v122-field"><label>Meeting type</label><select class="v122-input" id="v122-room-kind"><option value="meeting">Video meeting</option><option value="study">Study room</option></select></div><button class="v122-btn lime" id="v122-create-room">Create meeting</button></section>'+
-      '<section class="v122-panel"><h2>Join a meeting</h2><p>Use an invitation from a friend or an authorized meeting organizer.</p><div class="v122-field"><label>Room ID</label><input class="v122-input" id="v122-join-id" placeholder="Meeting ID"></div><div class="v122-field"><label>Invitation code</label><input class="v122-input" id="v122-join-code" placeholder="Private invitation code"></div><button class="v122-btn" id="v122-join-room">Join meeting</button><p class="v122-warning" style="margin-top:15px">Initial Connect meetings support up to four people. Some networks require a dedicated TURN relay, which is not yet configured.</p></section></div>';
+      host.innerHTML='<div class="v122-grid"><section class="v122-panel"><h2>Create a voice call</h2><p>Invite people using a private SCHOLAVERUM link. Connect uses your microphone for calls and lets you share your screen when you choose. Your camera is never requested.</p><div class="v122-field"><label>Meeting title</label><input id="v122-room-title" class="v122-input" maxlength="100" value="Study together"></div><div class="v122-field"><label>Meeting type</label><select class="v122-input" id="v122-room-kind"><option value="meeting">Voice call</option><option value="study">Study room</option></select></div><button class="v122-btn lime" id="v122-create-room">Create meeting</button></section>'+
+      '<section class="v122-panel"><h2>Join a meeting</h2><p>Use an invitation from a friend or an authorized meeting organizer.</p><div class="v122-field"><label>Room ID</label><input class="v122-input" id="v122-join-id" placeholder="Meeting ID"></div><div class="v122-field"><label>Invitation code</label><input class="v122-input" id="v122-join-code" placeholder="Private invitation code"></div><button class="v122-btn" id="v122-join-room">Join meeting</button><p class="v122-warning" style="margin-top:15px">Voice calls support up to four people. Some networks require a dedicated TURN relay, which is not yet configured.</p></section></div>';
       if(uid(qp.get('room'))&&/^[a-f0-9]{40}$/i.test(qp.get('code')||'')){$('#v122-join-id').value=qp.get('room');$('#v122-join-code').value=qp.get('code')}
       $('#v122-create-room').onclick=async()=>{try{const title=clean($('#v122-room-title').value),kind=$('#v122-room-kind').value;state.room=await rpc('connect_create_room',{p_title:title,p_kind:kind});await enterRoom()}catch(e){handleError(e)}};
       $('#v122-join-room').onclick=async()=>{try{const id=clean($('#v122-join-id').value),code=clean($('#v122-join-code').value);if(!uid(id)||!/^[a-f0-9]{40}$/i.test(code))throw Error('Enter a valid meeting ID and code.');state.room=await rpc('connect_join_room',{p_room:id,p_code:code});await enterRoom()}catch(e){handleError(e)}};
       return;
     }
-    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VIDEO MEETING')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to four participants</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-camera">Turn camera off</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video"><video id="v122-local-video" autoplay muted playsinline></video><span>You</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
+    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VOICE CALL')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to four participants · camera off</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video"><video id="v122-local-video" autoplay muted playsinline hidden></video><span>You</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
     '<div class="v122-meetcols" style="margin-top:15px"><div class="v122-panel"><h2>Participants</h2><div id="v122-participants"></div><p class="v122-quiet">The host can remove a participant. Recording is not enabled.</p></div><div class="v122-panel"><h2>Meeting chat</h2><div class="v122-chat" id="v122-room-chat" style="height:240px;min-height:130px"></div><form class="v122-compose" id="v122-room-chat-form"><input class="v122-input" id="v122-room-chat-input" maxlength="1500" required placeholder="Message everyone…"><button class="v122-btn">Send</button></form></div></div>';
     $('#v122-copy-room').onclick=async()=>{try{await navigator.clipboard.writeText(roomUrl());status('Private meeting link copied.')}catch{status('Copy this meeting link: '+roomUrl())}};
     $('#v122-leave-room').onclick=()=>leaveRoom();
     $('#v122-invite-friend').onclick=async()=>{if(!state.selected)return;try{await rpc('connect_send_message',{p_target:state.selected,p_body:'Join my SCHOLAVERUM meeting: '+roomUrl()});status('Sent a meeting invitation to '+who(state.selected)+'.')}catch(e){handleError(e)}};
     $('#v122-room-chat-form').onsubmit=async e=>{e.preventDefault();const input=$('#v122-room-chat-input'),message=clean(input.value);if(!message)return;try{await rpc('connect_room_message',{p_room:state.room.id,p_body:message});input.value='';await pollRoomChat()}catch(err){handleError(err)}};
     $('#v122-mic').onclick=()=>{const track=state.local?.getAudioTracks()?.[0];if(!track){status('Microphone is not available on this device.',true);return}track.enabled=!track.enabled;$('#v122-mic').textContent=track.enabled?'Mute microphone':'Unmute microphone'};
-    $('#v122-camera').onclick=()=>{const track=state.local?.getVideoTracks()?.[0];if(!track){status('Camera is not available on this device.',true);return}track.enabled=!track.enabled;$('#v122-camera').textContent=track.enabled?'Turn camera off':'Turn camera on'};
     $('#v122-screen').onclick=shareScreen;
     $('#v122-board-toggle').onclick=()=>{const target=$('#v122-board-wrap');target.hidden=!target.hidden;state.whiteboard=!target.hidden;if(!target.hidden)wireBoard()};
     $('#v122-board-clear').onclick=()=>{const c=$('#v122-board');c?.getContext('2d')?.clearRect(0,0,c.width,c.height)};
     renderMembers();
-    const vid=$('#v122-local-video');if(vid&&state.local)vid.srcObject=state.local;
+    const vid=$('#v122-local-video');if(vid){vid.hidden=!state.screen;vid.srcObject=state.screen||null}const screenBtn=$('#v122-screen');if(screenBtn&&state.screen)screenBtn.textContent='Stop sharing';
   }
   async function enterRoom(){
     state.signalSeen=0;state.chatSeen=0;state.peers.clear();setTab('meetings');renderMeeting();
-    try{state.local=await navigator.mediaDevices.getUserMedia({audio:true,video:true})}
-    catch(e){try{state.local=await navigator.mediaDevices.getUserMedia({audio:true,video:false})}
-      catch{try{state.local=await navigator.mediaDevices.getUserMedia({audio:false,video:true})}
-        catch{state.mediaError='Camera/microphone permission denied. You can still use meeting chat.'}}}
-    const v=$('#v122-local-video');if(v&&state.local)v.srcObject=state.local;
+    // Voice-only by design: never request camera access (not even as a fallback).
+    state.mediaError='';state.local=null;
+    try{state.local=await navigator.mediaDevices.getUserMedia({audio:true,video:false})}
+    catch{state.mediaError='Microphone unavailable. Meeting chat and screen sharing may still work.'}
     if(state.mediaError)status(state.mediaError,true);
     await syncRoom();await pollSignals();await pollRoomChat();
     stopTimers();state.timers=[
@@ -226,14 +224,14 @@
       }
       for(const [other,p] of state.peers){if(!members.some(m=>m.user_id===other)){p.close();state.peers.delete(other);$('#v122-remote-'+other)?.remove()}}
       renderMembers();
-      const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Chat-only on this device':'WebRTC media enabled');
+      const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Microphone unavailable · screen sharing may work':'Voice enabled · screen sharing available');
     }finally{state.roomBusy=false}
   }
   function renderMembers(){
     const host=$('#v122-participants');if(!host||!state.room)return;
     host.innerHTML=state.members.map(m=>'<div class="v122-entry v122-row v122-between"><span><b>'+esc(who(m.user_id))+'</b> <small>'+(m.user_id===state.room.owner_id?'Host':m.user_id===state.me.id?'You':'Participant')+'</small></span>'+(m.user_id!==state.me.id?'<div class="v122-row"><button class="v122-btn alt" data-report="'+esc(m.user_id)+'">Report</button>'+(state.room.owner_id===state.me.id?'<button class="v122-btn danger" data-kick="'+esc(m.user_id)+'">Remove</button>':'')+'</div>':'')+'</div>').join('')||'<p>Waiting for participants…</p>';
-    $('[data-report]',host).forEach(b=>b.onclick=()=>void reportUser(b.dataset.report,'meeting'));
-    $('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
+    $$('[data-report]',host).forEach(b=>b.onclick=()=>void reportUser(b.dataset.report,'meeting'));
+    $$('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
   }
   async function signal(to,kind,payload){
     if(!state.room||!uid(to))return;
@@ -244,14 +242,29 @@
     if(state.peers.has(id))return state.peers.get(id);
     const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'}],bundlePolicy:'balanced'});
     state.peers.set(id,pc);
-    for(const track of state.local?.getTracks()||[])pc.addTrack(track,state.local);
-    // Keep data-only rooms negotiable when device permissions are unavailable.
-    if(!state.local?.getTracks().length)pc.createDataChannel('scholaverum-sync');
+    const audioTracks=state.local?.getAudioTracks?.()||[];
+    for(const track of audioTracks)pc.addTrack(track,state.local);
+    // Negotiate a video transceiver without opening a camera. Later, replaceTrack
+    // sends an explicitly selected screen without an SDP renegotiation race.
+    const screenTransceiver=pc.addTransceiver('video',{direction:'sendrecv'});
+    pc.__connectScreenSender=screenTransceiver.sender;
+    const activeScreen=state.screen?.getVideoTracks()?.[0];
+    if(activeScreen)await screenTransceiver.sender.replaceTrack(activeScreen);
+    if(!audioTracks.length)pc.createDataChannel('scholaverum-sync');
     pc.onicecandidate=e=>{if(e.candidate)void signal(id,'ice',e.candidate.toJSON()).catch(()=>{})};
     pc.ontrack=e=>{
-      let container=$('#v122-remote-'+id),video;
-      if(!container){container=document.createElement('div');container.className='v122-video';container.id='v122-remote-'+id;container.innerHTML='<video autoplay playsinline></video><span>'+esc(who(id))+'</span>';$('#v122-videos')?.appendChild(container)}
-      video=$('video',container);if(video){video.srcObject=e.streams[0]||new MediaStream([e.track]);void video.play().catch(()=>{})}
+      let container=$('#v122-remote-'+id);
+      if(!container){container=document.createElement('div');container.className='v122-video';container.id='v122-remote-'+id;container.innerHTML='<video autoplay playsinline hidden></video><audio autoplay playsinline></audio><span>'+esc(who(id))+'</span>';$('#v122-videos')?.appendChild(container)}
+      // Audio is independent of the optional screen stream. Do not treat a
+      // voice track as a video tile or require a camera to play remote audio.
+      if(e.track.kind==='audio'){
+        const audio=$('audio',container);if(audio){audio.srcObject=new MediaStream([e.track]);void audio.play().catch(()=>status('Tap the meeting to allow audio playback.'))}
+      }else if(e.track.kind==='video'){
+        const video=$('video',container);if(!video)return;
+        video.srcObject=new MediaStream([e.track]);
+        const update=()=>{video.hidden=e.track.muted||e.track.readyState==='ended';if(!video.hidden)void video.play().catch(()=>{})};
+        e.track.onmute=update;e.track.onunmute=update;e.track.onended=update;update();
+      }
     };
     pc.onconnectionstatechange=()=>{const row=$('#v122-remote-'+id);if(row)row.title='Connection: '+pc.connectionState};
     if(offer){
@@ -303,24 +316,34 @@
   async function shareScreen(){
     if(!state.room)return;
     if(state.screen){stopScreen();return}
+    let screen=null;
     try{
-      const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
-      const track=screen.getVideoTracks()[0];if(!track)throw Error('No screen track');
+      if(!navigator.mediaDevices?.getDisplayMedia)throw Error('Screen sharing is not supported by this browser.');
+      // getDisplayMedia is invoked only by the participant clicking Share screen.
+      screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      const track=screen.getVideoTracks()[0];if(!track)throw Error('No screen track available.');
       state.screen=screen;
-      for(const [peerId,pc] of state.peers){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)await sender.replaceTrack(track);
-        else{pc.addTrack(track,screen);const offer=await pc.createOffer();await pc.setLocalDescription(offer);await signal(peerId,'offer',{type:'offer',sdp:pc.localDescription?.sdp})}}
-      const local=$('#v122-local-video');if(local)local.srcObject=screen;
-      const btn=$('#v122-screen');if(btn)btn.textContent='Stop sharing';
       track.onended=()=>stopScreen();
-    }catch(e){handleError(e)}
+      let failures=0;
+      for(const pc of state.peers.values()){
+        try{if(!pc.__connectScreenSender)throw Error('Peer has no screen sender');await pc.__connectScreenSender.replaceTrack(track)}
+        catch{failures++}
+      }
+      const local=$('#v122-local-video');if(local){local.srcObject=screen;local.hidden=false;void local.play().catch(()=>{})}
+      const btn=$('#v122-screen');if(btn)btn.textContent='Stop sharing';
+      status(failures?'Screen sharing is active, but some participants could not receive it.':'You are sharing your screen.');
+    }catch(e){
+      if(state.screen===screen)stopScreen();
+      else for(const track of screen?.getTracks()||[])track.stop();
+      handleError(e);
+    }
   }
   function stopScreen(){
     if(!state.screen)return;
-    for(const track of state.screen.getTracks())track.stop();
-    state.screen=null;
-    const camera=state.local?.getVideoTracks()?.[0]||null;
-    for(const pc of state.peers.values()){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)void sender.replaceTrack(camera).catch(()=>{})}
-    const v=$('#v122-local-video');if(v)v.srcObject=state.local;
+    const previous=state.screen;state.screen=null;
+    for(const pc of state.peers.values())if(pc.__connectScreenSender)void pc.__connectScreenSender.replaceTrack(null).catch(()=>{});
+    for(const track of previous.getTracks())track.stop();
+    const v=$('#v122-local-video');if(v){v.srcObject=null;v.hidden=true}
     const btn=$('#v122-screen');if(btn)btn.textContent='Share screen';
   }
   function drawSegment(p){
@@ -384,5 +407,5 @@
   setInterval(()=>{if(document.hidden||!location.hash.startsWith('#connect')||!state.profile)return;
     if(!state.room){void refresh().then(renderFriends).catch(()=>{});if(state.selected)void loadDM()}
   },7000);
-  window.__SCHOLARK_CONNECT__={open,leaveRoom,version:'r258-native-connect',getState:()=>({signedIn:!!state.me,profile:!!state.profile,friends:state.friends.length,meeting:!!state.room,participants:state.members.length})};
+  window.__SCHOLARK_CONNECT__={open,leaveRoom,version:'r260-voice-screen',getState:()=>({signedIn:!!state.me,profile:!!state.profile,friends:state.friends.length,meeting:!!state.room,participants:state.members.length})};
 })();
