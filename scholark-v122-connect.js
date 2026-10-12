@@ -244,11 +244,23 @@
       const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Chat-only on this device':state.room.media_mode==='sfu'?'SFU / TURN media':'WebRTC media enabled');
     }finally{state.roomBusy=false}
   }
+  async function mediaControl(action,target){
+    if(state.room?.media_mode!=='sfu')return;
+    const session=own();if(!session?.access_token)throw Error('Sign in again before managing the meeting.');
+    const r=await fetch(SB+'/functions/v1/connect-media-admin',{
+      method:'POST',
+      headers:{apikey:KEY,authorization:'Bearer '+session.access_token,
+        'content-type':'application/json','accept':'application/json'},
+      cache:'no-store',
+      body:JSON.stringify({room_id:state.room.id,action,target_id:target||null}),
+    });
+    if(!r.ok)throw Error('Could not confirm the action with the SCHOLAVERUM media server. Try again.');
+  }
   function renderMembers(){
     const host=$('#v122-participants');if(!host||!state.room)return;
     host.innerHTML=state.members.map(m=>'<div class="v122-entry v122-row v122-between"><span><b>'+esc(who(m.user_id))+'</b> <small>'+(m.user_id===state.room.owner_id?'Host':m.user_id===state.me.id?'You':'Participant')+'</small></span>'+(m.user_id!==state.me.id?'<div class="v122-row"><button class="v122-btn alt" data-report="'+esc(m.user_id)+'">Report</button>'+(state.room.owner_id===state.me.id?'<button class="v122-btn danger" data-kick="'+esc(m.user_id)+'">Remove</button>':'')+'</div>':'')+'</div>').join('')||'<p>Waiting for participants…</p>';
     $('[data-report]',host).forEach(b=>b.onclick=()=>void reportUser(b.dataset.report,'meeting'));
-    $('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
+    $('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await mediaControl('kick',b.dataset.kick);await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
   }
   async function signal(to,kind,payload){
     if(!state.room||!uid(to))return;
@@ -367,13 +379,17 @@
   function stopTimers(){for(const t of state.timers)clearInterval(t);state.timers=[]}
   async function leaveRoom(write=true){
     const room=state.room;if(!room)return;
+    let mediaEndFailed=false;
+    if(write&&room.media_mode==='sfu'&&room.owner_id===state.me?.id){
+      try{await mediaControl('end')}catch(e){mediaEndFailed=true;handleError(e)}
+    }
     stopTimers();stopScreen();if(state.sfu){state.sfu.disconnect();state.sfu=null;}
     for(const [id,pc] of state.peers){pc.close();if(write)void signal(id,'bye',{}).catch(()=>{})}
     state.peers.clear();
     for(const track of state.local?.getTracks()||[])track.stop();state.local=null;
     state.room=null;state.members=[];state.mediaError='';
     if(write)try{await rpc('connect_leave_room',{p_room:room.id})}catch(e){handleError(e)}
-    renderMeeting();status(write?'You left the meeting.':'The meeting is no longer available.');
+    renderMeeting();status(mediaEndFailed?'Meeting closed, but SFU shutdown could not be confirmed. Contact support if participants remain connected.':write?'You left the meeting.':'The meeting is no longer available.',mediaEndFailed);
   }
   async function open(){
     const s=own();
