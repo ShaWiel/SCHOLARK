@@ -586,7 +586,7 @@
     }catch(e){handleError(e)}
   }
   window.addEventListener('scholark:auth-changed',()=>{if(location.hash.startsWith('#connect'))void open();else if(state.room)void leaveRoom(false)});
-  window.addEventListener('scholark-workspace-change',e=>{if(state.room&&e.detail?.to!=='connect')void leaveRoom()});
+  window.addEventListener('scholark-workspace-change',e=>{if(e.detail?.to!=='connect')clearDeviceContacts();if(state.room&&e.detail?.to!=='connect')void leaveRoom()});
   window.addEventListener('pagehide',()=>{clearDeviceContacts();stopTimers();stopScreen();for(const pc of state.peers.values())pc.close();for(const track of state.local?.getTracks()||[])track.stop()});
   window.addEventListener('hashchange',()=>{if(state.room&&!location.hash.startsWith('#connect'))void leaveRoom()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.selected&&location.hash.startsWith('#connect'))void loadDM()});
