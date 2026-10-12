@@ -13,6 +13,15 @@ Connect is an **independent SCHOLAVERUM Workspace feature**. Do not redirect or 
 - Request rate limits, private profile discovery rules and chat text sanitization
 - Follow-up improvements: native push notifications, typing state, online/offline presence, unread counts, report/moderation workflow, parental and school safeguards
 
+### r261 optional contacts discovery (draft, not deployed)
+- Signed-in users can explicitly select individual contacts through the Contact Picker API when supported (usually Chromium-based Android), or locally import an exported .vcf/.csv file on desktop and other devices.
+- **No automatic/background sync, no cross-device access without an export, and no persistent address book**. The browser must never silently access the phone's contacts. Selected identifiers only travel via authenticated TLS RPC for a one-time exact match; names and unmatched identifiers are not stored in Connect's tables.
+- Matching requires an independently verified Supabase Auth email or international-format phone number and **separate target opt-in**, default OFF; target email and phone are never returned.
+- RLS-protected usage counter only stores user ID, UTC day, attempts. Maximum 30 identifiers/request and three lookup requests/day, with blocks and existing/pending friend relationships excluded. Authenticated RPCs only.
+- Only user-approved matches get an **Add friend** action; friend requests stay protected by existing block checks and throttling.
+- Imported contacts remain in in-memory browser state only; clear on account switch, sign-out and page exit. A native OS-level periodic contacts sync would require separate mobile permissions/integration and is NOT promised in web.
+- Verify Android picker API permission and format, iOS fallback, CSV quoting, folded vCards, verified phone normalization (+country code), opt-in revocation, private RLS, search throttles and cross-account contamination before deploy.
+
 ## Priority 2 — Native meetings and Study Rooms
 Initial release r258 was a 4-person camera/microphone WebRTC mesh. The proposed r260 transition (not deployed until approved) is **voice-only mesh with optional screen sharing**:
 - Create/join using a private, strong invitation code; up to 9 participants including the host for newly created calls
