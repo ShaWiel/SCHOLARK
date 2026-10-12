@@ -60,7 +60,7 @@ Deno.serve(async(req:Request)=>{
       return response(req,403,{error:'host_only'});
     if(action==='kick'&&target===user.data.id)return response(req,400,{error:'host_cannot_kick_self'});
     const roomName='scholaverum_'+room,now=Math.floor(Date.now()/1000);
-    const grant=action==='end'?{roomCreate:true}:{roomAdmin:true,room:roomName};
+    const grant={roomAdmin:true,room:roomName};
     const jwt=await sign({iss:KEY,sub:user.data.id,iat:now,nbf:now-5,exp:now+60,video:grant});
     apiUrl.protocol='https:';
     apiUrl.pathname='/twirp/livekit.RoomService/'+(action==='end'?'DeleteRoom':'RemoveParticipant');
