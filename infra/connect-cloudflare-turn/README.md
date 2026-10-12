@@ -67,8 +67,10 @@ https://developers.cloudflare.com/realtime/sfu/platform/pricing/
 
 ## Current state
 
-As of 12 Oct 2026: **GitHub draft PR only; no Cloudflare TURN key configured,
-no TURN vendor activated, no production Supabase migration or Edge deployment
-claimed.** The current production client continues to use STUN and four-person rooms.
+As of 12 Oct 2026: **the r262 authorization migration and the JWT-protected
+`connect-turn-ice` Edge Function (version 1) are now deployed in Supabase**.
+The function remains **disabled** because no Cloudflare TURN key or private API
+token has been configured. No paid TURN service or production media relay has
+been activated. The production SCHOLAVERUM client still uses STUN and four-person rooms.
 Do not merge or release r262 unless the provider credentials are available and
 all release checks are green.
