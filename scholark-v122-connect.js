@@ -8,7 +8,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const clean=s=>String(s??'').trim();
   const uid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
-  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],room:null,members:[],peers:new Map(),local:null,screen:null,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
+  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
   const own=()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||null;
   const header=()=>{const s=own();if(!s?.access_token)throw Error('Sign in to use SCHOLAVERUM Connect.');return {apikey:KEY,authorization:'Bearer '+s.access_token,accept:'application/json','content-type':'application/json'}};
   async function request(path,method='GET',body){
@@ -177,13 +177,13 @@
     if(!state.room){
       const qp=new URLSearchParams(location.hash.split('?')[1]||'');
       host.innerHTML='<div class="v122-grid"><section class="v122-panel"><h2>Create a voice call</h2><p>Invite friends using a private SCHOLAVERUM link. Calls use your microphone only; you can share your screen when needed.</p><div class="v122-field"><label>Meeting title</label><input id="v122-room-title" class="v122-input" maxlength="100" value="Study together"></div><div class="v122-field"><label>Meeting type</label><select class="v122-input" id="v122-room-kind"><option value="meeting">Voice call</option><option value="study">Study room</option></select></div><button class="v122-btn lime" id="v122-create-room">Create meeting</button></section>'+
-      '<section class="v122-panel"><h2>Join a meeting</h2><p>Use an invitation from a friend or an authorized meeting organizer.</p><div class="v122-field"><label>Room ID</label><input class="v122-input" id="v122-join-id" placeholder="Meeting ID"></div><div class="v122-field"><label>Invitation code</label><input class="v122-input" id="v122-join-code" placeholder="Private invitation code"></div><button class="v122-btn" id="v122-join-room">Join meeting</button><p class="v122-warning" style="margin-top:15px">Voice calls support up to eight people, including the host. Screen sharing uses extra upload bandwidth. Some networks need TURN, which is not yet configured.</p></section></div>';
+      '<section class="v122-panel"><h2>Join a meeting</h2><p>Use an invitation from a friend or an authorized meeting organizer.</p><div class="v122-field"><label>Room ID</label><input class="v122-input" id="v122-join-id" placeholder="Meeting ID"></div><div class="v122-field"><label>Invitation code</label><input class="v122-input" id="v122-join-code" placeholder="Private invitation code"></div><button class="v122-btn" id="v122-join-room">Join meeting</button><p class="v122-warning" style="margin-top:15px">Voice calls support up to nine people, including the host. Screen sharing uses extra upload bandwidth. Some networks need TURN, which is not yet configured.</p></section></div>';
       if(uid(qp.get('room'))&&/^[a-f0-9]{40}$/i.test(qp.get('code')||'')){$('#v122-join-id').value=qp.get('room');$('#v122-join-code').value=qp.get('code')}
       $('#v122-create-room').onclick=async()=>{try{const title=clean($('#v122-room-title').value),kind=$('#v122-room-kind').value;state.room=await rpc('connect_create_room',{p_title:title,p_kind:kind});await enterRoom()}catch(e){handleError(e)}};
       $('#v122-join-room').onclick=async()=>{try{const id=clean($('#v122-join-id').value),code=clean($('#v122-join-code').value);if(!uid(id)||!/^[a-f0-9]{40}$/i.test(code))throw Error('Enter a valid meeting ID and code.');state.room=await rpc('connect_join_room',{p_room:id,p_code:code});await enterRoom()}catch(e){handleError(e)}};
       return;
     }
-    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VOICE CALL')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to '+Number(state.room.max_participants||8)+' participants</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video" hidden><video id="v122-local-video" autoplay muted playsinline></video><span>Your screen</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
+    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VOICE CALL')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to '+Number(state.room.max_participants||9)+' participants</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video" hidden><video id="v122-local-video" autoplay muted playsinline></video><span>Your screen</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
     '<div class="v122-meetcols" style="margin-top:15px"><div class="v122-panel"><h2>Participants</h2><div id="v122-participants"></div><p class="v122-quiet">The host can remove a participant. Recording is not enabled.</p></div><div class="v122-panel"><h2>Meeting chat</h2><div class="v122-chat" id="v122-room-chat" style="height:240px;min-height:130px"></div><form class="v122-compose" id="v122-room-chat-form"><input class="v122-input" id="v122-room-chat-input" maxlength="1500" required placeholder="Message everyone…"><button class="v122-btn">Send</button></form></div></div>';
     $('#v122-copy-room').onclick=async()=>{try{await navigator.clipboard.writeText(roomUrl());status('Private meeting link copied.')}catch{status('Copy this meeting link: '+roomUrl())}};
     $('#v122-leave-room').onclick=()=>leaveRoom();
@@ -207,24 +207,42 @@
     stopTimers();state.timers=[
       setInterval(()=>{void syncRoom().catch(handleError)},2200),
       setInterval(()=>{void pollSignals().catch(handleError)},800),
-      setInterval(()=>{void pollRoomChat().catch(handleError)},3000)
+      setInterval(()=>{void pollRoomChat().catch(handleError)},3000),
+      setInterval(()=>{if(!state.room||!state.screen)return;const id=state.room.id;
+        void rpc('connect_screen_share',{p_room:id,p_action:'renew'}).then(ok=>{
+          if(state.room?.id===id&&state.screen&&!ok){
+            stopScreen();status('Screen sharing stopped because your permission expired.',true)
+          }
+        }).catch(()=>{
+          if(state.room?.id===id&&state.screen){
+            stopScreen();status('Screen sharing stopped because authorization could not be renewed.',true)
+          }
+        });
+      },15000)
     ];
   }
   async function syncRoom(){
     if(!state.room||state.roomBusy)return;state.roomBusy=true;
     try{
       const id=state.room.id;
-      const rows=await request('connect_rooms?select=id,active,expires_at&id=eq.'+id+'&limit=1');
+      const rows=await request('connect_rooms?select=id,active,expires_at,screen_share_owner,screen_share_expires_at&id=eq.'+id+'&limit=1');
       if(!state.room||state.room.id!==id)return;
       if(!rows?.[0]?.active||new Date(rows[0].expires_at).getTime()<=Date.now()){status('This meeting has ended.');await leaveRoom(false);return}
       const members=await request('connect_room_members?select=user_id,joined_at&room_id=eq.'+id+'&left_at=is.null');
       if(!members.some(x=>x.user_id===state.me.id)){status('The host removed you from this meeting.',true);await leaveRoom(false);return}
-      state.members=members;await people(members.map(x=>x.user_id));
+      state.members=members;
+      const leaseExpiry=new Date(rows[0].screen_share_expires_at||0).getTime();
+      state.screenOwner=leaseExpiry>Date.now()?rows[0].screen_share_owner:null;
+      state.screenLeaseUntil=leaseExpiry;
+      if(state.screen&&state.screenOwner&&state.screenOwner!==state.me.id){
+        stopScreen();status('Another participant has the screen share slot.',true);
+      }
+      await people(members.map(x=>x.user_id));
       for(const m of members){if(m.user_id===state.me.id)continue;
         if(!state.peers.has(m.user_id)&&state.me.id<m.user_id)void peer(m.user_id,true).catch(handleError);
       }
       for(const [other,p] of state.peers){if(!members.some(m=>m.user_id===other)){p.close();state.peers.delete(other);$('#v122-remote-'+other)?.remove();$('#v122-audio-'+other)?.remove()}}
-      renderMembers();
+      renderMembers();updateScreenShareControl();
       const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Microphone unavailable':'Voice call · screen sharing available');
     }finally{state.roomBusy=false}
   }
@@ -245,7 +263,7 @@
     state.peers.set(id,pc);
     for(const track of state.local?.getAudioTracks()||[])pc.addTrack(track,state.local);
     // Negotiate a video m-line without a camera. Screen sharing can then start or stop
-    // with replaceTrack and does not require offers from all seven recipients.
+    // with replaceTrack and does not require offers from the other eight recipients.
     pc.__screenSender=pc.addTransceiver('video',{direction:'sendrecv'}).sender;
     const sharing=state.screen?.getVideoTracks()?.[0];
     if(sharing)await pc.__screenSender.replaceTrack(sharing);
@@ -318,29 +336,67 @@
       if(bottom)host.scrollTop=host.scrollHeight;
     }finally{state.roomChatBusy=false}
   }
+  function updateScreenShareControl(){
+    const btn=$('#v122-screen');if(!btn)return;
+    const occupied=!!state.screenOwner&&state.screenOwner!==state.me?.id&&state.screenLeaseUntil>Date.now();
+    btn.disabled=!!state.screenBusy||(!state.screen&&occupied);
+    btn.textContent=state.screen?'Stop sharing':state.screenBusy?'Starting screen share…':occupied?'Another person is sharing':'Share screen';
+  }
   async function shareScreen(){
-    if(!state.room)return;
+    if(!state.room||state.screenBusy)return;
     if(state.screen){stopScreen();return}
+    if(state.screenOwner&&state.screenOwner!==state.me?.id&&state.screenLeaseUntil>Date.now()){
+      status('Only one participant can share their screen at a time.',true);return;
+    }
+    if(typeof navigator.mediaDevices?.getDisplayMedia!=='function'){
+      status('This browser does not support screen sharing.',true);return;
+    }
+    const id=state.room.id;
+    let captured=null,claimed=false;
+    state.screenBusy=true;updateScreenShareControl();
     try{
-      const screen=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:10,max:12}},audio:false});
-      const track=screen.getVideoTracks()[0];if(!track)throw Error('No screen track');
-      state.screen=screen;
-      const updates=await Promise.allSettled([...state.peers.values()].map(pc=>pc.__screenSender?.replaceTrack(track)||Promise.resolve()));
-      const local=$('#v122-local-video');if(local)local.srcObject=screen;
+      // getDisplayMedia must be initiated by the user click, before any await.
+      captured=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:10,max:12}},audio:false});
+      const track=captured.getVideoTracks()[0];if(!track)throw Error('No screen track');
+      if(state.room?.id!==id){for(const t of captured.getTracks())t.stop();return}
+      claimed=await rpc('connect_screen_share',{p_room:id,p_action:'claim'});
+      if(!claimed){
+        status('Another participant is already sharing their screen.',true);
+        for(const t of captured.getTracks())t.stop();return;
+      }
+      if(state.room?.id!==id){
+        for(const t of captured.getTracks())t.stop();
+        void rpc('connect_screen_share',{p_room:id,p_action:'release'}).catch(()=>{});
+        return;
+      }
+      state.screen=captured;state.screenOwner=state.me.id;
+      state.screenLeaseUntil=Date.now()+45000;
+      const results=await Promise.allSettled([...state.peers.values()].map(pc=>pc.__screenSender?.replaceTrack(track)||Promise.resolve()));
+      const local=$('#v122-local-video');if(local)local.srcObject=captured;
       const ownTile=$('#v122-own-video');if(ownTile)ownTile.hidden=false;
-      if(updates.some(x=>x.status==='rejected'))status('Some participants may not see your shared screen. Check connection quality.',true);
-      const btn=$('#v122-screen');if(btn)btn.textContent='Stop sharing';
+      if(results.some(x=>x.status==='rejected')){
+        status('Some participants may not see your shared screen. Check connection quality.',true);
+      }
       track.onended=()=>stopScreen();
-    }catch(e){handleError(e)}
+    }catch(e){
+      if(captured&&!state.screen)for(const track of captured.getTracks())track.stop();
+      if(claimed&&!state.screen)void rpc('connect_screen_share',{p_room:id,p_action:'release'}).catch(()=>{});
+      handleError(e);
+    }finally{state.screenBusy=false;updateScreenShareControl()}
   }
   function stopScreen(){
     if(!state.screen)return;
+    const roomId=state.room?.id;
     for(const track of state.screen.getTracks())track.stop();
     state.screen=null;
     for(const pc of state.peers.values())if(pc.__screenSender)void pc.__screenSender.replaceTrack(null).catch(()=>{});
-    const v=$('#v122-local-video');if(v)v.srcObject=null;
+    const local=$('#v122-local-video');if(local)local.srcObject=null;
     const ownTile=$('#v122-own-video');if(ownTile)ownTile.hidden=true;
-    const btn=$('#v122-screen');if(btn)btn.textContent='Share screen';
+    if(state.screenOwner===state.me?.id)state.screenOwner=null;
+    state.screenLeaseUntil=0;
+    updateScreenShareControl();
+    // Lease expires even if the network drops before this RPC can finish.
+    if(roomId)void rpc('connect_screen_share',{p_room:roomId,p_action:'release'}).catch(()=>{});
   }
   function drawSegment(p){
     const canvas=$('#v122-board');if(!canvas||!p)return;
@@ -368,7 +424,7 @@
     for(const [id,pc] of state.peers){pc.close();if(write)void signal(id,'bye',{}).catch(()=>{})}
     state.peers.clear();
     for(const track of state.local?.getTracks()||[])track.stop();state.local=null;
-    state.room=null;state.members=[];state.mediaError='';
+    state.room=null;state.members=[];state.screenOwner=null;state.screenLeaseUntil=0;state.mediaError='';
     if(write)try{await rpc('connect_leave_room',{p_room:room.id})}catch(e){handleError(e)}
     renderMeeting();status(write?'You left the meeting.':'The meeting is no longer available.');
   }
@@ -403,5 +459,5 @@
   setInterval(()=>{if(document.hidden||!location.hash.startsWith('#connect')||!state.profile)return;
     if(!state.room){void refresh().then(renderFriends).catch(()=>{});if(state.selected)void loadDM()}
   },7000);
-  window.__SCHOLARK_CONNECT__={open,leaveRoom,version:'r260-audio-eight-connect',getState:()=>({signedIn:!!state.me,profile:!!state.profile,friends:state.friends.length,meeting:!!state.room,participants:state.members.length})};
+  window.__SCHOLARK_CONNECT__={open,leaveRoom,version:'r260-audio-nine-connect',getState:()=>({signedIn:!!state.me,profile:!!state.profile,friends:state.friends.length,meeting:!!state.room,participants:state.members.length})};
 })();
