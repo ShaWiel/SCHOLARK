@@ -45,8 +45,9 @@ COPY scholark-v121-notifications.js /tmp/scholark-v121-notifications.js
 COPY scholark-v122-connect.js /tmp/scholark-v122-connect.js
 COPY scholark-v123-connect-livekit.js /tmp/scholark-v123-connect-livekit.js
 # Package pinned browser SDK locally; never load executable meeting code from a public CDN.
-RUN npm install --prefix /tmp/scholark-livekit --no-save --ignore-scripts --no-audit --no-fund livekit-client@2.22.4 \
-    && cp /tmp/scholark-livekit/node_modules/livekit-client/dist/livekit-client.umd.min.js /tmp/scholark-livekit-client.umd.min.js \
+RUN npm install --prefix /tmp/scholark-livekit --no-save --ignore-scripts --no-audit --no-fund livekit-client@2.22.4 esbuild@0.25.12 \
+    && printf 'import * as LivekitClient from "livekit-client";window.LivekitClient=LivekitClient;\n' > /tmp/scholark-livekit/connect-browser-entry.mjs \
+    && /tmp/scholark-livekit/node_modules/.bin/esbuild /tmp/scholark-livekit/connect-browser-entry.mjs --bundle --minify --platform=browser --format=iife --outfile=/tmp/scholark-livekit-client.umd.min.js \
     && node --check /tmp/scholark-livekit-client.umd.min.js
 COPY scholark-sw.js /app/scholark-sw.js
 COPY scholark.webmanifest /app/scholark.webmanifest
