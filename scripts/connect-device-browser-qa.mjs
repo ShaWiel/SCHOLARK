@@ -69,7 +69,7 @@ for(const scenario of cases){
     assert.equal(await page.locator('input[data-contact="0"]').isChecked(),false,scenario.name+' must not auto-select');
     await page.locator('input[data-contact="0"]').check();
     await page.locator('#v122-search-contacts').click();
-    await page.waitForFunction(()=>window.__CALL_LOOKUP__?.some(c=>c.url.endsWith('/rpc/connect_find_contacts')));
+    await page.waitForFunction(()=>window.__CONNECT_BROWSER_QA__.state.contactMatches.length===1);
     const data=await page.evaluate(()=>{
       const r=window.__CALL_LOOKUP__.find(c=>c.url.endsWith('/rpc/connect_find_contacts'));
       return {json:JSON.parse(r.body),remaining:window.__CONNECT_BROWSER_QA__.state.contacts.length,
