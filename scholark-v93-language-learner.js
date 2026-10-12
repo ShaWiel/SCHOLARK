@@ -285,7 +285,7 @@
   }
 
   function speak(text,code){
-    if(!text||!('speechSynthesis'in window))return;const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase().startsWith(String(code||'').toLowerCase()));speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||code||'en';u.rate=.9;if(voice)u.voice=voice;speechSynthesis.speak(u);
+    if(!text||!('speechSynthesis'in window))return;const speechCode=code==='cmn'?'zh-CN':code;const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase().startsWith(String(speechCode||'').slice(0,2).toLowerCase()));speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||speechCode||'en';u.rate=.9;if(voice)u.voice=voice;speechSynthesis.speak(u);
   }
 
   function similarity(a,b){
@@ -293,7 +293,7 @@
   }
   function practice(expected,code,host){
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){if(host)host.textContent='Speech recognition is not supported in this browser. You can still use Listen and repeat aloud.';return}
-    const rec=new SR();rec.lang=code||'en';rec.interimResults=false;rec.maxAlternatives=1;if(host)host.textContent='Listening… say: '+expected;
+    const rec=new SR();rec.lang=code==='cmn'?'zh-CN':(code||'en');rec.interimResults=false;rec.maxAlternatives=1;if(host)host.textContent='Listening… say: '+expected;
     rec.onresult=e=>{const heard=e.results?.[0]?.[0]?.transcript||'',score=similarity(expected,heard);if(host)host.textContent='Heard: “'+heard+'” · similarity '+score+'%'+(score>=85?' · excellent':score>=65?' · close, try once more':' · listen again and retry')};
     rec.onerror=()=>{if(host)host.textContent='Could not capture speech. Try again or use Listen first.'};try{rec.start()}catch{}
   }
@@ -339,7 +339,7 @@
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(()=>open(false),40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open(false)},260);
   function selftest(){
-    const rows=langs(),codes=rows.map(x=>x[0]),adaptiveReview=REVIEW_MIN_GAP>=2&&REVIEW_MAX_GAP>REVIEW_MIN_GAP,ok=rows.length===74&&new Set(codes).size===74&&!codes.includes('srn')&&adaptiveReview&&REVIEW_QUESTIONS>=10;
+    const rows=langs(),codes=rows.map(x=>x[0]),adaptiveReview=REVIEW_MIN_GAP>=2&&REVIEW_MAX_GAP>REVIEW_MIN_GAP,ok=rows.length===75&&new Set(codes).size===75&&codes.includes('cmn')&&!codes.includes('srn')&&adaptiveReview&&REVIEW_QUESTIONS>=10;
     return {ok,count:rows.length,unique:new Set(codes).size,noSranan:!codes.includes('srn'),reviewGap:[REVIEW_MIN_GAP,REVIEW_MAX_GAP],reviewQuestions:REVIEW_QUESTIONS,adaptiveReview};
   }
   window.__SCHOLARK_V93_LANGUAGE__={open:()=>open(false),refresh:()=>open(true),buildLesson,nextLesson,completeLesson:complete,reviewDue,finishReview,openSavedLibrary,getCurrent:()=>current,selftest,supportedCount:()=>langs().length};
