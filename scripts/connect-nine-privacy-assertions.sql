@@ -24,7 +24,6 @@ begin
     perform set_config('request.jwt.claim.sub',uid::text,true);
     perform public.connect_join_room(room_id,repeat('b',40));
   end loop;
-  select count(*) into members from public.connect_room_members where room_id=room_id and left_at is null;
   -- Qualified query below avoids SQL ambiguous var names.
   select count(*) into members from public.connect_room_members m where m.room_id='10000000-0000-4000-8000-000000000009' and m.left_at is null;
   if members<>9 then raise exception 'Expected nine admitted members, found %',members;end if;
