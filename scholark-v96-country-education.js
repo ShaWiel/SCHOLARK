@@ -664,8 +664,10 @@
     const known=[...countryList];
     if(selected&&!known.includes(selected))known.push(selected);
     const lang=displayLocale();
-    known.sort((a,b)=>countryName(a).localeCompare(countryName(b),lang,{sensitivity:'base',numeric:true})||a.localeCompare(b,'en'));
-    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+countryName(c)+'</option>').join('');
+    const labels=new Map(known.map(c=>[c,countryName(c)]));
+    const collator=new Intl.Collator(lang,{sensitivity:'base',numeric:true});
+    known.sort((a,b)=>collator.compare(labels.get(a),labels.get(b))||a.localeCompare(b,'en'));
+    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+labels.get(c)+'</option>').join('');
   }
   function ensureSidebarCountry(){
     const side=$('#v51-sidebar');if(!side)return;
