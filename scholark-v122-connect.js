@@ -575,7 +575,7 @@
     const previous=state.me?.id;state.me=s.user;
     if(previous&&previous!==state.me.id){clearDeviceContacts();await leaveRoom(false);state.selected=null;state.profile=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[]}
     try{
-      const rows=await request('connect_identities?select=user_id,handle,display_name,searchable&user_id=eq.'+state.me.id+'&limit=1');
+      const rows=await request('connect_identities?select=user_id,handle,display_name,searchable,contact_discovery_enabled&user_id=eq.'+state.me.id+'&limit=1');
       state.profile=rows?.[0]||null;
       if(!state.profile){showProfile();return}
       state.identities.set(state.me.id,state.profile);
