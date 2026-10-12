@@ -1484,6 +1484,14 @@ for(const code of ['ar','zh','hi','sw','fr']){
   await page.waitForFunction(code=>document.documentElement.lang===code&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),code,{timeout:7000});
   const s=await page.evaluate(()=>({country:document.querySelectorAll('#v50-country').length,radius:document.querySelectorAll('#v50-radius').length,cross:document.querySelectorAll('#v50-crossborder').length,sw:document.documentElement.scrollWidth,w:innerWidth}));
   check(s.country===1&&s.radius===1&&s.cross===1,`Schools Near Me controls changed/duplicated in ${code}: ${JSON.stringify(s)}`);
+  const localizedCountries=await page.evaluate(()=>{
+    const countrySelect=document.querySelector('#v96-side-country select');
+    if(!countrySelect)return {present:false,sorted:false};
+    const labels=[...countrySelect.options].map(o=>o.textContent.trim());
+    const lang=localStorage.getItem('scholark_ui_language')||'nl';
+    return {present:true,sorted:labels.every((name,i)=>i===0||labels[i-1].localeCompare(name,lang,{sensitivity:'base',numeric:true})<=0)};
+  });
+  check(localizedCountries.present&&localizedCountries.sorted,`Countries are not sorted in the selected language ${code}`);
   check(s.sw<=s.w+4,`Schools Near Me overflowed after ${code} switch: ${JSON.stringify(s)}`);
 }
 await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('study'));
