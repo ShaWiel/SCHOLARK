@@ -165,6 +165,8 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 480s npx playwright install chromium firefox webkit
+      - name: Check actual nine-logical-participant WebRTC audio and screen RTP (one machine)
+        run: node scripts/connect-nine-rtc-browser-qa.mjs
       - name: Check Connect contacts import in Chromium, Firefox and WebKit profiles
         run: node scripts/connect-device-browser-qa.mjs
       - name: Run mobile device launch QA
