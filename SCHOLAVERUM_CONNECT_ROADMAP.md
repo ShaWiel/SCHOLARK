@@ -8,6 +8,8 @@ Connect is an **independent SCHOLAVERUM Workspace feature**. Do not redirect or 
 - Friend requests, acceptance, removal, blocking and direct messages
 - Authenticated users only, database RLS, read-only client tables and SECURITY DEFINER RPC checks
 - No public email address, location or school exposure
+- Opt-in discovery is **off by default** for newly created Connect profiles
+- Private safety reports (harassment, bullying, spam, unsafe content) stored for authorized review
 - Request rate limits, private profile discovery rules and chat text sanitization
 - Follow-up improvements: native push notifications, typing state, online/offline presence, unread counts, report/moderation workflow, parental and school safeguards
 
