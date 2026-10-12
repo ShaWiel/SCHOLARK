@@ -8,7 +8,7 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const clean=s=>String(s??'').trim();
   const uid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
-  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],contacts:[],contactPicked:new Set(),contactMatches:[],contactBusy:false,room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
+  const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],contacts:[],contactPicked:new Set(),contactMatches:[],contactBusy:false,contactEpoch:0,room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
   const own=()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||null;
   const header=()=>{const s=own();if(!s?.access_token)throw Error('Sign in to use SCHOLAVERUM Connect.');return {apikey:KEY,authorization:'Bearer '+s.access_token,accept:'application/json','content-type':'application/json'}};
   async function request(path,method='GET',body){
@@ -135,11 +135,17 @@
     return /^\+[1-9]\d{7,14}$/.test(n)?n:'';
   }
   function clearDeviceContacts(){
+    // Invalidate pending picker, file reads and network lookups when contact data is
+    // cleared, a profile changes or the workspace is exited.
+    state.contactEpoch++;state.contactBusy=false;
     state.contacts=[];state.contactPicked.clear();state.contactMatches=[];
     const c=$('#v122-contact-candidates'),m=$('#v122-contact-matches');
     if(c)c.textContent='';if(m)m.textContent='';
+    const button=$('#v122-search-contacts');if(button)button.disabled=false;
+    const file=$('#v122-file');if(file)file.value='';
   }
   function addDeviceContacts(rows){
+    state.contactEpoch++;
     state.contacts=[];state.contactPicked.clear();state.contactMatches=[];
     for(const person of rows||[]){
       const many=x=>Array.isArray(x)?x:(x?[x]:[]);
@@ -219,38 +225,50 @@
     }
     if(!emails.size&&!phones.size){status('No valid email or international phone numbers selected.',true);return}
     if(!confirm('Securely compare '+(emails.size+phones.size)+' selected contact identifiers with opted-in SCHOLAVERUM accounts? This is a one-time check, not a background sync.'))return;
+    const epoch=state.contactEpoch,requester=state.me?.id;
     state.contactBusy=true;const b=$('#v122-search-contacts');if(b)b.disabled=true;
     try{
       const found=await rpc('connect_find_contacts',{p_emails:[...emails],p_phones:[...phones]});
+      if(epoch!==state.contactEpoch||requester!==state.me?.id)return;
       state.contactMatches=Array.isArray(found)?found:[];
       state.contacts=[];state.contactPicked.clear();
       renderDeviceContacts();renderContactMatches();
       status(state.contactMatches.length+' matching Connect account(s). Your selected contacts were cleared from this session.');
-    }catch(e){handleError(e)}finally{state.contactBusy=false;if(b)b.disabled=false}
+    }catch(e){if(epoch===state.contactEpoch&&requester===state.me?.id)handleError(e)}
+    finally{if(epoch===state.contactEpoch){state.contactBusy=false;if(b)b.disabled=false}}
   }
   function wireDeviceContactDiscovery(){
     const toggle=$('#v122-contacts-visible');
     toggle.checked=!!state.profile?.contact_discovery_enabled;
     toggle.onchange=async()=>{
+      const profileId=state.me?.id,epoch=state.contactEpoch;
       toggle.disabled=true;
       try{const enabled=await rpc('connect_set_contact_discovery',{p_enabled:toggle.checked});
-        state.profile.contact_discovery_enabled=enabled;status(enabled?'You can now be found by contacts with your verified details.':'Contact discovery is off.')}
-      catch(e){toggle.checked=!!state.profile?.contact_discovery_enabled;handleError(e)}
+        if(profileId!==state.me?.id||epoch!==state.contactEpoch)return;
+        if(state.profile)state.profile.contact_discovery_enabled=enabled;
+        status(enabled?'You can now be found by contacts with your verified details.':'Contact discovery is off.')}
+      catch(e){if(profileId===state.me?.id&&epoch===state.contactEpoch){toggle.checked=!!state.profile?.contact_discovery_enabled;handleError(e)}}
       finally{toggle.disabled=false}
     };
     $('#v122-pick').onclick=async()=>{
       if(!navigator.contacts?.select){status('Your browser cannot open device contacts. Please import a .vcf or .csv file.',true);return}
+      const epoch=state.contactEpoch,requester=state.me?.id;
       try{const rows=await navigator.contacts.select(['name','email','tel'],{multiple:true});
+        if(epoch!==state.contactEpoch||requester!==state.me?.id)return;
         if(rows?.length)addDeviceContacts(rows)}
-      catch(e){if(e?.name!=='AbortError')handleError(e)}
+      catch(e){if(epoch===state.contactEpoch&&requester===state.me?.id&&e?.name!=='AbortError')handleError(e)}
     };
     $('#v122-import').onclick=()=>$('#v122-file')?.click();
     $('#v122-file').onchange=async e=>{
       const file=e.target.files?.[0];e.target.value='';if(!file)return;
       if(file.size>1024*1024){status('Maximum contact file size is 1 MB.',true);return}
-      try{const content=await file.text();const parsed=/\.vcf$/i.test(file.name)?readVCF(content):/\.csv$/i.test(file.name)?readCSV(content):[];
-        if(!parsed.length)throw Error('No valid .vcf or .csv contacts found');addDeviceContacts(parsed)}
-      catch(err){handleError(err)}
+      const epoch=state.contactEpoch,requester=state.me?.id;
+      try{const content=await file.text();
+        if(epoch!==state.contactEpoch||requester!==state.me?.id)return;
+        const parsed=/\.vcf$/i.test(file.name)?readVCF(content):/\.csv$/i.test(file.name)?readCSV(content):[];
+        if(!parsed.length)throw Error('No valid .vcf or .csv contacts found');
+        addDeviceContacts(parsed)}
+      catch(err){if(epoch===state.contactEpoch&&requester===state.me?.id)handleError(err)}
     };
     $('#v122-contact-filter').oninput=renderDeviceContacts;
     $('#v122-clear-contacts').onclick=()=>{clearDeviceContacts();renderDeviceContacts();status('Contact data cleared from this session.')};
