@@ -24,8 +24,9 @@
     ['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],['sr','Српски','Serbian'],
     ['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],['si','සිංහල','Sinhala'],
     ['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],
-    ['ha','Hausa','Hausa']
-  ];
+    ['ha','Hausa','Hausa'],['cmn','普通话','Mandarin Chinese']
+  ].sort((a,b)=>a[2].localeCompare(b[2],'en',{sensitivity:'base'})||a[0].localeCompare(b[0]));
+  const languageOptionLabel=([,native,english])=>native===english?english:english+' · '+native;
   const STATIC_CORE_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
 
   const STATIC_UI={nl:{},es:{},fr:{},de:{},pt:{},it:{}};
@@ -542,8 +543,8 @@
     const copy=target==='en'?'AI Learning + Creation OS':clean((STATIC_UI[target]||{})[TITLE_SOURCE]||map?.[TITLE_SOURCE]||'');
     document.title='SCHOLAVERUM | '+(copy||('AI Learning + Creation OS · '+nativeName(target)));
   }
-  const CACHE_VERSION='v9-global74-resilient-atomic-layout';
-  const LEGACY_CACHE_VERSIONS=['v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
+  const CACHE_VERSION='v10-global75-mandarin-alphabetic';
+  const LEGACY_CACHE_VERSIONS=['v9-global74-resilient-atomic-layout','v7-global74-stable','v6-global74','v5-global37','v4-seven-ui','v3-seven-ui'];
   const key=c=>'scholark_v90_i18n_'+CACHE_VERSION+'_'+c;
   const legacyKey=(version,c)=>'scholark_v90_i18n_'+version+'_'+c;
   function parseStored(k){try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch{return{}}}
@@ -614,7 +615,7 @@
     // Translator API whenever the browser supports it.
     if(window.__SCHOLARK_TEST_MODE__||target==='en'||!DEVICE_LANGS.has(target)||!('Translator' in window))return null;
     if(deviceTranslators.has(target))return deviceTranslators.get(target);
-    const options={sourceLanguage:'en',targetLanguage:target};
+    const options={sourceLanguage:'en',targetLanguage:target==='cmn'?'zh':target};
     let promise;
     try{
       promise=window.Translator.create({...options,monitor(m){m.addEventListener('downloadprogress',e=>{try{onProgress?.(Math.max(0,Math.min(100,Math.round(Number(e.loaded||0)*100))))}catch{}})}});
@@ -690,7 +691,7 @@
         const ctrl=new AbortController(),timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000,timer=setTimeout(()=>ctrl.abort(),timeoutMs);
         const relay=()=>ctrl.abort();if(parentSignal)parentSignal.addEventListener('abort',relay,{once:true});
         try{
-          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
+          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target==='cmn'?'zh':target,purpose,strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));
           if(r.ok&&d?.ok)return d;
           last='HTTP '+r.status;
@@ -776,7 +777,7 @@
   }
 
   function upgradeSelectors(){
-    const expected=LANGS.map(([v,n])=>[v,n]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
+    const expected=LANGS.map(x=>[x[0],languageOptionLabel(x)]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
     const wireStableSelect=sel=>{
       if(!sel||sel.dataset.v90StableSelect==='1')return;
       sel.dataset.v90StableSelect='1';
@@ -1115,10 +1116,12 @@
     const excluded=new Set(['srn']);
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
     const abortable=typeof AbortController==='function',retryReady=/resilient/.test(CACHE_VERSION);
-    const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
+    const sortedNames=LANGS.every((x,i)=>i===0||LANGS[i-1][2].localeCompare(x[2],'en',{sensitivity:'base'})<=0);
+    const mandarinReady=LANGS.some(([lc,native,english])=>lc==='cmn'&&native==='普通话'&&english==='Mandarin Chinese');
+    const ok=LANGS.length===75&&dynamicLocales.length===68&&sortedNames&&mandarinReady&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
+    const report={ok,count:LANGS.length,sortedNames,mandarinReady,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
     console[ok?'log':'warn']('[SCHOLAVERUM] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,coverage:visibleCoverage,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource,rtlCodes:[...RTL]};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],languageOptionLabel(x)]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,coverage:visibleCoverage,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource,rtlCodes:[...RTL]};
 })();
