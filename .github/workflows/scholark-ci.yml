@@ -169,6 +169,8 @@ jobs:
         run: node scripts/connect-nine-rtc-browser-qa.mjs
       - name: Check Connect contacts import in Chromium, Firefox and WebKit profiles
         run: node scripts/connect-device-browser-qa.mjs
+      - name: Test WebRTC audio and screen RTP to eight real browser peer connections
+        run: node scripts/connect-nine-webrtc-loopback.mjs
       - name: Run mobile device launch QA
         run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Validate r218 foundation, runtime tuning and visual isolation
