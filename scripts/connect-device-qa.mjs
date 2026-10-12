@@ -8,7 +8,7 @@ const source=fs.readFileSync(new URL('../scholark-v122-connect.js',import.meta.u
 const anchor='  window.__SCHOLARK_CONNECT__={';
 assert.ok(source.includes(anchor),'Connect test hook anchor changed');
 const program=source.replace(anchor,
-  '  window.__TEST_CONNECT__={readVCF,readCSV,phoneE164,addDeviceContacts,clearDeviceContacts,wireDeviceContactDiscovery,runContactLookup,peer,shareScreen,stopScreen,enableIncomingAudio,state};\n'+anchor);
+  '  window.__TEST_CONNECT__={readVCF,readCSV,phoneE164,addDeviceContacts,clearDeviceContacts,wireDeviceContactDiscovery,runContactLookup,peer,shareScreen,stopScreen,enableIncomingAudio,refreshIce,state};\n'+anchor);
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const elem=(id)=>({
   id,value:'',innerHTML:'',textContent:'',hidden:false,disabled:false,checked:false,dataset:{},
@@ -18,6 +18,7 @@ const elem=(id)=>({
 const dom=new Map(),$=s=>{if(!dom.has(s))dom.set(s,elem(s));return dom.get(s)};
 const calls=[],senders=[],videos=[],errors=[];
 const incomingAudio=[];
+let turnAvailable=true;
 let deferredContactResponse=null;
 const mediaTrack={kind:'video',enabled:true,stop(){this.stopped=true}};
 const capture={getVideoTracks:()=>[mediaTrack],getTracks:()=>[mediaTrack]};
@@ -35,7 +36,9 @@ const fakeNavigator={
   }
 };
 class FakePeer{
-  constructor(){this.tracks=[];this.closed=false}
+  constructor(config){this.tracks=[];this.closed=false;this.config=config}
+  getConfiguration(){return this.config}
+  setConfiguration(value){this.config=value}
   addTrack(t){this.tracks.push(t)}
   addTransceiver(kind,options){
     assert.equal(kind,'video');assert.equal(options.direction,'sendrecv');
@@ -53,6 +56,13 @@ const mockFetch=async(url,opts)=>{
     return response([{user_id:uuid(13),handle:'student13',display_name:'Student Thirteen'}]);
   }
   if(String(url).endsWith('/rpc/connect_screen_share'))return response(true);
+  if(String(url).endsWith('/functions/v1/connect-turn-ice')){
+    if(!turnAvailable)return {ok:false,status:503,json:async()=>({code:'TURN_DISABLED'})};
+    return response({iceServers:[
+      {urls:['stun:stun.cloudflare.com:3478']},
+      {urls:['turn:turn.cloudflare.com:3478?transport=udp'],username:'qa-expiring',credential:'qa-only'}
+    ],expiresAt:Date.now()+4*60*60*1000});
+  }
   return response([]);
 };
 const sandbox={
@@ -62,7 +72,7 @@ const sandbox={
   document:{head:{appendChild(){}},createElement:()=>elem('created'),querySelector:$,querySelectorAll:selector=>selector==='audio[id^="v122-audio-"]'?incomingAudio:[],addEventListener(){}},
   navigator:fakeNavigator,console:{warn:(...args)=>errors.push(args.join(' '))},
   fetch:mockFetch,MediaStream:class{constructor(tracks){this.tracks=tracks}},
-  RTCPeerConnection:FakePeer,URL,URLSearchParams,Date,Map,Set,Promise,
+  RTCPeerConnection:FakePeer,URL,URLSearchParams,Date,Map,Set,Promise,AbortController,
   setInterval:()=>0,clearInterval(){},setTimeout:()=>0,clearTimeout(){},
   confirm:()=>true
 };
@@ -152,8 +162,20 @@ assert.equal(test.state.contacts.length,0,'Picker exposed contacts after workspa
 test.state.room={id:uuid(99)};
 test.state.me={id:uuid(1)};
 test.state.local={getAudioTracks:()=>[{kind:'audio'}],getTracks:()=>[{kind:'audio'}]};
+assert.equal(await test.refreshIce(),true);
+assert.equal(test.state.turnMode,'relay-ready');
+assert.equal(test.state.iceServers.length,2);
+assert.equal(calls.at(-1).method,'POST');
+assert.deepEqual(JSON.parse(calls.at(-1).body),{room_id:uuid(99)});
 for(let id=2;id<=9;id++)await test.peer(uuid(id),false);
 assert.equal(test.state.peers.size,8);
+assert.ok([...test.state.peers.values()].every(pc=>pc.config.iceServers.length===2),
+  'Peers must receive the authenticated TURN configuration');
+turnAvailable=false;
+test.state.iceExpiresAt=0;
+assert.equal(await test.refreshIce(true),false,'TURN outage must not break the call');
+assert.equal(test.state.turnMode,'direct','Unavailable relay must fall back to STUN');
+assert.equal(test.state.iceServers.length,1);
 for(const pc of test.state.peers.values()){
   assert.equal(pc.tracks.length,1,'Peer should send audio only until sharing');
   assert.equal(pc.tracks[0].kind,'audio');
