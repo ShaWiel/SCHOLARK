@@ -14,6 +14,17 @@ create table if not exists public.connect_contact_lookup_quota (
 );
 alter table public.connect_contact_lookup_quota enable row level security;
 revoke all on public.connect_contact_lookup_quota from public,anon,authenticated;
+-- A contact-only private profile can be invited only by a requester who
+-- actually matched a verified contact recently. No raw contact identifiers.
+create table if not exists public.connect_contact_match_grants (
+  requester uuid not null references auth.users(id) on delete cascade,
+  target uuid not null references auth.users(id) on delete cascade,
+  expires_at timestamptz not null,
+  primary key(requester,target)
+);
+alter table public.connect_contact_match_grants enable row level security;
+revoke all on public.connect_contact_match_grants from public,anon,authenticated;
+
 
 create or replace function public.connect_set_contact_discovery(p_enabled boolean)
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
@@ -43,6 +54,7 @@ declare
   phone_values text[];
   hits smallint;
   today_utc date:=(now() at time zone 'UTC')::date;
+  matched_ids uuid[];
 begin
   if caller_id is null then raise exception 'Sign in required';end if;
   if not exists(select 1 from public.connect_identities i where i.user_id=caller_id) then
@@ -74,8 +86,9 @@ begin
   returning attempts into hits;
   if hits is null then raise exception 'Daily contacts search limit reached. Try again tomorrow';end if;
 
-  return query
-    select i.user_id,i.handle,i.display_name
+  select coalesce(array_agg(matches.user_id),array[]::uuid[]) into matched_ids
+  from (
+    select i.user_id
     from public.connect_identities i
     join auth.users u on u.id=i.user_id
     where i.contact_discovery_enabled is true
@@ -94,6 +107,18 @@ begin
         where (f.requester=caller_id and f.recipient=i.user_id)
            or (f.recipient=caller_id and f.requester=i.user_id)
       )
+    order by i.handle limit 30
+  ) matches;
+
+  insert into public.connect_contact_match_grants(requester,target,expires_at)
+    select caller_id,matched_id,now()+interval '10 minutes' from unnest(matched_ids) as matched_id
+  on conflict on constraint connect_contact_match_grants_pkey do update
+    set expires_at=excluded.expires_at;
+
+  return query
+    select i.user_id,i.handle,i.display_name
+    from public.connect_identities i
+    where i.user_id=any(matched_ids) and i.contact_discovery_enabled
     order by i.handle limit 30;
 end $$;
 revoke all on function public.connect_find_contacts(text[],text[]) from public,anon;
@@ -111,8 +136,13 @@ begin
     raise exception 'Too many friend requests. Try again later';
   end if;
   if p_target=u or not exists(
-      select 1 from public.connect_identities
-      where user_id=p_target and (searchable or contact_discovery_enabled)
+      select 1 from public.connect_identities i
+      where i.user_id=p_target and (
+        i.searchable or (i.contact_discovery_enabled and exists(
+          select 1 from public.connect_contact_match_grants g
+          where g.requester=u and g.target=p_target and g.expires_at>now()
+        ))
+      )
     ) then raise exception 'Person not available';end if;
   if exists(select 1 from public.connect_blocks where
       (blocker=u and blocked=p_target) or (blocker=p_target and blocked=u)) then
