@@ -1,5 +1,1 @@
-SCHOLAVERUM r258-native-connect release candidate
-Independent Connect feature: private friends and chat; authenticated 4-seat WebRTC meeting/study rooms; screen share; whiteboard; host controls; Supabase RLS and abuse limits. Phase 3 ARKI/Tutor meeting integration deferred in SCHOLAVERUM_CONNECT_ROADMAP.md.
-Production deployment requires passing CI, browser smoke, release gate and security review. TURN/SFU scale intentionally not claimed.
-
-Audit updated for native Connect direct-entry protection.
+SCHOLAVERUM r258-native-connect release candidate — native private friends, direct messages, WebRTC small meetings/study rooms, screen share, room chat, shared whiteboard, host controls, blocking and reports. Private discovery is opt-in. Supabase RLS, rate limits and authenticated invitations. ARKI/Tutor in meetings deferred in SCHOLAVERUM_CONNECT_ROADMAP.md. No connection to other meeting applications. Release only after green production gate; limited to four participants, TURN and SFU pending.
