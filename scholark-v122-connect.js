@@ -83,6 +83,7 @@
     const rows=await request('connect_friends?select=id,requester,recipient,status,created_at&or=(requester.eq.'+state.me.id+',recipient.eq.'+state.me.id+')&order=created_at.desc');
     const entries=Array.isArray(rows)?rows:[];
     state.friends=entries.filter(x=>x.status==='accepted');
+    if(state.selected&&!state.friends.some(x=>(x.requester===state.me.id?x.recipient:x.requester)===state.selected))state.selected=null;
     state.requests=entries.filter(x=>x.status==='pending'&&x.recipient===state.me.id);
     state.pending=entries.filter(x=>x.status==='pending'&&x.requester===state.me.id);
     await people(entries.map(x=>x.requester===state.me.id?x.recipient:x.requester));
@@ -210,7 +211,7 @@
       if(!members.some(x=>x.user_id===state.me.id)){status('The host removed you from this meeting.',true);await leaveRoom(false);return}
       state.members=members;await people(members.map(x=>x.user_id));
       for(const m of members){if(m.user_id===state.me.id)continue;
-        if(!state.peers.has(m.user_id)&&state.me.id<m.user_id)void peer(m.user_id,true);
+        if(!state.peers.has(m.user_id)&&state.me.id<m.user_id)void peer(m.user_id,true).catch(handleError);
       }
       for(const [other,p] of state.peers){if(!members.some(m=>m.user_id===other)){p.close();state.peers.delete(other);$('#v122-remote-'+other)?.remove()}}
       renderMembers();
@@ -324,7 +325,7 @@
     canvas.onpointermove=e=>{
       if(!state.drawing||!state.lastPoint)return;
       const next=coords(e),point={...state.lastPoint,x2:next.x,y2:next.y};drawSegment(point);state.lastPoint=next;
-      if(Date.now()-state.lastBoardAt<140)return;state.lastBoardAt=Date.now();
+      if(Date.now()-state.lastBoardAt<450)return;state.lastBoardAt=Date.now();
       for(const p of state.members)if(p.user_id!==state.me.id)void signal(p.user_id,'board',point).catch(()=>{});
     };
   }
@@ -342,9 +343,12 @@
   async function open(){
     if(!renderBase())return;
     const s=own();if(!s?.access_token||!s?.user?.id){
+      if(state.room)await leaveRoom(false);
+      state.me=null;state.profile=null;state.selected=null;state.identities.clear();
       $('#v122-body').innerHTML='<div class="v122-panel"><h2>Sign in to Connect</h2><p>Meetings, friend requests and chat require a verified SCHOLAVERUM account.</p><button class="v122-btn lime" id="v122-signin">Sign in</button></div>';
       $('#v122-signin').onclick=()=>window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return;
     }
+    if(state.room&&$('#v122-videos')?.isConnected&&state.me?.id===s.user.id)return;
     const previous=state.me?.id;state.me=s.user;
     if(previous&&previous!==state.me.id){await leaveRoom(false);state.selected=null;state.profile=null}
     try{
@@ -358,7 +362,9 @@
       status('Connect ready. Your personal messages and rooms are protected by account permissions.');
     }catch(e){handleError(e)}
   }
-  window.addEventListener('scholark:auth-changed',()=>{if(location.hash.startsWith('#connect'))void open()});
+  window.addEventListener('scholark:auth-changed',()=>{if(location.hash.startsWith('#connect'))void open();else if(state.room)void leaveRoom(false)});
+  window.addEventListener('scholark-workspace-change',e=>{if(state.room&&e.detail?.to!=='connect')void leaveRoom()});
+  window.addEventListener('pagehide',()=>{stopTimers();stopScreen();for(const pc of state.peers.values())pc.close();for(const track of state.local?.getTracks()||[])track.stop()});
   window.addEventListener('hashchange',()=>{if(state.room&&!location.hash.startsWith('#connect'))void leaveRoom()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.selected&&location.hash.startsWith('#connect'))void loadDM()});
   // Poll private social data conservatively; room signaling uses a faster, bounded cycle.
