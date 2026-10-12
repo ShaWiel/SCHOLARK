@@ -165,6 +165,8 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 480s npx playwright install chromium firefox webkit
+      - name: Check Connect contacts import in Chromium, Firefox and WebKit profiles
+        run: node scripts/connect-device-browser-qa.mjs
       - name: Run mobile device launch QA
         run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Validate r218 foundation, runtime tuning and visual isolation
