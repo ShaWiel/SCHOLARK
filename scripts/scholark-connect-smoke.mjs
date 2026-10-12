@@ -23,7 +23,7 @@ requireAll(migration,['enable row level security','connect_room_members','connec
 requireAll(hardening,['grant execute on function public.connect_member','Too many meeting updates','rate-limit','connect identities searchable and contacts'],'Connect security');
 requireAll(privacy,['searchable set default false'],'Private discovery');
 requireAll(reporting,['connect_reports','enable row level security','Daily report limit reached'],'Report moderation');
-requireAll(audioNine,['max_participants between 2 and 9','max_participants set default 9','create or replace function public.connect_join_room','where id=p_room for update','r.invite_code<>p_code','connect_screen_share','screen_share_expires_at','45 seconds',"p_action='claim'",'to authenticated'],'Voice calls, nine-person admission and exclusive screen sharing');
+requireAll(audioNine,['max_participants between 2 and 9','max_participants set default 9','create or replace function public.connect_join_room','where id=p_room for update','r.invite_code<>p_code','connect_screen_share','screen_share_expires_at','45 seconds',"p_action not in ('claim'",'to authenticated'],'Voice calls, nine-person admission and exclusive screen sharing');
 requireAll(ui,['getUserMedia({','video:false','audio:{echoCancellation:true','getDisplayMedia({video:{frameRate:','pc.addTransceiver(\'video\'','__screenSender','replaceTrack(track)','replaceTrack(null)','r260-audio-nine-connect'],'Audio-only WebRTC and screen-share negotiation');
 for(const forbidden of ['id="v122-camera"','getVideoTracks()?.[0]||null','video:true})','VIDEO MEETING','up to four participants']){
   assert.ok(!ui.includes(forbidden),'Camera UI or old four-person text found: '+forbidden);
