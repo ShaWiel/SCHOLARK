@@ -122,6 +122,18 @@ try{
   check(await page.locator('.v85-topbar-wallet-panel').count()===1,'live Workspace Wallet opens without duplication');
   await page.keyboard.press('Escape');
 
+  // Connect is a standalone SCHOLAVERUM feature. A signed-out visitor must
+  // see its native shell without receiving private contacts or meeting data.
+  const connectAsset=await fetch(base+'/scholark-v122-connect.js?live-connect='+Date.now());
+  const connectSource=await connectAsset.text();
+  check(connectAsset.ok&&connectSource.includes("version:'r258-native-connect'"),'live native Connect asset is served by SCHOLAVERUM');
+  await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('connect'));
+  await page.waitForSelector('#v122-connect',{state:'visible',timeout:14000});
+  check(await page.locator('#v51-sidebar [data-v51-tool="connect"]').count()===1,'live Connect uses one canonical Workspace navigation item');
+  check(await page.locator('#v122-signin').count()===1,'live Connect requires sign-in before friends, chat or meetings');
+  check(await page.locator('#v122-connect iframe').count()===0,'live Connect does not embed third-party meeting platforms');
+  check(await page.evaluate(()=>window.__SCHOLARK_CONNECT__?.version==='r258-native-connect'),'live Connect runtime correctly initializes');
+
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('ai'));
   await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000});
   check(await page.locator('#v107-q').count()===1&&await page.locator('#v107-send').count()===1,'live ARKI UI is mounted and Ask action is available');
