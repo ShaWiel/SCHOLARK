@@ -87,7 +87,9 @@ jobs:
             scripts/connect-nine-test-fixture.sql \
             supabase/migrations/20261012_connect_audio_nine_mesh_r260.sql \
             supabase/migrations/20261012_connect_optin_contact_discovery_r261.sql \
-            scripts/connect-nine-privacy-assertions.sql; do
+            supabase/migrations/20261012_connect_turn_issuance_gate_r262.sql \
+            scripts/connect-nine-privacy-assertions.sql \
+            scripts/connect-turn-auth-assertions.sql; do
             echo "Testing $path"
             docker exec -i scholark-connect-test-postgres \
               psql -X -v ON_ERROR_STOP=1 -U postgres -d connect_qa < "$path"
