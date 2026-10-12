@@ -13,6 +13,7 @@ const roadmap=read('SCHOLAVERUM_CONNECT_ROADMAP.md');
 const privacy=read('supabase/migrations/20261011_connect_private_discovery_r258.sql');
 const reporting=read('supabase/migrations/20261011_connect_reporting_r258.sql');
 const audioNine=read('supabase/migrations/20261012_connect_audio_nine_mesh_r260.sql');
+const deviceContacts=read('supabase/migrations/20261012_connect_optin_contact_discovery_r261.sql');
 const requireAll=(value,fragments,label)=>fragments.forEach(fragment=>assert.ok(value.includes(fragment),label+' missing '+fragment));
 new Function(ui);
 requireAll(runtime,["connect:['scholark-v122-connect.js']","'scholark-v122-connect.js'","'connect','schools'"],'Connect runtime');
@@ -28,10 +29,14 @@ requireAll(ui,['getUserMedia({','video:false','audio:{echoCancellation:true','ge
 for(const forbidden of ['id="v122-camera"','getVideoTracks()?.[0]||null','video:true})','VIDEO MEETING','up to four participants']){
   assert.ok(!ui.includes(forbidden),'Camera UI or old four-person text found: '+forbidden);
 }
-requireAll(ui,["$('[data-report]',host).forEach","$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
+requireAll(ui,["$$('[data-report]',host).forEach","$$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
 requireAll(ui,["p_action:'claim'","p_action:'renew'","p_action:'release'","Another participant is already sharing","updateScreenShareControl()"],'One sharer per room');
 assert.ok(!ui.includes('eight participants'),'Old eight-user cap remains in Connect copy');
 requireAll(roadmap,['Priority 3','ARKI','AI Tutor','SFU','TURN'],'Deferred plans');
+requireAll(deviceContacts,['contact_discovery_enabled boolean not null default false','enable row level security','revoke all on public.connect_contact_lookup_quota','create or replace function public.connect_find_contacts','u.email_confirmed_at is not null','u.phone_confirmed_at is not null','i.contact_discovery_enabled is true','connect_blocks','connect_friends','coalesce(cardinality(p_emails),0)+coalesce(cardinality(p_phones),0)>30','attempts<3','connect_set_contact_discovery','to authenticated'],'Opt-in private contacts and throttling');
+requireAll(ui,['navigator.contacts.select','connect_find_contacts','connect_set_contact_discovery','readVCF','readCSV','clearDeviceContacts()','v122-contact-optin-profile','wireDeviceContactDiscovery','Maximum contact file size','30 identifiers per search'],'Consent-only device contacts UI');
+assert.ok(!/localStorage\.setItem\([^\n]*contact/i.test(ui),'Contact data must not be saved in localStorage');
+assert.ok(!/getUserMedia\(\{[^\n]*video:true/.test(ui),'Webcam capture must stay disabled');
 for(const forbidden of ['meet.google.com','teams.microsoft.com','join.skype.com','sdk.daily.co','livekit-client']){
   assert.ok(!ui.includes(forbidden),'Connect must not embed a third-party meeting application: '+forbidden);
 }
@@ -39,7 +44,7 @@ const mockWindow={addEventListener(){},navigator:{},};
 const mockDocument={createElement:()=>({id:'',textContent:''}),head:{appendChild(){}},addEventListener(){},querySelector(){return null}};
 const sandbox={window:mockWindow,document:mockDocument,setInterval:()=>1,clearInterval(){},fetch:()=>{throw Error('Unexpected network call on initialization')},console,URLSearchParams,URL,MediaStream:function(){}};
 vm.runInNewContext(ui,sandbox,{filename:'scholark-v122-connect.js'});
-assert.equal(mockWindow.__SCHOLARK_CONNECT__.version,'r260-audio-eight-connect');
+assert.equal(mockWindow.__SCHOLARK_CONNECT__.version,'r260-audio-nine-connect');
 assert.equal(mockWindow.__SCHOLARK_CONNECT__.getState().friends,0);
 assert.equal(mockWindow.__SCHOLARK_CONNECT__.getState().meeting,false);
 console.log('SCHOLAVERUM CONNECT SMOKE PASS: voice-only mesh, nine seats, safe screen-share sender, privacy and host controls');
