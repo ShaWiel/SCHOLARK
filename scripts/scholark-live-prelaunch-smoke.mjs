@@ -122,17 +122,19 @@ try{
   check(await page.locator('.v85-topbar-wallet-panel').count()===1,'live Workspace Wallet opens without duplication');
   await page.keyboard.press('Escape');
 
-  // Connect is a standalone SCHOLAVERUM feature. A signed-out visitor must
-  // see its native shell without receiving private contacts or meeting data.
+  // Connect is staged until launch. Deep links must never mount chats/calls.
   const connectAsset=await fetch(base+'/scholark-v122-connect.js?live-connect='+Date.now());
   const connectSource=await connectAsset.text();
-  check(connectAsset.ok&&connectSource.includes("version:'r258-native-connect'"),'live native Connect asset is served by SCHOLAVERUM');
+  check(connectAsset.ok&&connectSource.includes("version:'r263-coming-soon'"),'live Connect asset is staged behind Coming Soon');
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('connect'));
-  await page.waitForSelector('#v122-connect',{state:'visible',timeout:14000});
-  check(await page.locator('#v51-sidebar [data-v51-tool="connect"]').count()===1,'live Connect uses one canonical Workspace navigation item');
-  check(await page.locator('#v122-signin').count()===1,'live Connect requires sign-in before friends, chat or meetings');
-  check(await page.locator('#v122-connect iframe').count()===0,'live Connect does not embed third-party meeting platforms');
-  check(await page.evaluate(()=>window.__SCHOLARK_CONNECT__?.version==='r258-native-connect'),'live Connect runtime correctly initializes');
+  await page.waitForSelector('#v51-main .v51-coming-soon',{state:'visible',timeout:14000});
+  const connectNav=page.locator('#v51-sidebar [data-v51-tool="connect"]');
+  check(await connectNav.count()===1,'live Coming Soon Connect navigation entry is missing');
+  check((await connectNav.getAttribute('data-v51-inactive'))==='1','live Connect must be marked unavailable');
+  check((await connectNav.innerText()).includes('COMING SOON'),'live Connect coming soon label is missing');
+  check((await page.locator('.v51-coming-soon h1').innerText())==='Connect','live Connect Coming Soon page is missing');
+  check(await page.locator('#v122-connect,#v122-signin').count()===0,'live Connect chat and meeting controls must be disabled');
+  check(!(await page.evaluate(()=>window.__SCHOLARK_RUNTIME__?.loaded?.()?.includes('scholark-v122-connect.js'))),'live Connect module must not load');
 
   await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('ai'));
   await page.waitForSelector('#v107-ai',{state:'visible',timeout:12000});
