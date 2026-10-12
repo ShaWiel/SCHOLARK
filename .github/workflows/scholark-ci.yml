@@ -54,6 +54,50 @@ jobs:
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
 
+  connect-isolated-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Test simulated nine-person media and mobile contacts
+        run: node scripts/connect-device-qa.mjs
+      - name: Start isolated PostgreSQL fixture (never connect to Supabase production)
+        run: |
+          docker run -d --name scholark-connect-test-postgres \
+            -e POSTGRES_PASSWORD=qa-only \
+            -e POSTGRES_DB=connect_qa \
+            postgres:16-alpine
+          for i in {1..50}; do
+            if docker exec scholark-connect-test-postgres pg_isready -U postgres -d connect_qa >/dev/null 2>&1 \
+              && docker exec scholark-connect-test-postgres psql -AtX -U postgres -d connect_qa -c 'select 1' >/dev/null 2>&1; then
+              sleep 3
+              docker exec scholark-connect-test-postgres psql -AtX -U postgres -d connect_qa -c 'select 1' >/dev/null 2>&1 && exit 0
+            fi
+            sleep 1
+          done
+          docker logs scholark-connect-test-postgres
+          exit 1
+      - name: Apply local schema and run admission/privacy SQL assertions
+        run: |
+          for path in \
+            scripts/connect-nine-test-fixture.sql \
+            supabase/migrations/20261012_connect_audio_nine_mesh_r260.sql \
+            supabase/migrations/20261012_connect_optin_contact_discovery_r261.sql \
+            supabase/migrations/20261012_connect_turn_issuance_gate_r262.sql \
+            scripts/connect-nine-privacy-assertions.sql \
+            scripts/connect-turn-auth-assertions.sql; do
+            echo "Testing $path"
+            docker exec -i scholark-connect-test-postgres \
+              psql -X -v ON_ERROR_STOP=1 -U postgres -d connect_qa < "$path"
+          done
+      - name: Stop isolated PostgreSQL
+        if: always()
+        run: docker rm -f scholark-connect-test-postgres || true
+
   docker-build-and-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 50
@@ -123,6 +167,12 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 480s npx playwright install chromium firefox webkit
+      - name: Check actual nine-logical-participant WebRTC audio and screen RTP (one machine)
+        run: node scripts/connect-nine-rtc-browser-qa.mjs
+      - name: Check Connect contacts import in Chromium, Firefox and WebKit profiles
+        run: node scripts/connect-device-browser-qa.mjs
+      - name: Test WebRTC audio and screen RTP to eight real browser peer connections
+        run: node scripts/connect-nine-webrtc-loopback.mjs
       - name: Run mobile device launch QA
         run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Validate r218 foundation, runtime tuning and visual isolation
