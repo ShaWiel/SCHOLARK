@@ -55,6 +55,9 @@ const powerTools=read('scholark-v106-workspace-power-tools.js');
 const generalAi=read('scholark-v107-general-ai.js');
 const experienceControls=read('scholark-v120-experience-controls.js');
 const notifications=read('scholark-v121-notifications.js');
+const connect=read('scholark-v122-connect.js');
+const connectSchema=read('supabase/migrations/20261011_connect_native_friends_meetings_r258.sql');
+const connectSecurity=read('supabase/migrations/20261011_connect_security_hardening_r258.sql');
 const serviceWorker=read('scholark-sw.js');
 const webmanifest=read('scholark.webmanifest');
 const notificationFunction=read('supabase/functions/scholark-notify/index.ts');
@@ -316,7 +319,7 @@ ok(!workspaceBlock.includes('scholark-v43-studio-workspace.js')&&!workspaceBlock
 ok(runtime.includes('studio:[]')&&runtime.includes("planner:['scholark-v52-workspace-qa.js']")&&runtime.includes("project:['scholark-v64-projects.js'")&&runtime.includes("ai:['scholark-v107-general-ai.js']"),'Lazy feature routing is incomplete after workspace boot optimization');
 ok(runtime.includes("ai:['scholark-v107-general-ai.js']")&&runtime.includes("'scholark-v107-general-ai.js'"),'General SCHOLARK AI is not lazy-loaded as a workspace feature');
 ok(docker.includes('COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js'),'General SCHOLARK AI module is not shipped in the production image');
-ok(prepaint.includes('dashboard|studio|ai|tutor'),'Direct #ai boot is not protected by prepaint');
+ok(prepaint.includes('dashboard|connect|studio|ai|tutor'),'Direct #ai boot is not protected by prepaint');
 ok(stabilityFoundation.includes('dashboard|studio|ai|tutor')&&foundationHealth.includes("'dashboard','studio','ai','tutor'"),'Foundation route guards do not recognize SCHOLARK AI');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
@@ -477,6 +480,11 @@ ok(launchFoundation.includes('PRIVACY, TERMS & BILLING · 5 OCT 2026')&&launchFo
 ok(launchFoundation.includes("event:'client_performance'")&&launchFoundation.includes('/rest/v1/client_errors')&&launchFoundation.includes("data-v116-submit"),'Client observability/feedback foundation is incomplete');
 ok(launchFoundation.includes('Finish setting up SCHOLAVERUM.')&&launchFoundation.includes("routeTo('#'+k)")&&launchFoundation.includes('Studio AI and Book Studio stay Coming Soon.'),'Launch onboarding flow is incomplete');
 ok(runtime.includes('studio:false,book:false'),'Studio AI and Book Studio must remain feature-gated in this release');
+ok(runtime.includes("connect:['scholark-v122-connect.js']")&&workspaceShell.includes("['connect','◉','Connect']")&&workspaceShell.includes("id==='connect'")&&docker.includes('COPY scholark-v122-connect.js'),'Native Connect route is not correctly packaged');
+ok(connect.includes('RTCPeerConnection')&&connect.includes('getUserMedia')&&connect.includes('getDisplayMedia')&&connect.includes("window.__SCHOLARK_CONNECT__")&&connect.includes('scholark-workspace-change'),'Native Connect meeting controls are incomplete');
+ok(connectSchema.includes('enable row level security')&&connectSchema.includes('connect_room_members')&&connectSecurity.includes('Too many meeting updates'),'Connect RLS and anti-abuse migration absent');
+ok(ciWorkflow.includes('node scripts/scholark-connect-smoke.mjs')&&releaseGateWorkflow.includes('node scripts/scholark-connect-smoke.mjs'),'Native Connect security smoke is not enforced before release');
+
 
 const activeBlock=(runtime.match(/const ACTIVE = \[([\s\S]*?)\n  \];/)||[])[1]||'';
 const active=[...activeBlock.matchAll(/'([^']+\.js)'/g)].map(m=>m[1]);
