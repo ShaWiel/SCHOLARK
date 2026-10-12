@@ -34,6 +34,11 @@ begin
   update public.connect_identities
     set contact_discovery_enabled=p_enabled where user_id=caller_id;
   if not found then raise exception 'Create your Connect profile first';end if;
+  -- Opting out immediately invalidates all previous contact-based invitations,
+  -- including grants issued during a recent successful exact-match lookup.
+  if not p_enabled then
+    delete from public.connect_contact_match_grants where target=caller_id;
+  end if;
   return p_enabled;
 end $$;
 revoke all on function public.connect_set_contact_discovery(boolean) from public,anon;
