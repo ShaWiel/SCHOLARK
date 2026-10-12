@@ -1417,7 +1417,7 @@ await route('ai','#v107-ai');
 if(!(await page.locator('#v107-context').isChecked()))await page.check('#v107-context');
 await page.fill('#v107-q','What should I work on next using my workspace context?');
 await page.click('#v107-send');
-await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/connected SCHOLARK workspace context/i.test(x.textContent||'')),null,{timeout:15000}).catch(async()=>{
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/connected (?:SCHOLARK|SCHOLAVERUM) workspace context/i.test(x.textContent||'')),null,{timeout:15000}).catch(async()=>{
   const info=await page.evaluate(()=>({
     state:document.querySelector('#v107-state')?.textContent||'',
     thread:document.querySelector('#v107-thread')?.textContent?.slice(-650)||'',
