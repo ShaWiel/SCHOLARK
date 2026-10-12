@@ -9,6 +9,8 @@
   const clean=s=>String(s??'').trim();
   const uid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
   const state={me:null,profile:null,friends:[],identities:new Map(),pending:[],requests:[],selected:null,messages:[],contacts:[],contactPicked:new Set(),contactMatches:[],contactBusy:false,contactEpoch:0,room:null,members:[],peers:new Map(),local:null,screen:null,screenBusy:false,screenOwner:null,screenLeaseUntil:0,timers:[],signalSeen:0,chatSeen:0,dmBusy:false,roomBusy:false,signalsBusy:false,roomChatBusy:false,tab:'friends',mediaError:'',whiteboard:false,drawing:false,lastPoint:null,lastBoardAt:0};
+  const STUN_ONLY=[{urls:'stun:stun.cloudflare.com:3478'}];
+  state.iceServers=STUN_ONLY;state.iceRoom=null;state.iceExpiresAt=0;state.turnMode='direct';
   const own=()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||null;
   const header=()=>{const s=own();if(!s?.access_token)throw Error('Sign in to use SCHOLAVERUM Connect.');return {apikey:KEY,authorization:'Bearer '+s.access_token,accept:'application/json','content-type':'application/json'}};
   async function request(path,method='GET',body){
@@ -357,11 +359,16 @@
     })}
     catch{state.mediaError='Microphone unavailable. You can still use meeting chat and screen sharing.'}
     if(state.mediaError)status(state.mediaError,true);
+    // Get TURN configuration before creating any WebRTC peer connections.
+    // On a provider outage, a direct STUN path remains available.
+    await refreshIce();
     await syncRoom();await pollSignals();await pollRoomChat();
     stopTimers();state.timers=[
       setInterval(()=>{void syncRoom().catch(handleError)},2200),
       setInterval(()=>{void pollSignals().catch(handleError)},800),
       setInterval(()=>{void pollRoomChat().catch(handleError)},3000),
+      setInterval(()=>{if(state.room&&state.iceExpiresAt<Date.now()+2*60*60*1000)
+        void refreshIce(true)},60*60*1000),
       setInterval(()=>{if(!state.room||!state.screen)return;const id=state.room.id;
         void rpc('connect_screen_share',{p_room:id,p_action:'renew'}).then(ok=>{
           if(state.room?.id===id&&state.screen&&!ok){
@@ -397,7 +404,7 @@
       }
       for(const [other,p] of state.peers){if(!members.some(m=>m.user_id===other)){p.close();state.peers.delete(other);$('#v122-remote-'+other)?.remove();$('#v122-audio-'+other)?.remove()}}
       renderMembers();updateScreenShareControl();
-      const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Microphone unavailable':'Voice call · screen sharing available');
+      const s=$('#v122-call-status');if(s)s.textContent=members.length+' participant'+(members.length===1?'':'s')+' · '+(state.mediaError?'Microphone unavailable':'Voice call · '+(state.turnMode==='relay-ready'?'TURN fallback ready':'direct connection only')+' · screen sharing available');
     }finally{state.roomBusy=false}
   }
   function renderMembers(){
@@ -413,7 +420,7 @@
   async function peer(id,offer){
     if(!state.room||!uid(id))return null;
     if(state.peers.has(id))return state.peers.get(id);
-    const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'}],bundlePolicy:'balanced'});
+    const pc=new RTCPeerConnection({iceServers:state.iceServers,bundlePolicy:'balanced'});
     state.peers.set(id,pc);
     for(const track of state.local?.getAudioTracks()||[])pc.addTrack(track,state.local);
     // Negotiate a video m-line without a camera. Screen sharing can then start or stop
@@ -499,6 +506,46 @@
     const failed=results.filter(x=>x.status==='rejected').length;
     status(failed?'Some incoming audio remains blocked. Check your browser sound permission.':'Incoming audio enabled.',!!failed);
     return failed===0;
+  }
+  // Requests temporary TURN credentials only for a current signed-in room member.
+  // A missing relay is non-fatal: we keep STUN instead of publishing any secret.
+  async function refreshIce(force=false){
+    if(!state.room||!state.me?.id)return false;
+    const roomId=state.room.id,userId=state.me.id;
+    if(state.iceRoom!==roomId){
+      state.iceRoom=roomId;state.iceServers=STUN_ONLY;
+      state.iceExpiresAt=0;state.turnMode='direct';
+    }
+    if(!force&&state.iceExpiresAt>Date.now()+60*60*1000)return true;
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),3500);
+    try{
+      const response=await fetch(SB+'/functions/v1/connect-turn-ice',{
+        method:'POST',headers:header(),cache:'no-store',
+        body:JSON.stringify({room_id:roomId}),signal:controller.signal
+      });
+      if(!response.ok)throw Error('TURN relay unavailable');
+      const result=await response.json();
+      if(!Array.isArray(result?.iceServers)||!result.iceServers.some(x=>
+        [x?.urls].flat().some(url=>typeof url==='string'&&url.startsWith('turn:'))||
+        [x?.urls].flat().some(url=>typeof url==='string'&&url.startsWith('turns:'))))
+        throw Error('TURN relay response missing');
+      if(state.room?.id!==roomId||state.me?.id!==userId)return false;
+      state.iceServers=result.iceServers;
+      state.iceExpiresAt=Math.min(Number(result.expiresAt)||0,Date.now()+4*60*60*1000);
+      state.turnMode='relay-ready';
+      for(const pc of state.peers.values()){
+        if(typeof pc.setConfiguration==='function')
+          try{pc.setConfiguration({...pc.getConfiguration(),iceServers:state.iceServers})}catch{}
+      }
+      return true;
+    }catch{
+      if(state.room?.id!==roomId||state.me?.id!==userId)return false;
+      if(state.iceExpiresAt<=Date.now()){
+        state.iceServers=STUN_ONLY;state.turnMode='direct';state.iceExpiresAt=0;
+      }
+      return false;
+    }finally{clearTimeout(timer)}
   }
   function updateScreenShareControl(){
     const btn=$('#v122-screen');if(!btn)return;
@@ -588,7 +635,7 @@
     for(const [id,pc] of state.peers){pc.close();if(write)void signal(id,'bye',{}).catch(()=>{})}
     state.peers.clear();
     for(const track of state.local?.getTracks()||[])track.stop();state.local=null;
-    state.room=null;state.members=[];state.screenOwner=null;state.screenLeaseUntil=0;state.mediaError='';
+    state.room=null;state.members=[];state.screenOwner=null;state.screenLeaseUntil=0;state.mediaError='';state.iceServers=STUN_ONLY;state.iceRoom=null;state.iceExpiresAt=0;state.turnMode='direct';
     if(write)try{await rpc('connect_leave_room',{p_room:room.id})}catch(e){handleError(e)}
     renderMeeting();status(write?'You left the meeting.':'The meeting is no longer available.');
   }
@@ -618,7 +665,7 @@
   window.addEventListener('scholark-workspace-change',e=>{if(e.detail?.to!=='connect')clearDeviceContacts();if(state.room&&e.detail?.to!=='connect')void leaveRoom()});
   window.addEventListener('pagehide',()=>{clearDeviceContacts();stopTimers();stopScreen();for(const pc of state.peers.values())pc.close();for(const track of state.local?.getTracks()||[])track.stop()});
   window.addEventListener('hashchange',()=>{if(state.room&&!location.hash.startsWith('#connect'))void leaveRoom()});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.selected&&location.hash.startsWith('#connect'))void loadDM()});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(state.selected&&location.hash.startsWith('#connect'))void loadDM();if(state.room&&state.iceExpiresAt<Date.now()+2*60*60*1000)void refreshIce(true)});
   // Poll private social data conservatively; room signaling uses a faster, bounded cycle.
   setInterval(()=>{if(document.hidden||!location.hash.startsWith('#connect')||!state.profile)return;
     if(!state.room){void refresh().then(renderFriends).catch(()=>{});if(state.selected)void loadDM()}
