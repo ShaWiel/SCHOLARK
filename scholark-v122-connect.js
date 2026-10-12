@@ -336,13 +336,14 @@
       $('#v122-join-room').onclick=async()=>{try{const id=clean($('#v122-join-id').value),code=clean($('#v122-join-code').value);if(!uid(id)||!/^[a-f0-9]{40}$/i.test(code))throw Error('Enter a valid meeting ID and code.');state.room=await rpc('connect_join_room',{p_room:id,p_code:code});await enterRoom()}catch(e){handleError(e)}};
       return;
     }
-    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VOICE CALL')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to '+Number(state.room.max_participants||9)+' participants</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video" hidden><video id="v122-local-video" autoplay muted playsinline></video><span>Your screen</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
+    host.innerHTML='<div class="v122-panel"><div class="v122-row v122-between"><div><span class="v122-quiet">'+(state.room.kind==='study'?'STUDY ROOM':'VOICE CALL')+'</span><h2>'+esc(state.room.title)+'</h2><small>Private invitation · up to '+Number(state.room.max_participants||9)+' participants</small></div><div class="v122-row"><button class="v122-btn alt" id="v122-copy-room">Copy invite link</button><button class="v122-btn danger" id="v122-leave-room">'+(state.room.owner_id===state.me.id?'End meeting':'Leave meeting')+'</button></div></div><div class="v122-row" style="margin-top:12px"><button class="v122-btn alt" id="v122-mic">Mute microphone</button><button class="v122-btn alt" id="v122-enable-audio">Enable sound</button><button class="v122-btn alt" id="v122-screen">Share screen</button><button class="v122-btn alt" id="v122-board-toggle">Whiteboard</button><button class="v122-btn alt" id="v122-invite-friend" '+(!state.selected?'disabled':'')+'>Invite current friend</button></div><div class="v122-quiet" id="v122-call-status">Connecting participants securely…</div><div class="v122-videos" id="v122-videos"><div class="v122-video" id="v122-own-video" hidden><video id="v122-local-video" autoplay muted playsinline></video><span>Your screen</span></div></div><div id="v122-board-wrap" hidden><h2>Shared study whiteboard</h2><canvas class="v122-board" id="v122-board" width="920" height="280" aria-label="Shared whiteboard"></canvas><button class="v122-btn alt" id="v122-board-clear">Clear locally</button><p class="v122-quiet">Board drawings are sent only to active participants. No recording or automatic AI analysis.</p></div></div>'+
     '<div class="v122-meetcols" style="margin-top:15px"><div class="v122-panel"><h2>Participants</h2><div id="v122-participants"></div><p class="v122-quiet">The host can remove a participant. Recording is not enabled.</p></div><div class="v122-panel"><h2>Meeting chat</h2><div class="v122-chat" id="v122-room-chat" style="height:240px;min-height:130px"></div><form class="v122-compose" id="v122-room-chat-form"><input class="v122-input" id="v122-room-chat-input" maxlength="1500" required placeholder="Message everyone…"><button class="v122-btn">Send</button></form></div></div>';
     $('#v122-copy-room').onclick=async()=>{try{await navigator.clipboard.writeText(roomUrl());status('Private meeting link copied.')}catch{status('Copy this meeting link: '+roomUrl())}};
     $('#v122-leave-room').onclick=()=>leaveRoom();
     $('#v122-invite-friend').onclick=async()=>{if(!state.selected)return;try{await rpc('connect_send_message',{p_target:state.selected,p_body:'Join my SCHOLAVERUM meeting: '+roomUrl()});status('Sent a meeting invitation to '+who(state.selected)+'.')}catch(e){handleError(e)}};
     $('#v122-room-chat-form').onsubmit=async e=>{e.preventDefault();const input=$('#v122-room-chat-input'),message=clean(input.value);if(!message)return;try{await rpc('connect_room_message',{p_room:state.room.id,p_body:message});input.value='';await pollRoomChat()}catch(err){handleError(err)}};
     $('#v122-mic').onclick=()=>{const track=state.local?.getAudioTracks()?.[0];if(!track){status('Microphone is not available on this device.',true);return}track.enabled=!track.enabled;$('#v122-mic').textContent=track.enabled?'Mute microphone':'Unmute microphone'};
+    $('#v122-enable-audio').onclick=()=>void enableIncomingAudio();
     $('#v122-screen').onclick=shareScreen;
     $('#v122-board-toggle').onclick=()=>{const target=$('#v122-board-wrap');target.hidden=!target.hidden;state.whiteboard=!target.hidden;if(!target.hidden)wireBoard()};
     $('#v122-board-clear').onclick=()=>{const c=$('#v122-board');c?.getContext('2d')?.clearRect(0,0,c.width,c.height)};
@@ -428,7 +429,7 @@
         let audio=$('#v122-audio-'+id);
         if(!audio){audio=document.createElement('audio');audio.id='v122-audio-'+id;audio.autoplay=true;audio.playsInline=true;$('#v122-videos')?.appendChild(audio)}
         audio.srcObject=new MediaStream([e.track]);
-        void audio.play().catch(()=>{status('Audio playback was blocked. Interact with the call to enable sound.',true)});
+        void audio.play().catch(()=>{status('Audio playback was blocked. Tap Enable sound to hear participants.',true)});
         return;
       }
       if(e.track.kind!=='video')return;
@@ -488,6 +489,16 @@
       host.innerHTML=(rows||[]).reverse().map(m=>'<div class="v122-bubble '+(m.sender===state.me.id?'mine':'')+'"><small>'+esc(m.sender===state.me.id?'You':who(m.sender))+'</small>'+esc(m.body)+'</div>').join('')||'<p>Meeting messages will appear here.</p>';
       if(bottom)host.scrollTop=host.scrollHeight;
     }finally{state.roomChatBusy=false}
+  }
+  async function enableIncomingAudio(){
+    // Browser autoplay policies can block remote microphone streams until a
+    // user gesture. The action is explicitly initiated by the listener.
+    const streams=$('audio[id^="v122-audio-"]');
+    if(!streams.length){status('No incoming audio streams yet.');return false}
+    const results=await Promise.allSettled(streams.map(audio=>audio.play()));
+    const failed=results.filter(x=>x.status==='rejected').length;
+    status(failed?'Some incoming audio remains blocked. Check your browser sound permission.':'Incoming audio enabled.',!!failed);
+    return failed===0;
   }
   function updateScreenShareControl(){
     const btn=$('#v122-screen');if(!btn)return;
