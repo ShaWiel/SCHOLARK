@@ -28,7 +28,7 @@ requireAll(ui,['getUserMedia({','video:false','audio:{echoCancellation:true','ge
 for(const forbidden of ['id="v122-camera"','getVideoTracks()?.[0]||null','video:true})','VIDEO MEETING','up to four participants']){
   assert.ok(!ui.includes(forbidden),'Camera UI or old four-person text found: '+forbidden);
 }
-requireAll(ui,["$('[data-report]',host).forEach","$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
+requireAll(ui,["$$('[data-report]',host).forEach","$$('[data-kick]',host).forEach"],'Every report/kick button must be bound');
 requireAll(ui,["p_action:'claim'","p_action:'renew'","p_action:'release'","Another participant is already sharing","updateScreenShareControl()"],'One sharer per room');
 assert.ok(!ui.includes('eight participants'),'Old eight-user cap remains in Connect copy');
 requireAll(roadmap,['Priority 3','ARKI','AI Tutor','SFU','TURN'],'Deferred plans');
@@ -39,7 +39,7 @@ const mockWindow={addEventListener(){},navigator:{},};
 const mockDocument={createElement:()=>({id:'',textContent:''}),head:{appendChild(){}},addEventListener(){},querySelector(){return null}};
 const sandbox={window:mockWindow,document:mockDocument,setInterval:()=>1,clearInterval(){},fetch:()=>{throw Error('Unexpected network call on initialization')},console,URLSearchParams,URL,MediaStream:function(){}};
 vm.runInNewContext(ui,sandbox,{filename:'scholark-v122-connect.js'});
-assert.equal(mockWindow.__SCHOLARK_CONNECT__.version,'r260-audio-eight-connect');
+assert.equal(mockWindow.__SCHOLARK_CONNECT__.version,'r260-audio-nine-connect');
 assert.equal(mockWindow.__SCHOLARK_CONNECT__.getState().friends,0);
 assert.equal(mockWindow.__SCHOLARK_CONNECT__.getState().meeting,false);
 console.log('SCHOLAVERUM CONNECT SMOKE PASS: voice-only mesh, nine seats, safe screen-share sender, privacy and host controls');
