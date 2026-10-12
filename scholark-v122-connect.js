@@ -92,17 +92,27 @@
   function renderFriends(){
     const el=$('#v122-friends-list');if(!el)return;
     el.innerHTML=(state.requests.length?'<h2>Friend requests</h2>'+state.requests.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>Wants to connect</small></div><div class="v122-row"><button class="v122-btn lime" data-friend-accept="'+esc(x.id)+'">Accept</button><button class="v122-btn alt" data-friend-reject="'+esc(x.id)+'">Decline</button></div></div></div>').join(''):'')+
-      '<h2>Your friends</h2>'+(state.friends.length?state.friends.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>@'+esc(state.identities.get(peerId(x))?.handle||'friend')+'</small></div><div class="v122-row"><button class="v122-btn alt" data-chat="'+esc(peerId(x))+'">Message</button><button class="v122-btn alt" data-friend-remove="'+esc(x.id)+'">Remove</button><button class="v122-btn danger" data-friend-block="'+esc(peerId(x))+'">Block</button></div></div></div>').join(''):'<p>No friends yet. Search for classmates by username.</p>')+
+      '<h2>Your friends</h2>'+(state.friends.length?state.friends.map(x=>'<div class="v122-entry"><div class="v122-row v122-between"><div><b>'+esc(who(peerId(x)))+'</b><br><small>@'+esc(state.identities.get(peerId(x))?.handle||'friend')+'</small></div><div class="v122-row"><button class="v122-btn alt" data-chat="'+esc(peerId(x))+'">Message</button><button class="v122-btn alt" data-friend-remove="'+esc(x.id)+'">Remove</button><button class="v122-btn alt" data-friend-report="'+esc(peerId(x))+'">Report</button><button class="v122-btn danger" data-friend-block="'+esc(peerId(x))+'">Block</button></div></div></div>').join(''):'<p>No friends yet. Search for classmates by username.</p>')+
       (state.pending.length?'<h2>Sent requests</h2>'+state.pending.map(x=>'<div class="v122-entry"><b>'+esc(who(peerId(x)))+'</b><small> · Pending</small><button class="v122-btn alt" data-friend-cancel="'+esc(x.id)+'" style="margin-left:9px">Cancel</button></div>').join(''):'');
-    $$('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block]',el).forEach(btn=>btn.onclick=async()=>{
+    $('[data-friend-accept],[data-friend-reject],[data-friend-remove],[data-friend-cancel],[data-friend-block],[data-friend-report]',el).forEach(btn=>btn.onclick=async()=>{
       try{
         const id=btn.dataset.friendAccept||btn.dataset.friendReject||btn.dataset.friendRemove||btn.dataset.friendCancel;
+        if(btn.dataset.friendReport){await reportUser(btn.dataset.friendReport,'message');return}
         if(btn.dataset.friendBlock){if(!confirm('Block this person and remove them from your friends?'))return;await rpc('connect_block',{p_target:btn.dataset.friendBlock,p_block:true})}
         else await rpc('connect_friend_action',{p_id:id,p_action:btn.dataset.friendAccept?'accept':btn.dataset.friendReject?'reject':btn.dataset.friendCancel?'cancel':'remove'});
         await refresh();renderFriends();status('Friend list updated.');
       }catch(e){handleError(e)}
     });
     $$('[data-chat]',el).forEach(btn=>btn.onclick=()=>selectFriend(btn.dataset.chat));
+  }
+  async function reportUser(target,context){
+    if(!uid(target))return;
+    const category=clean(window.prompt('Report reason: harassment, bullying, spam, unsafe_content, other','harassment')||'').toLowerCase();
+    if(!category)return;
+    if(!['harassment','bullying','spam','unsafe_content','other'].includes(category)){status('Choose a valid report category.',true);return}
+    const details=clean(window.prompt('Describe the safety concern (optional; no passwords or private information):','')||'').slice(0,1000);
+    try{await rpc('connect_report',{p_target:target,p_category:category,p_context:context,p_details:details});status('Report submitted privately. You can also block this person.')}
+    catch(e){handleError(e)}
   }
   async function lookup(){
     try{
@@ -220,8 +230,9 @@
   }
   function renderMembers(){
     const host=$('#v122-participants');if(!host||!state.room)return;
-    host.innerHTML=state.members.map(m=>'<div class="v122-entry v122-row v122-between"><span><b>'+esc(who(m.user_id))+'</b> <small>'+(m.user_id===state.room.owner_id?'Host':m.user_id===state.me.id?'You':'Participant')+'</small></span>'+(state.room.owner_id===state.me.id&&m.user_id!==state.me.id?'<button class="v122-btn danger" data-kick="'+esc(m.user_id)+'">Remove</button>':'')+'</div>').join('')||'<p>Waiting for participants…</p>';
-    $$('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
+    host.innerHTML=state.members.map(m=>'<div class="v122-entry v122-row v122-between"><span><b>'+esc(who(m.user_id))+'</b> <small>'+(m.user_id===state.room.owner_id?'Host':m.user_id===state.me.id?'You':'Participant')+'</small></span>'+(m.user_id!==state.me.id?'<div class="v122-row"><button class="v122-btn alt" data-report="'+esc(m.user_id)+'">Report</button>'+(state.room.owner_id===state.me.id?'<button class="v122-btn danger" data-kick="'+esc(m.user_id)+'">Remove</button>':'')+'</div>':'')+'</div>').join('')||'<p>Waiting for participants…</p>';
+    $('[data-report]',host).forEach(b=>b.onclick=()=>void reportUser(b.dataset.report,'meeting'));
+    $('[data-kick]',host).forEach(b=>b.onclick=async()=>{if(!confirm('Remove this participant?'))return;try{await rpc('connect_end_room',{p_room:state.room.id,p_kick:b.dataset.kick});await syncRoom()}catch(e){handleError(e)}});
   }
   async function signal(to,kind,payload){
     if(!state.room||!uid(to))return;
