@@ -200,7 +200,8 @@
     state.signalSeen=0;state.chatSeen=0;state.peers.clear();setTab('meetings');renderMeeting();
     try{state.local=await navigator.mediaDevices.getUserMedia({audio:true,video:true})}
     catch(e){try{state.local=await navigator.mediaDevices.getUserMedia({audio:true,video:false})}
-      catch{state.mediaError='Camera/microphone permission denied. You can still use meeting chat.'}}
+      catch{try{state.local=await navigator.mediaDevices.getUserMedia({audio:false,video:true})}
+        catch{state.mediaError='Camera/microphone permission denied. You can still use meeting chat.'}}}
     const v=$('#v122-local-video');if(v&&state.local)v.srcObject=state.local;
     if(state.mediaError)status(state.mediaError,true);
     await syncRoom();await pollSignals();await pollRoomChat();
@@ -306,7 +307,8 @@
       const screen=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
       const track=screen.getVideoTracks()[0];if(!track)throw Error('No screen track');
       state.screen=screen;
-      for(const pc of state.peers.values()){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)await sender.replaceTrack(track)}
+      for(const [peerId,pc] of state.peers){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)await sender.replaceTrack(track);
+        else{pc.addTrack(track,screen);const offer=await pc.createOffer();await pc.setLocalDescription(offer);await signal(peerId,'offer',{type:'offer',sdp:pc.localDescription?.sdp})}}
       const local=$('#v122-local-video');if(local)local.srcObject=screen;
       const btn=$('#v122-screen');if(btn)btn.textContent='Stop sharing';
       track.onended=()=>stopScreen();
