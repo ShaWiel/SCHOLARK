@@ -123,6 +123,10 @@ begin
   -- Verify revocation is immediate.
   perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',true);
   perform public.connect_set_contact_discovery(false);
+  if exists(select 1 from public.connect_contact_match_grants
+    where target='00000000-0000-4000-8000-000000000013') then
+    raise exception 'Contact opt-out left a stale invitation grant';
+  end if;
   perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',true);
   select count(*) into matches from public.connect_find_contacts(array['person13@example.test'],array[]::text[]);
   if matches<>0 then raise exception 'Opt-out did not take effect';end if;
