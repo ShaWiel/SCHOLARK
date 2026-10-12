@@ -352,14 +352,14 @@
     renderMeeting();status(write?'You left the meeting.':'The meeting is no longer available.');
   }
   async function open(){
-    if(!renderBase())return;
-    const s=own();if(!s?.access_token||!s?.user?.id){
+    const s=own();
+    if(state.room&&state.me?.id===s?.user?.id&&$('#v122-videos')?.isConnected)return;
+    if(!renderBase())return;if(!s?.access_token||!s?.user?.id){
       if(state.room)await leaveRoom(false);
       state.me=null;state.profile=null;state.selected=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[];
       $('#v122-body').innerHTML='<div class="v122-panel"><h2>Sign in to Connect</h2><p>Meetings, friend requests and chat require a verified SCHOLAVERUM account.</p><button class="v122-btn lime" id="v122-signin">Sign in</button></div>';
       $('#v122-signin').onclick=()=>window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');return;
     }
-    if(state.room&&$('#v122-videos')?.isConnected&&state.me?.id===s.user.id)return;
     const previous=state.me?.id;state.me=s.user;
     if(previous&&previous!==state.me.id){await leaveRoom(false);state.selected=null;state.profile=null;state.identities.clear();state.friends=[];state.requests=[];state.pending=[];state.messages=[]}
     try{
