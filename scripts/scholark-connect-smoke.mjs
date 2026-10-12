@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const ui=read('scholark-v122-connect.js');
+const sfu=read('scholark-v123-connect-livekit.js');
+const rollout=read('supabase/migrations/20261012_connect_sfu_rollout_disabled_r259.sql');
+const token=read('supabase/functions/connect-media-token/index.ts');
 const runtime=read('scholark-runtime-loader.js');
 const shell=read('scholark-v51-workspace-shell.js');
 const docker=read('Dockerfile');
@@ -13,17 +16,21 @@ const roadmap=read('SCHOLAVERUM_CONNECT_ROADMAP.md');
 const privacy=read('supabase/migrations/20261011_connect_private_discovery_r258.sql');
 const reporting=read('supabase/migrations/20261011_connect_reporting_r258.sql');
 const requireAll=(value,fragments,label)=>fragments.forEach(fragment=>assert.ok(value.includes(fragment),label+' missing '+fragment));
-new Function(ui);
-requireAll(runtime,["connect:['scholark-v122-connect.js']","'scholark-v122-connect.js'","'connect','schools'"],'Connect runtime');
+new Function(ui);new Function(sfu);
+requireAll(runtime,["connect:['scholark-v123-connect-livekit.js','scholark-v122-connect.js']","'scholark-v122-connect.js'","'connect','schools'"],'Connect runtime');
 requireAll(shell,["['connect','◉','Connect']","card('connect','◉','Connect'","id==='connect'","h.startsWith('#connect')"],'Connect workspace route');
 requireAll(docker,['COPY scholark-v122-connect.js','ENV SCHOLARK_RELEASE=r258-native-connect'],'Connect Docker');
 requireAll(ui,['connect_friend_request','connect_friend_action','connect_block','connect_report','data-friend-report','data-report','connect_send_message','connect_create_room','connect_join_room','connect_leave_room','connect_end_room','connect_signal','connect_room_message','RTCPeerConnection','getUserMedia','getDisplayMedia','v122-board','stopScreen()','scholark-workspace-change','pagehide','getState:'],'Connect UI core');
+requireAll(ui,["media_mode==='sfu'","state.sfu","toggleMic","toggleCam","toggleScreen"],'SFU UI branch');
+requireAll(sfu,['connect-media-token','LivekitClient','RoomEvent.TrackSubscribed','setMicrophoneEnabled','setCameraEnabled','setScreenShareEnabled','disconnect()'],'SFU tracks and teardown');
+requireAll(rollout,['sfu_enabled boolean not null default false',"default 'mesh'",'maximum % people','connect_media_rollout'],'Fail-closed SFU rollout');
+requireAll(token,['connect_room_members','connect_rooms','sfu_room_unavailable','not_a_room_member','roomJoin:true','exp:now+120'],'Authenticated SFU tokens');
 requireAll(migration,['enable row level security','connect_room_members','connect_signals','connect_member','connect_find_people','on conflict(room_id,user_id)','revoke insert,update,delete','gen_random_bytes(20)'],'Connect schema');
 requireAll(hardening,['grant execute on function public.connect_member','Too many meeting updates','rate-limit','connect identities searchable and contacts'],'Connect security');
 requireAll(privacy,['searchable set default false'],'Private discovery');
 requireAll(reporting,['connect_reports','enable row level security','Daily report limit reached'],'Report moderation');
 requireAll(roadmap,['Priority 3','ARKI','AI Tutor','SFU','TURN'],'Deferred plans');
-for(const forbidden of ['meet.google.com','teams.microsoft.com','join.skype.com','sdk.daily.co','livekit-client']){
+for(const forbidden of ['meet.google.com','teams.microsoft.com','join.skype.com','sdk.daily.co','meet.jit.si']){
   assert.ok(!ui.includes(forbidden),'Connect must not embed a third-party meeting application: '+forbidden);
 }
 const mockWindow={addEventListener(){},navigator:{},};
