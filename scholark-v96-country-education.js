@@ -215,6 +215,7 @@
   const countryList=[...new Set([...Object.keys(SYSTEMS),...WORLD_COUNTRIES.map(x=>x.name)])].sort((a,b)=>a.localeCompare(b,'en'));
   const STATIC_UI_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
   const uiLang=()=>{const x=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.langs?.some?.(([code])=>code===x)?x:(STATIC_UI_LANGS.has(x)?x:'nl')};
+  const displayLocale=()=>uiLang()==='cmn'?'zh-CN':uiLang();
   const COUNTRY_NAMES={
     Suriname:['Suriname','Suriname','Surinam','Suriname','Suriname','Suriname','Suriname'],
     Netherlands:['Nederland','Netherlands','Países Bajos','Pays-Bas','Niederlande','Países Baixos','Paesi Bassi'],
@@ -537,7 +538,7 @@
     if(idx!=null&&COUNTRY_NAMES[c]?.[idx])return COUNTRY_NAMES[c][idx];
     const region=COUNTRY_CODES[c]||worldCodeByName.get(c);
     if(region&&typeof Intl!=='undefined'&&Intl.DisplayNames){
-      try{const v=new Intl.DisplayNames([lang],{type:'region'}).of(region);if(v)return v}catch{}
+      try{const v=new Intl.DisplayNames([displayLocale()],{type:'region'}).of(region);if(v)return v}catch{}
     }
     return c;
   };
@@ -610,7 +611,7 @@
     let worldLocalized='';
     if(!localized&&typeof Intl!=='undefined'&&Intl.DisplayNames){
       try{
-        const dn=new Intl.DisplayNames([uiLang()],{type:'region'});
+        const dn=new Intl.DisplayNames([displayLocale()],{type:'region'});
         const code=WORLD_CODES.find(code=>clean(dn.of(code)).toLowerCase()===low);
         if(code)worldLocalized=WORLD_COUNTRIES.find(x=>x.code===code)?.name||'';
       }catch{}
@@ -658,9 +659,15 @@
     return country;
   }
   function countryOptions(selected){
+    // Sort by the actual localized names users see, not internal English IDs.
+    // Keep the stable country value and selected education system unchanged.
     const known=[...countryList];
-    if(selected&&!known.includes(selected))known.unshift(selected);
-    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+countryName(c)+'</option>').join('');
+    if(selected&&!known.includes(selected))known.push(selected);
+    const lang=displayLocale();
+    const labels=new Map(known.map(c=>[c,countryName(c)]));
+    const collator=new Intl.Collator(lang,{sensitivity:'base',numeric:true});
+    known.sort((a,b)=>collator.compare(labels.get(a),labels.get(b))||a.localeCompare(b,'en'));
+    return known.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'"'+(c===selected?' selected':'')+'>'+labels.get(c)+'</option>').join('');
   }
   function ensureSidebarCountry(){
     const side=$('#v51-sidebar');if(!side)return;

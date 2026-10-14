@@ -26,7 +26,7 @@
   `;
   document.head.appendChild(style);
 
-  const fallbackLangs=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','Deutsch'],['pt','Português'],['it','Italiano']];
+  const fallbackLangs=[['nl','Dutch'],['en','English'],['es','Spanish'],['fr','French'],['de','German · Deutsch'],['pt','Portuguese · Português'],['it','Italian · Italiano']].sort((a,b)=>a[1].localeCompare(b[1],'en'));
   const langs=()=>window.__SCHOLARK_I18N__?.langs?.length?window.__SCHOLARK_I18N__.langs:fallbackLangs;
 
   const labels={

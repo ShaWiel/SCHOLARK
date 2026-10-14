@@ -45,7 +45,7 @@
     @media(max-width:1050px){.v93{padding:26px 18px 60px}.v93-hero{grid-template-columns:1fr}.v93-row{grid-template-columns:1fr 1fr}.v93-intro{min-height:auto}.v93-intro-copy{padding-top:54px}}@media(max-width:620px){.v93{padding:24px 11px 50px}.v93-row,.v93-language-row{grid-template-columns:1fr}.v93-progress-grid{grid-template-columns:1fr 1fr}.v93-line{grid-template-columns:1fr}.v93-line .v93-mini{justify-self:start}.v93-language-row .v93-swap{margin:-2px auto 0;width:52px;height:38px}.v93-language-row .v93-swap:hover{transform:translateY(-1px)}.v93-language-orb{position:static;width:auto;height:auto;border-radius:16px;display:grid;grid-template-columns:auto 1fr auto;gap:8px;text-align:left;justify-content:stretch;margin:14px 0;padding:10px 12px}.v93-language-orb b{margin:0;max-width:none}.v93-intro-copy{padding-top:0}.v93 h1{font-size:42px;padding-right:0}.v93-review-head{grid-template-columns:1fr}.v93-review-options{grid-template-columns:1fr}.v93-grade{grid-template-columns:1fr}.v93-card,.v93-section{border-radius:21px;padding:18px}}
   `;document.head.appendChild(css);
 
-  function langs(){return window.__SCHOLARK_I18N__?.langs||[['en','English'],['nl','Nederlands'],['es','Español'],['fr','Français']]}
+  function langs(){return window.__SCHOLARK_I18N__?.langs||[['en','English'],['nl','Dutch'],['es','Spanish'],['fr','French']].sort((a,b)=>a[1].localeCompare(b[1],'en'))}
   function langName(code){return window.__SCHOLARK_I18N__?.languageName?.(code)||langs().find(x=>x[0]===code)?.[1]||code}
   function uiCode(){return window.__SCHOLARK_I18N__?.code?.()||localStorage.getItem('scholark_ui_language')||'en'}
   function options(selected){return langs().map(([v,n])=>'<option value="'+esc(v)+'" '+(v===selected?'selected':'')+'>'+esc(n)+'</option>').join('')}
@@ -285,7 +285,7 @@
   }
 
   function speak(text,code){
-    if(!text||!('speechSynthesis'in window))return;const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase().startsWith(String(code||'').toLowerCase()));speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||code||'en';u.rate=.9;if(voice)u.voice=voice;speechSynthesis.speak(u);
+    if(!text||!('speechSynthesis'in window))return;const speechCode=code==='cmn'?'zh-CN':code;const voices=speechSynthesis.getVoices(),voice=voices.find(v=>(v.lang||'').toLowerCase()===String(speechCode||'').toLowerCase())||voices.find(v=>(v.lang||'').toLowerCase().startsWith(String(speechCode||'').slice(0,2).toLowerCase()));speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=voice?.lang||speechCode||'en';u.rate=.9;if(voice)u.voice=voice;speechSynthesis.speak(u);
   }
 
   function similarity(a,b){
@@ -293,7 +293,7 @@
   }
   function practice(expected,code,host){
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){if(host)host.textContent='Speech recognition is not supported in this browser. You can still use Listen and repeat aloud.';return}
-    const rec=new SR();rec.lang=code||'en';rec.interimResults=false;rec.maxAlternatives=1;if(host)host.textContent='Listening… say: '+expected;
+    const rec=new SR();rec.lang=code==='cmn'?'zh-CN':(code||'en');rec.interimResults=false;rec.maxAlternatives=1;if(host)host.textContent='Listening… say: '+expected;
     rec.onresult=e=>{const heard=e.results?.[0]?.[0]?.transcript||'',score=similarity(expected,heard);if(host)host.textContent='Heard: “'+heard+'” · similarity '+score+'%'+(score>=85?' · excellent':score>=65?' · close, try once more':' · listen again and retry')};
     rec.onerror=()=>{if(host)host.textContent='Could not capture speech. Try again or use Listen first.'};try{rec.start()}catch{}
   }
@@ -339,7 +339,7 @@
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(()=>open(false),40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open(false)},260);
   function selftest(){
-    const rows=langs(),codes=rows.map(x=>x[0]),adaptiveReview=REVIEW_MIN_GAP>=2&&REVIEW_MAX_GAP>REVIEW_MIN_GAP,ok=rows.length===74&&new Set(codes).size===74&&!codes.includes('srn')&&adaptiveReview&&REVIEW_QUESTIONS>=10;
+    const rows=langs(),codes=rows.map(x=>x[0]),adaptiveReview=REVIEW_MIN_GAP>=2&&REVIEW_MAX_GAP>REVIEW_MIN_GAP,ok=rows.length===75&&new Set(codes).size===75&&codes.includes('cmn')&&!codes.includes('srn')&&adaptiveReview&&REVIEW_QUESTIONS>=10;
     return {ok,count:rows.length,unique:new Set(codes).size,noSranan:!codes.includes('srn'),reviewGap:[REVIEW_MIN_GAP,REVIEW_MAX_GAP],reviewQuestions:REVIEW_QUESTIONS,adaptiveReview};
   }
   window.__SCHOLARK_V93_LANGUAGE__={open:()=>open(false),refresh:()=>open(true),buildLesson,nextLesson,completeLesson:complete,reviewDue,finishReview,openSavedLibrary,getCurrent:()=>current,selftest,supportedCount:()=>langs().length};

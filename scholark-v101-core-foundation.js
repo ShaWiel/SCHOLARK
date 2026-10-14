@@ -329,7 +329,7 @@
       connectedExperience:publicSurface||!!window.__SCHOLARK_V111_EXPERIENCE__,
       workspaceRootLocked:publicSurface||document.documentElement.classList.contains('v51-workspace-root'),
       localeControls:publicSurface||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
-      language74:window.__SCHOLARK_I18N__?.count===74&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
+      language74:window.__SCHOLARK_I18N__?.count===75&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
       languageResilience:i18nReport?.abortable===true&&i18nReport?.retryReady===true,
       languageCoverage:window.__SCHOLARK_I18N__?.coverage?.(620)||null,
       globalCountryRegistry:countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195,

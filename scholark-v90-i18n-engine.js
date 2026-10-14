@@ -24,8 +24,9 @@
     ['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],['sr','Српски','Serbian'],
     ['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],['si','සිංහල','Sinhala'],
     ['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],
-    ['ha','Hausa','Hausa']
-  ];
+    ['ha','Hausa','Hausa'],['cmn','普通话','Mandarin Chinese']
+  ].sort((a,b)=>a[2].localeCompare(b[2],'en',{sensitivity:'base'})||a[0].localeCompare(b[0]));
+  const languageOptionLabel=([,native,english])=>native===english?english:english+' · '+native;
   const STATIC_CORE_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
 
   const STATIC_UI={nl:{},es:{},fr:{},de:{},pt:{},it:{}};
@@ -113,7 +114,7 @@
     ['For everyday learning, practice and planning.','Voor dagelijks leren, oefenen en plannen.','Para aprender, practicar y planificar cada día.','Pour apprendre, pratiquer et planifier au quotidien.','Für tägliches Lernen, Üben und Planen.','Para aprender, praticar e planejar todos os dias.','Per imparare, esercitarsi e pianificare ogni giorno.'],
     ['Everything in Free','Alles uit Gratis','Todo lo de Gratis','Tout ce qui est inclus dans Gratuit','Alles aus Kostenlos','Tudo do Grátis','Tutto di Gratis'],
     ['Everything in Plus','Alles uit Plus','Todo lo de Plus','Tout ce qui est inclus dans Plus','Alles aus Plus','Tudo do Plus','Tutto di Plus'],
-    ['74-language interface','Interface in 74 talen','Interfaz en 74 idiomas','Interface en 74 langues','Oberfläche in 74 Sprachen','Interface em 74 idiomas','Interfaccia in 74 lingue'],
+    ['75-language interface','Interface in 75 talen','Interfaz en 75 idiomas','Interface en 75 langues','Oberfläche in 75 Sprachen','Interface em 75 idiomas','Interfaccia in 75 lingue'],
     ['/ month','/ maand','/ mes','/ mois','/ Monat','/ mês','/ mese'],
     ['Ask Tutor','Vraag Tutor','Preguntar al Tutor','Demander au tuteur','Tutor fragen','Perguntar ao Tutor','Chiedi al Tutor'],
     ['Use my files','Gebruik mijn bestanden','Usar mis archivos','Utiliser mes fichiers','Meine Dateien verwenden','Usar meus arquivos','Usa i miei file'],
@@ -500,7 +501,7 @@
     'Lesson complete','Listen','Practice speaking','Show answer','Hide answer','Vocabulary & phrases','Grammar made clear','Practice dialogue','Exercises','Culture tip','Next lesson','Your language progress','Lessons completed','Current streak','XP',
     'SCHOLAVERUM PLANS','Choose how much advantage you want.','Free','Plus','Pro','SCHOLAVERUM Free','SCHOLAVERUM Plus','SCHOLAVERUM Pro','MOST POPULAR','No payment method required.','Start free','Start Plus free trial','Start Pro free trial',
     'For everyday learning, practice and planning.','For learners and creators who use Studio AI regularly.','Maximum AI quality, large projects and future-study tools.',
-    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','74-language interface','30 included AI credits/month','Credits are spent only on AI-heavy actions',
+    'AI Tutor with step-by-step lessons','Diagnostics, Mastery & Spaced Review','Planner, Goals & Progress','Files & Notes analysis','Language Learner: vocabulary, grammar, listening & speaking practice','75-language interface','30 included AI credits/month','Credits are spent only on AI-heavy actions',
     'Everything in Free','Studio AI: Presentation, Webpage, Document, Social & Graphic','Research + citations and web sources','Cloud projects + version history','Advanced Files & Notes: Ask Files, worksheets and study tools','Natural Rewrite + priority creation','750 included AI credits/month','Higher fair-use limits',
     'Everything in Plus','Highest-quality ARKI','Generous Studio + Natural Rewrite with fair-use guardrails','Presentations up to 100 slides','Documents/reports up to 100 pages','Book Studio beta: architecture + chapter-by-chapter writing','All genres + custom blends','Schools Near Me + Study Ahead','2,500 included AI credits/month','Priority access to stronger models for complex work',
     '/ month','7 days free, then $14.99/month. Cancel anytime.','7 days free, then $19.99/month. Cancel anytime.','Plans & limits',
@@ -606,7 +607,7 @@
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null,activeTransitionFailsafe=0;
   const textSource=new WeakMap(),attrSource=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
-  const DEVICE_LANGS=new Set(['ar','bg','bn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
+  const DEVICE_LANGS=new Set(['ar','bg','bn','cmn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
   function primeDeviceTranslator(target,onProgress){
     // CI/local smoke runs must stay deterministic and must never wait for
@@ -614,7 +615,7 @@
     // Translator API whenever the browser supports it.
     if(window.__SCHOLARK_TEST_MODE__||target==='en'||!DEVICE_LANGS.has(target)||!('Translator' in window))return null;
     if(deviceTranslators.has(target))return deviceTranslators.get(target);
-    const options={sourceLanguage:'en',targetLanguage:target};
+    const options={sourceLanguage:'en',targetLanguage:target==='cmn'?'zh':target};
     let promise;
     try{
       promise=window.Translator.create({...options,monitor(m){m.addEventListener('downloadprogress',e=>{try{onProgress?.(Math.max(0,Math.min(100,Math.round(Number(e.loaded||0)*100))))}catch{}})}});
@@ -690,7 +691,7 @@
         const ctrl=new AbortController(),timeoutMs=(purpose==='ui'||purpose==='topbar_ui')?12000:45000,timer=setTimeout(()=>ctrl.abort(),timeoutMs);
         const relay=()=>ctrl.abort();if(parentSignal)parentSignal.addEventListener('abort',relay,{once:true});
         try{
-          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target,purpose,strings:chunk}),signal:ctrl.signal});
+          const r=await fetch('/api/learning/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'translate_ui',language:languageName(target),languageCode:target==='cmn'?'zh':target,purpose,strings:chunk}),signal:ctrl.signal});
           const d=await r.json().catch(()=>({}));
           if(r.ok&&d?.ok)return d;
           last='HTTP '+r.status;
@@ -776,7 +777,7 @@
   }
 
   function upgradeSelectors(){
-    const expected=LANGS.map(([v,n])=>[v,n]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
+    const expected=LANGS.map(x=>[x[0],languageOptionLabel(x)]),options=expected.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('');
     const wireStableSelect=sel=>{
       if(!sel||sel.dataset.v90StableSelect==='1')return;
       sel.dataset.v90StableSelect='1';
@@ -1115,10 +1116,12 @@
     const excluded=new Set(['srn']);
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
     const abortable=typeof AbortController==='function',retryReady=/resilient/.test(CACHE_VERSION);
-    const ok=LANGS.length===74&&dynamicLocales.length===67&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
-    const report={ok,count:LANGS.length,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
+    const sortedNames=LANGS.every((x,i)=>i===0||LANGS[i-1][2].localeCompare(x[2],'en',{sensitivity:'base'})<=0);
+    const mandarinReady=LANGS.some(([lc,native,english])=>lc==='cmn'&&native==='普通话'&&english==='Mandarin Chinese');
+    const ok=LANGS.length===75&&dynamicLocales.length===68&&sortedNames&&mandarinReady&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
+    const report={ok,count:LANGS.length,sortedNames,mandarinReady,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
     console[ok?'log':'warn']('[SCHOLAVERUM] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
-  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],x[1]]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,coverage:visibleCoverage,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource,rtlCodes:[...RTL]};
+  window.__SCHOLARK_I18N__={langs:LANGS.map(x=>[x[0],languageOptionLabel(x)]),languageName,nativeName,code,changeLanguage,apply:applyKnown,translateMissing:fillUnknown,translateCurrentPage,translateStrings,upgradeSelectors,selftest:i18nSelftest,coverage:visibleCoverage,count:LANGS.length,cacheVersion:CACHE_VERSION,canonicalSource,rtlCodes:[...RTL]};
 })();
