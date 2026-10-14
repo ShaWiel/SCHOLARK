@@ -210,9 +210,9 @@ async function chargeLearningCredits(req,mode,p,out){
   return {ok:true,usage:{billingMode:'server',serverCharged:true,feature,spent:Number(d?.spent)||0,balance:Number(d?.balance)||0,idempotent:!!d?.idempotent,requestId,quota:d?.quota||null}};
 }
 const isSecret = s => /^(sk[_-]|sk-proj-|pk_)/.test(String(s||''));
-const UI_LANGUAGE_CODES=new Set(["nl","en","es","fr","de","pt","it","ar","zh","hi","bn","ru","ja","ko","tr","pl","uk","ro","el","cs","sv","da","no","fi","hu","id","ms","vi","th","tl","sw","he","ur","fa","ta","te","pa","af","sq","am","hy","az","eu","be","bs","bg","ca","hr","et","ka","gu","is","ga","kk","km","lo","lv","lt","mk","ml","mr","mn","ne","ps","sr","sk","sl","so","si","uz","cy","yo","zu","ha"]);
-if(UI_LANGUAGE_CODES.size!==74||UI_LANGUAGE_CODES.has('srn'))throw new Error('SCHOLAVERUM language registry integrity failure');
-console.log('[SCHOLAVERUM] Global language registry ready · 74 interface + Language Learner languages · Sranan Tongo excluded');
+const UI_LANGUAGE_CODES=new Set(["nl","en","es","fr","de","pt","it","ar","zh","hi","bn","ru","ja","ko","tr","pl","uk","ro","el","cs","sv","da","no","fi","hu","id","ms","vi","th","tl","sw","he","ur","fa","ta","te","pa","af","sq","am","hy","az","eu","be","bs","bg","ca","hr","et","ka","gu","is","ga","kk","km","lo","lv","lt","mk","ml","mr","mn","ne","ps","sr","sk","sl","so","si","uz","cy","yo","zu","ha","cmn"]);
+if(UI_LANGUAGE_CODES.size!==75||!UI_LANGUAGE_CODES.has('cmn')||UI_LANGUAGE_CODES.has('srn'))throw new Error('SCHOLAVERUM language registry integrity failure');
+console.log('[SCHOLAVERUM] Global language registry ready · 75 interface + Language Learner languages · Sranan Tongo excluded');
 const translationMemory=new Map();
 const TRANSLATION_MEMORY_MAX=24000;
 const translationKey=(lang,source)=>String(lang||'').toLowerCase()+'\u0000'+String(source||'');
