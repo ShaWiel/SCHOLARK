@@ -66,11 +66,11 @@
 
   const SURINAME_AI_LEVEL=Object.fromEntries(SURINAME_LEVELS.map(([id,,,,,ai])=>[id,ai]));
   const TOOLS=[
-    ['dashboard','⌂','Dashboard'],['connect','◉','Connect'],['ai','✺','ARKI'],['tutor','AI',tutorDisplayName()],['education','◎','Education & Learning'],['language','Aa','Language Learner'],['planner','▦','Planner'],['focus','◷','Focus Sessions'],['flashcards','▤','Flashcards'],['assignments','✓','Assignments'],['reminders','◴','Reminders'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
+    ['dashboard','⌂','Dashboard'],['ai','✺','ARKI'],['tutor','AI',tutorDisplayName()],['education','◎','Education & Learning'],['language','Aa','Language Learner'],['planner','▦','Planner'],['focus','◷','Focus Sessions'],['flashcards','▤','Flashcards'],['assignments','✓','Assignments'],['reminders','◴','Reminders'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
   ];
   const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','🚀','Study Ahead','PRO']];
-  const COMING=[['studio','✦','Studio AI'],['book','📚','Book Studio']];
-  const INACTIVE=new Set(['studio','book']);
+  const COMING=[['connect','◉','Connect'],['studio','✦','Studio AI'],['book','📚','Book Studio']];
+  const INACTIVE=new Set(['connect','studio','book']);
   const ALIASES={
     ai:['scholark ai','general ai','ai assistant'],tutor:['ai tutor','tutor ai','tutor'],education:['education & learning','educatie & leren','onderwijs & leren','education'],language:['language learner','language learning','talen leren','taal leren'],planner:['planner'],focus:['focus sessions','focus','concentratie'],flashcards:['flashcards','flash cards','kaartjes'],assignments:['assignments','assignment','opdrachten'],reminders:['reminders','reminder','notifications','meldingen','herinneringen'],progress:['progress','voortgang'],goal:['goals','doelen','goal'],project:['my projects','mijn projecten','projects','projecten']
   };
@@ -542,8 +542,8 @@
   function showComingSoon(id){
     setCollapsed(false,true);clearModes();state.active=id;syncNav();setRoute(id);showPage('fallback');
     const host=$('#v51-fallback');if(!host)return;
-    const isBook=id==='book',title=isBook?'Book Studio':'Studio AI';
-    host.innerHTML=`<div class="v51-coming-soon"><div class="v51-coming-card"><span class="v51-coming-badge">COMING SOON</span><h1>${title}</h1><div class="v51-coming-actions"><button type="button" data-v51-coming="dashboard">Back to Dashboard</button></div></div></div>`;
+    const isBook=id==='book',title=id==='connect'?'Connect':isBook?'Book Studio':'Studio AI';
+    host.innerHTML=`<div class="v51-coming-soon"><div class="v51-coming-card"><span class="v51-coming-badge">COMING SOON</span><h1>${title}</h1>${id==='connect'?'<p>Friends, messages, voice calls and study rooms are being prepared for a future release.</p>':''}<div class="v51-coming-actions"><button type="button" data-v51-coming="dashboard">Back to Dashboard</button></div></div></div>`;
     qsa('[data-v51-coming]',host).forEach(b=>b.onclick=()=>openTool(b.dataset.v51Coming));
     syncWorkspaceLanguage(host,true);
   }
