@@ -46,6 +46,7 @@ const languageLearner=read('scholark-v93-language-learner.js');
 const workspaceCore=read('scholark-v110-workspace-core.js');
 const fileIntelligence=read('scholark-v86-file-intelligence.js');
 const learningRoute=read('scholark-learning-route.mjs');
+const creditAuthR269=read('supabase/migrations/20261015_credit_internal_auth_grant_r269.sql');
 const dashboardBootstrap=read('scholark-v53-dashboard-bootstrap.js');
 const stabilityFoundation=read('scholark-v81-stability-foundation.js');
 const workspacePolish=read('scholark-v91-workspace-polish.js');
@@ -133,6 +134,8 @@ ok(apiGuard.includes('MAX_BUCKETS = 10000')&&apiGuard.includes('buckets.size >= 
 ok(apiGuard.includes('function hardenServer(server)')&&apiGuard.includes('server.requestTimeout = 120000')&&apiGuard.includes('server.headersTimeout = 20000')&&apiGuard.includes('server.maxHeadersCount = 100')&&apiGuard.includes('server.maxRequestsPerSocket = 250'),'Node transport hardening is incomplete');
 ok(apiGuard.includes('MAX_CONCURRENT_PER_CLIENT = 6')&&apiGuard.includes('activeExpensiveByClient')&&apiGuard.includes('CLIENT_CONCURRENCY_LIMIT')&&apiGuard.includes("res.setHeader('cache-control','no-store')")&&apiGuard.includes('perClientConcurrencyGuard:true')&&apiGuard.includes('apiNoStore:true'),'API per-client concurrency / no-store hardening is incomplete');
 ok(apiGuard.includes("rateLimitMode:testMode?'test-bypass':'enforced'")&&apiGuard.includes("if (testMode) {")&&apiGuard.includes("x-ratelimit-limit','test-bypass'")&&apiGuard.includes("const client = clientKey(req)")&&apiGuard.includes("const rate = consume(client,url.pathname,rule.limit)"),'API guard must bypass only synthetic test buckets while preserving production rate enforcement');
+ok(creditAuthR269.includes("grant execute on function scholark_private.consume_feature_credits_once_internal(text,text,jsonb) to authenticated")&&creditAuthR269.includes("from public, anon")&&learningRoute.includes("CREDIT_SERVICE_FORBIDDEN")&&!learningRoute.includes("Your SCHOLAVERUM session has expired. Sign in again."),"AI credit RPC access and 403 auth error mapping are incomplete");
+ok(experienceControls.includes("document.execCommand?.('copy')")&&experienceControls.includes('data-v120-copy-message="arki:')&&experienceControls.includes('data-v120-copy-message="tutor:')&&ciWorkflow.includes('node scripts/scholark-ai-auth-copy-smoke.mjs')&&releaseGateWorkflow.includes('node scripts/scholark-ai-auth-copy-smoke.mjs'),"AI messages must be copyable and tested before deployment");
 ok(learningRoute.includes('async function resilientCreditFetch')&&learningRoute.includes("setDefaultResultOrder('ipv4first')")&&learningRoute.includes("Credit service '+label+' network attempt")&&learningRoute.includes("SCHOLAVERUM is reconnecting to account services"),'Learning AI credit-service network resilience is incomplete');
 ok(learningRoute.includes("url.pathname==='/api/learning/credit-health'")&&learningRoute.includes('async function creditServiceHealth()')&&learningRoute.includes("service:'supabase-credit'"),'Learning AI live credit-service healthcheck is missing');
 ok(learningRoute.includes('Credit service startup self-test')&&learningRoute.includes('dnsRecords')&&learningRoute.includes('httpStatus'),'Production credit-service startup probe is missing');

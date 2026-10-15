@@ -125,7 +125,11 @@ async function fetchFreeQuotaStatus(token,attachmentCount=0){
     body:JSON.stringify({p_attachment_count:Math.max(0,Math.min(CHAT_ATTACHMENT_LIMIT,Number(attachmentCount)||0))})
   },'free-ai-quota-status');
   const d=await r.json().catch(()=>({}));
-  if(r.status===401||r.status===403){const e=new Error('Your SCHOLAVERUM session has expired. Sign in again.');e.code='AUTH_REQUIRED';e.http=401;throw e}
+  if(r.status===401||r.status===403){
+    if(r.status===403)console.warn('[SCHOLAVERUM] Quota status RPC access denied; check database grants');
+    const e=new Error(r.status===403?'SCHOLAVERUM could not access the daily quota service. Please retry shortly.':'SCHOLAVERUM could not verify your sign-in. Please refresh your session.');
+    e.code=r.status===403?'CREDIT_SERVICE_FORBIDDEN':'AUTH_REQUIRED';e.http=r.status===403?503:401;throw e
+  }
   if(!r.ok){const e=new Error('SCHOLAVERUM could not verify the Free plan daily limit.');e.code='CREDIT_SERVICE_UNAVAILABLE';throw e}
   return d&&typeof d==='object'?d:{ok:true,quota:null}
 }
@@ -148,9 +152,14 @@ async function authorizeLearningCredits(req,mode,p={}){
       chatMode?fetchFreeQuotaStatus(token,attachmentCount):Promise.resolve(null)
     ])
   }catch(e){
-    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLAVERUM is reconnecting to account services. Please try ARKI again in a moment.',detailCode:e.causeCode||networkCode(e)}
+    if(e?.code==='AUTH_REQUIRED'||e?.code==='CREDIT_SERVICE_FORBIDDEN')return {ok:false,http:e.http||503,code:e.code,error:e.message};
+    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLAVERUM is reconnecting to account services. Please try again in a moment.',detailCode:e.causeCode||networkCode(e)}
   }
-  if(cr.status===401||cr.status===403||wr.status===401||wr.status===403)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'Your SCHOLAVERUM session has expired. Sign in again.'};
+  if(cr.status===403||wr.status===403){
+    console.warn('[SCHOLAVERUM] Credit preflight denied · cost HTTP '+cr.status+' · wallet HTTP '+wr.status);
+    return {ok:false,http:503,code:'CREDIT_SERVICE_FORBIDDEN',error:'SCHOLAVERUM cannot verify your credits due to a service permission issue. Please retry shortly.'};
+  }
+  if(cr.status===401||wr.status===401)return {ok:false,http:401,code:'AUTH_REQUIRED',error:'SCHOLAVERUM could not verify your sign-in. Please refresh your session.'};
   if(!cr.ok||!wr.ok)return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLAVERUM could not verify your credit balance before this request.'};
   const cd=await cr.json().catch(()=>[]),wd=await wr.json().catch(()=>[]);
   const needed=Math.max(0,Number((Array.isArray(cd)?cd[0]:cd)?.credits)||0),wallet=Array.isArray(wd)?wd[0]:wd,balance=Math.max(0,Number(wallet?.balance)||0),quota=quotaStatus?.quota||null;
@@ -180,7 +189,10 @@ async function chargeLearningCredits(req,mode,p,out){
       return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'ARKI answered, but SCHOLAVERUM could not safely confirm the Free plan daily limit. Please retry.',detailCode:e.causeCode||networkCode(e)}
     }
     const qd=await qr.json().catch(()=>({}));
-    if(!qr.ok)return {ok:false,http:qr.status===401||qr.status===403?401:503,code:qr.status===401||qr.status===403?'AUTH_REQUIRED':'CREDIT_SERVICE_UNAVAILABLE',error:qr.status===401||qr.status===403?'Your SCHOLAVERUM session has expired. Sign in again.':'SCHOLAVERUM could not confirm the Free plan daily limit.'};
+    if(!qr.ok){
+      if(qr.status===403)console.warn('[SCHOLAVERUM] Free quota debit RPC denied');
+      return {ok:false,http:qr.status===401?401:503,code:qr.status===401?'AUTH_REQUIRED':qr.status===403?'CREDIT_SERVICE_FORBIDDEN':'CREDIT_SERVICE_UNAVAILABLE',error:qr.status===401?'SCHOLAVERUM could not verify your sign-in. Please refresh your session.':'SCHOLAVERUM could not confirm the Free plan daily limit.'};
+    }
     if(qd?.ok===false){
       const code=String(qd.code||'free_daily_chat_limit').toUpperCase();
       if(code==='REQUEST_ID_MISMATCH')return {ok:false,http:409,code,error:'This SCHOLAVERUM request ID cannot be replayed with different request details. Please retry the message.',quota:qd.quota||null};
@@ -198,8 +210,9 @@ async function chargeLearningCredits(req,mode,p,out){
   }
   const d=await r.json().catch(()=>({}));
   if(!r.ok){
-    const status=r.status===401||r.status===403?401:503;
-    return {ok:false,http:status,code:status===401?'AUTH_REQUIRED':'CREDIT_SERVICE_UNAVAILABLE',error:status===401?'Your SCHOLAVERUM session has expired. Sign in again.':'SCHOLAVERUM could not verify credits for this request.'};
+    const status=r.status===401?401:503;
+    if(r.status===403)console.warn('[SCHOLAVERUM] Credit debit RPC denied · mode '+mode);
+    return {ok:false,http:status,code:status===401?'AUTH_REQUIRED':r.status===403?'CREDIT_SERVICE_FORBIDDEN':'CREDIT_SERVICE_UNAVAILABLE',error:status===401?'SCHOLAVERUM could not verify your sign-in. Please refresh your session.':'SCHOLAVERUM could not verify credits for this request.'};
   }
   if(d?.ok===false){
     const code=String(d.code||'INSUFFICIENT_CREDITS').toUpperCase(),quota=d?.quota||null;

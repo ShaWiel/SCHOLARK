@@ -43,7 +43,25 @@
   `;document.head.appendChild(style);
 
   function toast(msg){let x=$('#v120-toast');if(!x){x=document.createElement('div');x.id='v120-toast';x.className='v120-toast';document.body.appendChild(x)}x.textContent=msg;clearTimeout(window.__v120toast);window.__v120toast=setTimeout(()=>x.remove(),1800)}
-  async function copyText(text){try{await navigator.clipboard.writeText(String(text||''));toast('Copied')}catch{toast('Could not copy')}}
+  async function copyText(text){
+    const value=String(text??'');
+    if(!value){toast('Nothing to copy');return false}
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(value);toast('Copied');return true;
+    }catch{
+      // Some browsers and embedded views reject Clipboard API permissions.
+      // Fallback to a user-gesture copy without exporting data to a server.
+      const active=document.activeElement,field=document.createElement('textarea');
+      field.value=value;field.setAttribute('readonly','');field.setAttribute('aria-hidden','true');
+      field.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(field);field.focus();field.select();
+      let copied=false;try{copied=!!document.execCommand?.('copy')}catch{}
+      field.remove();try{active?.focus?.({preventScroll:true})}catch{}
+      toast(copied?'Copied':'Copy unavailable: select the text and press Ctrl+C');
+      return copied;
+    }
+  }
   function speak(text){if(!('speechSynthesis'in window)||!text)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(text));u.lang=document.documentElement.lang||'en';speechSynthesis.speak(u)}catch{}}
   async function shareText(text,title='SCHOLARK'){const t=String(text||'');try{if(navigator.share){await navigator.share({title,text:t})}else await copyText(t)}catch{}}
 
@@ -208,7 +226,7 @@
   function decorateArkiUsers(){
     const api=window.__SCHOLARK_V107_GENERAL_AI__,box=$('#v107-thread');if(!api||!box)return;
     const chat=api.getCurrent?.(),rows=(chat?.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$$('.v107-msg.user',box);
-    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120UserIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-arki="'+row.i+'">Edit</button></div>')})
+    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120UserIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="arki:'+row.i+'" aria-label="Copy your ARKI message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-arki="'+row.i+'">Edit</button></div>')})
   }
   function startInlineEdit(node,text,onSave,onCancel){
     if(!node)return;node.innerHTML='<div class="v120-editbox"><textarea data-editing="1">'+esc(text||'')+'</textarea><div class="v120-edit-actions"><button type="button" class="save">Save & resend</button><button type="button" class="cancel">Cancel</button></div></div>';
@@ -255,7 +273,7 @@
   function renderTutorChat(chat=currentTutor()){
     const box=$('#v52-chat');if(!box)return;
     if(!(chat.messages||[]).length){box.innerHTML='<div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or choose an Assignment above and I’ll turn it into concrete next steps.</div>';return}
-    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
+    box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="tutor:'+i+'" aria-label="Copy your AI Tutor message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
     const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText()
@@ -297,7 +315,7 @@
   }
   function decorateTutorUsers(){
     const chat=currentTutor(),rows=(chat.messages||[]).map((m,i)=>({m,i})).filter(x=>x.m.role==='user'),nodes=$$('#v52-chat .v52-msg.user').filter(n=>!n.dataset.v82MessageId);
-    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120TutorIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+row.i+'">Edit</button></div>')})
+    nodes.forEach((node,n)=>{const row=rows[n];if(!row||node.querySelector('.v120-user-actions'))return;node.dataset.v120TutorIndex=String(row.i);node.insertAdjacentHTML('beforeend','<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="tutor:'+row.i+'" aria-label="Copy your AI Tutor message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+row.i+'">Edit</button></div>')})
   }
   function tutorAssistantHost(){return $$('#v52-chat .v52-msg.ai').filter(x=>!x.querySelector('.v62-loading')).at(-1)}
   function decorateLatestTutor(detail){
@@ -344,6 +362,13 @@
     const pick=e.target.closest?.('[data-v120-attach-pick]');if(pick){const [scope,kind]=String(pick.dataset.v120AttachPick||'').split(':'),root=attachmentRoot(scope),input=root?.querySelector?.('[data-v120-attach-input="'+scope+':'+kind+'"]');root?.querySelector?.('[data-v120-attach-menu="'+scope+'"]')?.classList.remove('open');root?.querySelector?.('[data-v120-attach-plus="'+scope+'"]')?.setAttribute('aria-expanded','false');input?.click();return}
     const remove=e.target.closest?.('[data-v120-attach-remove]');if(remove){const [scope,index]=String(remove.dataset.v120AttachRemove||'').split(':'),st=attachmentState[scope];if(st){st.items.splice(Number(index)||0,1);renderAttachmentTray(scope)}return}
     if(!e.target.closest?.('.v120-attach-wrap')){document.querySelectorAll('.v120-attach-menu.open').forEach(x=>x.classList.remove('open'));document.querySelectorAll('[data-v120-attach-plus]').forEach(x=>x.setAttribute('aria-expanded','false'))}
+    const copying=e.target.closest?.('[data-v120-copy-message]');if(copying){
+      const [scope,rawIndex]=String(copying.dataset.v120CopyMessage||'').split(':');
+      const index=Number(rawIndex),messages=scope==='arki'?window.__SCHOLARK_V107_GENERAL_AI__?.getCurrent?.()?.messages:scope==='tutor'?currentTutor()?.messages:null;
+      const msg=Number.isSafeInteger(index)&&index>=0?messages?.[index]:null;
+      if(msg?.role==='user')void copyText(msg.content??msg.text);
+      return;
+    }
     const ea=e.target.closest?.('[data-v120-edit-arki]');if(ea){editArkiUser(Number(ea.dataset.v120EditArki),ea.closest('.v107-msg.user'));return}
     const et=e.target.closest?.('[data-v120-edit-tutor]');if(et){editTutorUser(Number(et.dataset.v120EditTutor),et.closest('.v52-msg.user'));return}
     const a=e.target.closest?.('[data-v120-do]');if(a){const host=a.closest('.v120-actions');if(!host)return;const scope=host.dataset.v120Scope;if(scope==='arki')arkiAction(host,a.dataset.v120Do);else tutorAction(host,a.dataset.v120Do);return}
