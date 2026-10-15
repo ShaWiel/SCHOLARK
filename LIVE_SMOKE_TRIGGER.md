@@ -1,9 +1,17 @@
-# SCHOLAVERUM r267 post-deployment verification
+# SCHOLAVERUM r272 post-deployment verification
 
-Production application commit: dcce9412c5d7d48bdac373d6eeb6db80a526b429
-Render deploy: dep-db84ej3ncjis73ejak7g
+Production application commit: c3c3db1575c8dc078afc70fa66970ef01ca54b55
+Render deployment: dep-db89n0ivcj2c738nmg70
 Render service: scholark-web (manual deployment)
+Production URL: https://scholark-app-shawiel.onrender.com
+Release: r272-foundation-privacy
 
-Verify the actual production website and API health after the Tutor multiline-formula fix and notebook math reference tests. Inspect ARKI and AI Tutor routes, non-authenticated access controls, lesson UI, navigation, language switching, mobile behavior, user data boundaries, and in-chat HTML sandbox isolation. The authenticated live-model answer quality remains unverified without a dedicated signed-in test account; do not claim otherwise or spend user credits.
+Confirmed via Render:
+- Deployment status live, startup release r272-foundation-privacy.
+- Security foundation, API guard, learning route and workspace modules initialized.
+- Credit service startup self-test passed; document exports and references passed.
+- Paddle remains in sandbox; production logs report a Pro catalog verification warning (http_unknown) that requires separate follow-up.
 
-This documentation-only change triggers the normal post-deploy smoke and does not alter application code, deploy configuration, billing, or the separately staged Connect feature.
+The documentation-only live-smoke GitHub commit triggers live health/API/ARKI/Workspace/Language Learner/Schools Near Me browser and resilience smoke coverage. It does not change deployed application code, payment configuration, account data, or Connect release status.
+
+Authenticated live-model responses are not guaranteed by unauthenticated smoke tests; do not consume real users' credits.
