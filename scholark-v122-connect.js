@@ -1,6 +1,12 @@
 (() => {
   'use strict';
   if (window.__SCHOLARK_CONNECT__) return;
+  // Disable chat, contact discovery and meetings until the public Connect launch.
+  const CONNECT_RELEASE_STATE='coming-soon';
+  if(CONNECT_RELEASE_STATE!=='live'){
+    window.__SCHOLARK_CONNECT__={open:()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('connect'),leaveRoom:async()=>{},version:'r268-coming-soon',getState:()=>({available:false,comingSoon:true,signedIn:false,meeting:false,participants:0})};
+    return;
+  }
   const SB='https://yhafbwdnnpvuedycdkll.supabase.co';
   const KEY='sb_publishable_1f1KQE-QMOM8rR3RqvQlsw__79lCn6A';
   const $=(s,r=document)=>r.querySelector(s);
