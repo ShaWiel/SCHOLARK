@@ -116,7 +116,7 @@
     return copied;
   }
   function bindCopyButtons(box){
-    $('[data-v107-copy]',box).forEach(button=>button.addEventListener('click',()=>{
+    Array.from(box.querySelectorAll('[data-v107-copy]')).forEach(button=>button.addEventListener('click',()=>{
       const index=Number(button.dataset.v107Copy);
       if(Number.isInteger(index)&&index>=0)void copyMessage(index,button);
     }));
