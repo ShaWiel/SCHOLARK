@@ -100,10 +100,15 @@
   }
   function drawHistory(){const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-rename" data-v107-rename="'+esc(x.id)+'" aria-label="Rename chat" title="Rename chat">✎</button><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del],[data-v107-rename]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()});$$('[data-v107-rename]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();renameChat(b.dataset.v107Rename)});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread();syncDraftInput()})}
   function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Build an interactive HTML lesson I can preview here','Debug my code and show a tested fix','Analyze information and explain the findings','Draft a professional document','Create a step-by-step project plan','Explain a school problem with every step, rules and a memory aid'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='user'?attachmentTags(m.attachments||[]):'')+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
-  const withTimeout=(promise,ms,label='request')=>Promise.race([
-    Promise.resolve(promise),
-    new Promise((_,reject)=>setTimeout(()=>{const e=new Error(label+' timed out');e.code='CLIENT_TIMEOUT';reject(e)},ms))
-  ]);
+  // Release session-check timers immediately when the result settles.
+  // Avoid orphaned timeouts after successful ARKI and account-switch requests.
+  const withTimeout=(promise,ms,label='request')=>new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>{const e=new Error(label+' timed out');e.code='CLIENT_TIMEOUT';reject(e)},ms);
+    Promise.resolve(promise).then(
+      value=>{clearTimeout(timer);resolve(value)},
+      error=>{clearTimeout(timer);reject(error)}
+    );
+  });
   async function resolvedSession(force=false){
     if(window.__SCHOLARK_TEST_MODE__)return null;
     const cloud=window.__SCHOLARK_V72_CLOUD__;
