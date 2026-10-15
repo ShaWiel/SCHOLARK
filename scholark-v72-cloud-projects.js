@@ -94,9 +94,41 @@
   function loadSession(){try{const s=JSON.parse(localStorage.getItem(SESSION)||'null');state.session=s&&s.access_token?s:null}catch{state.session=null}return state.session}
   function saveSession(s){const before=state.session?.access_token||'';state.session=s&&s.access_token?s:null;try{if(state.session)localStorage.setItem(SESSION,JSON.stringify(state.session));else localStorage.removeItem(SESSION)}catch{}const after=state.session?.access_token||'';if(before!==after)queueMicrotask(()=>window.dispatchEvent(new CustomEvent('scholark:auth-changed',{detail:{signedIn:!!after,user:state.session?.user||null}})))}
   function authHeaders(token=state.session?.access_token){return {'apikey':KEY,'authorization':'Bearer '+token,'content-type':'application/json','accept':'application/json'}}
-  async function refresh(){const s=loadSession(),refreshToken=s?.refresh_token||'';if(!refreshToken)return null;try{const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':KEY,'content-type':'application/json'},body:JSON.stringify({refresh_token:refreshToken})});const d=await r.json();if(!r.ok||!d?.access_token)throw 0;if(loadSession()?.refresh_token!==refreshToken)return null;d.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);saveSession(d);return d}catch{if(loadSession()?.refresh_token===refreshToken)saveSession(null);return null}}
-  async function session(){let s=loadSession();if(!s)return null;const exp=Number(s.expires_at||0);if(exp&&exp<Math.floor(Date.now()/1000)+60)s=await refresh();return s}
-  async function apiFetch(path,opts={}){let s=await session();if(!s){const e=new Error('Sign in to use SCHOLARK Cloud');e.code='AUTH_REQUIRED';throw e}let r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}});if(r.status===401&&await refresh()){s=state.session;r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}})}return r}
+  // Tokens rotate: one refresh per tab, with a safe re-read across tabs.
+  // Temporary network/provider failures never erase a user's saved session.
+  let refreshPromise=null,refreshIssue='';
+  const tokenFresh=s=>Boolean(s?.access_token)&&(!Number(s.expires_at)||Number(s.expires_at)>Math.floor(Date.now()/1000)+75);
+  async function refresh(){
+    if(refreshPromise)return refreshPromise;
+    const run=async()=>{
+      const before=loadSession(),token=before?.refresh_token||'';
+      if(!token)return null;
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),15000);
+      try{
+        const response=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:KEY,'content-type':'application/json'},body:JSON.stringify({refresh_token:token}),signal:ctrl.signal});
+        const data=await response.json().catch(()=>({}));
+        const latest=loadSession();
+        // A logout, account switch or another tab's token rotation wins.
+        if(latest?.refresh_token!==token){refreshIssue='';return latest?.access_token?latest:null}
+        if(response.ok&&data?.access_token&&data?.refresh_token){
+          const updated={...before,...data,user:data.user||before.user,expires_at:data.expires_at||Math.floor(Date.now()/1000)+(data.expires_in||3600)};
+          refreshIssue='';saveSession(updated);return updated;
+        }
+        if(response.status===400||response.status===401){
+          await new Promise(resolve=>setTimeout(resolve,350));
+          const current=loadSession();
+          if(current?.refresh_token!==token){refreshIssue='';return current?.access_token?current:null}
+          refreshIssue='invalid';saveSession(null);return null;
+        }
+        refreshIssue='temporary';return null;
+      }catch{refreshIssue='temporary';return null}
+      finally{clearTimeout(timer)}
+    };
+    refreshPromise=run().finally(()=>{refreshPromise=null});
+    return refreshPromise;
+  }
+  async function session(){const s=loadSession();if(!s)return null;if(tokenFresh(s))return s;const renewed=await refresh();return tokenFresh(renewed)?renewed:null}
+  async function apiFetch(path,opts={}){let s=await session();if(!s){const e=new Error('Sign in to use SCHOLARK Cloud');e.code='AUTH_REQUIRED';throw e}let r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}});if(r.status===401){const fresh=await refresh();if(fresh?.access_token){s=fresh;r=await fetch(SB+path,{...opts,headers:{...authHeaders(s.access_token),...(opts.headers||{})}})}}return r}
   async function publicFetch(path,opts={}){return fetch(SB+path,{...opts,headers:{'apikey':KEY,'content-type':'application/json','accept':'application/json',...(opts.headers||{})}})}
   function userEmail(){return clean(state.session?.user?.email||state.session?.email||'')}
   function time(v){try{return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return clean(v)}}
@@ -302,5 +334,5 @@
   loadSession();
   addEventListener('storage',e=>{if(e.key!==SESSION)return;const before=state.session?.access_token||'';loadSession();state.cloud=[];if((state.session?.access_token||'')!==before)window.dispatchEvent(new CustomEvent('scholark:auth-changed',{detail:{signedIn:!!state.session?.access_token,user:state.session?.user||null,source:'storage'}}));setTimeout(()=>enhance(true),30)});
   consumeAuthCallback().catch(()=>{}).finally(()=>setTimeout(async()=>{if(await session())try{await loadCloud()}catch{}enhance(true);if(state.authNotice){status(state.authNotice);state.authNotice=''}},350));
-  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,rememberedAccounts,switchAccount:switchRememberedAccount,forgetRememberedAccount,updateRememberedAccount,uploadProfilePhoto,profilePhotoUrl,removeProfilePhoto,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,release:'r221'};
+  window.__SCHOLARK_V72_CLOUD__={session,refreshSession:refresh,saveSession,loadCloud,syncAllLocal,openAuth,signOut,resetPassword,updatePassword,captchaToken,rememberedAccounts,switchAccount:switchRememberedAccount,forgetRememberedAccount,updateRememberedAccount,uploadProfilePhoto,profilePhotoUrl,removeProfilePhoto,items:()=>state.cloud,saveProject:saveCloud,request:apiFetch,publicRequest:publicFetch,currentSession:()=>state.session,sessionRefreshState:()=>refreshIssue,release:'r268-session-resilience'};
 })();
