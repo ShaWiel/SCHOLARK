@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+const core=readFileSync('scholark-v110-workspace-core.js','utf8');
 
 const source=readFileSync('scholark-v72-cloud-projects.js','utf8');
 const arki=readFileSync('scholark-v107-general-ai.js','utf8');
@@ -72,4 +73,26 @@ assert.equal(get()?.user?.id,'u2','Do not cross-contaminate switched accounts');
 
 assert.ok(arki.includes('await withTimeout(cloud.session()')&&!arki.includes('if(!force&&current?.access_token)return current'),'ARKI must check token expiry, not reuse cached access tokens');
 assert.ok(core.includes('SESSION_REFRESH_TEMPORARY')&&core.includes('The server enforces feature credits and limits atomically'),'Tutor must use central refresh and server-authoritative credits');
+
+const aiStart=core.indexOf('  const AI_FEATURES='),aiEnd=core.indexOf('  function record(',aiStart);
+assert.ok(aiStart>0&&aiEnd>aiStart,'Could not isolate shared authenticated Tutor AI request');
+let activeToken='initial-ai',calls=[],refreshed=0,preflightCalled=false;
+const testCloud={
+  async session(){return {access_token:activeToken}},
+  async refreshSession(){refreshed++;activeToken='refreshed-ai';return {access_token:activeToken}},
+  sessionRefreshState(){return 'temporary'}
+};
+const shared=vm.runInNewContext(core.slice(aiStart,aiEnd)+'\n({aiRequest})',{
+  window:{__SCHOLARK_V72_CLOUD__:testCloud,__SCHOLARK_CREDITS__:{authorize(){preflightCalled=true;throw Error('Legacy wallet preflight called')},load(){}},__SCHOLARK_CHAT_QUOTA__:{apply(){}},__SCHOLARK_I18N__:{languageName:()=> 'Dutch'}},
+  localStorage:{getItem:()=>null},document:{documentElement:{lang:'nl'}},clean:x=>String(x||'').trim(),uid:()=> 'request-id-1',
+  fetch:async(_url,opts)=>{calls.push(opts);return calls.length===1?{ok:false,status:401,headers:{get:()=>null},json:async()=>({code:'AUTH_REQUIRED',error:'Expired'})}:{ok:true,status:200,headers:{get:()=>null},json:async()=>({ok:true,result:{answer:'Goed',steps:['Uitleg']}})}},
+  AbortController,setTimeout,clearTimeout,Math,Number,String,JSON,Promise
+});
+const tutorResult=await shared.aiRequest('tutor',{prompt:'Leg de stelling van Pythagoras met tussenstappen uit'});
+assert.equal(tutorResult.result.answer,'Goed');
+assert.equal(calls.length,2,'Tutor must retry exactly once after 401');
+assert.equal(refreshed,1,'Tutor must request a fresh session on unauthorized responses');
+assert.ok(calls[0].headers.authorization==='Bearer initial-ai'&&calls[1].headers.authorization==='Bearer refreshed-ai','Tutor must use the refreshed authorization header');
+assert.equal(calls[0].headers['x-scholark-request-id'],calls[1].headers['x-scholark-request-id'],'Tutor must preserve server-side credit idempotency across retry');
+assert.equal(preflightCalled,false,'Tutor must not block on stale client credit preflight');
 console.log('SCHOLAVERUM SESSION RECOVERY PASS: fresh, parallel, network outage, recovery, revocation, logout, account switching, ARKI and Tutor');
