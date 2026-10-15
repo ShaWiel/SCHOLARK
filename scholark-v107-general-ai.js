@@ -227,5 +227,5 @@
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
-  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261015-r272'};
+  window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r255'};
 })();
