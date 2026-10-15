@@ -108,7 +108,9 @@
   function paragraphs(s){return multiline(s).split(/\n{2,}/).map(x=>multiline(x)).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,'<br>')+'</p>').join('')}
   function tutorPlain(r){
     const parts=[multiline(r.answer||r.summary)];
+    if(r.rules?.length)parts.push('Rules and why they apply:\n- '+r.rules.map(multiline).join('\n- '));
     if(r.steps?.length)parts.push('How to work through it:\n'+r.steps.map((x,i)=>(i+1)+'. '+multiline(x)).join('\n'));
+    if(r.memoryAids?.length)parts.push('Memory aids / ezelsbruggetjes:\n- '+r.memoryAids.map(multiline).join('\n- '));
     if(r.examples?.length)parts.push('Worked examples:\n'+r.examples.map((x,i)=>(i+1)+'. '+clean(x.title)+'\n'+multiline(x.setup)+'\n'+multiline(x.walkthrough)+'\nAnswer: '+multiline(x.answer)).join('\n\n'));
     if(r.keyPoints?.length)parts.push('Key points:\n- '+r.keyPoints.map(clean).join('\n- '));
     if(r.commonMistakes?.length)parts.push('Common mistakes:\n- '+r.commonMistakes.map(clean).join('\n- '));
@@ -118,7 +120,9 @@
   }
   function tutorHtml(r,data){
     return '<div class="v62-answer-card"><h3>'+esc(r.topic||'SCHOLARK Tutor')+'</h3>'+paragraphs(r.answer||r.summary||'')+'</div>'+
+      (r.rules?.length?'<div class="v62-answer-card"><h4>Rules and why they apply</h4>'+list(r.rules)+'</div>':'')+
       (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4>'+list(r.steps,true)+'</div>':'')+
+      (r.memoryAids?.length?'<div class="v62-answer-card"><h4>Memory aids / Ezelsbruggetjes</h4>'+list(r.memoryAids)+'</div>':'')+
       (r.examples?.length?'<div class="v62-answer-card"><h4>Worked examples</h4>'+r.examples.map((x,i)=>'<div style="padding:11px 0;border-top:'+(i?'1px solid #eee':'0')+'"><b>'+esc(x.title||('Example '+(i+1)))+'</b>'+paragraphs(x.setup)+(x.walkthrough?'<div class="v62-worked"><b>Walkthrough:</b>'+paragraphs(x.walkthrough)+'</div>':'')+(x.answer?'<div class="v62-worked"><b>Answer:</b>'+paragraphs(x.answer)+'</div>':'')+'</div>').join('')+'</div>':'')+
       (r.keyPoints?.length?'<div class="v62-answer-card"><h4>Key points to remember</h4>'+list(r.keyPoints)+'</div>':'')+
       (r.commonMistakes?.length?'<div class="v62-answer-card"><h4>Common mistakes</h4>'+list(r.commonMistakes)+'</div>':'')+
