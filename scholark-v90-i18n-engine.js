@@ -627,10 +627,13 @@
     const promise=primed||primeDeviceTranslator(target);if(!promise)return {translated:{},missing:[...strings]};
     // Language packs may require downloads; never let the browser-native API
     // hold up another language switch or the server translation fallback.
-    const timeLimit=(promise,ms)=>Promise.race([
-      Promise.resolve(promise),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('device-translation-timeout')),ms))
-    ]);
+    const timeLimit=async(promise,ms)=>{
+      let timer=0;
+      try{return await Promise.race([
+        Promise.resolve(promise),
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('device-translation-timeout')),ms)})
+      ])}finally{clearTimeout(timer)}
+    };
     let translator;
     try{translator=await timeLimit(promise,1600)}
     catch{return {translated:{},missing:[...strings]}}
