@@ -40,6 +40,8 @@ jobs:
           node --check scripts/scholark-arki-production-smoke.mjs
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
+          node --check scripts/scholark-language-nonblocking-smoke.mjs
+          node --check scripts/scholark-foundation-network-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
           node --check scripts/scholark-security-smoke.mjs
           node --check scripts/scholark-security-contracts.mjs
@@ -49,6 +51,7 @@ jobs:
           node scripts/scholark-teaching-quality-smoke.mjs
           node scripts/scholark-session-recovery-smoke.mjs
           node scripts/scholark-ai-auth-copy-smoke.mjs
+          node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
@@ -119,6 +122,7 @@ jobs:
           NODE
           node scripts/scholark-account-lifecycle-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-language-nonblocking-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Firefox and WebKit critical regression

@@ -47,6 +47,8 @@ jobs:
           node --check scripts/scholark-arki-production-smoke.mjs
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
+          node --check scripts/scholark-language-nonblocking-smoke.mjs
+          node --check scripts/scholark-foundation-network-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
           node --check scripts/scholark-security-smoke.mjs
           node --check scripts/scholark-security-contracts.mjs
@@ -56,6 +58,7 @@ jobs:
           node scripts/scholark-teaching-quality-smoke.mjs
           node scripts/scholark-session-recovery-smoke.mjs
           node scripts/scholark-ai-auth-copy-smoke.mjs
+          node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
@@ -157,7 +160,9 @@ jobs:
       - name: Validate multi-account switching and private profile photos
         run: node scripts/scholark-account-switcher-smoke.mjs http://127.0.0.1:10000
       - name: Validate 15-language layout, RTL and mobile overflow
-        run: node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
+        run: |
+          node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-language-nonblocking-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
