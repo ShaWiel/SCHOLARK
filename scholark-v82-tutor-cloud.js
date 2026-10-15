@@ -26,7 +26,7 @@
   async function api(path,opts={}){const x=await ctx();if(!x)throw Object.assign(new Error('AUTH_REQUIRED'),{code:'AUTH_REQUIRED'});const r=await x.c.request(path,opts);return {r,...x}}
 
   function freshChatUI(){
-    const chat=$('#v52-chat');if(chat)chat.innerHTML='<div class="v52-msg ai">I’m ready. Ask a question, paste a problem, or tell me what subject you want explained.</div>';
+    const chat=$('#v52-chat');if(chat)chat.innerHTML='<div class="v52-msg ai">I’m ready. Ask about any subject. I can explain the rules, show every useful intermediate step, work through examples and give an ezelsbruggetje when it helps.</div>';
     try{localStorage.setItem('scholark_v62_tutor_history','[]')}catch{}
   }
   function newChat(){setCurrent('');freshChatUI();renderHistory();$('#v52-tutor-q')?.focus()}
