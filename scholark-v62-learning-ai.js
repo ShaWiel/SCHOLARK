@@ -112,7 +112,7 @@
     const rows=Array.isArray(items)?items.filter(x=>String(x??'').trim()):[];
     if(!rows.length)return'';
     const tag=ordered?'ol':'ul';
-    return '<'+tag+' class="v62-tutor-list">'+rows.map(x=>'<li>'+esc(multiline(x)).replace(/\\n/g,'<br>')+'</li>').join('')+'</'+tag+'>';
+    return '<'+tag+' class="v62-tutor-list">'+rows.map(x=>'<li>'+esc(multiline(x)).split('\n').join('<br>')+'</li>').join('')+'</'+tag+'>';
   }
   function tutorPlain(r){
     const parts=[multiline(r.answer||r.summary)];
