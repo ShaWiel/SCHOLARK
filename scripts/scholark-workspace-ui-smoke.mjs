@@ -766,7 +766,8 @@ check(await studioComing.count()===1,'Studio AI Coming Soon entry missing');
 check((await studioComing.getAttribute('data-v51-inactive'))==='1','Studio AI should remain feature-gated in R194');
 check((await studioComing.innerText()).includes('COMING SOON'),'Studio AI feature gate is not visible to users');
 
-await route('connect','.v51-coming-soon');
+await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('connect'));
+await page.waitForSelector('#v51-fallback .v51-coming-soon h1',{state:'visible',timeout:10000});
 const connectComing=page.locator('#v51-sidebar [data-v51-tool="connect"]');
 check(await connectComing.count()===1,'Connect must remain in Coming Soon navigation');
 check((await connectComing.getAttribute('data-v51-inactive'))==='1','Connect must be feature-gated');
