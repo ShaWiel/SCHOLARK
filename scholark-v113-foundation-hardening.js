@@ -24,13 +24,20 @@
   async function fetchJson(url,options={},timeout=15000){
     const target=new URL(String(url||""),location.origin);
     if(target.origin!==location.origin)throw new Error("Cross-origin foundation requests are blocked");
-    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),Math.max(1000,timeout));
+    const ctrl=new AbortController(),external=options.signal;
+    const abort=()=>ctrl.abort();
+    if(external?.aborted)abort();
+    else external?.addEventListener?.("abort",abort,{once:true});
+    // Previously an external signal silently disabled the foundation timeout.
+    // Always combine both signals so a hung request cannot block a tool.
+    const timer=setTimeout(abort,Math.max(1000,Math.min(60000,Number(timeout)||15000)));
     try{
-      const res=await fetch(target.href,{...options,credentials:"same-origin",signal:options.signal||ctrl.signal,headers:{Accept:"application/json",...(options.headers||{})}});
+      const {signal:ignored,...rest}=options;
+      const res=await fetch(target.href,{...rest,credentials:"same-origin",signal:ctrl.signal,headers:{Accept:"application/json",...(options.headers||{})}});
       const data=await res.json().catch(()=>null);
       if(!res.ok)throw new Error(data?.error||("HTTP "+res.status));
       return data;
-    }finally{clearTimeout(timer)}
+    }finally{clearTimeout(timer);external?.removeEventListener?.("abort",abort)}
   }
   function recordError(kind,event){
     const msg=clean(event?.reason?.message||event?.message||event?.error?.message||event?.reason||"Unknown runtime error");
