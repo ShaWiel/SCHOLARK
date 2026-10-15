@@ -62,16 +62,16 @@ assert.ok(unsafe.includes('&lt;img')&&!unsafe.includes('<img'),'Model output mus
 
 const multilineExample={
   ...result,
-  rules:['Pythagoras geldt voor rechthoekige driehoeken:\\na² + b² = c²'],
-  steps:['Gegeven: AB = AC = a\\nBC² = a² + a²\\nBC² = 2a²\\nBC = a√2'],
-  memoryAids:['SOS-CAS-TOA:\\nSin = overstaand / schuin\\nCos = aanliggend / schuin\\nTan = overstaand / aanliggend']
+  rules:['Pythagoras geldt voor rechthoekige driehoeken:\na² + b² = c²'],
+  steps:['Gegeven: AB = AC = a\nBC² = a² + a²\nBC² = 2a²\nBC = a√2'],
+  memoryAids:['SOS-CAS-TOA:\nSin = overstaand / schuin\nCos = aanliggend / schuin\nTan = overstaand / aanliggend']
 };
 const formatted=api.tutorHtml(multilineExample,{});
 assert.ok(formatted.includes('a² + b² = c²'),'Multiline formula missing');
 assert.ok(formatted.includes('BC² = a² + a²<br>BC² = 2a²<br>BC = a√2'),'Tutor must render each intermediate calculation on a separate line');
 assert.ok(formatted.includes('SOS-CAS-TOA:<br>Sin = overstaand / schuin<br>Cos = aanliggend / schuin'),'Mnemonic definitions must keep their line breaks');
 assert.ok(formatted.includes('<ol class="v62-tutor-list">'),'Tutor must keep method steps numbered');
-const injection=api.tutorList(['x² < 9\\n<img src=x onerror=alert(1)>'],true);
+const injection=api.tutorList(['x² < 9\n<img src=x onerror=alert(1)>'],true);
 assert.ok(injection.includes('x² &lt; 9<br>&lt;img')&&!injection.includes('<img'),'Equation list rendering must escape AI-generated HTML');
 
 // Verified gold-standard examples transcribed from the user's trig / root notes.
@@ -95,7 +95,9 @@ assert.ok(near(4*Math.cos(deg(30))+9*Math.tan(deg(30)),5*root3),'Notebook exampl
 assert.ok(near(3*Math.sin(deg(30))-root2*Math.sin(deg(45)),1/2),'Notebook example: 3sin30° - √2sin45° = 1/2');
 assert.ok(near(Math.tan(deg(60)),root3)&&near(Math.tan(deg(30)),root3/3),'Exact tan(60°) and tan(30°)');
 assert.ok(near(Math.sqrt((-7)**2),7)&&Math.sqrt((-7)**2)!==-7,'√(a²)=|a|, not a for negative a');
-assert.equal(1/Math.cos(Math.PI/2),Infinity,'90° cosine ideal denominator is zero; tan90° is undefined mathematically');
+const exactTangent=(sin,cos)=>cos===0?null:sin/cos;
+assert.equal(exactTangent(1,0),null,'tan(90°) is undefined because exact cosine is zero');
+assert.equal(exactTangent(-1,0),null,'tan(270°) is undefined because exact cosine is zero');
 
 assert.ok(near(Math.sin(Math.PI/6),1/2),'sin 30°');
 assert.ok(near(Math.cos(Math.PI/6),Math.sqrt(3)/2),'cos 30°');
