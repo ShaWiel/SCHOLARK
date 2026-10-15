@@ -193,7 +193,7 @@
     try{
       if(force&&cloud?.refreshSession)return await cloud.refreshSession();
       if(cloud?.session)return await cloud.session();
-      return cloud?.currentSession?.()||null;
+      return null;
     }catch{return null}
   }
   async function aiRequest(mode,payload={},opts={}){
@@ -202,14 +202,13 @@
     const test=!!window.__SCHOLARK_TEST_MODE__;
     let session=test?null:await aiSession(false);
     if(!test&&!session?.access_token){
-      if(opts.openAuth!==false)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
-      const e=new Error('Sign in to use SCHOLAVERUM AI features and protect your credits.');e.code='AUTH_REQUIRED';throw e;
+      const recovering=window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary';
+      if(!recovering&&opts.openAuth!==false)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
+      const e=new Error(recovering?'SCHOLAVERUM could not renew your session right now. Check your connection and retry; your sign-in was preserved.':'Sign in to use SCHOLAVERUM AI features and protect your credits.');e.code=recovering?'SESSION_REFRESH_TEMPORARY':'AUTH_REQUIRED';throw e;
     }
-    if(!test){
-      await window.__SCHOLARK_CREDITS__?.authorize?.(feature);
-      session=await aiSession(false);
-      if(!session?.access_token){const e=new Error('Your SCHOLAVERUM session expired. Sign in again.');e.code='AUTH_REQUIRED';throw e}
-    }
+    // The server enforces feature credits and limits atomically. A separate
+    // client wallet preflight can delay Tutor and race an expiring session.
+    // Always let the authenticated server decide whether credits suffice.
     const requestId=clean(opts.requestId)||(globalThis.crypto?.randomUUID?.()||uid('sch-ai')).replace(/[^a-zA-Z0-9._:-]/g,'');
     const timeoutMs=Math.max(5000,Math.min(220000,Number(opts.timeoutMs)||(m==='general_ai'?(payload?.deep===true?210000:190000):m==='tutor'?210000:90000)));
     const code=localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en';
@@ -233,6 +232,9 @@
     if(!test&&attempt.response.status===401){
       const fresh=await aiSession(true);
       if(fresh?.access_token){session=fresh;attempt=await once(session)}
+      else if(window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary'){
+        const e=new Error('Your session could not be renewed because the connection is temporarily unavailable. Try again; your account remains signed in.');e.code='SESSION_REFRESH_TEMPORARY';throw e;
+      }
     }
     const {response,data}=attempt;
     if(!response.ok||!data?.ok||!data?.result){

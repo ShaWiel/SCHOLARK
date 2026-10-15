@@ -88,12 +88,10 @@
     if(window.__SCHOLARK_TEST_MODE__)return null;
     const cloud=window.__SCHOLARK_V72_CLOUD__;
     try{
-      const current=cloud?.currentSession?.()||null;
-      if(!force&&current?.access_token)return current;
-      if(force&&cloud?.refreshSession)return await withTimeout(cloud.refreshSession(),8000,'Session refresh');
-      if(cloud?.session)return await withTimeout(cloud.session(),8000,'Session check');
-      return current;
-    }catch{return cloud?.currentSession?.()||null}
+      if(force&&cloud?.refreshSession)return await withTimeout(cloud.refreshSession(),18000,'Session refresh');
+      if(cloud?.session)return await withTimeout(cloud.session(),18000,'Session check');
+      return null;
+    }catch{return null}
   }
   async function arkiFetch(payload,requestId,session,timeoutMs){
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
@@ -119,8 +117,9 @@
     try{
       session=test?null:await resolvedSession(false);
       if(!test&&!session?.access_token){
-        if(state)state.textContent='Sign in to use ARKI.';
-        window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
+        const recoverable=window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary';
+        if(state)state.textContent=recoverable?'Could not refresh session right now. Check your connection and retry.':'Sign in to use ARKI.';
+        if(!recoverable)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
         return
       }
 
@@ -160,6 +159,8 @@
           session=fresh;
           if(state)state.textContent='Session refreshed · ARKI is retrying…';
           attempt=await arkiFetch(payload,requestId,session,timeoutMs)
+        }else if(window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary'){
+          const e=new Error('Your session could not be refreshed because the connection is temporarily unavailable. Try again; your sign-in is still saved.');e.code='SESSION_REFRESH_TEMPORARY';throw e;
         }
       }
 
@@ -177,7 +178,7 @@
       const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT',limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       const msg=timed?'ARKI reached the maximum processing time. Your message is saved; you can retry without losing your question.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
-      else if(responseChatId){const failed=update(responseChatId,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:['Try again']}));if(current?.id===responseChatId)current=failed||current;}
+      else if(responseChatId){const failed=update(responseChatId,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:[prompt.slice(0,1600)]}));if(current?.id===responseChatId)current=failed||current;}
       if(state)state.textContent=limited?'Free / rate limit reached':(timed?'Request timed out — you can retry':'Request failed — you can retry')
     }finally{
       for(const timer of waitTimers)clearTimeout(timer);
