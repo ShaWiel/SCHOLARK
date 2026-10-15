@@ -51,7 +51,9 @@ jobs:
           node --check scripts/scholark-security-smoke.mjs
           node --check scripts/scholark-security-contracts.mjs
           node --check scripts/scholark-teaching-quality-smoke.mjs
+          node --check scripts/scholark-session-recovery-smoke.mjs
           node scripts/scholark-teaching-quality-smoke.mjs
+          node scripts/scholark-session-recovery-smoke.mjs
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
