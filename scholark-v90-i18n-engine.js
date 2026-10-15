@@ -946,6 +946,19 @@
   // always background work and must never hold the interface or its navigation.
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
+    // Two callers (for example first-load boot and the user selecting a
+    // language) must share an in-progress switch to the SAME locale. Without
+    // this, the first call can return while another epoch owns readiness.
+    if(target===code()&&document.documentElement.classList.contains('scholark-language-switching')){
+      await new Promise(resolve=>{
+        let timer=0;
+        const done=()=>{clearTimeout(timer);removeEventListener('scholark-language-ready',onReady);resolve()};
+        const onReady=e=>{if(e.detail?.code===target)done()};
+        addEventListener('scholark-language-ready',onReady);
+        timer=setTimeout(done,1600);
+      });
+      if(document.documentElement.dataset.scholarkI18nReady===target&&!document.documentElement.classList.contains('scholark-language-switching'))return;
+    }
     if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();scheduleApplyVisible();return}
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);completionQueued=false;
     clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;
@@ -1015,6 +1028,8 @@
 
   let bootLocalePrime='';
   function boot(){
+    // Never declare a locale ready while a newer language-switch epoch owns it.
+    if(document.documentElement.classList.contains('scholark-language-switching')){upgradeSelectors();return}
     const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';syncDocumentTitle(normalized);
     if(isHomeRoute()&&!STATIC_CORE_LANGS.has(normalized)&&bootLocalePrime!==normalized){
