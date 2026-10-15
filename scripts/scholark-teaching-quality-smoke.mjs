@@ -24,9 +24,34 @@ for(const token of [
   'Fill rules with the exact applicable formula',
   'Fill memoryAids with accurate subject-specific ezelsbruggetjes'
 ]) assert.ok(route.includes(token),'Teaching contract missing: '+token);
+for(const token of [
+  'const ARKI_CONVERSATION_STYLE=',
+  'React to the SPECIFIC last message and relevant conversation history',
+  'Match the user\'s language, register, informality and level of detail',
+  'A simple greeting, thank-you, short follow-up or casual question deserves a short',
+  'not as a scripted customer-service bot',
+  'Do not fake memories, experiences, tool access or a human identity',
+  'Leave suggestedFollowUps empty unless',
+  '${ARKI_CONVERSATION_STYLE} ${TEACHING_DEPTH_STYLE} ${MATH_SOLUTION_STYLE}',
+  'for a short question, explain naturally instead of enforcing a worksheet template'
+]) assert.ok(route.includes(token),'ARKI natural response contract missing: '+token);
 const shared='$'+'{TEACHING_DEPTH_STYLE} $'+'{MATH_SOLUTION_STYLE}';
 assert.ok(route.split(shared).length===3,'Both ARKI and Tutor must receive teaching instructions');
 assert.ok(arki.includes('Explain a school problem with every step, rules and a memory aid'),'ARKI example prompt missing');
+
+const richStart=arki.indexOf('  function rich(s){'),richEnd=arki.indexOf('  function attachmentTags(',richStart);
+assert.ok(richStart>=0&&richEnd>richStart,'ARKI safe response display renderer missing');
+const htmlEscape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const richResponse=vm.runInNewContext(arki.slice(richStart,richEnd)+'\nrich',{esc:htmlEscape});
+const humanHtml=richResponse('Ja, dat klopt. **Zo werkt het:**\n\nEerst kies je de formule.\n\nDaarna reken je verder.');
+assert.ok(humanHtml.includes('<p>Ja, dat klopt. <strong>Zo werkt het:</strong></p>'),'Plain language and emphasis must render like a conversation');
+assert.ok(humanHtml.includes('</p><p>Daarna reken je verder.</p>'),'Natural paragraphs must not collapse into a wall of text');
+assert.ok(richResponse('- Stap één\n- Stap twee').includes('<li>Stap twee</li>'),'List formatting must stay readable for real instructions');
+assert.ok(richResponse('1. Kies formule\n2. Werk uit').includes('<ol>'),'Numbered educational steps must be preserved');
+assert.ok(richResponse('Antwoord: <img src=x onerror=alert(1)>').includes('&lt;img')&&!richResponse('Antwoord: <img src=x onerror=alert(1)>').includes('<img'),'AI output must remain HTML-escaped');
+const codeHtml=richResponse('Probeer dit:\n\n```html\n<h1>Voorbeeld</h1>\n```');
+assert.ok(codeHtml.includes('<pre><code>&lt;h1&gt;Voorbeeld&lt;/h1&gt;'),'In-chat HTML preview code must stay escaped in reply renderer');
+
 assert.ok(welcome.includes('ezelsbruggetje'),'Tutor teaching affordance missing');
 assert.ok(tutor.includes('Rules and why they apply')&&tutor.includes('Memory aids / Ezelsbruggetjes'),'Structured Tutor lesson sections missing');
 assert.ok(route.includes("rules:['Use the actual assignment brief")&&route.includes("memoryAids:['5W+H"),'Test-mode assignment fields missing');
