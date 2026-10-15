@@ -129,7 +129,7 @@
   function tutorHtml(r,data){
     return '<div class="v62-answer-card"><h3>'+esc(r.topic||'SCHOLARK Tutor')+'</h3>'+paragraphs(r.answer||r.summary||'')+'</div>'+
       (r.rules?.length?'<div class="v62-answer-card"><h4>Rules and why they apply</h4>'+tutorList(r.rules)+'</div>':'')+
-      (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4>'+tutorList(r.steps,true)</div>':'')+
+      (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4>'+tutorList(r.steps,true)+'</div>':'')+
       (r.memoryAids?.length?'<div class="v62-answer-card"><h4>Memory aids / Ezelsbruggetjes</h4>'+tutorList(r.memoryAids)+'</div>':'')+
       (r.examples?.length?'<div class="v62-answer-card"><h4>Worked examples</h4>'+r.examples.map((x,i)=>'<div style="padding:11px 0;border-top:'+(i?'1px solid #eee':'0')+'"><b>'+esc(x.title||('Example '+(i+1)))+'</b>'+paragraphs(x.setup)+(x.walkthrough?'<div class="v62-worked"><b>Walkthrough:</b>'+paragraphs(x.walkthrough)+'</div>':'')+(x.answer?'<div class="v62-worked"><b>Answer:</b>'+paragraphs(x.answer)+'</div>':'')+'</div>').join('')+'</div>':'')+
       (r.keyPoints?.length?'<div class="v62-answer-card"><h4>Key points to remember</h4>'+list(r.keyPoints)+'</div>':'')+
