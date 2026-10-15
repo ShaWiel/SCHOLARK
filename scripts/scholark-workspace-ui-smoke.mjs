@@ -536,8 +536,8 @@ for(const [code,expected] of Object.entries(localeExpect)){
   check(actual.higher===expected.higher,`Dashboard higher group language mismatch for ${code}: ${actual.higher} | state=${JSON.stringify(localeState)}`);
 }
 
-// Atomic workspace-language switch: the visible workspace must be hidden until
-// the new language has been fully applied and the layout has settled.
+// Non-blocking workspace-language switch: content stays visible and interactive
+// while cached translations and layout changes are applied progressively.
 const atomicLanguageStart=await page.evaluate(()=>{
   window.__SCHOLARK_I18N__?.changeLanguage?.('es');
   const main=document.querySelector('#v51-main');
@@ -548,7 +548,7 @@ const atomicLanguageStart=await page.evaluate(()=>{
   };
 });
 check(atomicLanguageStart.switching===true,'Workspace language switch did not enter atomic mode');
-check(atomicLanguageStart.visibility==='hidden','Workspace stayed visible during atomic language replacement');
+check(atomicLanguageStart.visibility!=='hidden','Workspace language switching must never hide its interactive main content');
 check(atomicLanguageStart.overlay===true,'Workspace language switch did not show transition overlay');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='es'&&document.documentElement.dataset.scholarkI18nReady==='es'&&!document.documentElement.classList.contains('scholark-language-switching')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:6000});
 
