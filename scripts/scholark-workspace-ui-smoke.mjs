@@ -160,7 +160,7 @@ check((await page.locator('#v55-language option[value="cmn"]').innerText()).incl
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
 await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
 check(await page.evaluate(()=>document.documentElement.classList.contains('scholark-home-language-adapting')),'Homepage did not enter atomic language-adaptation mode');
-check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility==='hidden'),'Homepage content remained visible while adaptive translation was mutating copy');
+check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Homepage must remain visible during nonblocking translation');
 check((await page.locator('#v90-switch-copy').innerText()).includes('العربية'),'Adaptive Arabic switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='ar'&&document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',{timeout:4000});
 await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-home-language-adapting')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
