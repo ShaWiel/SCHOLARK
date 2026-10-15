@@ -152,7 +152,8 @@ async function authorizeLearningCredits(req,mode,p={}){
       chatMode?fetchFreeQuotaStatus(token,attachmentCount):Promise.resolve(null)
     ])
   }catch(e){
-    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLAVERUM is reconnecting to account services. Please try ARKI again in a moment.',detailCode:e.causeCode||networkCode(e)}
+    if(e?.code==='AUTH_REQUIRED'||e?.code==='CREDIT_SERVICE_FORBIDDEN')return {ok:false,http:e.http||503,code:e.code,error:e.message};
+    return {ok:false,http:503,code:'CREDIT_SERVICE_UNAVAILABLE',error:'SCHOLAVERUM is reconnecting to account services. Please try again in a moment.',detailCode:e.causeCode||networkCode(e)}
   }
   if(cr.status===403||wr.status===403){
     console.warn('[SCHOLAVERUM] Credit preflight denied · cost HTTP '+cr.status+' · wallet HTTP '+wr.status);
