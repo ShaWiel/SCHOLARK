@@ -16,7 +16,8 @@ const requireAll=(value,fragments,label)=>fragments.forEach(fragment=>assert.ok(
 new Function(ui);
 requireAll(runtime,["connect:[]","'scholark-v122-connect.js'","'connect','schools'","connect:false"],'Coming Soon runtime');
 requireAll(shell,["const COMING=[['connect','◉','Connect']","const INACTIVE=new Set(['connect','studio','book']);","if(INACTIVE.has(id)){showComingSoon(id);return}","h.startsWith('#connect')"],'Connect Coming Soon route');
-requireAll(docker,['COPY scholark-v122-connect.js','ENV SCHOLARK_RELEASE=r268-auth-connect-hold'],'Connect Docker');
+requireAll(docker,['COPY scholark-v122-connect.js'],'Connect Docker');
+assert.match(docker,/^ENV SCHOLARK_RELEASE=r[0-9]+[-a-z0-9]+$/m,'Connect must be bundled in a versioned release');
 requireAll(ui,['connect_friend_request','connect_friend_action','connect_block','connect_report','data-friend-report','data-report','connect_send_message','connect_create_room','connect_join_room','connect_leave_room','connect_end_room','connect_signal','connect_room_message','RTCPeerConnection','getUserMedia','getDisplayMedia','v122-board','stopScreen()','scholark-workspace-change','pagehide','getState:'],'Connect UI core');
 requireAll(migration,['enable row level security','connect_room_members','connect_signals','connect_member','connect_find_people','on conflict(room_id,user_id)','revoke insert,update,delete','gen_random_bytes(20)'],'Connect schema');
 requireAll(hardening,['grant execute on function public.connect_member','Too many meeting updates','rate-limit','connect identities searchable and contacts'],'Connect security');
