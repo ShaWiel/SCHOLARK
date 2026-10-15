@@ -511,12 +511,12 @@
   ];
 
   const css=document.createElement('style');css.id='scholark-v90-style';css.textContent=`
-    #v90-language-overlay{position:fixed;inset:0;z-index:2147483647;display:none;place-items:center;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);color:#fff;font-family:Inter,system-ui;padding:24px}
-    #v90-language-overlay.open{display:grid}.v90-switch-card{width:min(560px,94vw);padding:28px;border-radius:24px;background:#17191f;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 100px rgba(0,0,0,.38)}
+    #v90-language-overlay{position:fixed;inset:auto 14px 14px auto;z-index:2147483647;display:none;place-items:center;pointer-events:none;background:transparent;backdrop-filter:none;color:#fff;font-family:Inter,system-ui;padding:0;width:min(320px,calc(100vw - 28px))}
+    #v90-language-overlay.open{display:grid}.v90-switch-card{width:100%;padding:12px 15px;border-radius:14px;background:#17191f;border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 100px rgba(0,0,0,.38)}
     .v90-switch-card small{display:block;font:950 8px Inter;letter-spacing:.14em;color:#c9ff6a}.v90-switch-card h2{font:950 30px/1 Inter;margin:10px 0}.v90-switch-card p{font:650 10px/1.55 Inter;color:#c8c4cf}.v90-progress{height:7px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:16px}.v90-progress i{display:block;height:100%;width:35%;background:#c9ff6a;border-radius:inherit;animation:v90move 1s ease-in-out infinite alternate}@keyframes v90move{to{transform:translateX(180%)}}
     .v90-langbox{margin:12px 8px 4px;padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}.v90-langbox label{display:block;margin-bottom:6px;font:900 6.8px Inter;letter-spacing:.13em;color:#8f8b98}.v90-langbox select{width:100%;border:1px solid rgba(255,255,255,.12);background:#22252e;color:#fff;border-radius:10px;padding:8px;font:800 8px Inter;outline:0}.v90-langbox option{background:#fff;color:#17191f}
-    html[dir="rtl"] #v51-sidebar{left:auto;right:0}html[dir="rtl"] #v51-main{left:0;right:var(--v51-side)}html[dir="rtl"] #v51-side-toggle{left:auto;right:calc(var(--v51-side) - 16px)}html[dir="rtl"] .v51-nav{text-align:right}html[dir="rtl"] #v55-topbar,html[dir="rtl"] #v29-home-layer,html[dir="rtl"] #v51-main{direction:rtl}html[dir="rtl"] #v55-topbar .v55-menu{right:auto;left:0;text-align:right}html[dir="rtl"] #v55-topbar .v55-menu button{text-align:right}html[dir="rtl"] .v90-switch-card{text-align:right}html.scholark-home-language-adapting #v29-home-layer{visibility:hidden!important;pointer-events:none!important}html.scholark-home-language-adapting{scroll-behavior:auto!important}
-    html.scholark-language-switching body.v51-workspace #v51-main,html.scholark-language-switching body.v51-workspace #v51-sidebar,html.scholark-language-switching body.v51-workspace #v51-side-toggle{visibility:hidden!important;pointer-events:none!important},html.scholark-workspace-entering body.v51-workspace #v51-main,html.scholark-workspace-entering body.v51-workspace #v51-sidebar,html.scholark-workspace-entering body.v51-workspace #v51-side-toggle{visibility:hidden!important;pointer-events:none!important}
+    html[dir="rtl"] #v51-sidebar{left:auto;right:0}html[dir="rtl"] #v51-main{left:0;right:var(--v51-side)}html[dir="rtl"] #v51-side-toggle{left:auto;right:calc(var(--v51-side) - 16px)}html[dir="rtl"] .v51-nav{text-align:right}html[dir="rtl"] #v55-topbar,html[dir="rtl"] #v29-home-layer,html[dir="rtl"] #v51-main{direction:rtl}html[dir="rtl"] #v55-topbar .v55-menu{right:auto;left:0;text-align:right}html[dir="rtl"] #v55-topbar .v55-menu button{text-align:right}html[dir="rtl"] .v90-switch-card{text-align:right}html.scholark-home-language-adapting #v29-home-layer{will-change:contents}html.scholark-home-language-adapting{scroll-behavior:auto!important}
+    html.scholark-workspace-entering body.v51-workspace #v51-main,html.scholark-workspace-entering body.v51-workspace #v51-sidebar,html.scholark-workspace-entering body.v51-workspace #v51-side-toggle{visibility:hidden!important;pointer-events:none!important}
     html.scholark-language-switching body.v51-workspace #v51-main *,html.scholark-language-switching body.v51-workspace #v51-sidebar *{transition:none!important;animation:none!important},html.scholark-workspace-entering body.v51-workspace #v51-main *,html.scholark-workspace-entering body.v51-workspace #v51-sidebar *{transition:none!important;animation:none!important}
     body.v51-workspace .v51-head,body.v51-workspace .v51-head>div{min-width:0;max-width:100%}
     body.v51-workspace .v51-head h1{max-width:100%;overflow-wrap:anywhere;word-break:normal;text-wrap:balance}
@@ -772,7 +772,7 @@
   function scheduleUnknown(){
     if(code()==='en')return;
     clearTimeout(unknownTimer);
-    const run=()=>{if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){unknownTimer=setTimeout(run,120);return}fillUnknown()};
+    const run=()=>{if(document.documentElement.classList.contains('scholark-workspace-entering')){unknownTimer=setTimeout(run,120);return}fillUnknown()};
     unknownTimer=setTimeout(run,isHomeRoute()?760:300);
   }
 
@@ -926,101 +926,63 @@
     return true;
   }
 
+  // Language selection is a foreground UI action. Provider translation is
+  // always background work and must never hold the interface or its navigation.
   async function changeLanguage(target){
     if(!LANGS.some(x=>x[0]===target))return;
-    if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();applyVisible();return}
+    if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();scheduleApplyVisible();return}
     clearTimeout(backgroundLanguageTimer);clearTimeout(backgroundLanguageFollowup);completionQueued=false;
     clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;
-    try{activeUiAbort?.abort()}catch{}activeUiAbort=new AbortController();const uiSignal=activeUiAbort.signal;
-    translating=true;
+    try{activeUiAbort?.abort()}catch{}
+    activeUiAbort=new AbortController();const uiSignal=activeUiAbort.signal;
     const epoch=++translationEpoch,previous=code(),home=isHomeRoute(),dynamic=!STATIC_CORE_LANGS.has(target),overlayStarted=performance.now();
-    if(home){document.documentElement.classList.add('scholark-home-language-adapting');freezeHomeSurface()}
-
-    // Always show the same transition state for every interface language.
+    translating=true;
+    // Small pointer-transparent status indicator; no full-screen click blocker.
     overlay.classList.add('open');overlay.style.removeProperty('opacity');
-    $('#v90-switch-copy').textContent='Adapting SCHOLAVERUM to '+nativeName(target)+'…';
-    activeTransitionFailsafe=setTimeout(()=>{
+    $('#v90-switch-copy').textContent='Switching to '+nativeName(target)+'…';
+    document.documentElement.classList.add('scholark-language-switching');
+    if(home)document.documentElement.classList.add('scholark-home-language-adapting');
+    const release=degraded=>{
       if(epoch!==translationEpoch)return;
-      document.documentElement.dataset.scholarkI18nReady=target;
-      releaseHomeSurface();
-      document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
-      try{activeUiAbort?.abort()}catch{}overlay.classList.remove('open');overlay.style.removeProperty('opacity');translating=false;activeTransitionFailsafe=0;
-      window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:'failsafe',home,dynamic,coverage:visibleCoverage(560),degraded:true}}));
-      console.warn('[SCHOLAVERUM] language transition released by failsafe',target);
-    },16000);
-
-    // Keep the current layout/cinematic state intact while copy is replaced.
-    if(!home)document.documentElement.classList.add('scholark-language-switching');
-
-    localStorage.setItem('scholark_ui_language',target);
-    /* reverse index is incremental after boot */
-    map=loadMap(target);mapCode=target;indexMap(map);
-    document.documentElement.lang=target;
-    document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
-    syncDocumentTitle(target);
-
-    upgradeSelectors();
-    applyVisible();
-    window.__SCHOLARK_COUNTRY__?.apply?.();
-    if(home)window.__SCHOLARK_V30_DEMO__?.refreshLanguage?.();
-    else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
-
-    window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target,previous,home,dynamic}}));
-
-    if(target!=='en'&&dynamic&&navigator.onLine!==false){
       try{
-        const seed=[...new Set(home?collectDom(340):[...CORE,...collectDom(480)])].filter(eligibleText),missing=seed.filter(s=>!map[s]);
-        if(missing.length){
-          const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch||uiSignal.aborted)return;map={...map,...part};saveMap(target,map);if(!home)scheduleApplyVisible()},'ui',null,uiSignal);
-          if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map);applyVisible()}
-        }
-        if(epoch===translationEpoch)await window.__SCHOLARK_V55_TOPBAR__?.localize?.(target);
-      }catch(e){console.warn('[SCHOLAVERUM] locale prime:',clean(e?.message||e))}
+        document.documentElement.dataset.scholarkI18nReady=target;
+        document.documentElement.classList.remove('scholark-home-language-adapting','scholark-language-switching');
+        releaseHomeSurface();
+        overlay.classList.remove('open');overlay.style.removeProperty('opacity');
+        clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;translating=false;
+        window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,previous,home,dynamic,coverage:visibleCoverage(560),atomic:false,nonBlocking:true,degraded:!!degraded}}));
+        if(target!=='en'&&!uiSignal.aborted)scheduleLanguageCompletion(target,epoch,uiSignal);
+      }catch(e){console.warn('[SCHOLAVERUM] locale completion:',clean(e?.message||e))}
+    };
+    activeTransitionFailsafe=setTimeout(()=>{if(epoch===translationEpoch){console.warn('[SCHOLAVERUM] language frame released by bounded failsafe',target);release(true)}},1800);
+    try{
+      // Set the preferred locale *before* rebuilding visible controls, so
+      // every observer sees the latest user's choice. Cache writes may fail
+      // in private browsing and must not strand the UI.
+      try{localStorage.setItem('scholark_ui_language',target)}catch{document.documentElement.dataset.scholarkFallbackLanguage=target}
+      map=loadMap(target);mapCode=target;indexMap(map);
+      document.documentElement.lang=target;
+      document.documentElement.dir=RTL.has(target)?'rtl':'ltr';
+      syncDocumentTitle(target);
+      upgradeSelectors();applyVisible();
+      window.__SCHOLARK_COUNTRY__?.apply?.();
+      if(home)window.__SCHOLARK_V30_DEMO__?.refreshLanguage?.();
+      else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
+      window.dispatchEvent(new CustomEvent('scholark-language-applied',{detail:{code:target,previous,home,dynamic}}));
+      // No translateBatch / AI provider / downloadable language pack is awaited.
+      const remaining=Math.max(0,260-(performance.now()-overlayStarted));
+      if(remaining)await new Promise(r=>setTimeout(r,remaining));
+      if(epoch!==translationEpoch)return;
+      await Promise.race([
+        settleLanguageLayout(target,epoch),
+        new Promise(r=>setTimeout(r,700))
+      ]);
+      if(epoch===translationEpoch)release(false);
+    }catch(e){
+      console.warn('[SCHOLAVERUM] non-blocking language transition recovered:',clean(e?.message||e));
+      if(epoch===translationEpoch)release(true);
     }
-
-    if(epoch!==translationEpoch)return;
-    if(target!=='en'&&dynamic&&navigator.onLine!==false){
-      const coverage=visibleCoverage(560);
-      if(coverage.ratio<.92&&coverage.missing.length){
-        try{
-          const focus=coverage.missing.slice(0,140);
-          const add=await translateBatch(target,focus,part=>{if(epoch!==translationEpoch||uiSignal.aborted)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()},'ui',null,uiSignal);
-          if(epoch===translationEpoch&&Object.keys(add).length){map={...map,...add};saveMap(target,map)}
-        }catch(e){console.warn('[SCHOLAVERUM] final language coverage pass:',clean(e?.message||e))}
-      }
-    }
-    if(epoch!==translationEpoch)return;
-    window.__SCHOLARK_COUNTRY__?.apply?.();
-    applyVisible();
-    if(home)window.__SCHOLARK_V30_DEMO__?.refreshLanguage?.();
-    else window.__SCHOLARK_WORKSPACE__?.syncLanguage?.(null,true);
-
-    syncDocumentTitle(target);
-    const remaining=Math.max(0,260-(performance.now()-overlayStarted));
-    if(remaining)await new Promise(r=>setTimeout(r,remaining));
-    if(epoch!==translationEpoch)return;
-    const settled=await settleLanguageLayout(target,epoch);
-    if(!settled||epoch!==translationEpoch)return;
-    document.documentElement.dataset.scholarkI18nReady=target;
-    if(home){
-      releaseHomeSurface();
-      document.documentElement.classList.remove('scholark-home-language-adapting');
-    }else{
-      document.documentElement.classList.remove('scholark-language-switching');
-    }
-    const readyCoverage=visibleCoverage(560);
-    window.dispatchEvent(new CustomEvent('scholark-language-ready',{detail:{code:target,provider:target==='en'?'source':dynamic?'adaptive-translation':'static-cache',home,dynamic,coverage:readyCoverage,atomic:true}}));
-    clearTimeout(activeTransitionFailsafe);activeTransitionFailsafe=0;
-    // changeLanguage() now resolves only after the visual transition is fully
-    // closed. This prevents a new locale switch from racing a stale overlay.
-    overlay.style.opacity='0';
-    await new Promise(r=>setTimeout(r,120));
-    if(epoch!==translationEpoch)return;
-    overlay.classList.remove('open');overlay.style.removeProperty('opacity');
-    translating=false;
-    if(target!=='en')scheduleLanguageCompletion(target,epoch,uiSignal);
   }
-
   async function translateStrings(target,strings,purpose='content'){
     if(!LANGS.some(x=>x[0]===target))target='en';
     const src=[...new Set((strings||[]).map(clean).filter(eligibleText))];
