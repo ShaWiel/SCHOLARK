@@ -32,14 +32,14 @@ assert.ok(tutor.includes('Rules and why they apply')&&tutor.includes('Memory aid
 assert.ok(route.includes("rules:['Use the actual assignment brief")&&route.includes("memoryAids:['5W+H"),'Test-mode assignment fields missing');
 assert.ok(route.includes("rules:['Identify the exact rule")&&route.includes("memoryAids:['Understand → apply → check"),'Test-mode Tutor fields missing');
 
-const start=tutor.indexOf('  function tutorPlain(r){'),end=tutor.indexOf('  function readTutorHistory()',start);
+const start=tutor.indexOf('  function tutorList(items,ordered=false){'),end=tutor.indexOf('  function readTutorHistory()',start);
 assert.ok(start>=0&&end>start,'Could not isolate Tutor lesson display functions');
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const multiline=x=>String(x??'').replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
 const clean=x=>String(x??'').replace(/\s+/g,' ').trim();
 const paragraphs=x=>multiline(x).split(/\n{2,}/).filter(Boolean).map(t=>'<p>'+esc(t).replace(/\n/g,'<br>')+'</p>').join('');
 const list=(rows,numbered=false)=>'<'+(numbered?'ol':'ul')+'>'+(rows||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</'+(numbered?'ol':'ul')+'>';
-const api=vm.runInNewContext(tutor.slice(start,end)+'\n({tutorPlain,tutorHtml})',{esc,multiline,clean,paragraphs,list});
+const api=vm.runInNewContext(tutor.slice(start,end)+'\n({tutorList,tutorPlain,tutorHtml})',{esc,multiline,clean,paragraphs,list});
 const result={
   topic:'Trigonometrie',
   answer:'Gegeven: ∠A = 90°\nBC² = AB² + AC²\nBC = √(2a²) = a√2 (a ≥ 0)',
@@ -59,7 +59,44 @@ assert.ok(html.includes('BC² = 4² + 4²<br>BC² = 32<br>BC = 4√2'),'Calculat
 assert.ok(!api.tutorHtml({...result,rules:[],memoryAids:[]},{}).includes('Ezelsbruggetjes'),'Empty mnemonics must not render');
 const unsafe=api.tutorHtml({...result,rules:['<img src=x onerror=alert(1)>']},{});
 assert.ok(unsafe.includes('&lt;img')&&!unsafe.includes('<img'),'Model output must be escaped');
-const near=(a,b)=>Math.abs(a-b)<1e-12;
+
+const multilineExample={
+  ...result,
+  rules:['Pythagoras geldt voor rechthoekige driehoeken:\\na² + b² = c²'],
+  steps:['Gegeven: AB = AC = a\\nBC² = a² + a²\\nBC² = 2a²\\nBC = a√2'],
+  memoryAids:['SOS-CAS-TOA:\\nSin = overstaand / schuin\\nCos = aanliggend / schuin\\nTan = overstaand / aanliggend']
+};
+const formatted=api.tutorHtml(multilineExample,{});
+assert.ok(formatted.includes('a² + b² = c²'),'Multiline formula missing');
+assert.ok(formatted.includes('BC² = a² + a²<br>BC² = 2a²<br>BC = a√2'),'Tutor must render each intermediate calculation on a separate line');
+assert.ok(formatted.includes('SOS-CAS-TOA:<br>Sin = overstaand / schuin<br>Cos = aanliggend / schuin'),'Mnemonic definitions must keep their line breaks');
+assert.ok(formatted.includes('<ol class="v62-tutor-list">'),'Tutor must keep method steps numbered');
+const injection=api.tutorList(['x² < 9\\n<img src=x onerror=alert(1)>'],true);
+assert.ok(injection.includes('x² &lt; 9<br>&lt;img')&&!injection.includes('<img'),'Equation list rendering must escape AI-generated HTML');
+
+// Verified gold-standard examples transcribed from the user's trig / root notes.
+// These check the mathematical references and boundary cases; they do not
+// claim to measure a real hosted model's responses.
+const root2=Math.sqrt(2),root3=Math.sqrt(3),near=(a,b)=>Math.abs(a-b)<1e-12;
+const deg=n=>n*Math.PI/180;
+for(const [angle,sine,cosine] of [
+  [0,0,1],[30,1/2,root3/2],[45,root2/2,root2/2],
+  [60,root3/2,1/2],[90,1,0],
+  [180,0,-1],[210,-1/2,-root3/2],[270,-1,0],
+  [300,-root3/2,1/2],[360,0,1],
+  [-90,-1,0],[-135,-root2/2,-root2/2],[-540,0,-1]
+]){
+  assert.ok(near(Math.sin(deg(angle)),sine),`sin(${angle}°) must equal the reference`);
+  assert.ok(near(Math.cos(deg(angle)),cosine),`cos(${angle}°) must equal the reference`);
+}
+assert.ok(near(Math.sqrt(4**2+4**2),4*root2),'45-45-90 triangle a=4: hypotenuse 4√2');
+assert.ok(near(Math.sqrt(1-(1/2)**2),root3/2),'30-60-90 triangle height √3/2');
+assert.ok(near(4*Math.cos(deg(30))+9*Math.tan(deg(30)),5*root3),'Notebook example: 4cos30° + 9tan30° = 5√3');
+assert.ok(near(3*Math.sin(deg(30))-root2*Math.sin(deg(45)),1/2),'Notebook example: 3sin30° - √2sin45° = 1/2');
+assert.ok(near(Math.tan(deg(60)),root3)&&near(Math.tan(deg(30)),root3/3),'Exact tan(60°) and tan(30°)');
+assert.ok(near(Math.sqrt((-7)**2),7)&&Math.sqrt((-7)**2)!==-7,'√(a²)=|a|, not a for negative a');
+assert.equal(1/Math.cos(Math.PI/2),Infinity,'90° cosine ideal denominator is zero; tan90° is undefined mathematically');
+
 assert.ok(near(Math.sin(Math.PI/6),1/2),'sin 30°');
 assert.ok(near(Math.cos(Math.PI/6),Math.sqrt(3)/2),'cos 30°');
 assert.ok(near(Math.sin(Math.PI/4),Math.SQRT1_2),'sin 45°');
