@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const core=readFileSync('scholark-v110-workspace-core.js','utf8');
 
 const source=readFileSync('scholark-v72-cloud-projects.js','utf8');
 const arki=readFileSync('scholark-v107-general-ai.js','utf8');
