@@ -534,7 +534,7 @@
     for(const p of ['visibility','opacity','pointer-events'])home.style.removeProperty(p);
   }
 
-  const code=()=>{const v=localStorage.getItem('scholark_ui_language')||'nl';return LANGS.some(x=>x[0]===v)?v:'nl'};
+  const code=()=>{let v='nl';try{v=localStorage.getItem('scholark_ui_language')||document.documentElement.dataset.scholarkFallbackLanguage||'nl'}catch{v=document.documentElement.dataset.scholarkFallbackLanguage||'nl'}return LANGS.some(x=>x[0]===v)?v:'nl'};
   const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
@@ -623,14 +623,27 @@
     const guarded=Promise.resolve(promise).catch(e=>{deviceTranslators.delete(target);throw e});
     deviceTranslators.set(target,guarded);return guarded;
   }
-  async function deviceTranslate(target,strings,onChunk,primed){
+  async function deviceTranslate(target,strings,onChunk,primed,parentSignal=null){
     const promise=primed||primeDeviceTranslator(target);if(!promise)return {translated:{},missing:[...strings]};
-    let translator;try{translator=await promise}catch{return {translated:{},missing:[...strings]}}
-    const translated={},queue=[...strings.entries()],pending={};let flushTimer=0;
-    const flush=()=>{clearTimeout(flushTimer);flushTimer=0;const part={...pending};for(const k of Object.keys(pending))delete pending[k];if(Object.keys(part).length&&typeof onChunk==='function')onChunk(part)};
-    const emit=(source,tr)=>{pending[source]=tr;if(Object.keys(pending).length>=10)flush();else if(!flushTimer)flushTimer=setTimeout(flush,36)};
+    // Language packs may require downloads; never let the browser-native API
+    // hold up another language switch or the server translation fallback.
+    const timeLimit=(promise,ms)=>Promise.race([
+      Promise.resolve(promise),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('device-translation-timeout')),ms))
+    ]);
+    let translator;
+    try{translator=await timeLimit(promise,1600)}
+    catch{return {translated:{},missing:[...strings]}}
+    if(parentSignal?.aborted)return {translated:{},missing:[...strings]};
+    const translated={},queue=[...strings.entries()],pending={};let flushTimer=0,slow=false;
+    const flush=()=>{clearTimeout(flushTimer);flushTimer=0;const part={...pending};for(const k of Object.keys(pending))delete pending[k];if(Object.keys(part).length&&!parentSignal?.aborted&&typeof onChunk==='function')onChunk(part)};
+    const emit=(source,tr)=>{if(parentSignal?.aborted)return;pending[source]=tr;if(Object.keys(pending).length>=10)flush();else if(!flushTimer)flushTimer=setTimeout(flush,36)};
     const concurrency=Math.min((Number(navigator.hardwareConcurrency)||4)<=4?3:5,Math.max(1,strings.length));
-    const worker=async()=>{while(queue.length){const [,source]=queue.shift();try{const tr=clean(await translator.translate(source));if(tr&&tr!==source&&safeTranslation(source,tr)){translated[source]=tr;emit(source,tr)}}catch{}}};
+    const worker=async()=>{while(queue.length&&!slow&&!parentSignal?.aborted){const [,source]=queue.shift();try{
+      const tr=clean(await timeLimit(translator.translate(source),1250));
+      if(parentSignal?.aborted)break;
+      if(tr&&tr!==source&&safeTranslation(source,tr)){translated[source]=tr;emit(source,tr)}
+    }catch(e){if(String(e?.message||'').includes('device-translation-timeout'))slow=true}}};
     await Promise.all(Array.from({length:concurrency},()=>worker()));flush();
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
@@ -679,7 +692,7 @@
     if(target==='en')return Object.fromEntries(strings.map(s=>[s,s]));
     if(parentSignal?.aborted)return {};
     const result={},emit=part=>{if(parentSignal?.aborted)return;Object.assign(result,part);onChunk?.(part)};
-    const local=await deviceTranslate(target,strings,emit,primed);
+    const local=await deviceTranslate(target,strings,emit,primed,parentSignal);
     if(parentSignal?.aborted||!local.missing.length)return result;
     const chunks=[];for(let i=0;i<local.missing.length;i+=55)chunks.push(local.missing.slice(i,i+55));
     let cursor=0;
@@ -901,7 +914,7 @@
       }catch(e){console.warn('[SCHOLAVERUM] background language completion:',clean(e?.message||e))}
       finally{
         completionRunning=false;
-        if(completionQueued&&epoch===translationEpoch){completionQueued=false;setTimeout(run,120)}
+        if(completionQueued){completionQueued=false;setTimeout(()=>scheduleLanguageCompletion(code(),translationEpoch,activeUiAbort?.signal||null),90)}
       }
     };
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,100));
