@@ -100,8 +100,10 @@
   const tokenFresh=s=>Boolean(s?.access_token)&&(!Number(s.expires_at)||Number(s.expires_at)>Math.floor(Date.now()/1000)+75);
   async function refresh(){
     if(refreshPromise)return refreshPromise;
+    const requestedToken=loadSession()?.refresh_token||'';
     const run=async()=>{
       const before=loadSession(),token=before?.refresh_token||'';
+      if(token!==requestedToken)return tokenFresh(before)?before:null;
       if(!token)return null;
       const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),15000);
       try{
@@ -124,7 +126,10 @@
       }catch{refreshIssue='temporary';return null}
       finally{clearTimeout(timer)}
     };
-    refreshPromise=run().finally(()=>{refreshPromise=null});
+    const operation=(typeof navigator!=='undefined'&&navigator.locks?.request)
+      ?navigator.locks.request('scholark-auth-token-refresh',{mode:'exclusive'},run)
+      :run();
+    refreshPromise=operation.finally(()=>{refreshPromise=null});
     return refreshPromise;
   }
   async function session(){const s=loadSession();if(!s)return null;if(tokenFresh(s))return s;const renewed=await refresh();return tokenFresh(renewed)?renewed:null}
