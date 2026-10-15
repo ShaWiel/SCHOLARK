@@ -45,6 +45,10 @@ try{
     assert.equal(measured.overlayOpen,false,viewport.name+': status indicator remained open');
     assert.equal(measured.overlayPointer,'none',viewport.name+': overlay intercepts input');
     assert.ok(measured.homeVisible&&!measured.switching,viewport.name+': UI hidden or locked after changing language');
+    // Ensure the mocked *slow* provider was really requested. A cache-only
+    // smoke pass would otherwise give false confidence.
+    for(let tries=0;tries<12&&intercepted===0;tries++)await page.waitForTimeout(160);
+    assert.ok(intercepted>0,viewport.name+': no delayed translation request was exercised');
 
     // Switching again before a slow provider returns must abort old work.
     const rapid=await page.evaluate(async()=>{
