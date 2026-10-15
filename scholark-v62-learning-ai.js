@@ -106,6 +106,14 @@
     return '<div class="v62-study-grid">'+sections.map(([title,items])=>'<div><b>'+esc(title)+'</b>'+list(items)+'</div>').join('')+'</div>'
   }
   function paragraphs(s){return multiline(s).split(/\n{2,}/).map(x=>multiline(x)).filter(Boolean).map(x=>'<p>'+esc(x).replace(/\n/g,'<br>')+'</p>').join('')}
+  // Keep AI Tutor equations readable inside rules, steps and memory cues.
+  // Escape model output before converting newlines to visual line breaks.
+  function tutorList(items,ordered=false){
+    const rows=Array.isArray(items)?items.filter(x=>String(x??'').trim()):[];
+    if(!rows.length)return'';
+    const tag=ordered?'ol':'ul';
+    return '<'+tag+' class="v62-tutor-list">'+rows.map(x=>'<li>'+esc(multiline(x)).split('\n').join('<br>')+'</li>').join('')+'</'+tag+'>';
+  }
   function tutorPlain(r){
     const parts=[multiline(r.answer||r.summary)];
     if(r.rules?.length)parts.push('Rules and why they apply:\n- '+r.rules.map(multiline).join('\n- '));
@@ -120,13 +128,13 @@
   }
   function tutorHtml(r,data){
     return '<div class="v62-answer-card"><h3>'+esc(r.topic||'SCHOLARK Tutor')+'</h3>'+paragraphs(r.answer||r.summary||'')+'</div>'+
-      (r.rules?.length?'<div class="v62-answer-card"><h4>Rules and why they apply</h4>'+list(r.rules)+'</div>':'')+
-      (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4><div style="white-space:pre-line">'+list(r.steps,true)+'</div></div>':'')+
-      (r.memoryAids?.length?'<div class="v62-answer-card"><h4>Memory aids / Ezelsbruggetjes</h4>'+list(r.memoryAids)+'</div>':'')+
+      (r.rules?.length?'<div class="v62-answer-card"><h4>Rules and why they apply</h4>'+tutorList(r.rules)+'</div>':'')+
+      (r.steps?.length?'<div class="v62-answer-card"><h4>Step-by-step method</h4>'+tutorList(r.steps,true)+'</div>':'')+
+      (r.memoryAids?.length?'<div class="v62-answer-card"><h4>Memory aids / Ezelsbruggetjes</h4>'+tutorList(r.memoryAids)+'</div>':'')+
       (r.examples?.length?'<div class="v62-answer-card"><h4>Worked examples</h4>'+r.examples.map((x,i)=>'<div style="padding:11px 0;border-top:'+(i?'1px solid #eee':'0')+'"><b>'+esc(x.title||('Example '+(i+1)))+'</b>'+paragraphs(x.setup)+(x.walkthrough?'<div class="v62-worked"><b>Walkthrough:</b>'+paragraphs(x.walkthrough)+'</div>':'')+(x.answer?'<div class="v62-worked"><b>Answer:</b>'+paragraphs(x.answer)+'</div>':'')+'</div>').join('')+'</div>':'')+
       (r.keyPoints?.length?'<div class="v62-answer-card"><h4>Key points to remember</h4>'+list(r.keyPoints)+'</div>':'')+
       (r.commonMistakes?.length?'<div class="v62-answer-card"><h4>Common mistakes</h4>'+list(r.commonMistakes)+'</div>':'')+
-      (r.checks?.length?'<div class="v62-answer-card"><h4>Check yourself</h4>'+list(r.checks,true)+'</div>':'')+
+      (r.checks?.length?'<div class="v62-answer-card"><h4>Check yourself</h4>'+tutorList(r.checks,true)+'</div>':'')+
       (r.followUp?'<div class="v62-answer-card"><h4>Next step</h4><p>'+esc(r.followUp)+'</p></div>':'');
   }
 
