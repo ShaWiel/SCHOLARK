@@ -52,6 +52,7 @@ jobs:
           node --check scripts/scholark-r273-guardrails-smoke.mjs
           node --check scripts/scholark-r274-home-bootstrap-smoke.mjs
           node --check scripts/scholark-r275-burst-memory-smoke.mjs
+          node --check scripts/scholark-r277-arki-tutor-isolation-smoke.mjs
           node scripts/scholark-teaching-quality-smoke.mjs
           node scripts/scholark-session-recovery-smoke.mjs
           node scripts/scholark-ai-auth-copy-smoke.mjs
@@ -59,6 +60,7 @@ jobs:
           node scripts/scholark-r273-guardrails-smoke.mjs
           node scripts/scholark-r274-home-bootstrap-smoke.mjs
           node scripts/scholark-r275-burst-memory-smoke.mjs
+          node scripts/scholark-r277-arki-tutor-isolation-smoke.mjs
           node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-connect-smoke.mjs

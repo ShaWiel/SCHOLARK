@@ -57,7 +57,7 @@ assert.ok(tutor.includes('Rules and why they apply')&&tutor.includes('Memory aid
 assert.ok(route.includes("rules:['Use the actual assignment brief")&&route.includes("memoryAids:['5W+H"),'Test-mode assignment fields missing');
 assert.ok(route.includes("rules:['Identify the exact rule")&&route.includes("memoryAids:['Understand → apply → check"),'Test-mode Tutor fields missing');
 
-const start=tutor.indexOf('  function tutorList(items,ordered=false){'),end=tutor.indexOf('  function readTutorHistory()',start);
+const start=tutor.indexOf('  function tutorList(items,ordered=false){'),end=tutor.indexOf('  function tutorOwner(){',start);
 assert.ok(start>=0&&end>start,'Could not isolate Tutor lesson display functions');
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const multiline=x=>String(x??'').replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();

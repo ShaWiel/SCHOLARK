@@ -7,20 +7,32 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const KEY='scholark_v107_general_ai_chats',ACTIVE='scholark_v107_general_ai_active',DRAFT_KEY='scholark_v107_general_ai_drafts';
   const uid=()=>Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
-  let current=null,busy=false;
+  let current=null,busy=false,viewOwner='';
   const SLOW_REPLY='Our systems are still thinking a bit about this request';
 
-  const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}};
-  const write=a=>{try{localStorage.setItem(KEY,JSON.stringify((a||[]).slice(0,24).map(x=>({...x,messages:(x.messages||[]).slice(-60)}))))}catch{}};
-  const activeId=()=>localStorage.getItem(ACTIVE)||'';
-  function draftMap(){try{const x=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch{return{}}}
-  function readDraft(id){const x=draftMap();return String(x?.[id]||'')}
-  function writeDraft(id,value){if(!id)return;try{const x=draftMap(),v=String(value||'');if(v)x[id]=v;else delete x[id];sessionStorage.setItem(DRAFT_KEY,JSON.stringify(x))}catch{}}
-  function syncDraftInput(){const q=$('#v107-q');if(!q||!current?.id)return;q.value=readDraft(current.id);q.oninput=()=>writeDraft(current.id,q.value)}
-  const setActive=id=>{if(id)localStorage.setItem(ACTIVE,id);else localStorage.removeItem(ACTIVE)};
-  function createChat(){const row={id:'ai-'+uid(),title:'New chat',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),messages:[]},a=read();a.unshift(row);write(a);setActive(row.id);return row}
-  function getCurrent(){const a=read(),id=activeId();return a.find(x=>x.id===id)||a[0]||createChat()}
-  function update(id,fn){const a=read(),x=a.find(z=>z.id===id);if(!x)return null;fn(x);x.updatedAt=new Date().toISOString();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));write(a);return x}
+  // A shared browser can contain multiple SCHOLAVERUM accounts. Never load
+  // another profile's ARKI chats or drafts through device-wide storage keys.
+  // Unattributed legacy chats remain untouched, not assigned to a new user.
+  function ownerId(){
+    try{
+      const cloud=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.user?.id;
+      const saved=JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id;
+      const id=String(cloud||saved||'guest');
+      return /^[a-zA-Z0-9-]{8,128}$/.test(id)?id:'guest';
+    }catch{return 'guest'}
+  }
+  const ownedKey=(base,owner=ownerId())=>base+':account:'+owner;
+  const read=(owner=ownerId())=>{try{const x=JSON.parse(localStorage.getItem(ownedKey(KEY,owner))||'[]');return Array.isArray(x)?x:[]}catch{return[]}};
+  const write=(a,owner=ownerId())=>{try{localStorage.setItem(ownedKey(KEY,owner),JSON.stringify((a||[]).slice(0,24).map(x=>({...x,messages:(x.messages||[]).slice(-60)}))))}catch{}};
+  const activeId=(owner=ownerId())=>localStorage.getItem(ownedKey(ACTIVE,owner))||'';
+  function draftMap(owner=ownerId()){try{const x=JSON.parse(sessionStorage.getItem(ownedKey(DRAFT_KEY,owner))||'{}');return x&&typeof x==='object'?x:{}}catch{return{}}}
+  function readDraft(id,owner=ownerId()){const x=draftMap(owner);return String(x?.[id]||'')}
+  function writeDraft(id,value,owner=ownerId()){if(!id)return;try{const x=draftMap(owner),v=String(value||'');if(v)x[id]=v;else delete x[id];sessionStorage.setItem(ownedKey(DRAFT_KEY,owner),JSON.stringify(x))}catch{}}
+  function syncDraftInput(){const q=$('#v107-q');if(!q||!current?.id)return;const owner=viewOwner||ownerId();q.value=readDraft(current.id,owner);q.oninput=()=>writeDraft(current.id,q.value,owner)}
+  const setActive=(id,owner=ownerId())=>{if(id)localStorage.setItem(ownedKey(ACTIVE,owner),id);else localStorage.removeItem(ownedKey(ACTIVE,owner))};
+  function createChat(owner=ownerId()){const row={id:'ai-'+uid(),title:'New chat',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),messages:[]},a=read(owner);a.unshift(row);write(a,owner);setActive(row.id,owner);return row}
+  function getCurrent(owner=ownerId()){const a=read(owner),id=activeId(owner);return a.find(x=>x.id===id)||a[0]||createChat(owner)}
+  function update(id,fn,owner=ownerId()){const a=read(owner),x=a.find(z=>z.id===id);if(!x)return null;fn(x);x.updatedAt=new Date().toISOString();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));write(a,owner);return x}
   function outputLanguage(){const code=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.languageName?.(code)||window.__SCHOLARK_I18N__?.nativeName?.(code)||code}
   function workspaceContextPayload(){
     if(!$('#v107-context')?.checked)return '';
@@ -98,7 +110,37 @@
     const updated=update(id,x=>{x.title=title});if(!updated)return false;
     if(current?.id===id)current=updated;drawHistory();return true
   }
-  function drawHistory(){const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-rename" data-v107-rename="'+esc(x.id)+'" aria-label="Rename chat" title="Rename chat">✎</button><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del],[data-v107-rename]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()});$$('[data-v107-rename]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();renameChat(b.dataset.v107Rename)});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread();syncDraftInput()})}
+  function importedLegacyRefs(owner=ownerId()){
+    try{const v=JSON.parse(localStorage.getItem(ownedKey(KEY+':legacy-imported',owner))||'[]');return Array.isArray(v)?v:[]}catch{return[]}
+  }
+  function availableLegacyRows(owner=ownerId()){
+    try{
+      const legacy=JSON.parse(localStorage.getItem(KEY)||'[]'),imported=new Set(importedLegacyRefs(owner));
+      return Array.isArray(legacy)?legacy.map((chat,index)=>({chat,ref:index+':'+String(chat?.id||'')})).filter(({chat,ref})=>Array.isArray(chat?.messages)&&!imported.has(ref)):[];
+    }catch{return[]}
+  }
+  function legacyChatsAvailable(owner=ownerId()){return availableLegacyRows(owner).length>0}
+  function restoreLegacyChats(){
+    const owner=ownerId();if(!legacyChatsAvailable(owner))return false;
+    // Old device-wide data has no verifiable account owner. Ask explicitly;
+    // never overwrite existing chats, delete the source or silently claim it.
+    if(!confirm('These older chats were saved on this device without an account identifier. They might belong to another person who used this browser. Only import them if they are yours. Continue?'))return false;
+    if(owner!==ownerId())return false;
+    try{
+      const existing=read(owner),room=Math.max(0,24-existing.length);
+      if(!room){alert('Your chat list is full. Your previous device chats remain safely stored here. Free a chat slot before restoring more.');return false}
+      const picked=availableLegacyRows(owner).slice(0,room),rows=picked.map(({chat})=>({
+        ...chat,id:'ai-'+uid(),title:String(chat.title||'Recovered chat').slice(0,80),
+        messages:chat.messages.slice(-60),updatedAt:new Date().toISOString()
+      }));
+      if(!rows.length)return false;
+      write([...rows,...existing],owner);
+      localStorage.setItem(ownedKey(KEY+':legacy-imported',owner),JSON.stringify([...importedLegacyRefs(owner),...picked.map(x=>x.ref)]));
+      setActive(rows[0].id,owner);viewOwner=owner;current=getCurrent(owner);
+      drawHistory();drawThread();syncDraftInput();return true;
+    }catch{return false}
+  }
+  function drawHistory(){const recover=$('#v107-restore');if(recover)recover.hidden=!legacyChatsAvailable(viewOwner||ownerId());const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-rename" data-v107-rename="'+esc(x.id)+'" aria-label="Rename chat" title="Rename chat">✎</button><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del],[data-v107-rename]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()});$$('[data-v107-rename]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();renameChat(b.dataset.v107Rename)});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread();syncDraftInput()})}
   function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Build an interactive HTML lesson I can preview here','Debug my code and show a tested fix','Analyze information and explain the findings','Draft a professional document','Create a step-by-step project plan','Explain a school problem with every step, rules and a memory aid'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='user'?attachmentTags(m.attachments||[]):'')+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
   // Release session-check timers immediately when the result settles.
   // Avoid orphaned timeouts after successful ARKI and account-switch requests.
@@ -138,9 +180,11 @@
     if(button)button.disabled=true;if(input)input.disabled=true;
     if(state)state.textContent='Preparing ARKI…';
     const test=!!window.__SCHOLARK_TEST_MODE__;
-    let session=null,waitTimers=[],responseChatId='';
+    let session=null,waitTimers=[],responseChatId='',responseOwner=ownerId();
     try{
       session=test?null:await resolvedSession(false);
+      // Never send a prompt typed by one profile under another profile's refreshed session.
+      if(ownerId()!==responseOwner){if(state)state.textContent='Account changed. Send this message again from the current profile.';return}
       if(!test&&!session?.access_token){
         const recoverable=window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary';
         if(state)state.textContent=recoverable?'Could not refresh session right now. Check your connection and retry.':'Sign in to use ARKI.';
@@ -152,10 +196,11 @@
       // block the Ask button on client-side wallet/billing lookups; those can
       // be slow or temporarily unavailable and previously made ARKI appear dead.
       // Refresh the HUD opportunistically after the server responds instead.
+      if(viewOwner!==responseOwner){viewOwner=responseOwner;current=getCurrent(responseOwner);drawHistory();drawThread();syncDraftInput()}
       const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
       const visiblePrompt=typedPrompt||'Attached material';
       responseChatId=current.id;
-      current=update(responseChatId,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})})||current;
+      current=update(responseChatId,x=>{if(!x.messages.length)x.title=(typedPrompt||attachmentMeta[0]?.name||'Attached material').slice(0,64);x.messages.push({role:'user',content:visiblePrompt,attachments:attachmentMeta,createdAt:new Date().toISOString()})},responseOwner)||current;
       if(input)input.value='';writeDraft(current.id,'');drawHistory();drawThread();
       const thread=$('#v107-thread');
       if(thread){
@@ -194,16 +239,16 @@
         const e=new Error(d?.error||'ARKI is temporarily unavailable');e.code=d?.code||('HTTP_'+r.status);e.quota=d?.quota||null;e.retryAfter=Math.max(0,Number(r.headers.get('retry-after'))||0);window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e.quota,e.code,e.retryAfter);throw e
       }
       const answer=String(d.result?.answer||'').trim();if(!answer)throw new Error('ARKI returned an empty answer');
-      const completed=update(responseChatId,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}));if(current?.id===responseChatId)current=completed||current;
-      attachmentApi?.clear?.('arki');window.__SCHOLARK_CHAT_QUOTA__?.apply?.(d?.usage?.quota||null,'',0);
+      const completed=update(responseChatId,x=>x.messages.push({role:'assistant',content:answer,createdAt:new Date().toISOString(),followUps:Array.isArray(d.result?.suggestedFollowUps)?d.result.suggestedFollowUps.slice(0,4):[]}),responseOwner);if(viewOwner===responseOwner&&current?.id===responseChatId)current=completed||current;
+      if(ownerId()===responseOwner){attachmentApi?.clear?.('arki');window.__SCHOLARK_CHAT_QUOTA__?.apply?.(d?.usage?.quota||null,'',0)}
       if(state)state.textContent='Ready';
       window.__SCHOLARK_CREDITS__?.load?.();
-      window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:current.id,context:!!$('#v107-context')?.checked})
+      if(ownerId()===responseOwner)window.__SCHOLARK_WORKSPACE_CORE__?.record?.('ai','answered',{chatId:responseChatId,context:!!$('#v107-context')?.checked})
     }catch(e){
       const timed=e?.name==='AbortError'||e?.code==='CLIENT_TIMEOUT',limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       const msg=timed?'ARKI reached the maximum processing time. Your message is saved; you can retry without losing your question.':String(e?.message||e);if(window.__SCHOLARK_TEST_MODE__)console.error('[SCHOLARK] ARKI client failure',e?.stack||e);
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
-      else if(responseChatId){const failed=update(responseChatId,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:[prompt.slice(0,1600)]}));if(current?.id===responseChatId)current=failed||current;}
+      else if(responseChatId){const failed=update(responseChatId,x=>x.messages.push({role:'assistant',content:'I could not complete that request right now. '+msg,createdAt:new Date().toISOString(),model:'ARKI',followUps:[prompt.slice(0,1600)]}),responseOwner);if(viewOwner===responseOwner&&current?.id===responseChatId)current=failed||current;}
       if(state)state.textContent=limited?'Free / rate limit reached':(timed?'Request timed out — you can retry':'Request failed — you can retry')
     }finally{
       for(const timer of waitTimers)clearTimeout(timer);
@@ -213,7 +258,7 @@
       $('#v107-thinking')?.remove();drawHistory();drawThread();window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false);window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
     }
   }
-  function open(){const h=host();if(!h)return;current=getCurrent();h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
+  function open(){const h=host();if(!h)return;viewOwner=ownerId();current=getCurrent(viewOwner);h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><button type="button" class="v107-new" id="v107-restore" hidden style="width:100%;margin-bottom:9px">Restore previous device chats</button><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};$('#v107-restore').onclick=restoreLegacyChats;syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
 
   function editUserMessage(index,text){
     const next=String(text||'').trim();if(!next||busy)return false;current=current||getCurrent();const msg=current?.messages?.[index];if(!msg||msg.role!=='user')return false;
@@ -226,6 +271,10 @@
     if(opt.newChat){current=createChat()}else current=current||getCurrent();
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
+  addEventListener('scholark:auth-changed',()=>{
+    const next=ownerId();if(viewOwner===next)return;viewOwner=next;current=getCurrent(next);
+    if($('#v107-ai')){drawHistory();drawThread();syncDraftInput()}
+  });
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
   window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r255'};
 })();

@@ -806,13 +806,13 @@ try{
     prompt:document.querySelector('#v107-q')?.value||'',
     sendDisabled:!!document.querySelector('#v107-send')?.disabled,
     messages:[...document.querySelectorAll('.v107-msg')].map(x=>({cls:x.className,text:(x.textContent||'').slice(0,500)})),
-    chats:localStorage.getItem('scholark_v107_general_ai_chats'),
+    chats:localStorage.getItem('scholark_v107_general_ai_chats:account:'+(JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id||'guest')),
     runtime:window.__SCHOLARK_RUNTIME__?.errors?.()||[]
   }));
   console.error('ARKI FIRST SEND DIAGNOSTIC '+JSON.stringify(diag));
   throw e
 }
-check(await page.evaluate(()=>{try{const a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats')||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
+check(await page.evaluate(()=>{try{const owner=JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id||'guest',a=JSON.parse(localStorage.getItem('scholark_v107_general_ai_chats:account:'+owner)||'[]');return a.some(c=>(c.messages||[]).some(m=>m.role==='user'&&m.content==='What is 2 + 2?')&&(c.messages||[]).some(m=>m.role==='assistant'&&/4/.test(m.content||'')))}catch{return false}}),'ARKI chat did not persist both sides of the conversation');
 check(await page.locator('[data-v120-scope="arki"] [data-v120-do="copy"]').count()>=1,'ARKI copy action missing after response');
 check(await page.locator('[data-v120-edit-arki]').count()>=1,'ARKI user-message Edit action missing');
 check(await page.locator('.v107-msg.user .v120-msg-attachment').count()>=1,'ARKI sent message lost its image attachment badge');

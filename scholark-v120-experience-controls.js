@@ -67,6 +67,7 @@
 
   const ATTACHMENT_LIMIT=10,ATTACHMENT_IMAGE_CHARS=540000;
   const attachmentState={arki:{items:[],pending:0},tutor:{items:[],pending:0}};
+  let attachmentEpoch=0;
   const attachmentExt=f=>String(f?.name||'').split('.').pop().toLowerCase();
   const attachmentTextFile=f=>String(f?.type||'').startsWith('text/')||['txt','md','markdown','csv','json','html','htm','xml'].includes(attachmentExt(f));
   const attachmentBase64=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const v=String(r.result||''),i=v.indexOf(',');resolve(i>=0?v.slice(i+1):v)};r.onerror=()=>reject(r.error||new Error('Could not read file'));r.readAsDataURL(f)});
@@ -110,11 +111,18 @@
     const wrap=document.createElement('div');wrap.className='v120-attach-wrap';wrap.id='v120-attach-'+scope;
     wrap.innerHTML='<button type="button" class="v120-attach-plus" data-v120-attach-plus="'+scope+'" aria-label="Add photos, camera or files" aria-expanded="false">+</button><div class="v120-attach-menu" data-v120-attach-menu="'+scope+'"><button type="button" data-v120-attach-pick="'+scope+':photos"><b>▧</b>Photos</button><button type="button" data-v120-attach-pick="'+scope+':camera"><b>◉</b>Camera</button><button type="button" data-v120-attach-pick="'+scope+':files"><b>⌕</b>Files</button></div><input class="v120-attach-input" data-v120-attach-input="'+scope+':photos" type="file" accept="image/*" multiple><input class="v120-attach-input" data-v120-attach-input="'+scope+':camera" type="file" accept="image/*" capture="environment"><input class="v120-attach-input" data-v120-attach-input="'+scope+':files" type="file" accept=".pdf,.docx,.pptx,.txt,.md,.markdown,.csv,.json,.html,.htm,.xml,text/*">';
     wrap.querySelectorAll('[data-v120-attach-input]').forEach(input=>input.onchange=async()=>{
-      const files=[...(input.files||[])],st=attachmentState[scope];input.value='';if(!files.length||!st)return;
+      const files=[...(input.files||[])],st=attachmentState[scope],taskEpoch=attachmentEpoch;input.value='';if(!files.length||!st)return;
       const perMessageRoom=Math.max(0,ATTACHMENT_LIMIT-st.items.length-st.pending),dailyRemaining=quotaState.quota?.limited?Math.max(0,Number(quotaState.quota?.attachmentRemaining)||0):ATTACHMENT_LIMIT,room=Math.max(0,Math.min(perMessageRoom,dailyRemaining));
       if(!room){toast(quotaState.quota?.limited&&dailyRemaining<=0?'Free attachment limit reached for this 24-hour window':'Maximum '+ATTACHMENT_LIMIT+' attachments per message');applyQuotaScope(scope);return}
       const selected=files.slice(0,room);if(files.length>room)toast('Only the first '+room+' file'+(room===1?'':'s')+' fit — maximum '+ATTACHMENT_LIMIT+' per message and within your remaining upload allowance');st.pending+=selected.length;renderAttachmentTray(scope);
-      for(const file of selected){try{const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);st.items.push(item)}catch(err){toast(clean(err?.message||err))}finally{st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
+      for(const file of selected){
+        if(taskEpoch!==attachmentEpoch)break;
+        try{
+          const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);
+          if(taskEpoch===attachmentEpoch)st.items.push(item);
+        }catch(err){if(taskEpoch===attachmentEpoch)toast(clean(err?.message||err))}
+        finally{if(taskEpoch===attachmentEpoch){st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
+      }
     });
     return wrap
   }
@@ -182,19 +190,29 @@
   async function refreshQuota(force=false){
     if(window.__SCHOLARK_TEST_MODE__)return;
     const nowMs=Date.now();if(!force&&quotaState.lastLoaded&&nowMs-quotaState.lastLoaded<60000)return;if(quotaState.loading)return quotaState.loading;
+    const requestOwner=accountOwner();
     quotaState.loading=(async()=>{
       try{
         const session=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||await window.__SCHOLARK_V72_CLOUD__?.session?.();if(!session?.access_token)return;
         const r=await fetch('/api/learning/quota-status',{headers:{authorization:'Bearer '+session.access_token,accept:'application/json'}});
-        const d=await r.json().catch(()=>({}));if(r.ok&&d?.ok){quotaState.lastLoaded=Date.now();applyQuota(d.quota||null,d.code||'',Number(r.headers.get('retry-after'))||0)}
-      }catch{}finally{quotaState.loading=null}
+        const d=await r.json().catch(()=>({}));if(requestOwner===accountOwner()&&r.ok&&d?.ok){quotaState.lastLoaded=Date.now();applyQuota(d.quota||null,d.code||'',Number(r.headers.get('retry-after'))||0)}
+      }catch{}finally{if(requestOwner===accountOwner())quotaState.loading=null}
     })();return quotaState.loading
   }
   window.__SCHOLARK_CHAT_QUOTA__={apply:applyQuota,refresh:refreshQuota,sync:()=>{for(const scope of ['arki','tutor'])applyQuotaScope(scope)},state:()=>({...quotaState}),limits:{attachmentsPerMessage:ATTACHMENT_LIMIT}};
 
+  function accountOwner(){
+    try{
+      const live=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.user?.id;
+      const saved=JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id;
+      const id=String(live||saved||'guest');
+      return /^[a-zA-Z0-9-]{8,128}$/.test(id)?id:'guest';
+    }catch{return 'guest'}
+  }
+  const profileKey=(base,owner=accountOwner())=>base+':account:'+owner;
   const FEEDBACK='scholark_v120_answer_feedback';
-  function feedback(){try{return JSON.parse(localStorage.getItem(FEEDBACK)||'{}')||{}}catch{return{}}}
-  function setFeedback(key,value){const x=feedback();if(value)x[key]=value;else delete x[key];try{localStorage.setItem(FEEDBACK,JSON.stringify(x))}catch{}}
+  function feedback(){try{return JSON.parse(localStorage.getItem(profileKey(FEEDBACK))||'{}')||{}}catch{return{}}}
+  function setFeedback(key,value){const x=feedback();if(value)x[key]=value;else delete x[key];try{localStorage.setItem(profileKey(FEEDBACK),JSON.stringify(x))}catch{}}
 
   function actionMarkup(scope,key){
     const f=feedback()[key]||'';
@@ -252,16 +270,46 @@
   }
 
   const TUTOR_KEY='scholark_v120_tutor_chats',TUTOR_ACTIVE='scholark_v120_tutor_active',TUTOR_PROGRESS='scholark_v120_tutor_progress';
-  function tutorChats(){try{const x=JSON.parse(localStorage.getItem(TUTOR_KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
-  function saveTutorChats(rows){try{localStorage.setItem(TUTOR_KEY,JSON.stringify((rows||[]).slice(0,20).map(x=>({...x,messages:(x.messages||[]).slice(-50)}))))}catch{}}
-  function tutorActive(){return localStorage.getItem(TUTOR_ACTIVE)||''}
-  function setTutorActive(id){try{localStorage.setItem(TUTOR_ACTIVE,id)}catch{}}
-  function newTutorChat(){const row={id:uid('tutor'),title:'New tutor chat',createdAt:now(),updatedAt:now(),messages:[]};const a=tutorChats();a.unshift(row);saveTutorChats(a);setTutorActive(row.id);syncTutorBackend(row);return row}
-  function currentTutor(){const a=tutorChats(),id=tutorActive();return a.find(x=>x.id===id)||a[0]||newTutorChat()}
-  function updateTutor(fn){const a=tutorChats(),id=tutorActive();let x=a.find(z=>z.id===id);if(!x){x=newTutorChat();return updateTutor(fn)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a);return x}
-  function syncTutorBackend(chat=currentTutor()){try{localStorage.setItem('scholark_v62_tutor_history',JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
-  function tutorProgress(){try{return JSON.parse(localStorage.getItem(TUTOR_PROGRESS)||'{}')||{}}catch{return{}}}
-  function noteTutorProgress(topic,delta=0,review=false){const name=clean(topic)||'General';const p=tutorProgress(),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(TUTOR_PROGRESS,JSON.stringify(p))}catch{}return x}
+  let tutorProfileOwner=accountOwner();
+  function tutorChats(owner=accountOwner()){try{const x=JSON.parse(localStorage.getItem(profileKey(TUTOR_KEY,owner))||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
+  function saveTutorChats(rows,owner=accountOwner()){try{localStorage.setItem(profileKey(TUTOR_KEY,owner),JSON.stringify((rows||[]).slice(0,20).map(x=>({...x,messages:(x.messages||[]).slice(-50)}))))}catch{}}
+  function tutorActive(owner=accountOwner()){return localStorage.getItem(profileKey(TUTOR_ACTIVE,owner))||''}
+  function setTutorActive(id,owner=accountOwner()){try{localStorage.setItem(profileKey(TUTOR_ACTIVE,owner),id)}catch{}}
+  function newTutorChat(owner=accountOwner()){const row={id:uid('tutor'),title:'New tutor chat',createdAt:now(),updatedAt:now(),messages:[]};const a=tutorChats(owner);a.unshift(row);saveTutorChats(a,owner);setTutorActive(row.id,owner);syncTutorBackend(row,owner);return row}
+  function currentTutor(owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);return a.find(x=>x.id===id)||a[0]||newTutorChat(owner)}
+  function updateTutor(fn,owner=accountOwner(),chatId=tutorActive(owner)){const a=tutorChats(owner),id=chatId;let x=a.find(z=>z.id===id);if(!x){if(chatId)return null;newTutorChat(owner);return updateTutor(fn,owner)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a,owner);return x}
+  function syncTutorBackend(chat=currentTutor(),owner=accountOwner()){try{localStorage.setItem(profileKey('scholark_v62_tutor_history',owner),JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
+  function importedTutorRefs(owner=accountOwner()){
+    try{const v=JSON.parse(localStorage.getItem(profileKey(TUTOR_KEY+':legacy-imported',owner))||'[]');return Array.isArray(v)?v:[]}catch{return[]}
+  }
+  function availableLegacyTutorRows(owner=accountOwner()){
+    try{
+      const rows=JSON.parse(localStorage.getItem(TUTOR_KEY)||'[]'),imported=new Set(importedTutorRefs(owner));
+      return Array.isArray(rows)?rows.map((chat,index)=>({chat,ref:index+':'+String(chat?.id||'')})).filter(({chat,ref})=>Array.isArray(chat?.messages)&&!imported.has(ref)):[];
+    }catch{return[]}
+  }
+  function legacyTutorAvailable(owner=accountOwner()){return availableLegacyTutorRows(owner).length>0}
+  function restoreLegacyTutor(){
+    const owner=accountOwner();if(!legacyTutorAvailable(owner))return false;
+    if(!confirm('Older Tutor chats were saved on this device without an account owner. They might belong to someone else who used this browser. Import only chats that are yours. Continue?'))return false;
+    if(owner!==accountOwner())return false;
+    try{
+      const existing=tutorChats(owner),room=Math.max(0,20-existing.length);
+      if(!room){alert('Your Tutor chat list is full. Previous device chats are still saved. Free a chat slot to restore more.');return false}
+      const picked=availableLegacyTutorRows(owner).slice(0,room),rows=picked.map(({chat})=>({
+        ...chat,id:uid('tutor'),title:String(chat.title||'Recovered Tutor chat').slice(0,80),
+        messages:chat.messages.slice(-50),updatedAt:now()
+      }));
+      if(!rows.length)return false;
+      saveTutorChats([...rows,...existing],owner);
+      localStorage.setItem(profileKey(TUTOR_KEY+':legacy-imported',owner),JSON.stringify([...importedTutorRefs(owner),...picked.map(x=>x.ref)]));
+      setTutorActive(rows[0].id,owner);
+      const active=currentTutor(owner);syncTutorBackend(active,owner);
+      renderTutorChat(active);refreshTutorBar();return true
+    }catch{return false}
+  }
+  function tutorProgress(owner=accountOwner()){try{return JSON.parse(localStorage.getItem(profileKey(TUTOR_PROGRESS,owner))||'{}')||{}}catch{return{}}}
+  function noteTutorProgress(topic,delta=0,review=false,owner=accountOwner()){const name=clean(topic)||'General';const p=tutorProgress(owner),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(profileKey(TUTOR_PROGRESS,owner),JSON.stringify(p))}catch{}return x}
   function tutorProgressText(chat=currentTutor()){const last=[...(chat.messages||[])].reverse().find(m=>m.role==='assistant'&&m.topic),p=tutorProgress(),x=last?p[String(last.topic).toLowerCase()]:null;return x?x.topic+' · '+x.turns+' tutor turn'+(x.turns===1?'':'s')+' · '+x.reviews+' review'+(x.reviews===1?'':'s'):'Progress starts when ARKI teaches a topic.'}
   function renameTutorChat(){
     const chat=currentTutor(),raw=prompt('Rename Tutor chat',chat.title||'Tutor chat');if(raw==null)return false;
@@ -276,7 +324,13 @@
     box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="tutor:'+i+'" aria-label="Copy your AI Tutor message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
-    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText()
+    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText();
+    const bar=$('#v120-tutorbar'),restore=$('#v120-tutor-restore'),available=legacyTutorAvailable();
+    if(bar&&available&&!restore){
+      const button=document.createElement('button');button.type='button';button.id='v120-tutor-restore';
+      button.textContent='Restore previous device chats';button.style.gridColumn='1/-1';
+      button.onclick=restoreLegacyTutor;bar.appendChild(button)
+    }else if(!available&&restore)restore.remove()
   }
   function decorateTutor(){
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;ensureAttachmentUi('tutor');
@@ -378,12 +432,20 @@
   },true);
 
   addEventListener('scholark:tutor-user',e=>{
-    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[];if(!prompt&&!attachments.length)return;updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
+    const owner=String(e.detail?.owner||accountOwner()),chatId=String(e.detail?.chatId||tutorActive(owner));
+    if(owner!==accountOwner())return;
+    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[];if(!prompt&&!attachments.length)return;
+    updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})},owner,chatId);
+    if(chatId===tutorActive(owner)){refreshTutorBar();setTimeout(decorateTutorUsers,0)}
   });
   addEventListener('scholark:tutor-assistant',e=>{
+    const owner=String(e.detail?.owner||accountOwner()),chatId=String(e.detail?.chatId||tutorActive(owner));
     const text=multiline(e.detail?.answer),topic=clean(e.detail?.result?.topic)||clean(e.detail?.prompt).slice(0,80)||'General';if(!text)return;
+    const chat=updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}),owner,chatId);if(!chat)return;
+    noteTutorProgress(topic,0,false,owner);
+    if(owner!==accountOwner()||chatId!==tutorActive(owner))return;
     if(e.detail?.quota)applyQuota(e.detail.quota,'',0);
-    updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}));noteTutorProgress(topic,0,false);syncTutorBackend();decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
+    syncTutorBackend(chat,owner);decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
   });
 
   let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false;const observerRoots=new Set();
@@ -409,6 +471,21 @@
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
+  addEventListener('scholark:auth-changed',()=>{
+    const next=accountOwner();if(tutorProfileOwner===next)return;
+    tutorProfileOwner=next;
+    // Invalidate ongoing file processing so a previous user's photo/document
+    // cannot appear in a newly signed-in account after an async extraction.
+    attachmentEpoch++;
+    for(const scope of ['arki','tutor']){
+      const st=attachmentState[scope];st.items=[];st.pending=0;renderAttachmentTray(scope);
+      document.querySelectorAll('[data-v120-attach-menu="'+scope+'"]').forEach(menu=>menu.classList.remove('open'));
+    }
+    clearTimeout(quotaState.timer);quotaState.quota=null;quotaState.code='';quotaState.retryUntil=0;quotaState.lastLoaded=0;quotaState.loading=null;
+    if($('#v120-tutorbar')){const chat=currentTutor();syncTutorBackend(chat);renderTutorChat(chat);refreshTutorBar()}
+    for(const scope of ['arki','tutor'])applyQuotaScope(scope);
+    refreshQuota(true);
+  });
   addEventListener('scholark:arki-rendered',()=>{decorateArki();decorateArkiUsers();scrubProviderMarks($('#v107-thread')||document)});
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},60));
   addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},30));
@@ -418,5 +495,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r256-free-attachment-15'};
+  window.__SCHOLARK_V120_EXPERIENCE__={currentTutorId:()=>currentTutor().id,health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r256-free-attachment-15'};
 })();
