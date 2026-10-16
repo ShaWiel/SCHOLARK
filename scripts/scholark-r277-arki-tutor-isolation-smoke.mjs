@@ -69,10 +69,11 @@ assert.equal(tutorApi.readTutorHistory()[0]?.text,'Alice exclusive exercise');
 
 const controlsOwner=between(controls,'  function accountOwner(){','  function actionMarkup(');
 const controlsTutor=between(controls,"  const TUTOR_KEY='scholark_v120_tutor_chats'","  function tutorProgressText(");
+let importConsent=false;
 const controlsEnv={window:browser,localStorage:memoryStorage,JSON,String,Date,Math,
-  uid:()=>String(++ids),now:()=>new Date().toISOString(),clean:x=>String(x||'').trim()};
+  uid:()=>String(++ids),now:()=>new Date().toISOString(),clean:x=>String(x||'').trim(),confirm:()=>importConsent,alert(){},renderTutorChat(){},refreshTutorBar(){}};
 const controlsApi=vm.runInNewContext(controlsOwner+controlsTutor+
-  '\n({tutorChats,currentTutor,updateTutor,syncTutorBackend,tutorProgress,noteTutorProgress,feedback,setFeedback})',controlsEnv);
+  '\n({tutorChats,currentTutor,updateTutor,syncTutorBackend,tutorProgress,noteTutorProgress,feedback,setFeedback,restoreLegacyTutor,legacyTutorAvailable})',controlsEnv);
 setUser(alice);
 const aliceTutor=controlsApi.currentTutor();
 controlsApi.updateTutor(x=>x.messages.push({role:'user',text:'Alice Tutor chat'}));
@@ -90,6 +91,40 @@ setUser(alice);
 assert.equal(controlsApi.currentTutor().id,aliceTutor.id);
 assert.ok(JSON.stringify(controlsApi.tutorChats()).includes('Alice Tutor chat'));
 assert.ok(!JSON.stringify(controlsApi.tutorChats()).includes('Bob Tutor chat'));
+
+// Legacy device-wide chats must remain inaccessible until the user opts in.
+// Importing them must neither delete the source nor evict existing chats.
+const legacyArki=between(arki,'  function importedLegacyRefs(','  function drawHistory(){');
+const importEnv={ownerId:arkiApi.ownerId,KEY:'scholark_v107_general_ai_chats',
+  ownedKey:(base,owner)=>base+':account:'+owner,localStorage:memoryStorage,
+  read:arkiApi.read,write:arkiApi.write,getCurrent:arkiApi.getCurrent,
+  setActive:id=>memoryStorage.setItem('scholark_v107_general_ai_active:account:'+user,id),
+  uid:()=>String(++ids),Date,JSON,String,Set,
+  confirm:()=>importConsent,alert(){},drawHistory(){},drawThread(){},syncDraftInput(){}};
+const arkiRestore=vm.runInNewContext("let viewOwner='',current=null;\n"+legacyArki+
+  '\n({restoreLegacyChats,legacyChatsAvailable})',importEnv);
+setUser(alice);
+const beforeRestore=arkiApi.read().length;
+assert.equal(arkiRestore.legacyChatsAvailable(),true);
+assert.equal(arkiRestore.restoreLegacyChats(),false,'Legacy ARKI import needs explicit consent');
+assert.equal(arkiApi.read().length,beforeRestore);
+importConsent=true;
+assert.equal(arkiRestore.restoreLegacyChats(),true);
+assert.equal(arkiApi.read().length,beforeRestore+1);
+assert.ok(JSON.stringify(arkiApi.read()).includes('Alice private math problem'),'Recovering old ARKI chats must preserve existing chats');
+assert.equal(arkiRestore.legacyChatsAvailable(),false,'Legacy ARKI chats should not be imported twice');
+assert.ok(memoryStorage.getItem('scholark_v107_general_ai_chats')?.includes('unattributed confidential chat'),'Never delete legacy chat source');
+
+const beforeTutorRestore=controlsApi.tutorChats().length;
+importConsent=false;
+assert.equal(controlsApi.restoreLegacyTutor(),false,'Legacy Tutor import needs explicit consent');
+assert.equal(controlsApi.tutorChats().length,beforeTutorRestore);
+importConsent=true;
+assert.equal(controlsApi.restoreLegacyTutor(),true);
+assert.equal(controlsApi.tutorChats().length,beforeTutorRestore+1);
+assert.ok(JSON.stringify(controlsApi.tutorChats()).includes('Alice Tutor chat'),'Recovering old Tutor chats must preserve active chats');
+assert.equal(controlsApi.legacyTutorAvailable(),false,'Legacy Tutor chats should not be imported twice');
+assert.ok(memoryStorage.getItem('scholark_v120_tutor_chats')?.includes('unattributed homework'),'Never delete legacy Tutor source');
 
 assert.match(arki,/addEventListener\('scholark:auth-changed'/);
 assert.match(arki,/responseOwner=ownerId\(\)/);
