@@ -151,7 +151,7 @@
   const tutorHistoryKey=(owner=tutorOwner())=>'scholark_v62_tutor_history:account:'+owner;
   function readTutorHistory(owner=tutorOwner()){try{const v=JSON.parse(localStorage.getItem(tutorHistoryKey(owner))||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
   function writeTutorHistory(a,owner=tutorOwner()){try{localStorage.setItem(tutorHistoryKey(owner),JSON.stringify(a.slice(-12)))}catch{}}
-  let tutorInFlight=false,tutorViewOwner=tutorOwner();
+  const tutorPendingByOwner=new Set();let tutorViewOwner=tutorOwner();
   function readAssignments(){
     try{
       const rows=JSON.parse(localStorage.getItem('scholark_v106_assignments')||'[]');
@@ -166,16 +166,18 @@
     return {intent,rows:intent?rows.slice(0,10):[]};
   }
   async function runTutor(){
-    if(tutorInFlight)return;
+    if(tutorPendingByOwner.has(tutorOwner()))return;
     const q=$('#v52-tutor-q'),chat=$('#v52-chat'),btn=$('#v52-tutor-send'),attachmentApi=window.__SCHOLARK_CHAT_ATTACHMENTS__,attachments=attachmentApi?.get?.('tutor')||[],attachmentMeta=attachmentApi?.meta?.('tutor')||[],typedPrompt=multiline(q?.value);
     if(attachmentApi?.busy?.('tutor')){q?.focus();return}
     if(!typedPrompt&&!attachments.length){q?.focus();return}
-    tutorInFlight=true;
     const requestOwner=tutorOwner();
+    tutorPendingByOwner.add(requestOwner);
+    const requestChatId=window.__SCHOLARK_V120_EXPERIENCE__?.currentTutorId?.()||'';
+    const matchesView=()=>tutorOwner()===requestOwner&&(!requestChatId||window.__SCHOLARK_V120_EXPERIENCE__?.currentTutorId?.()===requestChatId);
     const prompt=typedPrompt||'Analyze the attached material and teach me what I need to understand from it.';
     const visiblePrompt=typedPrompt||'Attached material',attachmentHtml=attachmentApi?.messageMarkup?.(attachmentMeta)||'';
     chat?.insertAdjacentHTML('beforeend','<div class="v52-msg user">'+esc(visiblePrompt)+attachmentHtml+'</div>');
-    window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt:visiblePrompt,attachments:attachmentMeta}}));
+    window.dispatchEvent(new CustomEvent('scholark:tutor-user',{detail:{prompt:visiblePrompt,attachments:attachmentMeta,owner:requestOwner,chatId:requestChatId}}));
     if(q)q.value='';
     const wait=document.createElement('div');wait.className='v52-msg ai';wait.innerHTML='<span class="v62-loading"><i class="v62-spin"></i>SCHOLARK is thinking…</span>';chat?.appendChild(wait);
     busy(btn,true,'Thinking…');
@@ -198,16 +200,18 @@
       const tutorMode=assignment.intent?'assignment_coach':(/(?:check my|review my|grade my|mark my|correct my|controleer mijn|beoordeel mijn)/i.test(prompt)?'review_work':/(?:quiz me|test me|practice questions|oefentoets|toets me)/i.test(prompt)?'quiz_coach':/(?:study plan|revision schedule|studieplan|leerplanning)/i.test(prompt)?'study_planner':'teach');
       const data=await call('tutor',{prompt,context,attachments,tutorMode,assignmentContext:assignment.rows});
       const r=data.result,full=tutorPlain(r);
-      if(tutorOwner()===requestOwner){wait.innerHTML=tutorHtml(r,data);attachmentApi?.clear?.('tutor')}
-      hist.push({role:'user',text:prompt},{role:'assistant',text:full});writeTutorHistory(hist,requestOwner);
-      if(tutorOwner()===requestOwner)window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:full,result:r,provider:data.provider||'',model:data.model||'',quota:data?.usage?.quota||null}}));
+      if(matchesView()){wait.innerHTML=tutorHtml(r,data);attachmentApi?.clear?.('tutor')}
+      hist.push({role:'user',text:prompt},{role:'assistant',text:full});
+      // An answer for chat A must not overwrite the context for chat B.
+      if(matchesView())writeTutorHistory(hist,requestOwner);
+      window.dispatchEvent(new CustomEvent('scholark:tutor-assistant',{detail:{prompt,answer:full,result:r,provider:data.provider||'',model:data.model||'',quota:data?.usage?.quota||null,owner:requestOwner,chatId:requestChatId}}));
     }catch(e){
       wait.remove();
-      if(tutorOwner()!==requestOwner)return;
+      if(!matchesView())return;
       const limited=['FREE_DAILY_CHAT_LIMIT','FREE_DAILY_ATTACHMENT_LIMIT','USER_RATE_LIMITED','RATE_LIMITED','BURST_RATE_LIMITED','CLIENT_CONCURRENCY_LIMIT'].includes(String(e?.code||'').toUpperCase());
       if(limited)window.__SCHOLARK_CHAT_QUOTA__?.apply?.(e?.quota||null,e?.code||'',e?.retryAfter||0);
       else{const x=document.createElement('div');x.className='v52-msg ai';chat?.appendChild(x);error(x,e)}
-    }finally{for(const timer of progressTimers)clearTimeout(timer);tutorInFlight=false;busy(btn,false);window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false)}
+    }finally{for(const timer of progressTimers)clearTimeout(timer);tutorPendingByOwner.delete(requestOwner);if(tutorOwner()===requestOwner)busy(btn,false);window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false)}
   }
 
   async function runCurriculum(){
@@ -309,8 +313,10 @@
     const next=tutorOwner();
     if(next===tutorViewOwner)return;
     tutorViewOwner=next;
-    // Never leave another profile's Tutor answers visible after a switch.
+    // Never leave another profile's replies or unsent prompt on the screen.
     $('#v52-chat')?.replaceChildren();
+    const q=$('#v52-tutor-q');if(q)q.value='';
+    const send=$('#v52-tutor-send');if(send){send.disabled=tutorPendingByOwner.has(next);if(!send.disabled&&send.dataset.v62Text)send.textContent=send.dataset.v62Text}
   });
   const sync=()=>{ensureExamControls();if(String(location.hash).toLowerCase()==='#study'&&!$('#v62-field'))openStudyAhead()};
   addEventListener('hashchange',()=>{setTimeout(sync,60);setTimeout(sync,240)});
