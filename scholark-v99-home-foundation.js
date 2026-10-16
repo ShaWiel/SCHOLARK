@@ -92,7 +92,14 @@
   }
   function reloadPatchedLanguageMap(){
     if(cacheReloaded)return;cacheReloaded=true;const current=code();if(current==='en')return;
-    setTimeout(()=>window.__SCHOLARK_I18N__?.changeLanguage?.(current),20);
+    // The runtime-ready repair captures a locale before its deferred callback.
+    // If the user selects a newer language in the meantime, never replay the
+    // old locale: it would overwrite the last explicit selection.
+    setTimeout(()=>{
+      if(code()!==current)return;
+      if(document.documentElement.dataset.scholarkI18nReady===current)return;
+      window.__SCHOLARK_I18N__?.changeLanguage?.(current);
+    },20);
   }
 
   function repairHome(){
