@@ -128,7 +128,8 @@ const sendContext={...tutorEnv,
   tutorOwner:tutorApi.tutorOwner,tutorInFlight:false
 };
 setUser(alice);
-const doTutor=vm.runInNewContext(tutorSendSource+'\nrunTutor',sendContext);
+const tutorRunner=vm.runInNewContext(tutorSendSource+'\n({runTutor,pending:()=>tutorInFlight})',sendContext);
+const doTutor=tutorRunner.runTutor;
 const first=doTutor();
 const second=doTutor();
 assert.equal(serverCalls,1,'Simultaneous Tutor submission must only call the AI once');
@@ -136,6 +137,6 @@ assert.equal(userBubbles,1,'One Tutor user bubble per actual request');
 replyResolve({result:{answer:'Force equals mass times acceleration'},provider:'mock',model:'mock'});
 await Promise.all([first,second]);
 assert.equal(assistantEvents,1,'One assistant response event per Tutor request');
-assert.equal(sendContext.tutorInFlight,false,'Tutor must unlock when AI finishes');
+assert.equal(tutorRunner.pending(),false,'Tutor must unlock when AI finishes');
 assert.ok(tutorApi.readTutorHistory(alice).some(m=>m.text.includes('Physics principles')));
 console.log('SCHOLAVERUM r277 ARKI/TUTOR ACCOUNT ISOLATION PASS: separate chats, drafts, tutoring context, feedback/progress; no legacy leak, pinned late replies, bounded submission concurrency and attachment invalidation');
