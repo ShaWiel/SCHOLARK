@@ -1,17 +1,18 @@
-# SCHOLAVERUM r272 post-deployment verification
+# SCHOLAVERUM r273 post-deployment verification
 
-Production application commit: c3c3db1575c8dc078afc70fa66970ef01ca54b55
-Render deployment: dep-db89n0ivcj2c738nmg70
-Render service: scholark-web (manual deployment)
+Production application commit: 7fc5c6f88352f2ae2f2673abf13d6eef4fe43da3
+Render deployment: dep-db8q7qff3r2c73f19sv0
+Render service: scholark-web (manual release; Auto Deploy disabled)
 Production URL: https://scholark-app-shawiel.onrender.com
-Release: r272-foundation-privacy
+Release: r273-connect-gate
+Date: 2026-10-16 (America/Paramaribo)
 
-Confirmed via Render:
-- Deployment status live, startup release r272-foundation-privacy.
-- Security foundation, API guard, learning route and workspace modules initialized.
-- Credit service startup self-test passed; document exports and references passed.
-- Paddle remains in sandbox; production logs report a Pro catalog verification warning (http_unknown) that requires separate follow-up.
+Render startup confirms:
+- Live deploy and correct release marker.
+- Security foundation/step-up and credit self-tests passed.
+- Export, references, public artifact sanitizer and global school discovery startup tests passed.
+- Paddle remains Sandbox; Plus price OK, webhook OK, branding OK.
+- Pro Sandbox price has a trial_policy_mismatch: investigate the Paddle Pro trial setup without silently modifying subscription terms.
+- Connect API closed for browser JWTs at Supabase; service role retained.
 
-The documentation-only live-smoke GitHub commit triggers live health/API/ARKI/Workspace/Language Learner/Schools Near Me browser and resilience smoke coverage. It does not change deployed application code, payment configuration, account data, or Connect release status.
-
-Authenticated live-model responses are not guaranteed by unauthenticated smoke tests; do not consume real users' credits.
+This documentation-only [live-smoke] commit triggers the CI live health/API/ARKI/workspace/browser/resilience smoke test suite. It does not alter production code, customer data, billing mode, payment terms or Connect visibility. Authenticated AI answer quality and real payment flow are not covered by unauthenticated live smoke.
