@@ -220,7 +220,7 @@ jobs:
         run: |
           # Use the router version from the tested repository, not a stale
           # hard-coded value. This also catches real code/deploy version drift.
-          EXPECTED_ROUTER_VERSION="$(sed -nE "s/.*const ROUTER_VERSION = '([^']+)'.*/\\1/p" scholark-gemini-primary.mjs | head -n 1)"
+          EXPECTED_ROUTER_VERSION="$(sed -nE "s/.*const ROUTER_VERSION = '([^']+)'.*/\1/p" scholark-gemini-primary.mjs | head -n 1)"
           test -n "$EXPECTED_ROUTER_VERSION"
           for i in {1..90}; do
             if curl --fail --silent --show-error https://scholark-app-shawiel.onrender.com/api/gemini/health >/tmp/gemini-health.json; then
