@@ -114,7 +114,7 @@ const tempNode=()=>({innerHTML:'',isConnected:true,remove(){},querySelector:()=>
 const sendContext={...tutorEnv,
   document:{createElement:tempNode},
   $:selector=>selector==='#v52-tutor-q'?promptField:selector==='#v52-chat'?chatBox:selector==='#v52-tutor-send'?submit:null,
-  multiline:x=>String(x||'').trim(),clean:x=>String(x||'').trim(),
+  multiline:x=>String(x||'').trim(),clean:x=>String(x||'').trim(),esc:x=>String(x||''),
   window:{...browser,dispatchEvent(event){if(event.type==='scholark:tutor-assistant')assistantEvents++},
     __SCHOLARK_CHAT_ATTACHMENTS__:{get:()=>[],meta:()=>[],busy:()=>false,clear(){}},
     __SCHOLARK_CHAT_QUOTA__:{sync(){},refresh(){},apply(){}}},
