@@ -110,26 +110,32 @@
     const updated=update(id,x=>{x.title=title});if(!updated)return false;
     if(current?.id===id)current=updated;drawHistory();return true
   }
-  function legacyChatsAvailable(owner=ownerId()){
-    try{const old=JSON.parse(localStorage.getItem(KEY)||'[]');
-      return !localStorage.getItem(ownedKey(KEY+':legacy-imported',owner))&&Array.isArray(old)&&old.some(x=>Array.isArray(x?.messages));
-    }catch{return false}
+  function importedLegacyRefs(owner=ownerId()){
+    try{const v=JSON.parse(localStorage.getItem(ownedKey(KEY+':legacy-imported',owner))||'[]');return Array.isArray(v)?v:[]}catch{return[]}
   }
+  function availableLegacyRows(owner=ownerId()){
+    try{
+      const legacy=JSON.parse(localStorage.getItem(KEY)||'[]'),imported=new Set(importedLegacyRefs(owner));
+      return Array.isArray(legacy)?legacy.map((chat,index)=>({chat,ref:index+':'+String(chat?.id||'')})).filter(({chat,ref})=>Array.isArray(chat?.messages)&&!imported.has(ref)):[];
+    }catch{return[]}
+  }
+  function legacyChatsAvailable(owner=ownerId()){return availableLegacyRows(owner).length>0}
   function restoreLegacyChats(){
     const owner=ownerId();if(!legacyChatsAvailable(owner))return false;
-    // Old device-wide data has no verifiable account owner. Ask the user before
-    // associating anything with their active account; never delete the source.
+    // Old device-wide data has no verifiable account owner. Ask explicitly;
+    // never overwrite existing chats, delete the source or silently claim it.
     if(!confirm('These older chats were saved on this device without an account identifier. They might belong to another person who used this browser. Only import them if they are yours. Continue?'))return false;
     if(owner!==ownerId())return false;
     try{
-      const legacy=JSON.parse(localStorage.getItem(KEY)||'[]');
-      const rows=legacy.filter(x=>x&&Array.isArray(x.messages)).slice(0,24).map(x=>({
-        ...x,id:'ai-'+uid(),title:String(x.title||'Recovered chat').slice(0,80),
-        messages:x.messages.slice(-60),updatedAt:new Date().toISOString()
+      const existing=read(owner),room=Math.max(0,24-existing.length);
+      if(!room){alert('Your chat list is full. Your previous device chats remain safely stored here. Free a chat slot before restoring more.');return false}
+      const picked=availableLegacyRows(owner).slice(0,room),rows=picked.map(({chat})=>({
+        ...chat,id:'ai-'+uid(),title:String(chat.title||'Recovered chat').slice(0,80),
+        messages:chat.messages.slice(-60),updatedAt:new Date().toISOString()
       }));
       if(!rows.length)return false;
-      write([...rows,...read(owner)],owner);
-      localStorage.setItem(ownedKey(KEY+':legacy-imported',owner),'1');
+      write([...rows,...existing],owner);
+      localStorage.setItem(ownedKey(KEY+':legacy-imported',owner),JSON.stringify([...importedLegacyRefs(owner),...picked.map(x=>x.ref)]));
       setActive(rows[0].id,owner);viewOwner=owner;current=getCurrent(owner);
       drawHistory();drawThread();syncDraftInput();return true;
     }catch{return false}
