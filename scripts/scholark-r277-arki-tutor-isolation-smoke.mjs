@@ -94,9 +94,9 @@ assert.ok(!JSON.stringify(controlsApi.tutorChats()).includes('Bob Tutor chat'));
 assert.match(arki,/addEventListener\('scholark:auth-changed'/);
 assert.match(arki,/responseOwner=ownerId\(\)/);
 assert.match(arki,/responseOwner\);if\(viewOwner===responseOwner/);
-assert.match(tutor,/if\(tutorInFlight\)return/);
-assert.match(tutor,/writeTutorHistory\(hist,requestOwner\)/);
-assert.match(tutor,/if\(tutorOwner\(\)===requestOwner\)window.dispatchEvent/);
+assert.match(tutor,/if\(tutorPendingByOwner\.has\(tutorOwner\(\)\)\)return/);
+assert.match(tutor,/if\(matchesView\(\)\)writeTutorHistory\(hist,requestOwner\)/);
+assert.match(tutor,/owner:requestOwner,chatId:requestChatId/);
 assert.match(tutor,/addEventListener\('scholark:auth-changed'/);
 assert.match(controls,/taskEpoch===attachmentEpoch\)st.items.push/);
 assert.match(controls,/attachmentEpoch\+\+/);
@@ -125,10 +125,10 @@ const sendContext={...tutorEnv,
   busy:(btn,on)=>{btn.disabled=on},
   error(){},setTimeout:()=>1,clearTimeout:()=>{},
   readTutorHistory:tutorApi.readTutorHistory,writeTutorHistory:tutorApi.writeTutorHistory,
-  tutorOwner:tutorApi.tutorOwner,tutorInFlight:false
+  tutorOwner:tutorApi.tutorOwner,tutorPendingByOwner:new Set()
 };
 setUser(alice);
-const tutorRunner=vm.runInNewContext(tutorSendSource+'\n({runTutor,pending:()=>tutorInFlight})',sendContext);
+const tutorRunner=vm.runInNewContext(tutorSendSource+'\n({runTutor,pending:()=>tutorPendingByOwner.size})',sendContext);
 const doTutor=tutorRunner.runTutor;
 const first=doTutor();
 const second=doTutor();
@@ -137,6 +137,6 @@ assert.equal(userBubbles,1,'One Tutor user bubble per actual request');
 replyResolve({result:{answer:'Force equals mass times acceleration'},provider:'mock',model:'mock'});
 await Promise.all([first,second]);
 assert.equal(assistantEvents,1,'One assistant response event per Tutor request');
-assert.equal(tutorRunner.pending(),false,'Tutor must unlock when AI finishes');
+assert.equal(tutorRunner.pending(),0,'Tutor must unlock when AI finishes');
 assert.ok(tutorApi.readTutorHistory(alice).some(m=>m.text.includes('Physics principles')));
 console.log('SCHOLAVERUM r277 ARKI/TUTOR ACCOUNT ISOLATION PASS: separate chats, drafts, tutoring context, feedback/progress; no legacy leak, pinned late replies, bounded submission concurrency and attachment invalidation');
