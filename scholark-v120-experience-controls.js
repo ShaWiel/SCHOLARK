@@ -277,10 +277,10 @@
   function setTutorActive(id,owner=accountOwner()){try{localStorage.setItem(profileKey(TUTOR_ACTIVE,owner),id)}catch{}}
   function newTutorChat(owner=accountOwner()){const row={id:uid('tutor'),title:'New tutor chat',createdAt:now(),updatedAt:now(),messages:[]};const a=tutorChats(owner);a.unshift(row);saveTutorChats(a,owner);setTutorActive(row.id,owner);syncTutorBackend(row,owner);return row}
   function currentTutor(owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);return a.find(x=>x.id===id)||a[0]||newTutorChat(owner)}
-  function updateTutor(fn,owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);let x=a.find(z=>z.id===id);if(!x){newTutorChat(owner);return updateTutor(fn,owner)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a,owner);return x}
+  function updateTutor(fn,owner=accountOwner(),chatId=tutorActive(owner)){const a=tutorChats(owner),id=chatId;let x=a.find(z=>z.id===id);if(!x){if(chatId)return null;newTutorChat(owner);return updateTutor(fn,owner)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a,owner);return x}
   function syncTutorBackend(chat=currentTutor(),owner=accountOwner()){try{localStorage.setItem(profileKey('scholark_v62_tutor_history',owner),JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
-  function tutorProgress(){try{return JSON.parse(localStorage.getItem(profileKey(TUTOR_PROGRESS))||'{}')||{}}catch{return{}}}
-  function noteTutorProgress(topic,delta=0,review=false){const name=clean(topic)||'General';const p=tutorProgress(),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(profileKey(TUTOR_PROGRESS),JSON.stringify(p))}catch{}return x}
+  function tutorProgress(owner=accountOwner()){try{return JSON.parse(localStorage.getItem(profileKey(TUTOR_PROGRESS,owner))||'{}')||{}}catch{return{}}}
+  function noteTutorProgress(topic,delta=0,review=false,owner=accountOwner()){const name=clean(topic)||'General';const p=tutorProgress(owner),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(profileKey(TUTOR_PROGRESS,owner),JSON.stringify(p))}catch{}return x}
   function tutorProgressText(chat=currentTutor()){const last=[...(chat.messages||[])].reverse().find(m=>m.role==='assistant'&&m.topic),p=tutorProgress(),x=last?p[String(last.topic).toLowerCase()]:null;return x?x.topic+' · '+x.turns+' tutor turn'+(x.turns===1?'':'s')+' · '+x.reviews+' review'+(x.reviews===1?'':'s'):'Progress starts when ARKI teaches a topic.'}
   function renameTutorChat(){
     const chat=currentTutor(),raw=prompt('Rename Tutor chat',chat.title||'Tutor chat');if(raw==null)return false;
@@ -397,12 +397,20 @@
   },true);
 
   addEventListener('scholark:tutor-user',e=>{
-    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[];if(!prompt&&!attachments.length)return;updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})});refreshTutorBar();setTimeout(decorateTutorUsers,0)
+    const owner=String(e.detail?.owner||accountOwner()),chatId=String(e.detail?.chatId||tutorActive(owner));
+    if(owner!==accountOwner())return;
+    const prompt=clean(e.detail?.prompt),attachments=Array.isArray(e.detail?.attachments)?e.detail.attachments.slice(0,10):[];if(!prompt&&!attachments.length)return;
+    updateTutor(x=>{if(!x.messages.length)x.title=(prompt||attachments[0]?.name||'Attached material').slice(0,48);const last=x.messages.at(-1);if(!(last?.role==='user'&&last.text===prompt))x.messages.push({role:'user',text:prompt,attachments,at:now()})},owner,chatId);
+    if(chatId===tutorActive(owner)){refreshTutorBar();setTimeout(decorateTutorUsers,0)}
   });
   addEventListener('scholark:tutor-assistant',e=>{
+    const owner=String(e.detail?.owner||accountOwner()),chatId=String(e.detail?.chatId||tutorActive(owner));
     const text=multiline(e.detail?.answer),topic=clean(e.detail?.result?.topic)||clean(e.detail?.prompt).slice(0,80)||'General';if(!text)return;
+    const chat=updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}),owner,chatId);if(!chat)return;
+    noteTutorProgress(topic,0,false,owner);
+    if(owner!==accountOwner()||chatId!==tutorActive(owner))return;
     if(e.detail?.quota)applyQuota(e.detail.quota,'',0);
-    updateTutor(x=>x.messages.push({role:'assistant',text,topic,at:now()}));noteTutorProgress(topic,0,false);syncTutorBackend();decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
+    syncTutorBackend(chat,owner);decorateLatestTutor(e.detail);refreshTutorBar();scrubProviderMarks(document)
   });
 
   let observerQueued=false,observerNeedsArki=false,observerNeedsTutor=false;const observerRoots=new Set();
@@ -452,5 +460,5 @@
   addEventListener('storage',e=>{if(e.key===TUTOR_NAME_KEY)requestAnimationFrame(()=>applyTutorName(document))});
   setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},180);
 
-  window.__SCHOLARK_V120_EXPERIENCE__={health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r256-free-attachment-15'};
+  window.__SCHOLARK_V120_EXPERIENCE__={currentTutorId:()=>currentTutor().id,health:()=>({ok:!!document.getElementById('scholark-v120-style'),arkiActions:true,enterToSend:true,tutorChats:true,tutorProgress:true,tutorNaming:true,messageEditing:true,attachments:true,attachmentLimit:ATTACHMENT_LIMIT,freeDailyQuotaUi:true,providerUiHidden:true}),reviewTutorTopic:startTutorReview,release:'r256-free-attachment-15'};
 })();
