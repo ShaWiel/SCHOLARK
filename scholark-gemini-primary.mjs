@@ -6,7 +6,7 @@ const originalEnv = process.env;
 const context = new AsyncLocalStorage();
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
-const ROUTER_VERSION = '20261011-gemini-deadline-v4';
+const ROUTER_VERSION = '20261016-gemini-cooldown-rescue-v5';
 const liveEnabled = /^(1|true|yes|on)$/i.test(String(originalEnv.SCHOLARK_AI_LIVE || ''));
 const provider = String(originalEnv.SCHOLARK_AI_PROVIDER || 'gemini').trim().toLowerCase();
 const primaryModel = String(originalEnv.GEMINI_PRIMARY_MODEL || originalEnv.GEMINI_FAST_MODEL || 'gemini-3.8-flash').trim() || 'gemini-3.8-flash';
@@ -90,8 +90,11 @@ function availableChain(requestedModel) {
   // Reuse a recently successful model before retrying a rate-limited primary.
   const healthy = active.filter(model => stateFor(model).lastSuccessAt > now - 10 * 60_000)
     .sort((a,b) => stateFor(b).lastSuccessAt - stateFor(a).lastSuccessAt);
-  return active.length ? [...healthy, ...active.filter(model => !healthy.includes(model))]
-    : raw.slice().sort((a,b) => stateFor(a).cooldownUntil - stateFor(b).cooldownUntil).slice(0,1);
+  if (active.length) return [...healthy, ...active.filter(model => !healthy.includes(model))];
+  // When every provider is cooling down, fail open to a bounded last-resort
+  // chain instead of retrying only one model and giving up on recoverable
+  // alternatives. The existing per-request deadline still caps total cost.
+  return raw.slice().sort((a,b) => stateFor(a).cooldownUntil - stateFor(b).cooldownUntil);
 }
 
 function parseInitBody(init) {
