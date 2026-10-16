@@ -10,6 +10,7 @@ const WINDOW_MS = 5 * 60 * 1000;
 const MAX_CONCURRENT = 18;
 const MAX_CONCURRENT_PER_CLIENT = 6;
 const MAX_BUCKETS = 10000;
+const MAX_BURST_BUCKETS = MAX_BUCKETS;
 const BURST_WINDOW_MS = 60 * 1000;
 const EXPENSIVE_BURST_LIMIT = 32;
 const testMode = /^(1|true|yes|on)$/i.test(String(process.env.SCHOLARK_TEST_MODE || ''));
@@ -102,7 +103,22 @@ function consume(ip, path, limit) {
 }
 
 function consumeBurst(client) {
-  const now=Date.now();let b=burstBuckets.get(client);
+  const now=Date.now();
+  // A flood of distinct client keys must not grow the burst map indefinitely.
+  // Evict expired keys first; when full, replace one oldest entry while keeping
+  // a strict memory bound and avoiding unbounded sweeps on hot request paths.
+  if(!burstBuckets.has(client)&&burstBuckets.size>=MAX_BURST_BUCKETS){
+    let scanned=0;
+    for(const [key,bucket] of burstBuckets){
+      if(now-bucket.started>=BURST_WINDOW_MS)burstBuckets.delete(key);
+      if(burstBuckets.size<MAX_BURST_BUCKETS||++scanned>=128)break;
+    }
+    if(burstBuckets.size>=MAX_BURST_BUCKETS){
+      const oldest=burstBuckets.keys().next().value;
+      if(oldest!==undefined)burstBuckets.delete(oldest);
+    }
+  }
+  let b=burstBuckets.get(client);
   if(!b||now-b.started>=BURST_WINDOW_MS)b={started:now,count:0};
   b.count++;burstBuckets.set(client,b);
   return {allowed:b.count<=EXPENSIVE_BURST_LIMIT,retryAfter:Math.max(1,Math.ceil((BURST_WINDOW_MS-(now-b.started))/1000)),remaining:Math.max(0,EXPENSIVE_BURST_LIMIT-b.count)};
@@ -150,7 +166,7 @@ http.Server.prototype.emit = function(type,...args) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/guard/health') {
-    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,expensiveBurstGuard:true,apiNoStore:true,staticVersionCache:true,htmlRevalidation:true,sameOriginMicrophone:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
+    json(res,200,{ok:true,testMode,activeExpensive,trackedClients:buckets.size,trackedConcurrentClients:activeExpensiveByClient.size,windowSeconds:WINDOW_MS/1000,maxConcurrent:MAX_CONCURRENT,maxConcurrentPerClient:MAX_CONCURRENT_PER_CLIENT,maxBuckets:MAX_BUCKETS,maxBurstBuckets:MAX_BURST_BUCKETS,trackedBurstClients:burstBuckets.size,ruleCount:rules.length,originGuard:true,securityHeaders:true,requestBodyLimits:true,billingAndAccountGuards:true,securityStepUpGuard:true,jsonMutationGuard:true,strictApiMethods:true,strictMutationOrigin:true,ipHashedRateKeys:true,bearerRotationSafe:true,sensitiveQueryGuard:true,frameEmbeddingBlocked:true,perClientConcurrencyGuard:true,expensiveBurstGuard:true,apiNoStore:true,staticVersionCache:true,htmlRevalidation:true,sameOriginMicrophone:true,transportHardening:true,requestTimeoutMs:120000,headersTimeoutMs:20000,maxHeadersCount:100,maxRequestsPerSocket:250,rateLimitMode:testMode?'test-bypass':'enforced'});
     return true;
   }
 
