@@ -61,7 +61,25 @@ try{
     assert.equal(rapid.ready,'nl',viewport.name+': final locale did not settle');
     assert.equal(rapid.dir,'ltr',viewport.name+': RTL direction persisted');
     assert.equal(rapid.switching,false,viewport.name+': locale switching flag got stuck');
-    rows.push({viewport:viewport.name,elapsedMs:Math.round(measured.elapsed),finalCode:rapid.code,slowRequests:intercepted});
+
+    // Reproduce the prior r274 race deterministically: a second caller waits
+    // for an in-progress German switch, then Dutch supersedes it. The old
+    // waiter must NOT restart German after its 1.6-second coalescing timeout.
+    const coalesced=await page.evaluate(async()=>{
+      const api=window.__SCHOLARK_I18N__;
+      const original=api.changeLanguage('de');
+      const oldWaiter=api.changeLanguage('de');
+      await new Promise(resolve=>setTimeout(resolve,70));
+      const newest=api.changeLanguage('nl');
+      await Promise.all([original,oldWaiter,newest]);
+      return {code:api.code(),ready:document.documentElement.dataset.scholarkI18nReady,
+        dir:document.documentElement.dir,switching:document.documentElement.classList.contains('scholark-language-switching')};
+    });
+    assert.equal(coalesced.code,'nl',viewport.name+': old coalesced request reversed the newest language intent');
+    assert.equal(coalesced.ready,'nl',viewport.name+': stale waiter replaced final readiness');
+    assert.equal(coalesced.dir,'ltr',viewport.name+': stale waiter restored RTL direction');
+    assert.equal(coalesced.switching,false,viewport.name+': stale waiter left switching indicator active');
+    rows.push({viewport:viewport.name,elapsedMs:Math.round(measured.elapsed),finalCode:coalesced.code,slowRequests:intercepted,staleIntentProtected:true});
     await context.close();
   }
   console.log('SCHOLAVERUM NONBLOCKING LANGUAGE SMOKE PASS',JSON.stringify(rows));
