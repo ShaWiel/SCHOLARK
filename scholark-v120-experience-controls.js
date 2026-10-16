@@ -279,6 +279,29 @@
   function currentTutor(owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);return a.find(x=>x.id===id)||a[0]||newTutorChat(owner)}
   function updateTutor(fn,owner=accountOwner(),chatId=tutorActive(owner)){const a=tutorChats(owner),id=chatId;let x=a.find(z=>z.id===id);if(!x){if(chatId)return null;newTutorChat(owner);return updateTutor(fn,owner)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a,owner);return x}
   function syncTutorBackend(chat=currentTutor(),owner=accountOwner()){try{localStorage.setItem(profileKey('scholark_v62_tutor_history',owner),JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
+  function legacyTutorAvailable(owner=accountOwner()){
+    try{
+      const rows=JSON.parse(localStorage.getItem(TUTOR_KEY)||'[]');
+      return !localStorage.getItem(profileKey(TUTOR_KEY+':legacy-imported',owner))&&Array.isArray(rows)&&rows.some(x=>Array.isArray(x?.messages));
+    }catch{return false}
+  }
+  function restoreLegacyTutor(){
+    const owner=accountOwner();if(!legacyTutorAvailable(owner))return false;
+    if(!confirm('Older Tutor chats were saved on this device without an account owner. They might belong to someone else who used this browser. Import only chats that are yours. Continue?'))return false;
+    if(owner!==accountOwner())return false;
+    try{
+      const rows=JSON.parse(localStorage.getItem(TUTOR_KEY)||'[]').filter(x=>x&&Array.isArray(x.messages)).slice(0,20).map(x=>({
+        ...x,id:uid('tutor'),title:String(x.title||'Recovered Tutor chat').slice(0,80),
+        messages:x.messages.slice(-50),updatedAt:now()
+      }));
+      if(!rows.length)return false;
+      saveTutorChats([...rows,...tutorChats(owner)],owner);
+      localStorage.setItem(profileKey(TUTOR_KEY+':legacy-imported',owner),'1');
+      setTutorActive(rows[0].id,owner);
+      const active=currentTutor(owner);syncTutorBackend(active,owner);
+      renderTutorChat(active);refreshTutorBar();return true
+    }catch{return false}
+  }
   function tutorProgress(owner=accountOwner()){try{return JSON.parse(localStorage.getItem(profileKey(TUTOR_PROGRESS,owner))||'{}')||{}}catch{return{}}}
   function noteTutorProgress(topic,delta=0,review=false,owner=accountOwner()){const name=clean(topic)||'General';const p=tutorProgress(owner),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(profileKey(TUTOR_PROGRESS,owner),JSON.stringify(p))}catch{}return x}
   function tutorProgressText(chat=currentTutor()){const last=[...(chat.messages||[])].reverse().find(m=>m.role==='assistant'&&m.topic),p=tutorProgress(),x=last?p[String(last.topic).toLowerCase()]:null;return x?x.topic+' · '+x.turns+' tutor turn'+(x.turns===1?'':'s')+' · '+x.reviews+' review'+(x.reviews===1?'':'s'):'Progress starts when ARKI teaches a topic.'}
@@ -295,14 +318,14 @@
     box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="tutor:'+i+'" aria-label="Copy your AI Tutor message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
-    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText()
+    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText();const restore=$('#v120-tutor-restore');if(restore)restore.hidden=!legacyTutorAvailable()
   }
   function decorateTutor(){
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;ensureAttachmentUi('tutor');
     if(!$('#v120-tutorbar',form)){
-      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-rename">Rename chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
+      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-rename">Rename chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><button type="button" id="v120-tutor-restore" hidden style="grid-column:1/-1">Restore previous device chats</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
       $('#v120-tutor-select',bar).onchange=e=>{setTutorActive(e.target.value);const c=currentTutor();syncTutorBackend(c);renderTutorChat(c);refreshTutorBar()};
-      $('#v120-tutor-rename',bar).onclick=renameTutorChat;$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;
+      $('#v120-tutor-rename',bar).onclick=renameTutorChat;$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;$('#v120-tutor-restore',bar).onclick=restoreLegacyTutor;
       renderTutorChat();refreshTutorBar();syncTutorBackend();applyTutorName(document);
     }
     if(!$('#v120-tutor-tasks',form)){
