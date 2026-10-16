@@ -1,18 +1,25 @@
-# SCHOLAVERUM r273 post-deployment verification
+# SCHOLAVERUM r275 production live smoke verification
 
-Production application commit: 7fc5c6f88352f2ae2f2673abf13d6eef4fe43da3
-Render deployment: dep-db8q7qff3r2c73f19sv0
-Render service: scholark-web (manual release; Auto Deploy disabled)
+Production application commit: c56e78628178c4df9e982f469fc5b32fa8973a24
+Render deployment ID: dep-db8tqruq1p3s739cejog
+Render service: scholark-web (manual deployment)
 Production URL: https://scholark-app-shawiel.onrender.com
-Release: r273-connect-gate
-Date: 2026-10-16 (America/Paramaribo)
+Release: r275-api-burst-bounds
 
-Render startup confirms:
-- Live deploy and correct release marker.
-- Security foundation/step-up and credit self-tests passed.
-- Export, references, public artifact sanitizer and global school discovery startup tests passed.
-- Paddle remains Sandbox; Plus price OK, webhook OK, branding OK.
-- Pro Sandbox price has a trial_policy_mismatch: investigate the Paddle Pro trial setup without silently modifying subscription terms.
-- Connect API closed for browser JWTs at Supabase; service role retained.
+## Validated before production
+- Release Gate run 38871870534: success on production commit.
+- SCHOLARK CI run 38871870494: success on the same commit.
+- CodeQL run 38871870447: success on the same commit.
+- Render reported the intended commit as live; startup confirmed the r275 release.
+- Credit connection and self-test: PASS.
+- Document exports (PPTX/PDF/DOCX), reference extraction and public artifact sanitization: PASS.
+- Global school discovery startup self-test: PASS.
 
-This documentation-only [live-smoke] commit triggers the CI live health/API/ARKI/workspace/browser/resilience smoke test suite. It does not alter production code, customer data, billing mode, payment terms or Connect visibility. Authenticated AI answer quality and real payment flow are not covered by unauthenticated live smoke.
+## Guardrails
+- Connect remains Coming Soon with database browser-facing RPC/table grants revoked.
+- Paddle remains Sandbox; Pro sandbox price check returns trial_policy_mismatch. Prices/trial terms and webhooks have **not** been changed.
+- Browser-facing rate-limit memory has a 10,000-client cap and a 32-request/minute expensive burst threshold.
+- Multi-cycle rapid language switching, stale home callback and 75-language layout are covered by regression tests.
+
+The documentation-only [live-smoke] commit triggers the GitHub live-resilience-smoke job against the actual SCHOLAVERUM production URL. The production deployment remains pinned to the validated c56e786 commit; this documentation change does not alter application code.
+Unauthenticated live smoke does not prove authenticated user AI responses or real payment transactions.
