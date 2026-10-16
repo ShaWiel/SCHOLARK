@@ -190,12 +190,13 @@
   async function refreshQuota(force=false){
     if(window.__SCHOLARK_TEST_MODE__)return;
     const nowMs=Date.now();if(!force&&quotaState.lastLoaded&&nowMs-quotaState.lastLoaded<60000)return;if(quotaState.loading)return quotaState.loading;
+    const requestOwner=accountOwner();
     quotaState.loading=(async()=>{
       try{
         const session=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()||await window.__SCHOLARK_V72_CLOUD__?.session?.();if(!session?.access_token)return;
         const r=await fetch('/api/learning/quota-status',{headers:{authorization:'Bearer '+session.access_token,accept:'application/json'}});
-        const d=await r.json().catch(()=>({}));if(r.ok&&d?.ok){quotaState.lastLoaded=Date.now();applyQuota(d.quota||null,d.code||'',Number(r.headers.get('retry-after'))||0)}
-      }catch{}finally{quotaState.loading=null}
+        const d=await r.json().catch(()=>({}));if(requestOwner===accountOwner()&&r.ok&&d?.ok){quotaState.lastLoaded=Date.now();applyQuota(d.quota||null,d.code||'',Number(r.headers.get('retry-after'))||0)}
+      }catch{}finally{if(requestOwner===accountOwner())quotaState.loading=null}
     })();return quotaState.loading
   }
   window.__SCHOLARK_CHAT_QUOTA__={apply:applyQuota,refresh:refreshQuota,sync:()=>{for(const scope of ['arki','tutor'])applyQuotaScope(scope)},state:()=>({...quotaState}),limits:{attachmentsPerMessage:ATTACHMENT_LIMIT}};
@@ -427,6 +428,21 @@
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
+  addEventListener('scholark:auth-changed',()=>{
+    const next=accountOwner();if(tutorProfileOwner===next)return;
+    tutorProfileOwner=next;
+    // Invalidate ongoing file processing so a previous user's photo/document
+    // cannot appear in a newly signed-in account after an async extraction.
+    attachmentEpoch++;
+    for(const scope of ['arki','tutor']){
+      const st=attachmentState[scope];st.items=[];st.pending=0;renderAttachmentTray(scope);
+      document.querySelectorAll('[data-v120-attach-menu="'+scope+'"]').forEach(menu=>menu.classList.remove('open'));
+    }
+    clearTimeout(quotaState.timer);quotaState.quota=null;quotaState.code='';quotaState.retryUntil=0;quotaState.lastLoaded=0;quotaState.loading=null;
+    if($('#v120-tutorbar')){const chat=currentTutor();syncTutorBackend(chat);renderTutorChat(chat);refreshTutorBar()}
+    for(const scope of ['arki','tutor'])applyQuotaScope(scope);
+    refreshQuota(true);
+  });
   addEventListener('scholark:arki-rendered',()=>{decorateArki();decorateArkiUsers();scrubProviderMarks($('#v107-thread')||document)});
   addEventListener('hashchange',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},60));
   addEventListener('scholark-tool-mounted',()=>setTimeout(()=>{decorateArki();decorateArkiUsers();decorateTutor();decorateTutorUsers();applyTutorName(document);scrubProviderMarks(document)},30));
