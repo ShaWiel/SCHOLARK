@@ -67,6 +67,7 @@
 
   const ATTACHMENT_LIMIT=10,ATTACHMENT_IMAGE_CHARS=540000;
   const attachmentState={arki:{items:[],pending:0},tutor:{items:[],pending:0}};
+  let attachmentEpoch=0;
   const attachmentExt=f=>String(f?.name||'').split('.').pop().toLowerCase();
   const attachmentTextFile=f=>String(f?.type||'').startsWith('text/')||['txt','md','markdown','csv','json','html','htm','xml'].includes(attachmentExt(f));
   const attachmentBase64=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const v=String(r.result||''),i=v.indexOf(',');resolve(i>=0?v.slice(i+1):v)};r.onerror=()=>reject(r.error||new Error('Could not read file'));r.readAsDataURL(f)});
@@ -110,11 +111,18 @@
     const wrap=document.createElement('div');wrap.className='v120-attach-wrap';wrap.id='v120-attach-'+scope;
     wrap.innerHTML='<button type="button" class="v120-attach-plus" data-v120-attach-plus="'+scope+'" aria-label="Add photos, camera or files" aria-expanded="false">+</button><div class="v120-attach-menu" data-v120-attach-menu="'+scope+'"><button type="button" data-v120-attach-pick="'+scope+':photos"><b>▧</b>Photos</button><button type="button" data-v120-attach-pick="'+scope+':camera"><b>◉</b>Camera</button><button type="button" data-v120-attach-pick="'+scope+':files"><b>⌕</b>Files</button></div><input class="v120-attach-input" data-v120-attach-input="'+scope+':photos" type="file" accept="image/*" multiple><input class="v120-attach-input" data-v120-attach-input="'+scope+':camera" type="file" accept="image/*" capture="environment"><input class="v120-attach-input" data-v120-attach-input="'+scope+':files" type="file" accept=".pdf,.docx,.pptx,.txt,.md,.markdown,.csv,.json,.html,.htm,.xml,text/*">';
     wrap.querySelectorAll('[data-v120-attach-input]').forEach(input=>input.onchange=async()=>{
-      const files=[...(input.files||[])],st=attachmentState[scope];input.value='';if(!files.length||!st)return;
+      const files=[...(input.files||[])],st=attachmentState[scope],taskEpoch=attachmentEpoch;input.value='';if(!files.length||!st)return;
       const perMessageRoom=Math.max(0,ATTACHMENT_LIMIT-st.items.length-st.pending),dailyRemaining=quotaState.quota?.limited?Math.max(0,Number(quotaState.quota?.attachmentRemaining)||0):ATTACHMENT_LIMIT,room=Math.max(0,Math.min(perMessageRoom,dailyRemaining));
       if(!room){toast(quotaState.quota?.limited&&dailyRemaining<=0?'Free attachment limit reached for this 24-hour window':'Maximum '+ATTACHMENT_LIMIT+' attachments per message');applyQuotaScope(scope);return}
       const selected=files.slice(0,room);if(files.length>room)toast('Only the first '+room+' file'+(room===1?'':'s')+' fit — maximum '+ATTACHMENT_LIMIT+' per message and within your remaining upload allowance');st.pending+=selected.length;renderAttachmentTray(scope);
-      for(const file of selected){try{const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);st.items.push(item)}catch(err){toast(clean(err?.message||err))}finally{st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
+      for(const file of selected){
+        if(taskEpoch!==attachmentEpoch)break;
+        try{
+          const item=String(file.type||'').startsWith('image/')?await attachmentImage(file):await attachmentDocument(file);
+          if(taskEpoch===attachmentEpoch)st.items.push(item);
+        }catch(err){if(taskEpoch===attachmentEpoch)toast(clean(err?.message||err))}
+        finally{if(taskEpoch===attachmentEpoch){st.pending=Math.max(0,st.pending-1);renderAttachmentTray(scope)}}
+      }
     });
     return wrap
   }
@@ -192,9 +200,18 @@
   }
   window.__SCHOLARK_CHAT_QUOTA__={apply:applyQuota,refresh:refreshQuota,sync:()=>{for(const scope of ['arki','tutor'])applyQuotaScope(scope)},state:()=>({...quotaState}),limits:{attachmentsPerMessage:ATTACHMENT_LIMIT}};
 
+  function accountOwner(){
+    try{
+      const live=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.user?.id;
+      const saved=JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id;
+      const id=String(live||saved||'guest');
+      return /^[a-zA-Z0-9-]{8,128}$/.test(id)?id:'guest';
+    }catch{return 'guest'}
+  }
+  const profileKey=(base,owner=accountOwner())=>base+':account:'+owner;
   const FEEDBACK='scholark_v120_answer_feedback';
-  function feedback(){try{return JSON.parse(localStorage.getItem(FEEDBACK)||'{}')||{}}catch{return{}}}
-  function setFeedback(key,value){const x=feedback();if(value)x[key]=value;else delete x[key];try{localStorage.setItem(FEEDBACK,JSON.stringify(x))}catch{}}
+  function feedback(){try{return JSON.parse(localStorage.getItem(profileKey(FEEDBACK))||'{}')||{}}catch{return{}}}
+  function setFeedback(key,value){const x=feedback();if(value)x[key]=value;else delete x[key];try{localStorage.setItem(profileKey(FEEDBACK),JSON.stringify(x))}catch{}}
 
   function actionMarkup(scope,key){
     const f=feedback()[key]||'';
@@ -252,16 +269,17 @@
   }
 
   const TUTOR_KEY='scholark_v120_tutor_chats',TUTOR_ACTIVE='scholark_v120_tutor_active',TUTOR_PROGRESS='scholark_v120_tutor_progress';
-  function tutorChats(){try{const x=JSON.parse(localStorage.getItem(TUTOR_KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
-  function saveTutorChats(rows){try{localStorage.setItem(TUTOR_KEY,JSON.stringify((rows||[]).slice(0,20).map(x=>({...x,messages:(x.messages||[]).slice(-50)}))))}catch{}}
-  function tutorActive(){return localStorage.getItem(TUTOR_ACTIVE)||''}
-  function setTutorActive(id){try{localStorage.setItem(TUTOR_ACTIVE,id)}catch{}}
-  function newTutorChat(){const row={id:uid('tutor'),title:'New tutor chat',createdAt:now(),updatedAt:now(),messages:[]};const a=tutorChats();a.unshift(row);saveTutorChats(a);setTutorActive(row.id);syncTutorBackend(row);return row}
-  function currentTutor(){const a=tutorChats(),id=tutorActive();return a.find(x=>x.id===id)||a[0]||newTutorChat()}
-  function updateTutor(fn){const a=tutorChats(),id=tutorActive();let x=a.find(z=>z.id===id);if(!x){x=newTutorChat();return updateTutor(fn)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a);return x}
-  function syncTutorBackend(chat=currentTutor()){try{localStorage.setItem('scholark_v62_tutor_history',JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
-  function tutorProgress(){try{return JSON.parse(localStorage.getItem(TUTOR_PROGRESS)||'{}')||{}}catch{return{}}}
-  function noteTutorProgress(topic,delta=0,review=false){const name=clean(topic)||'General';const p=tutorProgress(),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(TUTOR_PROGRESS,JSON.stringify(p))}catch{}return x}
+  let tutorProfileOwner=accountOwner();
+  function tutorChats(owner=accountOwner()){try{const x=JSON.parse(localStorage.getItem(profileKey(TUTOR_KEY,owner))||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
+  function saveTutorChats(rows,owner=accountOwner()){try{localStorage.setItem(profileKey(TUTOR_KEY,owner),JSON.stringify((rows||[]).slice(0,20).map(x=>({...x,messages:(x.messages||[]).slice(-50)}))))}catch{}}
+  function tutorActive(owner=accountOwner()){return localStorage.getItem(profileKey(TUTOR_ACTIVE,owner))||''}
+  function setTutorActive(id,owner=accountOwner()){try{localStorage.setItem(profileKey(TUTOR_ACTIVE,owner),id)}catch{}}
+  function newTutorChat(owner=accountOwner()){const row={id:uid('tutor'),title:'New tutor chat',createdAt:now(),updatedAt:now(),messages:[]};const a=tutorChats(owner);a.unshift(row);saveTutorChats(a,owner);setTutorActive(row.id,owner);syncTutorBackend(row,owner);return row}
+  function currentTutor(owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);return a.find(x=>x.id===id)||a[0]||newTutorChat(owner)}
+  function updateTutor(fn,owner=accountOwner()){const a=tutorChats(owner),id=tutorActive(owner);let x=a.find(z=>z.id===id);if(!x){newTutorChat(owner);return updateTutor(fn,owner)}fn(x);x.updatedAt=now();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));saveTutorChats(a,owner);return x}
+  function syncTutorBackend(chat=currentTutor(),owner=accountOwner()){try{localStorage.setItem(profileKey('scholark_v62_tutor_history',owner),JSON.stringify((chat.messages||[]).map(m=>({role:m.role,text:m.text})).slice(-12)))}catch{}}
+  function tutorProgress(){try{return JSON.parse(localStorage.getItem(profileKey(TUTOR_PROGRESS))||'{}')||{}}catch{return{}}}
+  function noteTutorProgress(topic,delta=0,review=false){const name=clean(topic)||'General';const p=tutorProgress(),k=name.toLowerCase(),x=p[k]||{topic:name,turns:0,helpful:0,reviews:0,lastSeen:0};x.turns++;x.helpful=Math.max(0,(Number(x.helpful)||0)+delta);if(review)x.reviews++;x.lastSeen=Date.now();p[k]=x;try{localStorage.setItem(profileKey(TUTOR_PROGRESS),JSON.stringify(p))}catch{}return x}
   function tutorProgressText(chat=currentTutor()){const last=[...(chat.messages||[])].reverse().find(m=>m.role==='assistant'&&m.topic),p=tutorProgress(),x=last?p[String(last.topic).toLowerCase()]:null;return x?x.topic+' · '+x.turns+' tutor turn'+(x.turns===1?'':'s')+' · '+x.reviews+' review'+(x.reviews===1?'':'s'):'Progress starts when ARKI teaches a topic.'}
   function renameTutorChat(){
     const chat=currentTutor(),raw=prompt('Rename Tutor chat',chat.title||'Tutor chat');if(raw==null)return false;
