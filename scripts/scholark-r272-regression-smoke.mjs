@@ -45,10 +45,11 @@ await assert.rejects(withTimeout(Promise.reject(new Error('denied')), 1000), /de
 assert.equal(made, 2);
 assert.equal(cleared, 2, 'Successful and failed session checks must release their timers');
 
-const release = 'r272-foundation-privacy';
-const cache = '20261015-' + release;
+// Retain r272 behavioral regression tests while advancing the deployed release.
+const release = 'r273-connect-gate';
+const cache = '20261016-' + release;
 assert.ok(runtime.includes("const VERSION = '" + cache + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
 assert.ok(docker.includes('ENV SCHOLARK_RELEASE=' + release));
 assert.ok(docker.includes('?v=' + cache));
-console.log('SCHOLAVERUM r272 REGRESSION PASS: RLS identity privacy, indexes, ARKI timeout cleanup, copy compatibility, Coming Soon and runtime cache');
+console.log('SCHOLAVERUM r272 REGRESSION RETAINED IN r273: RLS identity privacy, indexes, ARKI timeout cleanup, copy compatibility, Coming Soon and runtime cache');
