@@ -10,7 +10,7 @@ const runtimePreview=read('scholark-runtime-loader.js');
 const VERSION=(runtimePreview.match(/const VERSION = '([^']+)'/)||[])[1]||'';
 const RUNTIME_RELEASE=(VERSION.match(/-(r\d+(?:-[a-z0-9-]+)?)$/)||[])[1]||'';
 const RELEASE=(VERSION.match(/-(r\d+)(?:-|$)/)||[])[1]||'';
-const ROUTER='20261011-gemini-deadline-v4';
+const ROUTER='20261016-gemini-cooldown-rescue-v5';
 const SCHOOL_STRICT='20261007-school-global-v15';
 
 const runtime=runtimePreview;
