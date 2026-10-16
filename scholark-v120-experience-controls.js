@@ -324,14 +324,20 @@
     box.innerHTML=(chat.messages||[]).map((m,i)=>'<div class="v52-msg '+(m.role==='user'?'user':'ai')+'" data-v120-tutor-index="'+i+'">'+(m.role==='assistant'?'<div class="v120-tutor-answer">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+actionMarkup('tutor',chat.id+':'+i):'<div class="v120-tutor-user-text">'+esc(m.text).replace(/\n/g,'<br>')+'</div>'+attachmentMessageMarkup(m.attachments||[])+'<div class="v120-user-actions"><button type="button" class="v120-edit-user" data-v120-copy-message="tutor:'+i+'" aria-label="Copy your AI Tutor message">Copy</button><button type="button" class="v120-edit-user" data-v120-edit-tutor="'+i+'">Edit</button></div>')+'</div>').join('');
   }
   function refreshTutorBar(){
-    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText();const restore=$('#v120-tutor-restore');if(restore)restore.hidden=!legacyTutorAvailable()
+    const select=$('#v120-tutor-select'),progress=$('#v120-tutor-progress');if(select){const rows=tutorChats(),cur=currentTutor();select.innerHTML=rows.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===cur.id?'selected':'')+'>'+esc(x.title||'Tutor chat')+'</option>').join('');select.title=cur.title||'Tutor chat';select.setAttribute('aria-label','Current Tutor chat: '+(cur.title||'Tutor chat'))}if(progress)progress.textContent=tutorProgressText();
+    const bar=$('#v120-tutorbar'),restore=$('#v120-tutor-restore'),available=legacyTutorAvailable();
+    if(bar&&available&&!restore){
+      const button=document.createElement('button');button.type='button';button.id='v120-tutor-restore';
+      button.textContent='Restore previous device chats';button.style.gridColumn='1/-1';
+      button.onclick=restoreLegacyTutor;bar.appendChild(button)
+    }else if(!available&&restore)restore.remove()
   }
   function decorateTutor(){
     const q=$('#v52-tutor-q');if(!q)return;const form=q.closest('.v52-form');if(!form)return;ensureAttachmentUi('tutor');
     if(!$('#v120-tutorbar',form)){
-      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-rename">Rename chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><button type="button" id="v120-tutor-restore" hidden style="grid-column:1/-1">Restore previous device chats</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
+      const bar=document.createElement('div');bar.className='v120-tutorbar';bar.id='v120-tutorbar';bar.innerHTML='<select id="v120-tutor-select" aria-label="Tutor chat"></select><button type="button" id="v120-tutor-rename">Rename chat</button><button type="button" id="v120-tutor-review">Review topic</button><button type="button" id="v120-tutor-name">Name: '+esc(tutorName())+'</button><div class="v120-tutor-progress" id="v120-tutor-progress"></div>';form.insertBefore(bar,q);
       $('#v120-tutor-select',bar).onchange=e=>{setTutorActive(e.target.value);const c=currentTutor();syncTutorBackend(c);renderTutorChat(c);refreshTutorBar()};
-      $('#v120-tutor-rename',bar).onclick=renameTutorChat;$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;$('#v120-tutor-restore',bar).onclick=restoreLegacyTutor;
+      $('#v120-tutor-rename',bar).onclick=renameTutorChat;$('#v120-tutor-review',bar).onclick=startTutorReview;$('#v120-tutor-name',bar).onclick=chooseTutorName;
       renderTutorChat();refreshTutorBar();syncTutorBackend();applyTutorName(document);
     }
     if(!$('#v120-tutor-tasks',form)){
