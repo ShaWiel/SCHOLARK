@@ -52,12 +52,26 @@ try{
 
     // Switching again before a slow provider returns must abort old work.
     const rapid=await page.evaluate(async()=>{
-      const api=window.__SCHOLARK_I18N__;
-      const actions=['fr','de','ar','nl'].map((c,i)=>new Promise(resolve=>setTimeout(()=>resolve(api.changeLanguage(c)),i*20)));
-      await Promise.all(actions);
-      return {code:api.code(),ready:document.documentElement.dataset.scholarkI18nReady,dir:document.documentElement.dir,switching:document.documentElement.classList.contains('scholark-language-switching')};
+      const api=window.__SCHOLARK_I18N__,timeline=[],started=performance.now();
+      const originalSetItem=Storage.prototype.setItem;
+      Storage.prototype.setItem=function(key,value){
+        if(key==='scholark_ui_language'&&timeline.length<90){
+          timeline.push({type:'storage',code:String(value),ms:Math.round(performance.now()-started),
+            stack:String(new Error().stack||'').split('\\n').slice(2,5).map(s=>s.trim()).join('|')});
+        }
+        return originalSetItem.apply(this,arguments);
+      };
+      try{
+        const actions=['fr','de','ar','nl'].map((c,i)=>new Promise(resolve=>setTimeout(()=>{
+          timeline.push({type:'invoke',code:c,ms:Math.round(performance.now()-started),previous:api.code()});
+          resolve(api.changeLanguage(c));
+        },i*20)));
+        await Promise.all(actions);
+      }finally{Storage.prototype.setItem=originalSetItem}
+      return {code:api.code(),ready:document.documentElement.dataset.scholarkI18nReady,dir:document.documentElement.dir,
+        switching:document.documentElement.classList.contains('scholark-language-switching'),timeline};
     });
-    assert.equal(rapid.code,'nl',viewport.name+': stale translation overwrote the final selection');
+    assert.equal(rapid.code,'nl',viewport.name+': stale translation overwrote the final selection '+JSON.stringify(rapid.timeline));
     assert.equal(rapid.ready,'nl',viewport.name+': final locale did not settle');
     assert.equal(rapid.dir,'ltr',viewport.name+': RTL direction persisted');
     assert.equal(rapid.switching,false,viewport.name+': locale switching flag got stuck');
