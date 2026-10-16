@@ -150,9 +150,11 @@
     if(button)button.disabled=true;if(input)input.disabled=true;
     if(state)state.textContent='Preparing ARKI…';
     const test=!!window.__SCHOLARK_TEST_MODE__;
-    let session=null,waitTimers=[],responseChatId='',responseOwner='';
+    let session=null,waitTimers=[],responseChatId='',responseOwner=ownerId();
     try{
       session=test?null:await resolvedSession(false);
+      // Never send a prompt typed by one profile under another profile's refreshed session.
+      if(ownerId()!==responseOwner){if(state)state.textContent='Account changed. Send this message again from the current profile.';return}
       if(!test&&!session?.access_token){
         const recoverable=window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary';
         if(state)state.textContent=recoverable?'Could not refresh session right now. Check your connection and retry.':'Sign in to use ARKI.';
@@ -164,7 +166,6 @@
       // block the Ask button on client-side wallet/billing lookups; those can
       // be slow or temporarily unavailable and previously made ARKI appear dead.
       // Refresh the HUD opportunistically after the server responds instead.
-      responseOwner=ownerId();
       if(viewOwner!==responseOwner){viewOwner=responseOwner;current=getCurrent(responseOwner);drawHistory();drawThread();syncDraftInput()}
       const history=(current?.messages||[]).slice(-20).map(x=>({role:x.role,content:x.content}));
       const visiblePrompt=typedPrompt||'Attached material';
