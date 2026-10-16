@@ -142,8 +142,14 @@ try{
   const htmlProbe='<!doctype html><html><body><button id="live-html-demo">Run</button><strong id="live-html-out">ready</strong><script>document.querySelector("#live-html-demo").onclick=()=>document.querySelector("#live-html-out").textContent="worked"</script></body></html>';
   await page.evaluate(html=>{
     const id='live-html-smoke',now=new Date().toISOString();
-    localStorage.setItem('scholark_v107_general_ai_chats',JSON.stringify([{id,title:'Live HTML smoke',createdAt:now,updatedAt:now,messages:[{role:'assistant',content:'HTML preview smoke.\\n\\n```html\\n'+html+'\\n```',createdAt:now,followUps:[]}]}]));
-    localStorage.setItem('scholark_v107_general_ai_active',id);
+    // r277 keeps ARKI chats and active IDs per identity. The live smoke runs
+    // unsigned, so it must seed the guest profile rather than legacy global
+    // keys, which are intentionally isolated pending explicit user recovery.
+    const sessionOwner=window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.user?.id
+      ||JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.user?.id||'guest';
+    const scoped=':account:'+sessionOwner;
+    localStorage.setItem('scholark_v107_general_ai_chats'+scoped,JSON.stringify([{id,title:'Live HTML smoke',createdAt:now,updatedAt:now,messages:[{role:'assistant',content:'HTML preview smoke.\\n\\n```html\\n'+html+'\\n```',createdAt:now,followUps:[]}]}]));
+    localStorage.setItem('scholark_v107_general_ai_active'+scoped,id);
     window.__SCHOLARK_V107_GENERAL_AI__?.open?.();
   },htmlProbe);
   await page.waitForSelector('[data-v107-html-open]',{state:'visible',timeout:6000});
