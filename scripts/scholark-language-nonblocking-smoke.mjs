@@ -51,13 +51,14 @@ try{
     assert.ok(intercepted>0,viewport.name+': no delayed translation request was exercised');
 
     // Switching again before a slow provider returns must abort old work.
+    for(let cycle=0;cycle<3;cycle++){
     const rapid=await page.evaluate(async()=>{
       const api=window.__SCHOLARK_I18N__,timeline=[],started=performance.now();
       const originalSetItem=Storage.prototype.setItem;
       Storage.prototype.setItem=function(key,value){
         if(key==='scholark_ui_language'&&timeline.length<90){
           timeline.push({type:'storage',code:String(value),ms:Math.round(performance.now()-started),
-            stack:String(new Error().stack||'').split('\\n').slice(2,5).map(s=>s.trim()).join('|')});
+            stack:String(new Error().stack||'').split(String.fromCharCode(10)).slice(2,5).map(s=>s.trim()).join('|')});
         }
         return originalSetItem.apply(this,arguments);
       };
@@ -75,6 +76,10 @@ try{
     assert.equal(rapid.ready,'nl',viewport.name+': final locale did not settle');
     assert.equal(rapid.dir,'ltr',viewport.name+': RTL direction persisted');
     assert.equal(rapid.switching,false,viewport.name+': locale switching flag got stuck');
+
+      await page.waitForTimeout(90);
+      assert.equal(await page.evaluate(()=>window.__SCHOLARK_I18N__.code()),'nl',viewport.name+': delayed old locale reverted selection after rapid cycle '+cycle);
+    }
 
     // Reproduce the prior r274 race deterministically: a second caller waits
     // for an in-progress German switch, then Dutch supersedes it. The old
