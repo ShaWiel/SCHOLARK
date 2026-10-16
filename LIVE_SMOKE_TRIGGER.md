@@ -28,3 +28,9 @@ Release: r277-arki-tutor-isolation
 - Live smoke is unauthenticated and cannot prove actual paid-auth AI responses or transactions.
 
 This **documentation-only [live-smoke]** commit triggers the live-resilience-smoke GitHub job on the active r277 production website without modifying the deployed app code.
+
+## Rerun after r277 live-smoke harness correction (2026-10-16)
+- Previous live check (run 38951518115) failed at HTML-preview probing because it wrote to the pre-r277 unscoped ARKI keys.
+- PR #48 corrected the smoke harness to write the guest account-scoped chat and active ID; GitHub CI run 38954412045 and CodeQL 38954411965 both succeeded.
+- This follow-up [live-smoke] rechecks the same deployed application commit without altering production code or user data.
+- Do not describe live AI replies as authenticated model verification: this browser suite is not signed in.
