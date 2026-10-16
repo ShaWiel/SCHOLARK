@@ -21,7 +21,7 @@ globalThis.fetch=async(input,init={})=>{
         init.signal?.addEventListener('abort',()=>reject(Object.assign(new Error('Cancelled'),{name:'AbortError'})),{once:true});
       });
     }
-    if((scenario==='fallback'||scenario==='healthy')&&model==='gemini-fallback-test'){
+    if((scenario==='fallback'||scenario==='healthy'||scenario==='recover-while-cooling')&&model==='gemini-fallback-test'){
       return new Response(JSON.stringify({candidates:[{content:{parts:[{text:'fallback model recovered'}]}}]}),{status:200,headers:{'content-type':'application/json'}});
     }
     return new Response(JSON.stringify({error:{message:'synthetic provider failure'}}),{status:503,headers:{'content-type':'application/json'}});
@@ -71,6 +71,18 @@ try{
   scenario='emergency';
   out=await call();
   if(out.status!==200||out.body?.provider!=='pollinations'||out.body?.emergencyProvider!=='pollinations'||out.body?.fallbackUsed!==true)failures.push({case:'emergency provider',out});
+
+  // Both configured Gemini models are now cooling down: the primary from
+  // the first HTTP 503, and the fallback from the emergency scenario.
+  // The fallback recovers at the next request. The router must try it rather
+  // than selecting only the first cooling model and giving up prematurely.
+  scenario='recover-while-cooling';
+  out=await call();
+  const rescueCalls=calls.filter(x=>x.scenario==='recover-while-cooling'&&x.provider==='gemini');
+  if(out.status!==200||out.body?.model!=='gemini-fallback-test'||rescueCalls.length!==2||
+    calls.some(x=>x.scenario==='recover-while-cooling'&&x.provider==='pollinations')){
+    failures.push({case:'all-cooling models still attempt alternate healthy recovery',out,rescueCalls});
+  }
 
   scenario='caller-abort';
   const abortStart=performance.now(), emergencyBefore=calls.filter(x=>x.scenario==='caller-abort'&&x.provider==='pollinations').length;
