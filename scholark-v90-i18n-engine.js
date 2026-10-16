@@ -957,6 +957,9 @@
         addEventListener('scholark-language-ready',onReady);
         timer=setTimeout(done,1600);
       });
+      // Another locale may have superseded this coalesced request while it
+      // waited. Never re-enter an outdated locale after a newer user choice.
+      if(target!==code())return;
       if(document.documentElement.dataset.scholarkI18nReady===target&&!document.documentElement.classList.contains('scholark-language-switching'))return;
     }
     if(target===code()&&document.documentElement.dataset.scholarkI18nReady===target){upgradeSelectors();scheduleApplyVisible();return}
