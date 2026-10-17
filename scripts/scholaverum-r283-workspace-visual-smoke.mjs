@@ -14,7 +14,7 @@ const wait=async selector=>page.waitForSelector(selector,{state:'visible',timeou
 try{
  await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.__SCHOLARK_WORKSPACE__?.openTool && document.body.classList.contains('v51-workspace'),null,{timeout:30000});
- await page.waitForFunction(()=>[...document.querySelectorAll('link[rel="stylesheet"]')].some(x=>x.href.includes('scholark-v126-workspace-integrity.css?v=20261017-r286')),null,{timeout:20000});
+ await page.waitForFunction(()=>[...document.querySelectorAll('link[rel="stylesheet"]')].some(x=>x.href.includes('scholark-v126-workspace-integrity.css?v=20261017-r288')),null,{timeout:20000});
  await open('ai');await wait('#v107-ai .v107-main');
  const arki=await page.evaluate(()=>{
   const root=document.getElementById('v107-ai'),header=root.querySelector('.v107-head h1'),input=root.querySelector('.v107-compose textarea'),panel=root.querySelector('.v107-main');
