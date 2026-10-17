@@ -535,7 +535,10 @@
   }
 
   const code=()=>{let v='nl';try{v=localStorage.getItem('scholark_ui_language')||document.documentElement.dataset.scholarkFallbackLanguage||'nl'}catch{v=document.documentElement.dataset.scholarkFallbackLanguage||'nl'}return LANGS.some(x=>x[0]===v)?v:'nl'};
-  const isHomeRoute=()=>{const h=String(location.hash||'').toLowerCase();return h===''||h==='#home'||h==='#pricing'};
+  const isHomeRoute=()=>{
+    const route=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
+    return !document.body.classList.contains('v51-workspace')&&['','home','pricing','start','credit-store'].includes(route);
+  };
   const languageName=c=>LANGS.find(x=>x[0]===c)?.[2]||'English';
   const nativeName=c=>LANGS.find(x=>x[0]===c)?.[1]||'English';
   const TITLE_SOURCE='YOUR AI LEARNING + CREATION OS';
@@ -605,7 +608,7 @@
     }catch{}
   }
   let map=loadMap(code()),mapCode=code(),translating=false,unknownTimer=null,translationEpoch=0,applying=false,activeUiAbort=null,activeTransitionFailsafe=0;
-  const textSource=new WeakMap(),attrSource=new WeakMap();
+  const textSource=new WeakMap(),textRendered=new WeakMap(),attrSource=new WeakMap(),attrRendered=new WeakMap();
   const canonicalSource=value=>reverseKnown.get(clean(value))||clean(value);
   const DEVICE_LANGS=new Set(['ar','bg','bn','cmn','cs','da','de','el','en','es','fi','fr','hi','hr','hu','id','it','he','ja','kn','ko','lt','mr','nl','no','pl','pt','ro','ru','sk','sl','sv','ta','te','th','tr','uk','vi','zh']);
   const deviceTranslators=new Map();
@@ -650,20 +653,29 @@
     await Promise.all(Array.from({length:concurrency},()=>worker()));flush();
     return {translated,missing:strings.filter(s=>!translated[s])};
   }
+  // Workspace features reuse text nodes and accessibility attributes. Detect
+  // external updates instead of replaying the first-rendered language forever.
   const rememberText=n=>{
-    const current=canonicalSource(n.nodeValue);
-    if(!textSource.has(n))textSource.set(n,current);
-    else{
-      const remembered=canonicalSource(textSource.get(n));
-      if(remembered!==textSource.get(n))textSource.set(n,remembered);
+    const raw=clean(n.nodeValue),previous=textRendered.get(n);
+    if(!textSource.has(n)||raw!==previous){
+      textSource.set(n,canonicalSource(raw));textRendered.set(n,raw);
+    }else{
+      const canonical=canonicalSource(textSource.get(n));
+      if(canonical!==textSource.get(n))textSource.set(n,canonical);
     }
-    return textSource.get(n)||current;
+    return textSource.get(n)||raw;
   };
   const rememberAttrs=el=>{
-    let o=attrSource.get(el);
-    if(!o){o={};for(const a of ['placeholder','aria-label','title','alt']){const v=clean(el.getAttribute?.(a));if(v)o[a]=canonicalSource(v)}attrSource.set(el,o)}
-    else for(const a of Object.keys(o))o[a]=canonicalSource(o[a]);
-    return o;
+    let source=attrSource.get(el),rendered=attrRendered.get(el);
+    if(!source){source={};rendered={};attrSource.set(el,source);attrRendered.set(el,rendered)}
+    for(const a of ['placeholder','aria-label','title','alt']){
+      const raw=clean(el.getAttribute?.(a));
+      if(!raw){delete source[a];rendered[a]='';continue}
+      if(!Object.hasOwn(source,a)||raw!==rendered[a])source[a]=canonicalSource(raw);
+      else source[a]=canonicalSource(source[a]);
+      rendered[a]=raw;
+    }
+    return source;
   };
 
   function eligibleText(s){
@@ -687,7 +699,8 @@
       if(!base||out.size>=limit)continue;
       const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);
       let n;while((n=walker.nextNode())&&out.size<limit){const el=n.parentElement,src=rememberText(n);if(!protectedNode(el)&&eligibleText(src))out.add(src)}
-      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')).forEach(el=>{if(out.size>=limit||protectedNode(el))return;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title','alt']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}});
+      const attrNodes=[...(base.matches?.('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')?[base]:[]),...base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')];
+      for(const el of attrNodes){if(out.size>=limit)break;if(protectedNode(el))continue;const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title','alt']){const t=clean(srcs[a]);if(eligibleText(t))out.add(t)}}
     }
     return [...out];
   }
@@ -744,19 +757,21 @@
         if(c==='en'){
           if(clean(raw)===clean(src))continue;
           if(protectedNode(n.parentElement))continue;
-          const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+src+tail;continue;
+          const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+src+tail;textRendered.set(n,clean(src));continue;
         }
         const tr=map[src];if(!tr||clean(raw)===clean(tr))continue;
         if(protectedNode(n.parentElement))continue;
-        const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail;
+        const lead=raw.match(/^\s*/)?.[0]||'',tail=raw.match(/\s*$/)?.[0]||'';n.nodeValue=lead+tr+tail;textRendered.set(n,clean(tr));
       }
-      Array.from(base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title]')).forEach(el=>{
-        if(protectedNode(el))return;
-        const srcs=rememberAttrs(el);for(const a of ['placeholder','aria-label','title','alt']){
+      const attrNodes=[...(base.matches?.('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')?[base]:[]),...base.querySelectorAll('input[placeholder],textarea[placeholder],[aria-label],[title],img[alt]')];
+      for(const el of attrNodes){
+        if(protectedNode(el))continue;
+        const srcs=rememberAttrs(el),rendered=attrRendered.get(el);
+        for(const a of ['placeholder','aria-label','title','alt']){
           const src=clean(srcs[a]);if(!src)continue;const tr=c==='en'?src:map[src];if(!tr)continue;
-          if(clean(el.getAttribute(a))!==clean(tr))el.setAttribute(a,tr);
+          if(clean(el.getAttribute(a))!==clean(tr)){el.setAttribute(a,tr);rendered[a]=clean(tr)}
         }
-      });
+      }
     }finally{applying=false}
   }
   async function translateCurrentPage(showOverlay=false){
