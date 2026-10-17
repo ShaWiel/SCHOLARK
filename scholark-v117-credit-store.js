@@ -244,6 +244,7 @@
     document.documentElement.classList.toggle('v117-credit-store-route',store);
     document.body?.classList.toggle('v117-credit-store-route',store);
     page.hidden=!store;
+    if(store){delete page.dataset.v30LegacyHome;delete page.dataset.v109Quarantined;page.removeAttribute('aria-hidden')}
     setAriaCurrent(button,store?'page':'false');
     syncStoreTopbar();
     if(store){

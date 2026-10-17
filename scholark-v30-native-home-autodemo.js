@@ -37,7 +37,7 @@
   `;
   document.head.appendChild(css);
 
-  function isHome(){return window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})()}
+  function isHome(){return window.__SCHOLARK_ROUTES__?.isLanding?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start'].includes(h)})()}
 
   function findSidebar(){
     const tokens=['Dashboard','Education & Learning','ARKI','Planner','Progress'];
@@ -59,7 +59,7 @@
       if(sib&&sib!==layer&&sib.getBoundingClientRect().width>260) return sib;
     }
     const mains=$$('main,[role="main"]')
-      .filter(x=>x!==layer&&!x.closest('#v29-home-layer'))
+      .filter(x=>x!==layer&&!x.closest('#v29-home-layer,#v51-main,#v117-credit-store-page,#v53-emergency'))
       .map(x=>({x,r:x.getBoundingClientRect()}))
       .filter(o=>o.r.width>Math.min(560,innerWidth*.5)&&o.r.height>300&&o.r.bottom>80)
       .sort((a,b)=>(b.r.width*b.r.height)-(a.r.width*a.r.height));
@@ -84,6 +84,7 @@
 
   function restoreLegacy(){
     const layer=$('#v29-home-layer');
+    if($('#v280-editorial-home')){if(legacyMain)delete legacyMain.dataset.v30LegacyHome;legacyMain=null;if(layer)layer.hidden=!isHome();return}
     if(isHome()){mountNative();if(legacyMain)legacyMain.dataset.v30LegacyHome='1';if(layer){layer.hidden=false;layer.classList.add('v30-native-home');}return;}
     if(legacyMain)delete legacyMain.dataset.v30LegacyHome;
     if(layer)layer.hidden=true;
@@ -347,7 +348,7 @@
     },lite?8000:4800);
   }
   function ensureDemo(){
-    if(!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
+    if(document.querySelector('#v280-editorial-home')||!isHome()||document.documentElement.classList.contains('scholark-runtime-loading')||document.documentElement.classList.contains('scholark-route-loading')||document.documentElement.classList.contains('scholark-language-switching')){stopDemo();return}
     mountNative();addLiveBadge();enhanceLearning();enhanceFuture();wirePause();
     const mode=currentDemoMode(),idx=demoModes.indexOf(mode);if(idx>=0)modeIndex=idx;
     if(!rotateTimer){

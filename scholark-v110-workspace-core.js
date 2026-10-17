@@ -19,6 +19,17 @@
   const uid=p=>(p||'id')+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
   const read=(key,fallback=null)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v??fallback}catch{return fallback}};
   const array=(key)=>{const x=read(key,[]);return Array.isArray(x)?x:[]};
+  const records=key=>array(key).filter(x=>x&&typeof x==='object'&&!Array.isArray(x));
+  const legacyRecords=(key,prefix)=>{
+    const values=array(key),used=new Set(values.filter(x=>x&&typeof x==='object'&&x.id).map(x=>String(x.id)));
+    return values.flatMap((x,i)=>{
+      if(typeof x==='string')x={text:x};
+      if(!x||typeof x!=='object'||Array.isArray(x))return [];
+      if(x.id)return [x];
+      let id=prefix+'-'+i;while(used.has(id))id+='-recovered';used.add(id);
+      return [{...x,id}];
+    });
+  };
   const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch{return false}};
   const now=()=>Date.now();
   const dayKey=(v=Date.now())=>{const d=new Date(v);return Number.isNaN(d.getTime())?'':d.toISOString().slice(0,10)};
@@ -49,28 +60,28 @@
   });
 
   function planner(){
-    return array(KEYS.planner).map(x=>({
-      ...x,id:x.id||uid('plan'),text:clean(x.text),type:x.type||'task',subject:clean(x.subject),
+    return legacyRecords(KEYS.planner,'legacy-plan').map((x,i)=>({
+      ...x,id:x.id||'legacy-plan-'+i,text:clean(x.text),type:x.type||'task',subject:clean(x.subject),
       date:clean(x.date),time:clean(x.time),duration:Math.max(0,Number(x.duration)||0),
       priority:['high','medium','low'].includes(x.priority)?x.priority:'medium',
       goalId:clean(x.goalId),sourceKey:clean(x.sourceKey),status:x.status==='done'?'done':'todo'
     }));
   }
   function goals(){
-    return array(KEYS.goals).map(x=>({...x,id:x.id||uid('goal'),text:clean(x.text),category:x.category||'learning',date:clean(x.date),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'?'complete':'active'}));
+    return legacyRecords(KEYS.goals,'legacy-goal').map((x,i)=>({...x,id:x.id||'legacy-goal-'+i,text:clean(x.text),category:x.category||'learning',date:clean(x.date),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'?'complete':'active'}));
   }
   function mastery(){
-    return array(KEYS.mastery).map(x=>({...x,id:x.id||uid('mastery'),subject:clean(x.subject)||'General',topic:clean(x.topic)||'Topic',status:x.status||'Learning',mastery:Math.max(0,Math.min(100,Number(x.mastery)||0)),nextReviewAt:x.nextReviewAt||'',updatedAt:x.updatedAt||''}));
+    return records(KEYS.mastery).map((x,i)=>({...x,id:x.id||'legacy-mastery-'+i,subject:clean(x.subject)||'General',topic:clean(x.topic)||'Topic',status:x.status||'Learning',mastery:Math.max(0,Math.min(100,Number(x.mastery)||0)),nextReviewAt:x.nextReviewAt||'',updatedAt:x.updatedAt||''}));
   }
   function assignments(){
-    return array(KEYS.assignments).map(x=>({...x,id:x.id||uid('assignment'),title:clean(x.title),subject:clean(x.subject),type:x.type||'assignment',priority:x.priority||'medium',dueDate:clean(x.dueDate),instructions:clean(x.instructions),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'||Number(x.progress)>=100?'complete':'active'}));
+    return records(KEYS.assignments).map((x,i)=>({...x,id:x.id||'legacy-assignment-'+i,title:clean(x.title),subject:clean(x.subject),type:x.type||'assignment',priority:x.priority||'medium',dueDate:clean(x.dueDate),instructions:clean(x.instructions),sourceKey:clean(x.sourceKey),progress:Math.max(0,Math.min(100,Number(x.progress)||0)),status:x.status==='complete'||Number(x.progress)>=100?'complete':'active'}));
   }
   function flashcards(){
-    return array(KEYS.flashcards).map(x=>({...x,id:x.id||uid('card'),deck:clean(x.deck)||'General',front:clean(x.front),back:clean(x.back),dueAt:Number(x.dueAt)||0,interval:Number(x.interval)||0,reps:Number(x.reps)||0,lapses:Number(x.lapses)||0,lastReviewedAt:Number(x.lastReviewedAt)||0}));
+    return records(KEYS.flashcards).map((x,i)=>({...x,id:x.id||'legacy-card-'+i,deck:clean(x.deck)||'General',front:clean(x.front),back:clean(x.back),dueAt:Number(x.dueAt)||0,interval:Number(x.interval)||0,reps:Number(x.reps)||0,lapses:Number(x.lapses)||0,lastReviewedAt:Number(x.lastReviewedAt)||0}));
   }
-  function focusHistory(){return array(KEYS.focusHistory)}
-  function learningProjects(){return array(KEYS.learningProjects).map(x=>({...x,sourceKey:clean(x.sourceKey)}))}
-  function activity(){return array(KEYS.activity)}
+  function focusHistory(){return records(KEYS.focusHistory)}
+  function learningProjects(){return records(KEYS.learningProjects).map((x,i)=>({...x,id:x.id||'legacy-project-'+i,sourceKey:clean(x.sourceKey)}))}
+  function activity(){return records(KEYS.activity)}
 
   function goalProgress(goal,planRows=planner()){
     if(goal.status==='complete')return 100;
@@ -95,7 +106,7 @@
     const focusWeek=focus.filter(x=>Number(x.endedAt||x.completedAt||x.startedAt)>=weekAgo);
     const focusMinutes7d=focusWeek.reduce((n,x)=>n+(Number(x.minutes)||Math.round((Number(x.duration)||0)/60)||0),0);
     const goalAvg=g.length?Math.round(g.reduce((n,x)=>n+goalProgress(x,p),0)/g.length):0;
-    const completed7d=donePlanner.filter(x=>safeDate(x.completedAt)>=weekAgo).length;
+    const completed7d=donePlanner.filter(x=>x.completedAt&&safeDate(x.completedAt)>=weekAgo&&safeDate(x.completedAt)<=t).length;
     const daySet=new Set();
     focusWeek.forEach(x=>{const d=dayKey(Number(x.endedAt||x.completedAt||x.startedAt));if(d)daySet.add(d)});
     reviewedCards7d.forEach(x=>{const d=dayKey(x.lastReviewedAt);if(d)daySet.add(d)});

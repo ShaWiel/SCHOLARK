@@ -42,7 +42,7 @@
       if(marker.closest?.('#v29-home-layer,#v41-home-pricing,#v55-topbar'))return;
       let target=marker.matches?.('main,[role="main"]')?marker:marker.closest?.('main,[role="main"]');
       if(!target||target.closest?.('#v29-home-layer,#v41-home-pricing,#v55-topbar'))target=marker;
-      if(target.id==='v51-main'||target.closest?.('#v51-sidebar,#v51-main,#v53-emergency'))return;
+      if(target.id==='v51-main'||target.closest?.('#v51-sidebar,#v51-main,#v53-emergency,#v117-credit-store-page'))return;
       target.dataset.v109Quarantined='1';target.setAttribute('aria-hidden','true');count++;
     });
     return count;

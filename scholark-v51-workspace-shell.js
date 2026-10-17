@@ -68,7 +68,7 @@
   const TOOLS=[
     ['dashboard','⌂','Dashboard'],['ai','✺','ARKI'],['tutor','AI',tutorDisplayName()],['education','◎','Education & Learning'],['language','Aa','Language Learner'],['planner','▦','Planner'],['focus','◷','Focus Sessions'],['flashcards','▤','Flashcards'],['assignments','✓','Assignments'],['reminders','◴','Reminders'],['progress','↗','Progress'],['goal','◉','Goals'],['files','▣','Files & Notes'],['project','▧','My Projects']
   ];
-  const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','🚀','Study Ahead','PRO']];
+  const PRO=[['schools','⌖','Schools Near Me','PRO'],['study','↗','Study Ahead','PRO']];
   const COMING=[['connect','◉','Connect'],['studio','✦','Studio AI'],['book','📚','Book Studio']];
   const INACTIVE=new Set(['connect','studio','book']);
   const ALIASES={
@@ -114,10 +114,78 @@
   const state={active:'dashboard'};
   let workspaceEntryEpoch=0,homeTransitionEpoch=0,workspaceEntryTimer=0,workspaceEntryFailsafe=0;
   const DASHBOARD_SOURCE={
-    kicker:'SCHOLAVERUM WORKSPACE',
-    title:'Your learning & creation workspace.',
-    copy:'Open the tool you need. Your selected level changes how SCHOLAVERUM should explain, structure and challenge you.'
+    kicker:'A LITTLE CURIOSITY. A WORLD OF POSSIBILITY.',
+    title:'What will you discover today?',
+    copy:'A clear space to think, learn and move your ideas forward.'
   };
+
+  // The dashboard is rendered from one source. Route recovery must reuse this
+  // exact structure rather than resurrecting the retired card-wall dashboard.
+  const DASHBOARD_TOOLS=[
+    ['ai','✺','ARKI','Think, write and explore ideas.'],
+    ['tutor','✧','AI Tutor','Understand the topic, step by step.'],
+    ['language','Aa','Language Learner','A little practice. A new perspective.'],
+    ['education','◎','Education & Learning','Find your path to understanding.'],
+    ['planner','▦','Planner','Make room for what matters.'],
+    ['focus','◷','Focus Sessions','One thing at a time.'],
+    ['flashcards','▤','Flashcards','Turn practice into lasting knowledge.'],
+    ['assignments','✓','Assignments','Give every deadline a clear next step.'],
+    ['reminders','◴','Reminders','Keep the important things in view.'],
+    ['files','▣','Files & Notes','Bring your learning material together.'],
+    ['project','▧','My Projects','A home for your ongoing work.'],
+    ['progress','↗','Progress','See how far you have come.'],
+    ['goal','◉','Goals','Start small. Keep moving.'],
+    ['schools','⌖','Schools Near Me','Explore your next opportunity.'],
+    ['study','↗','Study Ahead','Get ready for your next chapter.'],
+    ['connect','◉','Connect',''],['studio','✦','Studio AI',''],['book','▤','Book Studio','']
+  ];
+  function dashboardMarkup(){return `<div class="v51-shell v284-desk" data-workspace-owner="r284">
+    <header class="v284-topline"><span>SCHOLAVERUM <span class="v284-divider">/</span> <span>Workspace</span></span><span class="v284-date"></span></header>
+    <section class="v284-welcome" aria-labelledby="v284-title">
+      <div class="v284-spark" aria-hidden="true">✺</div>
+      <div class="v51-head"><div><small>${DASHBOARD_SOURCE.kicker}</small><h1 id="v284-title">${DASHBOARD_SOURCE.title}</h1><p>${DASHBOARD_SOURCE.copy}</p></div></div>
+      <form class="v284-composer" id="v284-compose">
+        <label class="v284-sr" for="v284-prompt">What would you like to learn or create?</label>
+        <textarea id="v284-prompt" rows="2" maxlength="12000" placeholder="What would you like to learn or create?"></textarea>
+        <div class="v284-composer-bottom"><div class="v284-modes" role="group" aria-label="Choose your assistant"><button type="button" data-v284-mode="ai" aria-pressed="true">✺ <span>ARKI</span></button><button type="button" data-v284-mode="tutor" aria-pressed="false">✧ <span>AI Tutor</span></button></div><button class="v284-submit" type="submit" aria-label="Open your question in the selected assistant">↑</button></div>
+      </form>
+      <div class="v284-starters"><button type="button" data-v284-open="tutor">✧ <span>Explain a topic</span></button><button type="button" data-v284-open="planner">▦ <span>Plan my study</span></button><button type="button" data-v284-open="flashcards">▤ <span>Review flashcards</span></button><button type="button" data-v284-open="language">Aa <span>Learn a language</span></button></div>
+    </section>
+    <section class="v284-overview" aria-label="Your learning at a glance"><article class="v284-continue"><div class="v284-section-label"><h2>Pick up where you left off</h2><button type="button" data-v284-open="project">View projects <span aria-hidden="true">↗</span></button></div><div id="v284-recent"></div></article><article class="v284-today"><div class="v284-section-label"><h2>A little focus goes a long way</h2><span aria-hidden="true">◷</span></div><div id="v284-next"></div></article></section>
+    <details class="v284-setup"><summary><span>✧ <span>Make this space your own</span></span><span>Quick setup ⌄</span></summary></details>
+    <details class="v284-level-picker"><summary><span>◎ <span>Your learning level</span></span><span class="v284-current-level"></span></summary><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLAVERUM SHOULD WORK & TEACH</div></div><div class="v51-levels"></div></details>
+    <section class="v284-library" aria-labelledby="v284-tools-title"><div class="v284-section-label"><h2 id="v284-tools-title">A tool for every next step</h2><span>YOUR WORKSPACE</span></div><div class="v51-grid">${DASHBOARD_TOOLS.map(([id,ic,title,desc])=>card(id,ic,id==='tutor'?tutorDisplayName():title,desc)).join('')}</div></section>
+    <footer class="v284-footer"><span>SCHOLAVERUM</span><span>A little more understanding, every day.</span></footer>
+  </div>`}
+  let dashboardMode='ai',dashboardPaintTimer=0;
+  function paintDashboardData(){
+    dashboardPaintTimer=0;const desk=$('[data-workspace-owner="r284"]',main);if(!desk)return;
+    let s;try{s=window.__SCHOLARK_WORKSPACE_CORE__?.compute?.()}catch{}
+    const date=$('.v284-date',desk);if(date)date.textContent=new Intl.DateTimeFormat(workspaceUiLang(),{weekday:'short',month:'short',day:'numeric'}).format(new Date());
+    const level=$('.v284-current-level',desk);if(level)level.textContent=dashboardLevels().find(x=>x[0]===levelId())?.[2]||'';
+    const next=$('#v284-next',desk),recent=$('#v284-recent',desk);
+    if(next){const n=s?.next;const markup=n?`<h3>${esc(n.title)}</h3><p>${esc(n.reason)}</p><button type="button" data-v284-open="${esc(n.tool)}">Continue <span aria-hidden="true">↗</span></button>`:'<h3>Make space for your next idea.</h3><p>Start a focused session and give your curiosity a little time.</p><button type="button" data-v284-open="focus">Start a focus session <span aria-hidden="true">↗</span></button>';if(next.dataset.signature!==markup){next.innerHTML=markup;next.dataset.signature=markup}}
+    if(recent){
+      const events=(s?.activity?.all||[]).filter(x=>x.tool&&x.tool!=='dashboard'&&DASHBOARD_TOOLS.some(t=>t[0]===x.tool)&&!INACTIVE.has(x.tool));
+      const ids=[...new Set(events.slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(x=>x.tool))].slice(0,3);
+      const markup=ids.length?ids.map(id=>{const t=DASHBOARD_TOOLS.find(x=>x[0]===id);return `<button type="button" class="v284-recent-row" data-v284-open="${id}"><span class="v284-recent-icon">${esc(t[1])}</span><span><b>${esc(id==='tutor'?tutorDisplayName():t[2])}</b><small>Continue exploring</small></span><span aria-hidden="true">↗</span></button>`}).join(''):'<div class="v284-empty"><span aria-hidden="true">▧</span><p>Your next chapter starts here.<small>Open a tool to begin. Your recent work will appear here.</small></p></div>';
+      if(recent.dataset.signature!==markup){recent.innerHTML=markup;recent.dataset.signature=markup}
+    }
+    window.__SCHOLARK_I18N__?.apply?.(desk);
+  }
+  function scheduleDashboardData(){clearTimeout(dashboardPaintTimer);dashboardPaintTimer=setTimeout(paintDashboardData,100)}
+  function wireDashboard(){
+    const desk=$('[data-workspace-owner="r284"]',main);if(!desk||desk.dataset.wired==='1')return;desk.dataset.wired='1';
+    desk.addEventListener('click',e=>{
+      const open=e.target.closest('[data-v284-open]');if(open){e.preventDefault();openTool(open.dataset.v284Open);return}
+      const mode=e.target.closest('[data-v284-mode]');if(mode){dashboardMode=mode.dataset.v284Mode;desk.querySelectorAll('[data-v284-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)))}
+    });
+    const form=$('#v284-compose',desk),prompt=$('#v284-prompt',desk);
+    form?.addEventListener('submit',e=>{e.preventDefault();const value=prompt.value.trim();if(!value){prompt.focus();return}const api=window.__SCHOLARK_V114_ORCHESTRATOR__;if(api?.handoff)api.handoff(dashboardMode,{prompt:value});else{try{sessionStorage.setItem('scholark_v108_arki_prompt',value)}catch{}openTool(dashboardMode)}});
+    prompt?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
+    desk.querySelectorAll('.v51-card[data-v51-tool]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
+    paintDashboardData();
+  }
 
   function workspaceCountry(){const api=window.__SCHOLARK_COUNTRY__;const raw=api?.current?.()||localStorage.getItem('scholark_country')||'Suriname';const normalized=api?.normalize?.(raw)||raw;const key=String(normalized).trim().toLowerCase();return key==='sr'?'suriname':key}
   function dashboardLevels(){if(workspaceCountry()==='suriname')return SURINAME_LEVELS;const api=window.__SCHOLARK_COUNTRY__;return LEVELS.map(row=>{const st=api?.stage?.(row[0]),lc=api?.localizedStage?.(row[0]);return [row[0],st?.[1]||row[1],lc?.title||st?.[2]||row[2],lc?.description||row[3]]})}
@@ -144,7 +212,7 @@
       localStorage.removeItem('scholark_education_track');
       localStorage.removeItem('scholark_vwo_selected');
     }
-    renderLevels();forceQuality();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0);
+    renderLevels();scheduleDashboardData();forceQuality();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0);
   }
   function forceQuality(){localStorage.setItem('scholark_ai_quality','highest');localStorage.setItem('scholark_default_ai_quality','highest');localStorage.setItem('scholark_workspace_quality','highest');const q=$('#v41-quality');if(q&&[...q.options].some(o=>o.value==='highest'))q.value='highest';const d=$('#v45-depth');if(d&&[...d.options].some(o=>o.value==='expert'))d.value='expert';['v45-strict','v45-research','v45-factcheck','v45-visuals','v45-autopolish','v41-citations','v41-sources'].forEach(id=>{const e=$('#'+id);if(e&&'checked'in e)e.checked=true})}
 
@@ -179,9 +247,11 @@
     const pages=Array.from(main.querySelectorAll('[data-v51-page="dashboard"]')),dash=pages[0];
     pages.slice(1).forEach(x=>x.remove());
     if(!dash)return false;
-    dash.innerHTML=`<div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLAVERUM SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLAVERUM WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLAVERUM should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('connect','◉','Connect','Find study friends, chat privately and join native video meetings or shared study rooms.')}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI',tutorDisplayName(),'Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('reminders','◴','Reminders','Link your devices and get reminders for homework, assignments, tasks, payments and anything you schedule yourself.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Keep learning projects, research, notes and ongoing work connected in one place.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div>`;
-    Array.from(dash.querySelectorAll('[data-v51-tool]')).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
-    renderLevels();resetDashboardCanonical();
+    const draft=$('#v284-prompt',dash)?.value||'';
+    dash.innerHTML=dashboardMarkup();wireDashboard();
+    const prompt=$('#v284-prompt',dash);if(prompt)prompt.value=draft;
+    dash.querySelectorAll('[data-v284-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v284Mode===dashboardMode)));
+    renderLevels();resetDashboardCanonical();scheduleDashboardData();
     return true;
   }
   function ownWorkspaceTopbar(){
@@ -273,8 +343,9 @@
     side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${ic}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
     ensureSidebarActions('build');
     toggle=document.createElement('button');toggle.id='v51-side-toggle';toggle.type='button';toggle.onclick=()=>setCollapsed(!document.body.classList.contains('v51-collapsed'));document.body.appendChild(toggle);
-    main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard"><div class="v51-shell"><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLAVERUM SHOULD WORK & TEACH</div></div><div class="v51-levels"></div><div class="v51-head"><div><small>SCHOLAVERUM WORKSPACE</small><h1>Your learning & creation workspace.</h1><p>Open the tool you need. Your selected level changes how SCHOLAVERUM should explain, structure and challenge you.</p></div></div><div class="v51-grid">${card('studio','✦','Studio AI','',true)}${card('ai','✺','ARKI','Ask a general-purpose AI about almost anything: writing, coding, ideas, planning, knowledge, analysis and more.')}${card('tutor','AI',tutorDisplayName(),'Ask, learn, practice and get explanations adapted to your selected level.')}${card('education','◎','Education & Learning','Diagnostics, learning paths, mastery and study support in one place.')}${card('language','Aa','Language Learner','Learn vocabulary, grammar, pronunciation and conversation with adaptive lessons.')}${card('planner','▦','Planner','Organize goals, study sessions, deadlines and what to work on next.')}${card('focus','◷','Focus Sessions','Run focused study blocks, connect them to Planner tasks and track completed focus time.')}${card('flashcards','▤','Flashcards','Build spaced-repetition decks and review weak cards at the right time.')}${card('assignments','✓','Assignments','Track briefs and deadlines, break work into Planner steps and get AI Tutor guidance.')}${card('reminders','◴','Reminders','Link your devices and get reminders for homework, assignments, tasks, payments and anything you schedule yourself.')}${card('progress','↗','Progress','See what is improving, what is weak and where to focus next.')}${card('goal','◉','Goals','Set learning, school and creation goals and connect them to your plan.')}${card('files','▣','Files & Notes','Work with uploaded files, notes, summaries and extracted knowledge.')}${card('project','▧','My Projects','Keep learning projects, research, notes and ongoing work connected in one place.')}${card('study','🚀','Study Ahead','Prepare for a future field with an AI roadmap connected to Planner, Mastery and Goals.')}${card('schools','⌖','Schools Near Me','Find education options for the study you actually want.')}${card('book','📚','Book Studio','')}</div></div></section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
-    qsa('[data-v51-tool]',document).forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
+    main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard">${dashboardMarkup()}</section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
+    qsa('[data-v51-tool]',side).forEach(b=>{const label=b.querySelector('span')?.textContent||b.dataset.v51Tool;b.setAttribute('aria-label',label);b.title=label;b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)})});
+    wireDashboard();
     renderLevels();setCollapsed(localStorage.getItem('scholark_v51_collapsed')==='1',false);refreshLogo();
     setTimeout(()=>{window.__SCHOLARK_I18N__?.upgradeSelectors?.();window.__SCHOLARK_COUNTRY__?.apply?.()},0);
   }
@@ -390,7 +461,7 @@
     const html=groups.map(group=>{
       const groupRows=suriname?rows.filter(x=>x[4]===group.id):rows.filter(x=>group.levels.includes(x[0]));
       const toneStyle=group.tone==='dark'?' style="background:linear-gradient(135deg,#1f2b5b 0%,#385294 52%,#172349 100%)!important;color:#fff!important;border-color:rgba(23,35,73,.30)!important"':'';
-      const cards=groupRows.map(([id,ic,l,d])=>`<button class="v51-level ${id===selected?'active':''}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"${toneStyle}><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
+      const cards=groupRows.map(([id,ic,l,d])=>`<button type="button" class="v51-level ${id===selected?'active':''}" aria-pressed="${id===selected}" data-level="${id}" data-v96-i18n-owned="1" data-education-group="${group.id}"${toneStyle}><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('');
       return `<section class="v51-level-cluster ${group.tone}" data-v51-group="${group.id}" data-v96-i18n-owned="1" data-sch-i18n-owned="1"><div class="v51-level-group" data-sch-i18n-owned="1">${esc(suriname?surinameGroupLabel(group):countryGroupLabel(group))}</div><div class="v51-level-cluster-cards">${cards}</div></section>`;
     }).join('');
     const key=country+'|'+lang+'|'+selected+'|'+rows.map(x=>x.slice(0,5).join('~')).join('^');
@@ -433,7 +504,7 @@
     }
   }
   function showPage(name){qsa('.v51-page',main).forEach(p=>{p.style.removeProperty('display');p.classList.toggle('active',p.dataset.v51Page===name)});main.style.removeProperty('display')}
-  function syncNav(id=state.active){qsa('[data-v51-tool]',side).forEach(b=>b.classList.toggle('active',b.dataset.v51Tool===id))}
+  function syncNav(id=state.active){if(id==='dashboard')scheduleDashboardData();qsa('[data-v51-tool]',side).forEach(b=>{const active=b.dataset.v51Tool===id;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
 
   function findLegacySidebar(){
     const labels=['dashboard','studio ai','ai tutor','education & learning','language learner','planner','progress','goals','my projects'];
@@ -574,7 +645,11 @@
     if(id==='language'){clearModes();setRoute('language');showPage('fallback');state.active='language';syncNav();if(window.__SCHOLARK_V93_LANGUAGE__?.open)window.__SCHOLARK_V93_LANGUAGE__.open();else setTimeout(()=>{if(route()==='#language')window.__SCHOLARK_V93_LANGUAGE__?.open?.()},100);syncWorkspaceLanguage(main);return}
     if(['tutor','education','planner','progress','goal'].includes(id)){
       setCollapsed(false,true);clearModes();setRoute(id);showPage('fallback');state.active=id;syncNav();
-      const api=window.__SCHOLARK_V52_FAST__;if(api?.open)api.open(id);else setTimeout(()=>{if(route()==='#'+id)window.__SCHOLARK_V52_FAST__?.open?.(id)},30);
+      const mount=()=>{if(route()!=='#'+id)return false;const api=window.__SCHOLARK_V52_FAST__;if(!api?.open)return false;api.open(id);syncWorkspaceLanguage(main);return true};
+      if(mount())return;
+      // Programmatic entry (dashboard starters/context handoff) bypasses the
+      // sidebar's capture listener, so it must load its own lazy dependency.
+      window.__SCHOLARK_RUNTIME__?.ensure?.(id)?.then(ok=>{if(!ok||!mount()){if(route()==='#'+id)showFallback(id)}});
       syncWorkspaceLanguage(main);return
     }
     if(['focus','flashcards','assignments'].includes(id)){
@@ -674,7 +749,8 @@
   addEventListener('scholark-language-ready',()=>scheduleWorkspaceLanguageRefresh(120));
   addEventListener('scholark-language-complete',()=>scheduleWorkspaceLanguageRefresh(150));
   addEventListener('scholark-runtime-ready',()=>{if(workspaceRoute())setTimeout(()=>{ensureSidebarActions('runtime-ready');renderLevels();window.__SCHOLARK_COUNTRY__?.apply?.();syncWorkspaceLanguage(null,true)},20)});
-  addEventListener('scholark-country-change',()=>{renderLevels();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
+  addEventListener('scholark-workspace-change',scheduleDashboardData);
+  addEventListener('scholark-country-change',()=>{renderLevels();scheduleDashboardData();setTimeout(()=>window.__SCHOLARK_COUNTRY__?.apply?.(),0)});
   const sidebarActionsObserver=new MutationObserver(()=>{
     if(!workspaceRoute()||!document.body.classList.contains('v51-workspace'))return;
     document.querySelectorAll('#v51-top-actions').forEach(el=>el.remove());

@@ -48,54 +48,7 @@
     html:not(.scholark-r218-store) #v41-home-pricing button{
       border-radius:13px;
     }
-    html:not(.scholark-r218-store) body.v51-workspace{
-      background:
-        radial-gradient(circle at 76% -8%,rgba(109,93,252,.105),transparent 30%),
-        radial-gradient(circle at 18% 102%,rgba(201,255,106,.13),transparent 26%),
-        linear-gradient(180deg,#f9f8f4,#f1f0ea)!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace #v51-sidebar{
-      border-right:1px solid rgba(255,255,255,.08);
-      box-shadow:16px 0 54px rgba(10,12,18,.12)!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace #v51-main{
-      background:transparent!important;
-      scroll-behavior:smooth;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace .v51-nav{
-      border-radius:13px!important;
-      transition:background-color .16s ease,transform .16s ease,color .16s ease,box-shadow .16s ease!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace .v51-nav:hover{
-      transform:translateX(2px);
-    }
-    html:not(.scholark-r218-store) body.v51-workspace .v51-nav.active,
-    html:not(.scholark-r218-store) body.v51-workspace .v51-nav[aria-current="page"]{
-      box-shadow:0 10px 26px rgba(109,93,252,.15);
-    }
-    html:not(.scholark-r218-store) body.v51-workspace .v51-card,
-    html:not(.scholark-r218-store) body.v51-workspace .v52-card,
-    html:not(.scholark-r218-store) body.v51-workspace .v52-form,
-    html:not(.scholark-r218-store) body.v51-workspace .v86-card,
-    html:not(.scholark-r218-store) body.v51-workspace .v64-card,
-    html:not(.scholark-r218-store) body.v51-workspace .v111-card{
-      border-color:var(--sch-r218-line)!important;
-      box-shadow:var(--sch-r218-soft-shadow)!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace input,
-    html:not(.scholark-r218-store) body.v51-workspace textarea,
-    html:not(.scholark-r218-store) body.v51-workspace select{
-      border-radius:12px!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace input:focus,
-    html:not(.scholark-r218-store) body.v51-workspace textarea:focus,
-    html:not(.scholark-r218-store) body.v51-workspace select:focus{
-      border-color:rgba(109,93,252,.45)!important;
-      box-shadow:0 0 0 4px rgba(109,93,252,.09)!important;
-    }
-    html:not(.scholark-r218-store) body.v51-workspace button{
-      text-rendering:optimizeLegibility;
-    }
+    /* r284: canonical Workspace stylesheet owns surface and navigation design. */
     html:not(.scholark-r218-store).scholark-r218-route-settle body.v51-workspace #v51-main,
     html:not(.scholark-r218-store).scholark-r218-route-settle #v29-home-layer{
       animation:schR218Settle .18s ease both;

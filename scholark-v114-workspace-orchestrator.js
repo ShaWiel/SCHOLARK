@@ -49,7 +49,7 @@
     clearTimeout(showToast.timer);toastEl.textContent=clean(message);toastEl.className='open '+type;showToast.timer=setTimeout(()=>{toastEl.className=''},2600)
   }
   function showTransition(to){
-    transitionEl.innerHTML='<i></i>Connecting to '+esctoolName(to)+'…';transitionEl.classList.add('open');
+    transitionEl.innerHTML='<i></i>Connecting to '+esc(toolName(to))+'…';transitionEl.classList.add('open');
     clearTimeout(showTransition.timer);showTransition.timer=setTimeout(()=>transitionEl.classList.remove('open'),3200)
   }
   function hideTransition(){transitionEl.classList.remove('open')}
@@ -117,7 +117,11 @@
     try{sessionStorage.setItem(HANDOFF,JSON.stringify(row))}catch{}
     core()?.record?.('workspace','handoff',{from:row.from,to:row.to,id:row.id});
     if(to==='focus'&&row.payload.focus)core()?.actions?.prepareFocus?.(row.payload.focus);
-    showTransition(to);open(to);scheduleConsume(35);return true;
+    showTransition(to);
+    const enter=()=>{if(readHandoff()?.id!==row.id)return;if(route()!==row.from&&route()!==row.to){clearHandoff(row.id);hideTransition();return}open(to);scheduleConsume(35)};
+    const ready=window.__SCHOLARK_RUNTIME__?.ensure?.(to);
+    if(ready?.then)ready.then(ok=>{if(ok)enter();else{hideTransition();showToast('The tool could not finish loading. Please try again.','bad')}}).catch(()=>{hideTransition();showToast('The tool could not finish loading. Please try again.','bad')});
+    else enter();return true;
   }
   function applyHandoff(row){
     const p=row.payload||{},to=row.to;
@@ -276,6 +280,7 @@
     const tool=route();if(!ROUTES.has(tool)){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return false}
     document.querySelectorAll('.v108-context').forEach(x=>x.remove());
     const root=rootFor(tool);if(!root){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());return false}
+    if(tool==='dashboard'&&root.dataset.workspaceOwner==='r284'){document.querySelectorAll('.v114-connect').forEach(x=>x.remove());hideTransition();consume();return true}
     const candidates=[...document.querySelectorAll('.v114-connect')],inRoot=candidates.filter(x=>root.contains(x)&&x.dataset.v114Route===tool),existing=inRoot[0]||null;
     // Keep one connected-flow bar for exactly one active root. Older code
     // removed other routes but preserved same-route duplicates indefinitely.
@@ -334,11 +339,12 @@
   function verify(){
     const tool=route(),workspace=ROUTES.has(tool),row=readHandoff();
     let root=rootFor(tool),bar=root?.querySelector?.('.v114-connect');
+    const canonicalDashboard=tool==='dashboard'&&root?.dataset.workspaceOwner==='r284'&&!!root.querySelector('.v284-composer')&&!!root.querySelector('.v284-overview');
     // Verification doubles as a last-resort repair boundary. A rapid language
     // or Home→Workspace re-entry can legitimately settle between the route-ready
     // event and the next animation frame. Paint synchronously once so health
     // never depends on requestAnimationFrame timing.
-    if(workspace&&!!core()&&root&&!bar){
+    if(workspace&&!!core()&&root&&!bar&&!canonicalDashboard){
       // paint() is singleton-safe. If the route root is already available,
       // health verification may complete the connected-flow mount even while
       // the broader Workspace entry class is finishing its final frame.
@@ -346,7 +352,8 @@
     }
     const stale=!!row&&Date.now()>Number(row.expiresAt||0),all=[...document.querySelectorAll('.v114-connect')],activeBars=root?all.filter(x=>root.contains(x)&&x.dataset.v114Route===tool).length:0,staleBars=all.length-activeBars;
     const actionCount=bar?.querySelectorAll?.('[data-v114-action]').length||0;
-    return {ok:!workspace||!!core()&&!!bar&&actionCount>=1&&actionCount<=4&&!stale&&activeBars<=1&&staleBars===0,release:'r203',tool,workspace,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
+    const surface=canonicalDashboard?all.length===0:!!bar&&actionCount>=1&&actionCount<=4;
+    return {ok:!workspace||!!core()&&surface&&!stale&&activeBars<=1&&staleBars===0,release:'r284',tool,workspace,canonicalDashboard,bar:!!bar,actionCount,staleHandoff:stale,duplicateBars:Math.max(0,activeBars-1),staleBars,pendingHandoff:row?{from:row.from,to:row.to,age:Date.now()-row.at}:null};
   }
   function selftest(){
     const expected=['dashboard','ai','tutor','education','planner','focus','flashcards','assignments','reminders','progress','goal','language','files','project','schools','study'];

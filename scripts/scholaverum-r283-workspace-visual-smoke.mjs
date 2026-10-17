@@ -14,7 +14,7 @@ const wait=async selector=>page.waitForSelector(selector,{state:'visible',timeou
 try{
  await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForFunction(()=>window.__SCHOLARK_WORKSPACE__?.openTool && document.body.classList.contains('v51-workspace'),null,{timeout:30000});
- await page.waitForFunction(()=>[...document.querySelectorAll('link[rel="stylesheet"]')].some(x=>x.href.includes('scholark-v126-workspace-integrity.css?v=20261017-r283-premium')),null,{timeout:20000});
+ await page.waitForFunction(()=>[...document.querySelectorAll('link[rel="stylesheet"]')].some(x=>x.href.includes('scholark-v126-workspace-integrity.css?v=20261017-r284')),null,{timeout:20000});
  await open('ai');await wait('#v107-ai .v107-main');
  const arki=await page.evaluate(()=>{
   const root=document.getElementById('v107-ai'),header=root.querySelector('.v107-head h1'),input=root.querySelector('.v107-compose textarea'),panel=root.querySelector('.v107-main');
@@ -45,7 +45,7 @@ try{
  await open('dashboard');await wait('#v51-main [data-v51-page="dashboard"].active .v51-grid');
  const aligned=await page.evaluate(()=>{
   const root=document.querySelector('#v51-main [data-v51-page="dashboard"].active');
-  const a=root.querySelector('.v51-levels').getBoundingClientRect(),b=root.querySelector('.v51-head').getBoundingClientRect(),c=root.querySelector('.v51-grid').getBoundingClientRect();
+  const a=root.querySelector('.v51-head').getBoundingClientRect(),b=root.querySelector('.v284-composer').getBoundingClientRect(),c=root.querySelector('.v284-overview').getBoundingClientRect();
   return a.bottom<=b.top+15&&b.bottom<=c.top+15;
  });
  assert.ok(aligned,'Workspace levels, headline and cards must not overlap after tool switches');

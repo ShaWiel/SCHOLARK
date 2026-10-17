@@ -145,7 +145,7 @@
       if(a==='switch'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');window.__SCHOLARK_V72_CLOUD__?.switchAccount?.(b.dataset.v55Key);return}
       if(a==='add-profile'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signup');return}
       if(a==='manage'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');if(window.__SCHOLARK_V89_ACCOUNT__?.open){window.__SCHOLARK_V89_ACCOUNT__.open();return}if(!clickNative(/^(account|my account|profile|profiel|settings|instellingen|account settings)$/i)){setTimeout(()=>window.__SCHOLARK_V89_ACCOUNT__?.open?.(),120)}}
-      else if(a==='plans'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'})}
+      else if(a==='plans'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');location.hash='#pricing'}
       else if(a==='signin'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');openAuth('signin')}
       else if(a==='signout'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');doSignOut();setTimeout(syncAuth,80)}
     });

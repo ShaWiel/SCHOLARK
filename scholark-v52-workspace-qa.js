@@ -83,6 +83,7 @@
   function dashboardPage(){return $('[data-v51-page="dashboard"]',$('#v51-main'))}
   function cleanDashboard(){
     const dash=dashboardPage();if(!dash)return;
+    if(dash.querySelector('[data-workspace-owner="r284"]'))return;
     const projectCard=$('[data-v51-tool="project"]',dash);if(projectCard)projectCard.remove();
     $$('[data-recent-project],.recent-projects,.project-history',dash).forEach(el=>el.remove());
   }

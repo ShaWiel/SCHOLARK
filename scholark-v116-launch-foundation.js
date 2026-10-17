@@ -78,8 +78,9 @@
     const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell)return;
     const boxes=[...shell.querySelectorAll('#v116-onboarding')];boxes.slice(0,-1).forEach(x=>x.remove());
     let box=boxes.at(-1)||null;const state=readOnboarding();
+    const setup=$('.v284-setup',shell);if(setup)setup.hidden=!!state.dismissed;
     if(state.dismissed){box?.remove();return}
-    if(!box){box=document.createElement('section');box.id='v116-onboarding';box.className='v116-onboarding';const anchor=$('.v51-head',shell);anchor?.insertAdjacentElement('afterend',box)}
+    if(!box){box=document.createElement('section');box.id='v116-onboarding';box.className='v116-onboarding';const anchor=$('.v51-head',shell);if(setup)setup.appendChild(box);else anchor?.insertAdjacentElement('afterend',box)}
     const country=localStorage.getItem('scholark_country')||'',level=localStorage.getItem('scholark_learning_level')||'',signed=!!token();
     const steps=[
       ['profile','1 · Country & level','Set the education system SCHOLAVERUM should use.',!!country&&!!level],

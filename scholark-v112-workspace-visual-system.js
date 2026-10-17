@@ -26,7 +26,6 @@
   const css=[
     ":root{--v112-ink:#151821;--v112-lime:#c9ff6a;--v112-violet:#6d5dfc;--v112-line:rgba(23,25,31,.08)}",
     "body.v51-workspace{background:radial-gradient(circle at 78% 10%,rgba(109,93,252,.07),transparent 28%),linear-gradient(180deg,#f8f7f2,#efede7)!important}",
-    "body.v51-workspace #v51-main{background:transparent!important}",
     ".v111-live.v112-live{position:relative;overflow:hidden;border:0!important;border-radius:30px!important;padding:22px!important;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(247,245,255,.96))!important;box-shadow:0 28px 85px rgba(31,27,63,.11)!important;isolation:isolate}",
     ".v111-live.v112-live:before{content:'';position:absolute;width:390px;height:390px;border-radius:50%;right:-190px;top:-210px;background:var(--v112-accent,#6d5dfc);opacity:.09;pointer-events:none;z-index:-1}",
     ".v111-live.v112-live[data-v112-tone=lime]{--v112-accent:#9fdc38}.v111-live.v112-live[data-v112-tone=violet]{--v112-accent:#6d5dfc}",

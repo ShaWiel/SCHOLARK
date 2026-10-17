@@ -448,6 +448,7 @@ await page.evaluate(()=>{
 });
 await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
+await page.locator('.v284-level-picker').evaluate(el=>{el.open=true});
 check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level strip did not mount');
 check(await page.locator('#v90-language option').count()===74,`Workspace language selector should expose 74 languages`);
 check(await page.evaluate(()=>{
@@ -580,7 +581,7 @@ const languageLayout=await page.evaluate(()=>{
     overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open')===true
   };
 });
-check(languageLayout.title==='Tu espacio de aprendizaje y creación.',`Rapid language switching left wrong dashboard title: ${languageLayout.title}`);
+check(languageLayout.title==='¿Qué descubrirás hoy?',`Rapid language switching left wrong dashboard title: ${languageLayout.title}`);
 check(languageLayout.h1Count===1,`Dashboard headline duplicated after language stress: ${languageLayout.h1Count}`);
 check(languageLayout.visibleHuge.length===0,`Oversized workspace text appeared after language stress: ${JSON.stringify(languageLayout.visibleHuge)}`);
 check(languageLayout.titleBottom<=languageLayout.gridTop,`Translated dashboard headline overlaps tool grid: ${JSON.stringify(languageLayout)}`);
@@ -634,7 +635,7 @@ check(reentryState.route==='#dashboard'&&reentryState.workspace&&reentryState.wo
 check(!reentryState.entering&&!reentryState.bodyPublic&&!reentryState.htmlPublic,`Home state leaked into Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.topbarDisplay===''&&reentryState.homeDisplay==='none',`Home UI remained visible over Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.mainCount===1&&reentryState.sidebarCount===1&&reentryState.homeCount===1&&reentryState.h1Count===1,`Workspace/home surfaces duplicated after rapid re-entry: ${JSON.stringify(reentryState)}`);
-check(reentryState.title==='Tu espacio de aprendizaje y creación.',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
+check(reentryState.title==='¿Qué descubrirás hoy?',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
 check(reentryState.huge.length===0&&reentryState.titleBottom<=reentryState.gridTop,`Workspace layout glitched after Home round-trip: ${JSON.stringify(reentryState)}`);
 
 // Also exercise the actual Home CTA route once, not only direct hash return.
@@ -662,7 +663,7 @@ const ctaReentry=await page.evaluate(()=>{
     titleBottom:hr?.bottom||0,gridTop:gr?.top||0
   };
 });
-check(ctaReentry.title==='Tu espacio de aprendizaje y creación.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='missing'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
+check(ctaReentry.title==='¿Qué descubrirás hoy?'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='missing'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
 
 await checkWorkspaceSingletons('Home CTA re-entry 1');
 for(let cycle=2;cycle<=6;cycle++){
@@ -1456,6 +1457,7 @@ check(await bookComing.count()===1,'Book Studio Coming Soon entry missing');
 check((await bookComing.getAttribute('data-v51-inactive'))==='1','Book Studio should remain feature-gated in R194');
 check((await bookComing.innerText()).includes('COMING SOON'),'Book Studio feature gate is not visible to users');
 await route('dashboard','#v51-main [data-v51-page="dashboard"].active');
+await page.locator('.v284-level-picker').evaluate(el=>{el.open=true});
 check(await visible('.v51-levels.v51-levels-suriname',5000),'Suriname groups disappeared after workspace route round-trip');
 
 // Full 74-language route/layout pass. Dynamic languages use the local deterministic

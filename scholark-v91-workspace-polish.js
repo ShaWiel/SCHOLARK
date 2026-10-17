@@ -70,7 +70,7 @@
     return {tool:'files',title:'Start with your material',desc:'Upload notes, slides or a document and turn it into a study or creation workflow'};
   }
   function dashboard(){
-    const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell)return;
+    const shell=$('#v51-main [data-v51-page="dashboard"] .v51-shell');if(!shell||shell.dataset.workspaceOwner==='r284')return;
     if(!$('.v91-quick',shell)){
       const q=document.createElement('div');q.className='v91-quick';q.innerHTML=[
         ['tutor','Ask Tutor','Deep explanation + examples'],['files','Use my files','Summaries, quizzes and notes'],['education','Run diagnostic','Find weak topics fast'],['language','Learn a language','Adaptive vocabulary + conversation'],['studio','Create in Studio','Build a polished artifact'],['study','Study Ahead','Prepare for a future field']

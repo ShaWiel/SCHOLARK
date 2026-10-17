@@ -7,7 +7,7 @@
   window.__SCHOLARK_V101_CORE_FOUNDATION__ = true;
 
   const $ = (s, r = document) => r.querySelector(s);
-  const RELEASE = 'r282-workspace-tour';
+  const RELEASE = 'r284-workspace-rebuild';
   const STUDIO = new Set(['studio','presentation','webpage','document','report','graphic','social']);
   const INACTIVE = new Set(['studio','presentation','webpage','document','report','graphic','social','book','connect']);
   const state = { lastRoute:'', routeEpoch:0, repairs:0, recoveries:0, duplicateRepairs:0, errors:[], lastRepairAt:0, schoolWheelBound:false };
@@ -138,12 +138,15 @@
   }
 
   function homeSurfaceHealthy() {
+    if(routeInfo().base==='pricing')return isVisible($('#v41-home-pricing'),240,180)&&isVisible($('#v55-topbar'),240,40);
     if(document.documentElement.classList.contains('scholark-home-language-adapting')&&$('#v90-language-overlay.open'))return true;
     return isVisible($('#v29-home-layer'), 180, 150);
   }
 
   function previewHealthy() {
     try {
+      const current=$('#v280-editorial-home');
+      if(current)return !!current.querySelector('#v280-hero')&&!!current.querySelector('#v280-app-preview [class]');
       if (window.__SCHOLARK_HOME_CINEMATICS__?.healthy) return window.__SCHOLARK_HOME_CINEMATICS__.healthy();
       if (window.__SCHOLARK_V32_PREVIEW__?.healthy) return window.__SCHOLARK_V32_PREVIEW__.healthy();
     } catch (e) { rememberError(e,'preview-health'); return false; }
@@ -329,7 +332,7 @@
       connectedExperience:publicSurface||!!window.__SCHOLARK_V111_EXPERIENCE__,
       workspaceRootLocked:publicSurface||document.documentElement.classList.contains('v51-workspace-root'),
       localeControls:publicSurface||(!!document.querySelector('#v90-language')&&!!document.querySelector('#v96-side-country select')),
-      language74:window.__SCHOLARK_I18N__?.count===75&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
+      language74:window.__SCHOLARK_I18N__?.count===74&&i18nReport?.ok===true&&!window.__SCHOLARK_I18N__?.langs?.some?.(([lc])=>lc==='srn'),
       languageResilience:i18nReport?.abortable===true&&i18nReport?.retryReady===true,
       languageCoverage:window.__SCHOLARK_I18N__?.coverage?.(620)||null,
       globalCountryRegistry:countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195,

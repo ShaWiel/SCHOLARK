@@ -4,7 +4,7 @@ if(window.__SCHOLAVERUM_R280_REBUILD__)return;
 window.__SCHOLAVERUM_R280_REBUILD__=true;
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const home=()=>{const p=(location.pathname||'/').replace(/\/+$/,'')||'/';const h=(location.hash||'').replace(/^#/,'').split(/[?&]/)[0].toLowerCase();return(p==='/'||p==='/index.html')&&(h===''||h==='home')};
+const home=()=>{const p=(location.pathname||'/').replace(/\/+$/,'')||'/';const h=(location.hash||'').replace(/^#/,'').split(/[?&]/)[0].toLowerCase();return(p==='/'||p==='/index.html')&&(h===''||h==='home'||h==='start')};
 const reduced=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 const lang=()=>{try{return localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en'}catch{return document.documentElement.lang||'en'}};
 const EN={
@@ -125,7 +125,7 @@ function choose(id){
  if(!['arki','tutor','language','schools'].includes(id))id='arki';chosen=id;
  $$('#v280-editorial-home [data-v280-tab]').forEach(btn=>{const selected=btn.dataset.v280Tab===id;btn.setAttribute('aria-selected',String(selected));btn.tabIndex=selected?0:-1});
  $('#v280-demo')?.setAttribute('aria-labelledby','v280-tab-'+id);
- const preview=$('#v280-app-preview');if(preview)preview.innerHTML=scene(id);
+ const preview=$('#v280-app-preview');if(preview&&preview.dataset.scene!==id){preview.innerHTML=scene(id);preview.dataset.scene=id;}
 }
 function mount(){
  const layer=$('#v29-home-layer');if(!layer)return;
@@ -245,7 +245,7 @@ window.addEventListener('scroll',queueProgress,{passive:true});window.addEventLi
 window.addEventListener('hashchange',()=>setTimeout(sync,60));window.addEventListener('pageshow',()=>setTimeout(sync,40));
 ['scholark:topbar-ready','scholark-runtime-ready','scholark-return-home','scholark-route-painted'].forEach(event=>window.addEventListener(event,()=>setTimeout(sync,50)));
 ['scholark-language-ready','scholark-language-applied','scholark-language-change'].forEach(event=>window.addEventListener(event,()=>setTimeout(translate,100)));
-const css=document.createElement('link');css.rel='stylesheet';css.href='scholark-v124-editorial-home.css?v=20261017-r281-motion-home';document.head.appendChild(css);
+if(!document.getElementById('scholaverum-home-style')){const css=document.createElement('link');css.id='scholaverum-home-style';css.rel='stylesheet';css.href='scholark-v124-editorial-home.css?v=20261017-r284';document.head.appendChild(css)}
 [0,160,500,1300].forEach(ms=>setTimeout(sync,ms));
 window.__SCHOLAVERUM_R280_HOME__={sync,choose,home,version:'r281-motion-home'};
 })();

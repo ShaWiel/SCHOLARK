@@ -38,7 +38,7 @@ try{
  await page.waitForTimeout(600);
  const dashboard=await page.evaluate(()=>{
   const main=document.querySelector('#v51-main'),shell=main?.querySelector('[data-v51-page="dashboard"].active .v51-shell');
-  const a=shell?.querySelector('.v51-levels')?.getBoundingClientRect(),b=shell?.querySelector('.v51-head')?.getBoundingClientRect(),c=shell?.querySelector('.v51-grid')?.getBoundingClientRect();
+  const a=shell?.querySelector('.v51-head')?.getBoundingClientRect(),b=shell?.querySelector('.v284-composer')?.getBoundingClientRect(),c=shell?.querySelector('.v284-overview')?.getBoundingClientRect();
   return {mainCount:document.querySelectorAll('#v51-main').length,
    sidebarCount:document.querySelectorAll('#v51-sidebar').length,
    dashCount:main?.querySelectorAll('[data-v51-page="dashboard"]').length,
@@ -50,8 +50,8 @@ try{
  assert.equal(dashboard.sidebarCount,1,'one sidebar');
  assert.equal(dashboard.dashCount,1,'one dashboard');
  assert.ok(dashboard.css,'new layout CSS must be served');
- assert.ok(dashboard.levelBeforeHeading,'education-level cards overlap headline');
- assert.ok(dashboard.headingBeforeGrid,'headline overlaps dashboard cards');
+ assert.ok(dashboard.levelBeforeHeading,'dashboard heading overlaps composer');
+ assert.ok(dashboard.headingBeforeGrid,'dashboard composer overlaps overview');
 
  await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('language'));
  await page.waitForFunction(()=>location.hash==='#language'&&window.__SCHOLARK_V93_LANGUAGE__?.openSavedLibrary,null,{timeout:25000});

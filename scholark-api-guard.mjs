@@ -70,10 +70,17 @@ function securityHeaders(res) {
 function applyStaticCachePolicy(req,res,url){
   if(res.headersSent||url.pathname.startsWith('/api/'))return;
   const p=url.pathname.toLowerCase();
-  const versioned=/-(?:r\d+|v\d+)(?:[._-]|$)/.test(p)||url.searchParams.has('v');
+  // The loader is the release manifest. Caching it as immutable can revive an
+  // entire retired UI even when the document itself was freshly retrieved.
+  if(p==='/'||p.endsWith('.html')||p.endsWith('/scholark-runtime-loader.js')||p.endsWith('/scholark-sw.js')){
+    res.setHeader('cache-control','no-cache, max-age=0, must-revalidate');return;
+  }
+  // v51 etc. are module names, not content versions. Only a release-qualified
+  // URL (or a release-named image) is safe to cache for a full year.
+  const versioned=/-r\d+(?:[._-]|$)/.test(p)||!!url.searchParams.get('v');
   const asset=/\.(?:js|mjs|css|png|webp|svg|ico|woff2?|ttf|json|webmanifest)$/.test(p);
   if(versioned&&asset){if(!res.hasHeader('cache-control'))res.setHeader('cache-control','public, max-age=31536000, immutable');return}
-  if(p==='/'||p.endsWith('.html')||p.endsWith('/scholark-runtime-loader.js')){
+  if(asset){
     if(!res.hasHeader('cache-control'))res.setHeader('cache-control','no-cache, max-age=0, must-revalidate');
   }
 }

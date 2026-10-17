@@ -48,6 +48,7 @@ jobs:
           node --check scholark-v126-workspace-integrity.js
           node --check scripts/scholaverum-r282-integrated-smoke.mjs
           node --check scripts/scholaverum-r283-workspace-visual-smoke.mjs
+          node --check scripts/scholaverum-r284-rebuild-smoke.mjs
           node --check scripts/scholaverum-r281-motion-contract.mjs
           node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
@@ -72,6 +73,7 @@ jobs:
           node scripts/scholark-r275-burst-memory-smoke.mjs
           node scripts/scholark-r277-arki-tutor-isolation-smoke.mjs
           node scripts/scholark-foundation-network-smoke.mjs
+          node scripts/scholaverum-r284-data-contract.mjs
           node scripts/scholark-static-audit.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
@@ -150,6 +152,8 @@ jobs:
         run: node scripts/scholaverum-r281-motion-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
+        run: node scripts/scholaverum-r284-rebuild-smoke.mjs http://127.0.0.1:10000
       - name: Validate r283 premium Workspace and mobile layout
         run: node scripts/scholaverum-r283-workspace-visual-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression

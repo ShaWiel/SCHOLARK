@@ -123,8 +123,8 @@
   function ensurePricing(){
     if(!landing())return;
     const layer=$('#v29-home-layer');if(!layer)return;
-    let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();const shell=$('.v29-shell',layer)||layer;const final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);final?shell.insertBefore(p,final):shell.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$$('[data-plan]',p).forEach(b=>{const plan=b.dataset.plan;if(plan==='free'){b.onclick=()=>{history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'))}}else{b.onclick=null;b.dataset.billingOwner='v115';}});}
-    if(p){p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity');const shell=$('.v29-shell',layer)||layer,final=$('.v29-final,.v29-final-cta,[class*="final-cta"]',shell);if(final&&p.nextElementSibling!==final)shell.insertBefore(p,final)}
+    let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();document.body.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$$('[data-plan]',p).forEach(b=>{const plan=b.dataset.plan;if(plan==='free'){b.onclick=()=>{history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'))}}else{b.onclick=null;b.dataset.billingOwner='v115';}});}
+    if(p){if(p.parentElement!==document.body)document.body.appendChild(p);p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity')}
     if((location.hash||'').toLowerCase().includes('pricing'))setTimeout(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}),120);
   }
 
@@ -134,7 +134,7 @@
     document.addEventListener('click',e=>{
       if(!landing())return;
       const el=e.target.closest('a,button,[role="button"],span');if(!el)return;
-      if(/^(prijzen|pricing)$/i.test(text(el))){e.preventDefault();e.stopPropagation();ensurePricing();$('#v41-home-pricing')?.scrollIntoView({behavior:'smooth',block:'start'});}
+      if(/^(prijzen|pricing)$/i.test(text(el))){e.preventDefault();e.stopPropagation();location.hash='#pricing';ensurePricing();}
     },true);
   }
 
