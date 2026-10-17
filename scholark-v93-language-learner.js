@@ -353,6 +353,14 @@
   addEventListener('scholark:language-choice',e=>{
     if(!current)return;const p=loadProgress(),code=current.targetCode,x=p[code]||{level:current.level||'A1'};x.attempts=(Number(x.attempts)||0)+1;if(e.detail?.correct)x.correct=(Number(x.correct)||0)+1;else{x.incorrect=(Number(x.incorrect)||0)+1;x.lastWeakTopic=current.topic||x.lastWeakTopic||''}p[code]=x;saveProgress(p);renderStats(code);pushCloudProgress(code);
   });
+  const closeLibraryIfLeaving=()=>{
+    if(String(location.hash||'').toLowerCase().split(/[?&]/)[0]==='#language')return;
+    document.querySelectorAll('.v93-library-modal').forEach(node=>node.remove());
+  };
+  addEventListener('scholark-workspace-change',event=>{
+    if(event?.detail?.to!=='language')closeLibraryIfLeaving();
+  });
+  addEventListener('hashchange',closeLibraryIfLeaving);
   addEventListener('hashchange',()=>{if(location.hash.toLowerCase()==='#language')setTimeout(()=>open(false),40)});
   setTimeout(()=>{if(location.hash.toLowerCase()==='#language')open(false)},260);
   function selftest(){
