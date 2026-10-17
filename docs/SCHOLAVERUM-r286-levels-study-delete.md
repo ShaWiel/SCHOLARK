@@ -1,0 +1,13 @@
+# SCHOLAVERUM r286 — expanded learning level selection and Study Ahead cleanup
+
+## Requested improvements
+- Expand the Your Learning Level section across the full dashboard width when opened. Show all Suriname level groups and worldwide categories in a responsive grid with no internal sideways carousel.
+- Quarantine retired homepage and Workspace surfaces by route-specific prepaint CSS and the Workspace integrity guard, and require a single canonical r285 layout before initial Workspace paint.
+- Add Remove per saved Study Ahead plan and confirmed Remove all, delete authenticated user-owned records from Supabase, clear currently displayed removed records and local cache, prevent stale loads during deletion, and provide accessible feedback.
+
+## Safety and verification
+- Supabase study_ahead has RLS enabled, authenticated SELECT/DELETE grants and authenticated user ownership policies; anon cannot DELETE.
+- Frontend destructive operations require an authenticated session and specify user_id filters. Remove all requires confirmation. Requests report failures without hiding unsaved data.
+- r286 browser smoke uses mocked cloud requests and verifies account isolation without deleting any real production study data.
+- CI static checks and full cross-browser regression passed on application commit `036a0ced7867b32bcc25cf516e2dac11c3ac978c`.
+- Release gate must pass before manual Render deployment; then run production verification.
