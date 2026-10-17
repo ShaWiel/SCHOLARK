@@ -406,20 +406,13 @@ check(await visible('#v116-dialog.open',3000),'Service status did not open from 
 check(/service status|operational/i.test(await page.locator('#v116-dialog').innerText()),'Service status dialog content missing');
 await page.keyboard.press('Escape');
 
-// Cinematic prompt must visibly type even when the lightweight performance-safe mode is active.
-const cinematicTyping=await page.evaluate(async()=>{
-  const html=document.documentElement,api=window.__SCHOLARK_V30_DEMO__,input=document.querySelector('#v29-prompt');
-  if(!api||!input)return{ok:false,reason:'missing-demo'};
-  const hadSafe=html.classList.contains('scholark-performance-safe');
-  api.stop?.();html.classList.add('scholark-performance-safe');input.blur();api.start?.();
-  await new Promise(r=>setTimeout(r,90));const first=input.value;
-  const cursor1=input.classList.contains('v30-typing-cursor');
-  await new Promise(r=>setTimeout(r,180));const second=input.value;
-  if(!hadSafe)html.classList.remove('scholark-performance-safe');
-  api.stop?.();api.start?.();
-  return{ok:true,first,second,cursor1};
+// Retired demo timers must remain stopped under the editorial homepage.
+const retiredDemo=await page.evaluate(async()=>{
+  const api=window.__SCHOLARK_V30_DEMO__,root=document.querySelector('#v280-editorial-home'),old=document.querySelector('#v29-home-layer>.v29-shell');
+  api?.start?.();await new Promise(r=>setTimeout(r,150));
+  return {current:!!root&&root.getBoundingClientRect().height>100,legacyHidden:!!old&&getComputedStyle(old).display==='none',running:api?.isRunning?.()===true};
 });
-check(cinematicTyping.ok&&cinematicTyping.first.length>0&&cinematicTyping.second.length>cinematicTyping.first.length&&cinematicTyping.cursor1,'Cinematic prompt is not visibly typing in performance-safe mode: '+JSON.stringify(cinematicTyping));
+check(retiredDemo.current&&retiredDemo.legacyHidden&&!retiredDemo.running,'Retired homepage demo resumed behind the editorial surface: '+JSON.stringify(retiredDemo));
 
 // The public topbar must show a Wallet action, never the raw credit amount.
 check(await visible('#v55-topbar .v85-topbar-credit',5000),'Wallet topbar action missing');
