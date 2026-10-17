@@ -63,7 +63,7 @@ try{
   window.__SCHOLAVERUM_WORKSPACE_GUARD__?.audit?.();
  });
  assert.equal(await page.evaluate(()=>{const el=document.querySelector('#v48-dashboard');return !el||getComputedStyle(el).display==='none'}),true,'retired Workspace cannot overlay the current one');
- assert.ok(await page.evaluate(()=>document.querySelector('#v29-home-layer')?.hidden),'reopened retired Home is re-quarantined');
+ assert.equal(await page.evaluate(()=>{const el=document.querySelector('#v29-home-layer');return !el||el.hidden||getComputedStyle(el).display==='none'}),true,'retired Home cannot appear over Workspace');
  assert.equal(await page.locator('#v51-main').count(),1);
  await page.locator('#v51-sidebar [data-v51-tool="study"]').click();
  await page.waitForFunction(()=>location.hash==='#study'&&document.querySelectorAll('#v83-saved [data-v83-saved]').length===2,null,{timeout:30000});
