@@ -1,6 +1,6 @@
 # SCHOLAVERUM r284 — Workspace rebuild and surface ownership
 
-The Workspace now starts with a calm, serif-led dashboard, an assistant composer, study starters, recent tools, next actions, a collapsible education-level picker and a compact tool directory. The canonical dashboard is produced by V51 from one template and retains the existing study tools, stored work and Coming Soon boundaries.
+The Workspace now starts with a calm, serif-led dashboard, an assistant composer, study starters, recent tools, next actions, a collapsible education-level picker and a compact tool directory. ARKI and AI Tutor use the same warm reading surfaces and serif headings; their conversations lead the page and connected insights follow below. The canonical dashboard is produced by V51 from one template and retains the existing study tools, stored work and Coming Soon boundaries.
 
 The recurring double-surface defect had several contributors: old foundation CSS made the Workspace transparent; the old Tutor helper removed a canonical dashboard card; independent decorators inserted legacy dashboard panels; and the old homepage adapter could mistake Credit Store for retired homepage content. These owners now respect the canonical surfaces. Pricing is mounted independently of the retired homepage shell.
 
