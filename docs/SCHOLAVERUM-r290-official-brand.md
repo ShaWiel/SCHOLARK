@@ -16,3 +16,6 @@ The approved transparent purple/lime orbital SCHOLAVERUM image is now the offici
 
 ## QA
 `scripts/scholaverum-r290-brand-unification-smoke.mjs` tests logo and icon HTTP responses, PWA manifest, preload and OG tags, Dashboard/sidebar/mobile, public topbar, singleton Workspace, and unchanged homepage sphere. Existing cross-browser, mobile, cinematic, and school tests remain mandatory. Deploy only after full CI, CodeQL, and release gate; then run production verification.
+
+## QA retry — historical navigation brand guard
+The first release-gate run passed the new brand-specific QA, including the homepage sphere exception, but detected a legacy foundation brand predicate during history reload. The r290 fix updates the V113 hardening module to repair the canonical logo before its audit and updates the V53 emergency logo to match. The full browser gate is rerun; deployment remains blocked until green.
