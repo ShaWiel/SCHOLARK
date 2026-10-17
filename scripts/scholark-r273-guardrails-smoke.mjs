@@ -16,7 +16,7 @@ assert.match(sql, /REVOKE ALL PRIVILEGES ON TABLE public\.%I FROM PUBLIC, anon, 
 assert.doesNotMatch(sql, /\bDROP\s+(TABLE|FUNCTION)\b/i, 'Do not delete existing Connect data');
 assert.match(read('scholark-v122-connect.js'), /CONNECT_RELEASE_STATE='coming-soon'/);
 
-const release = 'r277-arki-tutor-isolation';
+const release = 'r278-language-live-surface';
 assert.ok(runtime.includes("const VERSION = '20261016-" + release + "'"));
 assert.ok(runtime.includes("connect:false,release:'" + release + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
@@ -90,4 +90,4 @@ assert.match(productionAudit, /verifyWebhookDestination\(\{readOnly:ENV==='produ
 assert.match(billing, /reason=ok\?'':!active\?'price_inactive'/,
   'Price validation failures must include specific reasons instead of http_unknown');
 
-console.log('SCHOLAVERUM r273 GUARDRAILS RETAINED IN r277: Connect API launch lock, release alignment, production Paddle audit is read-only and diagnostics are specific');
+console.log('SCHOLAVERUM r273 GUARDRAILS RETAINED IN r278: Connect API launch lock, release alignment, production Paddle audit is read-only and diagnostics are specific');
