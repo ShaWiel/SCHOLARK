@@ -327,7 +327,7 @@ ok(!workspaceBlock.includes('scholark-v43-studio-workspace.js')&&!workspaceBlock
 ok(runtime.includes('studio:[]')&&runtime.includes("planner:['scholark-v52-workspace-qa.js']")&&runtime.includes("project:['scholark-v64-projects.js'")&&runtime.includes("ai:['scholark-v107-general-ai.js']"),'Lazy feature routing is incomplete after workspace boot optimization');
 ok(runtime.includes("ai:['scholark-v107-general-ai.js']")&&runtime.includes("'scholark-v107-general-ai.js'"),'General SCHOLARK AI is not lazy-loaded as a workspace feature');
 ok(docker.includes('COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js'),'General SCHOLARK AI module is not shipped in the production image');
-ok(prepaint.includes("if(r==='workspace')return document.getElementById('v51-main')"),'Direct #ai boot is not protected by prepaint');
+ok(prepaint.includes("if(r==='workspace')")&&prepaint.includes("data-workspace-layout=")&&prepaint.includes("document.querySelectorAll('#v51-main').length===1")&&prepaint.includes("cssReady('scholaverum-workspace-style')"),'Direct #ai boot requires the canonical single Workspace before first paint');
 ok(stabilityFoundation.includes('dashboard|studio|ai|tutor')&&foundationHealth.includes("'dashboard','studio','ai','tutor'"),'Foundation route guards do not recognize SCHOLARK AI');
 ok(homeFoundation.includes('documentWideObserver:false')&&!homeFoundation.includes('obs.observe(document.body')&&!homeFoundation.includes('obs.observe(document.documentElement'),'Home foundation still watches the full DOM');
 ok(runtime.includes('preloadFiles(files)')&&runtime.includes('preloadFiles(required(key))'),'Runtime does not preload route dependencies before ordered execution');
