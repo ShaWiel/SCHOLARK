@@ -17,3 +17,5 @@
 
 ## Safe rollout
 No Paddle payment settings, account data, RLS, AI routes, subscription handling or legacy Home ownership are modified. Release only after all checks pass; deploy the gated SHA explicitly to scholark-web, then run the production smoke. Existing Workspace tests remain enabled.
+## Gate retry 1
+The brand test correctly found the new SVG, original logo and motion, but measured the mobile CSS duration after the mobile Dashboard leg while expecting desktop speed. The test now restores desktop viewport for 22-second animation and checks the 25-second mobile variant separately. Runtime assets are unchanged.
