@@ -167,7 +167,7 @@
     <header class="v284-topline"><span><b>SCHOLAVERUM</b> <span class="v284-divider">/</span> <span>Workspace</span></span><div class="v285-command-actions"><span class="v284-date"></span><button type="button" data-v285-library><span>All tools</span> <span aria-hidden="true">↗</span></button></div></header>
     <section class="v284-welcome" aria-labelledby="v284-title">
       <div class="v51-head"><div><small>${DASHBOARD_SOURCE.kicker}</small><h1 id="v284-title">${DASHBOARD_SOURCE.title}</h1><p>${DASHBOARD_SOURCE.copy}</p></div></div>
-      <div class="v285-orbit v288-orbit-emblem" aria-hidden="true"><img src="/scholaverum-orbital-emblem-r288.svg" alt="" width="236" height="218" decoding="async"></div>
+      <div class="v285-orbit v288-orbit-emblem" aria-hidden="true"><img src="/scholaverum-official-logo-r290.webp" alt="" width="236" height="158" decoding="async"></div>
     </section>
     <section class="v285-launch-grid" aria-label="Start your next step">
      <article class="v285-ask"><div class="v285-panel-heading"><span class="v285-index">01</span><h2>Make it happen</h2><span class="v285-assistant-tag">ARKI + AI Tutor</span></div>
@@ -262,7 +262,7 @@
     for(const label of brands){let cur=label.parentElement;for(let i=0;cur&&cur!==document.body&&i<4;i++,cur=cur.parentElement){const mark=cur.querySelector('img,svg,picture');if(mark)return mark.cloneNode(true)}}
     return null;
   }
-  function refreshLogo(){const host=$('.v51-logo',side);if(!host)return;const expected='/scholaverum-logo-r246.png';const img=host.querySelector('img');if(img?.getAttribute('src')===expected){host.dataset.ready='1';return}host.innerHTML='<img src="'+expected+'" alt="SCHOLAVERUM logo" loading="eager" decoding="async" fetchpriority="high">';host.dataset.ready='1';}
+  function refreshLogo(){const host=$('.v51-logo',side);if(!host)return;const expected='/scholaverum-official-logo-r290.webp';const img=host.querySelector('img');if(img?.getAttribute('src')===expected){host.dataset.ready='1';return}host.innerHTML='<img src="'+expected+'" alt="SCHOLAVERUM logo" loading="eager" decoding="async" fetchpriority="high">';host.dataset.ready='1';}
 
   function keepSingleton(selector,preferred){
     const rows=document.querySelectorAll(selector),keep=preferred?.isConnected?preferred:(rows[0]||null);
