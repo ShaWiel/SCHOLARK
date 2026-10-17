@@ -46,8 +46,8 @@ assert.equal(made, 2);
 assert.equal(cleared, 2, 'Successful and failed session checks must release their timers');
 
 // Retain r272 behavioral regression tests while advancing the deployed release.
-const release = 'r278-language-live-surface';
-const cache = '20261016-' + release;
+const release = 'r279-cinematic-homepage';
+const cache = '20261017-' + release;
 assert.ok(runtime.includes("const VERSION = '" + cache + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
 assert.ok(docker.includes('ENV SCHOLARK_RELEASE=' + release));
