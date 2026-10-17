@@ -549,7 +549,7 @@
     for(const p of ['visibility','opacity','pointer-events'])home.style.removeProperty(p);
   }
 
-  const code=()=>{let v='nl';try{v=localStorage.getItem('scholark_ui_language')||document.documentElement.dataset.scholarkFallbackLanguage||'nl'}catch{v=document.documentElement.dataset.scholarkFallbackLanguage||'nl'}return LANGS.some(x=>x[0]===v)?v:'nl'};
+  const code=()=>{let v='nl';try{v=localStorage.getItem('scholark_ui_language')||document.documentElement.dataset.scholarkFallbackLanguage||'nl'}catch{v=document.documentElement.dataset.scholarkFallbackLanguage||'nl'}if(v==='cmn'){v='zh';try{localStorage.setItem('scholark_ui_language','zh')}catch{}}return LANGS.some(x=>x[0]===v)?v:'nl'};
   const isHomeRoute=()=>{
     const route=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');
     return !document.body.classList.contains('v51-workspace')&&['','home','pricing','start','credit-store'].includes(route);
@@ -1149,9 +1149,9 @@
     const excludedGone=[...excluded].every(x=>!LANGS.some(([lc])=>lc===x));
     const abortable=typeof AbortController==='function',retryReady=/resilient/.test(CACHE_VERSION);
     const sortedNames=LANGS.every((x,i)=>i===0||LANGS[i-1][2].localeCompare(x[2],'en',{sensitivity:'base'})<=0);
-    const mandarinReady=LANGS.some(([lc,native,english])=>lc==='cmn'&&native==='普通话'&&english==='Mandarin Chinese');
-    const ok=LANGS.length===75&&dynamicLocales.length===68&&sortedNames&&mandarinReady&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
-    const report={ok,count:LANGS.length,sortedNames,mandarinReady,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
+    const chineseReady=LANGS.some(([lc,,english])=>lc==='zh'&&english==='Chinese (Simplified)')&&!LANGS.some(([lc])=>lc==='cmn');
+    const ok=LANGS.length===74&&dynamicLocales.length===67&&sortedNames&&chineseReady&&uniqueCodes&&named&&rtlReady&&staticCoverage&&canonicalCrossLocale&&excludedGone&&abortable&&retryReady;
+    const report={ok,count:LANGS.length,sortedNames,chineseReady,dynamicCount:dynamicLocales.length,code:code(),localeCoverage,currentCoverage:visibleCoverage(620),cacheVersion:CACHE_VERSION,staticCoverage,rtlReady,canonicalCrossLocale,excludedGone,reverseIndexSize:reverseKnown.size,cacheEntryMax:CACHE_ENTRY_MAX,abortable,retryReady};
     console[ok?'log':'warn']('[SCHOLAVERUM] i18n self-test '+(ok?'PASS':'WARN'),report);
     return report;
   }
