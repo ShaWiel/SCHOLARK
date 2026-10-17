@@ -48,7 +48,8 @@ jobs:
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-language-nonblocking-smoke.mjs
-          node --check scripts/scholaverum-r279-home-smoke.mjs
+          node --check scholark-v124-editorial-home.js
+          node --check scripts/scholaverum-r280-home-smoke.mjs
           node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
@@ -176,8 +177,8 @@ jobs:
           node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-language-nonblocking-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-r278-live-i18n-smoke.mjs http://127.0.0.1:10000
-      - name: Validate r279 cinematic homepage desktop and mobile
-        run: node scripts/scholaverum-r279-home-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r280 rebuilt landing desktop and mobile
+        run: node scripts/scholaverum-r280-home-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
