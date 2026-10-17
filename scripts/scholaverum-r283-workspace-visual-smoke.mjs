@@ -38,7 +38,7 @@ try{
  await open('language');await wait('.v93-hero');
  const language=await page.evaluate(()=>{
    const r=document.querySelector('.v93'),p=r?.querySelector('.v93-card');
-   return {font:parseFloat(getComputedStyle(r.querySelector('input')).fontSize),cardRadius:parseFloat(getComputedStyle(p).borderTopLeftRadius)};
+   return {font:parseFloat(getComputedStyle(r.querySelector('select')).fontSize),cardRadius:parseFloat(getComputedStyle(p).borderTopLeftRadius)};
  });
  assert.ok(language.font>=12,'Language Learner inputs must be legible');
  assert.ok(language.cardRadius>=19,'Language Learner should use premium card shape');
