@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const app=readFileSync('scholark-v124-editorial-home.js','utf8');
+const css=readFileSync('scholark-v124-editorial-home.css','utf8');
+assert.ok(app.includes("$$('.v280-panel-graphic',root).forEach("),'Motion observers must select all graphic panels, not the singleton querySelector helper');
+assert.doesNotMatch(app,/(?<!\$)\$\('\.v280-panel-graphic',root\)\.forEach/,'Singleton selector must not be iterated');
+for(const marker of ['v281StageObserver','v281Refresh','v281Parallax','visibilitychange','prefers-reduced-motion'])assert.ok(app.includes(marker),'Missing motion lifecycle: '+marker);
+for(const marker of ['v281PlanetFloat','v281Orbit','v281SceneReveal','@media(prefers-reduced-motion:reduce)'])assert.ok(css.includes(marker),'Missing motion/reduced-motion stylesheet: '+marker);
+console.log('PASS r281 motion static contract: collection selector, lifecycle, reduced motion, keyframes');
