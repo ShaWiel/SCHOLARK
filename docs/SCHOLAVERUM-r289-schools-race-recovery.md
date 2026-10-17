@@ -13,3 +13,5 @@ Route cleanup could unset v51-schools while the lazy school-finder module was pe
 
 ## Rollout safety
 Release after full static audit, CI, CodeQL and browser release gate pass. Deploy exactly the gated commit to Render. Run read-only production verification afterwards. No user cloud data, billing, quota policies or AI providers modified.
+## Render deployment and post-launch QA
+The gated commit `3bc3c2667851e70c5f548d1a94fc28fcc6786204` passed static audit, CI, CodeQL and all browser release-gate checks, and is live on Render as deploy `dep-db9m6gu1egvs73fpug8g`. This documentation-only update triggers read-only live production browser verification. Production source code is unchanged by this trigger.
