@@ -233,3 +233,7 @@ html.v51-workspace-root body.v51-workspace #v51-main [data-workspace-layout="r28
   width:min(52vw,184px)!important;margin-top:10px!important
  }
 }
+
+/* r290 official brand: transparent approved 3:2 artwork in the existing orbit container. */
+html.v51-workspace-root body.v51-workspace #v51-main [data-workspace-layout="r285"] .v288-orbit-emblem{aspect-ratio:3 / 2!important}
+html.v51-workspace-root body.v51-workspace #v51-main [data-workspace-layout="r285"] .v288-orbit-emblem>img{object-fit:contain!important;filter:none!important}
