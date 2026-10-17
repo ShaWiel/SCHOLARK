@@ -24,7 +24,7 @@
     ['mn','Монгол','Mongolian'],['ne','नेपाली','Nepali'],['ps','پښتو','Pashto'],['sr','Српски','Serbian'],
     ['sk','Slovenčina','Slovak'],['sl','Slovenščina','Slovenian'],['so','Soomaali','Somali'],['si','සිංහල','Sinhala'],
     ['uz','Oʻzbekcha','Uzbek'],['cy','Cymraeg','Welsh'],['yo','Yorùbá','Yoruba'],['zu','isiZulu','Zulu'],
-    ['ha','Hausa','Hausa'],['cmn','普通话','Mandarin Chinese']
+    ['ha','Hausa','Hausa']
   ].sort((a,b)=>a[2].localeCompare(b[2],'en',{sensitivity:'base'})||a[0].localeCompare(b[0]));
   const languageOptionLabel=([,native,english])=>native===english?english:english+' · '+native;
   const STATIC_CORE_LANGS=new Set(['nl','en','es','fr','de','pt','it']);
