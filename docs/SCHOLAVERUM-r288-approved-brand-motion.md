@@ -19,3 +19,6 @@
 No Paddle payment settings, account data, RLS, AI routes, subscription handling or legacy Home ownership are modified. Release only after all checks pass; deploy the gated SHA explicitly to scholark-web, then run the production smoke. Existing Workspace tests remain enabled.
 ## Gate retry 1
 The brand test correctly found the new SVG, original logo and motion, but measured the mobile CSS duration after the mobile Dashboard leg while expecting desktop speed. The test now restores desktop viewport for 22-second animation and checks the 25-second mobile variant separately. Runtime assets are unchanged.
+
+## Live deployment verification trigger
+Approved r288 SHA `fb7929c2f4a9b6befb2df23489a6575d5ab0fa91` passed the complete release gate, CI and CodeQL. Render deployment `dep-db9m0ovavr4c73ej0jrg` completed with status LIVE. This documentation-only commit requests read-only live browser regression tests against the deployed r288 binary. No runtime assets change.
