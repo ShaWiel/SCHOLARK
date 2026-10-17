@@ -4,7 +4,6 @@ import {chromium} from 'playwright';
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const NEW='/scholaverum-official-logo-r290.webp';
 const ICON='/scholaverum-official-icon-r290.png';
-const BALL='/scholaverum-logo-r246.png';
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
 const errors=[];
@@ -20,6 +19,7 @@ try{
  assert.equal(manifest.icons[0].src,ICON,'installed PWA uses approved official icon');
  const html=await (await page.request.get(base+'/#dashboard')).text();
  assert.ok(html.includes('href="'+NEW+'"'),'first-paint preloader must use official logo');
+ assert.ok(html.includes('center/clamp(245px,31vw,380px) auto no-repeat'),'loading screen official emblem is slightly larger than previous build');
  assert.ok(html.includes('content="https://scholark-app-shawiel.onrender.com'+NEW+'"'),'social metadata must use the new official logo');
  assert.ok(html.includes(ICON),'favicon/apple icon must come from the new approved brand');
  await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:45000});
@@ -42,25 +42,42 @@ try{
  const mobile=await page.locator('.v288-orbit-emblem img').evaluate(el=>({width:el.getBoundingClientRect().width,natural:el.naturalWidth,display:getComputedStyle(el).display}));
  assert.ok(mobile.width>90&&mobile.natural>0&&mobile.display!=='none','official Dashboard brand remains visible on mobile');
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('.v288-branded-sphere .v288-sphere-spin',{state:'visible',timeout:30000});
+ await page.waitForSelector('.v291-official-hero-art .v291-official-logo-spin',{state:'visible',timeout:30000});
  const hero=await page.evaluate(async()=>{
-  const imgs=[...document.querySelectorAll('.v288-sphere-spin .v288-sphere-face img')];
-  await Promise.all(imgs.map(x=>x.decode()));
-  const legacy=[...document.images].filter(x=>(x.getAttribute('src')||'').includes('scholaverum-logo-r246.png')&&!x.closest('.v288-sphere-spin'));
+  const art=document.querySelector('#v280-editorial-home .v291-official-hero-art');
+  const rotor=art?.querySelector('.v291-official-logo-spin');
+  const img=rotor?.querySelector('img');
+  await img.decode();
   const topbar=document.querySelector('.v55-brand-logo');
-  const rotor=document.querySelector('.v288-sphere-spin');
-  return {ballUrls:imgs.map(x=>x.getAttribute('src')),loaded:imgs.every(x=>x.naturalWidth>0),extraLegacy:legacy.length,topbarSrc:topbar?.getAttribute('src')||null,spin:getComputedStyle(rotor).animationDuration};
+  return {rendered:document.querySelectorAll('.v291-official-logo-spin').length,
+    oldBall:document.querySelectorAll('.v280-planet,.v288-branded-sphere,.v288-sphere-spin').length,
+    oldOrbits:art.querySelectorAll('.v280-orbit').length,
+    path:img.getAttribute('src'),natural:img.naturalWidth,
+    spin:getComputedStyle(rotor).animationName,
+    duration:getComputedStyle(rotor).animationDuration,
+    repeat:getComputedStyle(rotor).animationIterationCount,
+    main:rotor.offsetWidth*.30,legacyDiameter:art.getBoundingClientRect().width*.76,
+    topbarSrc:topbar?.getAttribute('src')||null};
  });
- assert.deepEqual(hero.ballUrls,[BALL,BALL],'homepage rotating sphere MUST keep the original logo');
- assert.ok(hero.loaded,'protected homepage sphere keeps original art');
- assert.equal(hero.extraLegacy,0,'no old brand is displayed outside the protected sphere');
- if(hero.topbarSrc)assert.equal(hero.topbarSrc,NEW,'public topbar uses official logo');
- assert.equal(hero.spin,'25s','mobile rotating sphere keeps its prior speed');
+ assert.equal(hero.rendered,1,'new official hero logo is mounted once');
+ assert.equal(hero.oldBall,0,'previous gradient ball and old S must be removed entirely');
+ assert.equal(hero.oldOrbits,0,'no legacy orbit overlays');
+ assert.equal(hero.path,NEW,'whole homepage hero uses approved official orbital image');
+ assert.ok(hero.natural>0,'approved official artwork must load');
+ assert.equal(hero.spin,'v291FullOfficialLogoTurn','entire official artwork must rotate, not just the S');
+ assert.equal(hero.duration,'22s');
+ assert.equal(hero.repeat,'infinite','rotation has no automatic stopping point');
+ assert.ok(Math.abs(hero.main-hero.legacyDiameter)/hero.legacyDiameter<.10,'official center sphere must retain prior ball diameter');
+ if(hero.topbarSrc)assert.equal(hero.topbarSrc,NEW,'topbar uses canonical official logo');
+ const from=await page.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).transform);
+ await page.waitForTimeout(300);
+ const to=await page.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).transform);
+ assert.notEqual(from,to,'logo must physically turn over time');
  const reduced=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduced.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await reduced.waitForSelector('.v288-sphere-spin',{state:'attached',timeout:30000});
- assert.equal(await reduced.locator('.v288-sphere-spin').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await reduced.waitForSelector('.v291-official-logo-spin',{state:'attached',timeout:30000});
+ assert.equal(await reduced.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).animationName),'none');
  await reduced.close();
  assert.deepEqual(errors,[],'branding change must not throw page errors');
- console.log('PASS r290 official brand: Dashboard, sidebar, loading, favicon, PWA and topbar use new assets; original rotating homepage sphere remains unchanged');
+ console.log('PASS r291 unified official logo: Dashboard, sidebar, loading, PWA, topbar, and entire 360-degree rotating homepage artwork share new brand');
 }finally{await browser.close()}
