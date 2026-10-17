@@ -487,7 +487,7 @@ if(!live){
     const dashboardTools=(shell.match(/const DASHBOARD_TOOLS=\[([\s\S]*?)\n  \];/)||[])[1]||'';
     check(dashboardTools.includes("['focus','◷','Focus Sessions'")&&dashboardTools.includes("['flashcards','▤','Flashcards'")&&dashboardTools.includes("['assignments','✓','Assignments'")&&shell.includes('DASHBOARD_TOOLS.map(([id,ic,title,desc])=>card('),'live Dashboard lacks canonical power-tool cards');
     check(runtimeRes.r.ok&&runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'live runtime is not lazy-routing power tools');
-    check(prepaintRes.r.ok&&home.includes("h==='credit-store'?'credit-store':'workspace'")&&home.includes("if(r==='workspace')return document.getElementById('v51-main')")&&home.includes("cssReady('scholaverum-workspace-style')"),'live prepaint is not waiting for the canonical Workspace surface');
+    check(prepaintRes.r.ok&&home.includes("h==='credit-store'?'credit-store':'workspace'")&&home.includes("if(r==='workspace')")&&home.includes("document.querySelectorAll('#v51-main').length===1")&&home.includes('data-workspace-layout=')&&home.includes("cssReady('scholaverum-workspace-style')"),'live prepaint is not waiting for the canonical Workspace surface');
     check(power.includes('data-v106-user="1"'),'live power tools are not marking user content for localization isolation');
     results.push(`live:workspace_power_tools ${powerRes.r.status}/${shellRes.r.status}/${runtimeRes.r.status}/${prepaintRes.r.status}`);
   }catch(e){failures.push(`live:workspace_power_tools threw ${e?.message||e}`)}
