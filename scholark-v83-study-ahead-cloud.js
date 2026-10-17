@@ -4,34 +4,98 @@
   const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const clean=s=>String(s??'').replace(/\s+/g,' ').trim(), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const cloud=()=>window.__SCHOLARK_V72_CLOUD__;
-  let last=null,saved=[];
+  let last=null,saved=[],savedEpoch=0,studyOwner='',deleting=false,openedTrackId=null,savedNotice='';
   const css=document.createElement('style');css.id='scholark-v83-style';css.textContent=`
     .v83-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.v83-actions button{border:0;border-radius:10px;background:#17191f;color:#fff;padding:10px 12px;font:900 8px Inter;cursor:pointer}.v83-actions button.alt{background:#ece9ff;color:#574bd1}.v83-actions button:disabled{opacity:.5}
-    .v83-status{font:750 8px/1.4 Inter;color:#6558c8;margin-top:8px}.v83-saved{margin:12px 0;display:grid;gap:7px}.v83-saved-card{border:1px solid rgba(23,25,31,.09);background:#fff;border-radius:14px;padding:12px;text-align:left;cursor:pointer;width:100%}.v83-saved-card:hover{border-color:#6d5dfc;background:#f8f7ff}.v83-saved-card b{font:900 10px Inter}.v83-saved-card span{display:block;margin-top:4px;color:#77717e;font:650 8px/1.35 Inter}
+    .v83-status{font:750 8px/1.4 Inter;color:#6558c8;margin-top:8px}
+    #v83-saved{margin:16px 0 22px;padding:17px;border:1px solid #d4daea;border-radius:17px;background:#f7f8fc;color:#232b40}
+    .v83-saved-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.v83-saved-head .v52-kicker{margin:0}
+    .v83-saved{display:grid;gap:9px}.v83-saved-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:8px;min-width:0}
+    .v83-saved-card{border:1px solid #dde1ec;background:#fff;border-radius:12px;padding:14px;text-align:left;cursor:pointer;width:100%;min-width:0;color:#232b40}
+    .v83-saved-card:hover,.v83-saved-card:focus-visible{border-color:#8675c5;background:#f4f0ff}.v83-saved-card b{display:block;font:800 12px/1.4 Inter,system-ui;overflow-wrap:anywhere}.v83-saved-card span{display:block;margin-top:5px;color:#687085;font:550 11px/1.45 Inter,system-ui}
+    .v83-remove,.v83-remove-all{border:1px solid #d7b5c0;border-radius:11px;background:#fff7f8;color:#8c2d48;cursor:pointer;font:750 11px Inter,system-ui;padding:12px;min-height:44px}
+    .v83-remove:hover,.v83-remove-all:hover{background:#fce6eb;border-color:#b66280}.v83-remove:disabled,.v83-remove-all:disabled{opacity:.45;cursor:not-allowed}
+    .v83-saved-notice{min-height:18px;margin:10px 0 0;font:550 11px/1.5 Inter,system-ui;color:#6b587f;overflow-wrap:anywhere}
+    .v83-empty{margin:0;font:550 12px/1.5 Inter,system-ui;color:#748096}
+    @media(max-width:520px){#v83-saved{padding:12px}.v83-saved-row{grid-template-columns:minmax(0,1fr)}.v83-remove{justify-self:start}.v83-saved-head{align-items:flex-start}}
   `;document.head.appendChild(css);
   async function ctx(){const c=cloud(),s=await c?.session?.();return c&&s?.user?.id?{c,s,uid:s.user.id}:null}
   function isoDay(offset){const d=new Date();d.setDate(d.getDate()+offset);d.setHours(18,0,0,0);return d.toISOString()}
+  function notice(message){savedNotice=clean(message);renderSaved()}
   async function persist(detail){
-    last=detail;localStorage.setItem('scholark_v83_study_ahead',JSON.stringify(detail));
+    last=detail;openedTrackId=null;
+    try{localStorage.setItem('scholark_v83_study_ahead',JSON.stringify(detail))}catch{}
     try{
-      const x=await ctx();if(!x){decorate();return}
+      const x=await ctx();if(!x){decorate('Saved on this device. Sign in to save study plans to the cloud.');return}
       const body={user_id:x.uid,field:clean(detail.field).slice(0,180),country:clean(detail.country)||null,target_school:clean(detail.targetSchool)||null,data:{schema:2,result:detail.result,context:detail.context||'',specialization:detail.specialization||'',depth:detail.depth||'foundation',horizon:detail.horizon||'',weeklyHours:detail.weeklyHours||'',studyFocus:detail.studyFocus||'balanced',provider:detail.provider||'',model:detail.model||''},updated_at:new Date().toISOString()};
       const r=await x.c.request('/rest/v1/study_ahead?select=id,field,country,target_school,data,created_at,updated_at',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.message||'Could not save Study Ahead track')}
-      await loadSaved();decorate('Saved to SCHOLARK Cloud.');
+      await loadSaved();decorate('Saved to SCHOLAVERUM Cloud.');
     }catch(e){decorate('Saved locally; cloud save failed: '+clean(e?.message||e))}
   }
   async function loadSaved(){
+    if(deleting)return;
+    const epoch=++savedEpoch;
     try{
-      const x=await ctx();if(!x){saved=[];renderSaved();return}
-      const r=await x.c.request('/rest/v1/study_ahead?select=id,field,country,target_school,data,created_at,updated_at&order=updated_at.desc&limit=12',{method:'GET'});
-      const d=await r.json().catch(()=>[]);if(r.ok)saved=Array.isArray(d)?d:[];renderSaved();
-    }catch{}
+      const x=await ctx();
+      if(epoch!==savedEpoch)return;
+      const uid=x?.uid||'';
+      if(studyOwner!==uid){studyOwner=uid;saved=[];savedNotice='';openedTrackId=null}
+      if(!x){renderSaved();return}
+      const r=await x.c.request('/rest/v1/study_ahead?select=id,field,country,target_school,data,created_at,updated_at&user_id=eq.'+encodeURIComponent(uid)+'&order=updated_at.desc&limit=100',{method:'GET'});
+      const d=await r.json().catch(()=>[]);
+      if(epoch!==savedEpoch||studyOwner!==uid)return;
+      if(!r.ok)throw new Error(d?.message||'Could not load saved studies');
+      saved=Array.isArray(d)?d:[];renderSaved();
+    }catch(e){if(epoch===savedEpoch)notice('Could not refresh saved studies: '+clean(e?.message||e))}
   }
   function renderSaved(){
     const host=$('#v83-saved');if(!host)return;
-    host.innerHTML=saved.length?'<div class="v52-kicker">SAVED STUDY AHEAD TRACKS</div><div class="v83-saved">'+saved.map((x,i)=>'<button type="button" class="v83-saved-card" data-v83-saved="'+i+'"><b>'+esc(x.field)+(x.data?.specialization?' · '+esc(x.data.specialization):'')+(x.target_school?' · '+esc(x.target_school):'')+'</b><span>'+esc(x.country||'')+(x.data?.horizon?' · '+esc(x.data.horizon):'')+(x.updated_at?' · '+esc(new Date(x.updated_at).toLocaleDateString()):'')+' · open track</span></button>').join('')+'</div>':'';
-    $$('[data-v83-saved]',host).forEach(b=>b.onclick=()=>openSaved(saved[+b.dataset.v83Saved]));
+    host.innerHTML='<div class="v83-saved-head"><div class="v52-kicker">SAVED STUDY AHEAD TRACKS</div>'+
+      (saved.length?'<button type="button" class="v83-remove-all" data-v83-remove-all '+(deleting?'disabled':'')+'>Remove all</button>':'')+'</div>'+
+      (saved.length?'<div class="v83-saved">'+saved.map((x,i)=>'<div class="v83-saved-row"><button type="button" class="v83-saved-card" data-v83-saved="'+i+'" '+(deleting?'disabled':'')+'><b>'+esc(x.field||'Study')+(x.data?.specialization?' · '+esc(x.data.specialization):'')+(x.target_school?' · '+esc(x.target_school):'')+'</b><span>'+esc(x.country||'')+(x.data?.horizon?' · '+esc(x.data.horizon):'')+(x.updated_at?' · '+esc(new Date(x.updated_at).toLocaleDateString()):'')+' · Open study</span></button><button type="button" class="v83-remove" data-v83-remove="'+i+'" aria-label="Remove '+esc(x.field||'study')+'" '+(deleting?'disabled':'')+'>Remove</button></div>').join('')+'</div>':
+      '<p class="v83-empty">'+(studyOwner?'No saved studies yet. New Study Ahead plans will appear here.':'Sign in to see and manage your saved studies.')+'</p>')+
+      '<p class="v83-saved-notice" role="status" aria-live="polite">'+esc(savedNotice)+'</p>';
+    $$('[data-v83-saved]',host).forEach(b=>b.onclick=()=>openSaved(saved[Number(b.dataset.v83Saved)]));
+    $$('[data-v83-remove]',host).forEach(b=>b.onclick=()=>removeSaved(saved[Number(b.dataset.v83Remove)]));
+    const all=$('[data-v83-remove-all]',host);if(all)all.onclick=()=>removeAllSaved();
+  }
+  function clearOpenedTrack(id=null){
+    if(id!==null&&String(openedTrackId)!==String(id))return;
+    openedTrackId=null;last=null;
+    try{localStorage.removeItem('scholark_v83_study_ahead')}catch{}
+    const out=$('#v62-study-results');if(out)out.replaceChildren();
+  }
+  async function deleteCloud(path,uid){
+    const x=await ctx();if(!x||x.uid!==uid)throw new Error('Your session changed. Sign in again.');
+    const r=await x.c.request('/rest/v1/study_ahead?'+path+'&user_id=eq.'+encodeURIComponent(uid)+'&select=id',{method:'DELETE',headers:{Prefer:'return=representation'}});
+    const d=await r.json().catch(()=>[]);
+    if(!r.ok)throw new Error(d?.message||'Could not remove saved study');
+    if(!Array.isArray(d)||!d.length)throw new Error('No saved studies were removed. Refresh and try again.');
+    return d;
+  }
+  async function removeSaved(row){
+    if(deleting||!row?.id||!studyOwner)return;
+    const uid=studyOwner;deleting=true;savedEpoch++;notice('Removing study…');
+    try{
+      await deleteCloud('id=eq.'+encodeURIComponent(row.id),uid);
+      if(studyOwner!==uid)throw new Error('Account changed while removing the study');
+      saved=saved.filter(x=>x.id!==row.id);
+      clearOpenedTrack(row.id);
+      notice('Study removed from your saved plans.');
+    }catch(e){notice('Remove failed: '+clean(e?.message||e))}
+    finally{deleting=false;renderSaved()}
+  }
+  async function removeAllSaved(){
+    if(deleting||!saved.length||!studyOwner)return;
+    if(!window.confirm('Remove ALL saved Study Ahead plans from your account? This cannot be undone.'))return;
+    const uid=studyOwner;deleting=true;savedEpoch++;notice('Removing all saved studies…');
+    try{
+      await deleteCloud('id=not.is.null',uid);
+      if(studyOwner!==uid)throw new Error('Account changed while removing studies');
+      saved=[];clearOpenedTrack();notice('All saved Study Ahead plans have been removed.');
+    }catch(e){notice('Remove all failed: '+clean(e?.message||e));}
+    finally{deleting=false;renderSaved()}
   }
   function list(items){const a=(items||[]).filter(Boolean);return a.length?'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
   function legacyEmpty(label){return '<div class="v62-study-line"><b>'+esc(label||'More detail')+'</b><span>This saved track predates the advanced Study Ahead format. Rebuild the track once to populate this section with full details.</span></div>'}
@@ -87,7 +151,7 @@
     decorate('Track opened. Connect it to Tutor, Planner, reading, projects or Mastery when ready.');
     out.scrollIntoView({behavior:'smooth',block:'start'});
   }
-  function openSaved(row){if(!row)return;renderTrack({field:row.field,country:row.country||'',targetSchool:row.target_school||'',specialization:row.data?.specialization||'',depth:row.data?.depth||'foundation',horizon:row.data?.horizon||'',weeklyHours:row.data?.weeklyHours||'',studyFocus:row.data?.studyFocus||'balanced',context:row.data?.context||'',result:row.data?.result||{},provider:row.data?.provider||'',model:row.data?.model||''})}
+  function openSaved(row){if(!row)return;openedTrackId=row.id;renderTrack({field:row.field,country:row.country||'',targetSchool:row.target_school||'',specialization:row.data?.specialization||'',depth:row.data?.depth||'foundation',horizon:row.data?.horizon||'',weeklyHours:row.data?.weeklyHours||'',studyFocus:row.data?.studyFocus||'balanced',context:row.data?.context||'',result:row.data?.result||{},provider:row.data?.provider||'',model:row.data?.model||''})}
   function ensureSavedHost(){
     const h=$('.v62-study');if(!h||$('#v83-saved',h))return;
     const host=document.createElement('section');host.id='v83-saved';
@@ -142,10 +206,12 @@
   }
   addEventListener('scholark:study-ahead-generated',e=>{persist(e.detail||{});setTimeout(sync,80)});
   function sync(){if(location.hash.toLowerCase()==='#study'){ensureSavedHost();loadSaved();try{last=last||JSON.parse(localStorage.getItem('scholark_v83_study_ahead')||'null')}catch{}if(last)decorate()}}
-  addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,280)});setTimeout(sync,300);
+  addEventListener('hashchange',()=>{setTimeout(sync,80);setTimeout(sync,280)});
+  addEventListener('scholark:auth-changed',()=>{savedEpoch++;saved=[];studyOwner='';openedTrackId=null;last=null;savedNotice='';try{localStorage.removeItem('scholark_v83_study_ahead')}catch{}renderSaved();if(location.hash.toLowerCase()==='#study')setTimeout(loadSaved,40)});
+  setTimeout(sync,300);
   function prefill(data={}){
     const apply=()=>{if($('#v62-field')&&data.field!==undefined)$('#v62-field').value=clean(data.field);if($('#v62-country')&&data.country!==undefined)$('#v62-country').value=clean(data.country);if($('#v62-school')&&data.targetSchool!==undefined)$('#v62-school').value=clean(data.targetSchool);if($('#v62-specialization')&&data.specialization!==undefined)$('#v62-specialization').value=clean(data.specialization);if($('#v62-context')&&data.context!==undefined)$('#v62-context').value=clean(data.context);if($('#v62-horizon')&&data.horizon&&[...$('#v62-horizon').options].some(o=>o.value===data.horizon))$('#v62-horizon').value=data.horizon;if($('#v62-weekly-hours')&&data.weeklyHours&&[...$('#v62-weekly-hours').options].some(o=>o.value===String(data.weeklyHours)))$('#v62-weekly-hours').value=String(data.weeklyHours);if($('#v62-focus')&&data.studyFocus&&[...$('#v62-focus').options].some(o=>o.value===data.studyFocus))$('#v62-focus').value=data.studyFocus;$('#v62-field')?.focus()};
     if(String(location.hash||'').toLowerCase()!=='#study')window.__SCHOLARK_WORKSPACE__?.openTool?.('study');setTimeout(apply,140);return true;
   }
-  window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,openTrack:renderTrack,refresh:sync,version:'20260930-r198'};
+  window.__SCHOLARK_V83_STUDY_AHEAD__={getCurrent:()=>last,prefill,openTrack:renderTrack,refresh:sync,version:'20261017-r286'};
 })();
