@@ -30,6 +30,7 @@ try{
  const small=await page.evaluate(()=>{const el=document.querySelector('.v288-orbit-emblem'),rect=el.getBoundingClientRect();return {display:getComputedStyle(el).display,width:rect.width,height:rect.height,client:document.querySelector('#v51-main').clientWidth,scroll:document.querySelector('#v51-main').scrollWidth}});
  assert.ok(small.display!=='none'&&small.width>=100&&small.height>=100,'mobile Dashboard logo must remain visible');
  assert.ok(small.scroll<=small.client+4,'Dashboard branding must not trigger horizontal overflow');
+ await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForSelector('#v280-editorial-home .v288-sphere-spin',{state:'visible',timeout:30000});
  const spin=await page.evaluate(async()=>{
@@ -53,6 +54,7 @@ try{
  await page.setViewportSize({width:390,height:844});
  await page.waitForTimeout(120);
  assert.equal(await page.locator('.v280-planet.v288-branded-sphere').count(),1);
+ assert.equal(await page.locator('.v288-sphere-spin').evaluate(el=>getComputedStyle(el).animationDuration),'25s','mobile orb uses lower-motion 25-second rotation');
  const reduce=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduce.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
  await reduce.waitForSelector('.v288-sphere-spin',{state:'attached',timeout:30000});
