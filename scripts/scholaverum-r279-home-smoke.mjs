@@ -8,7 +8,7 @@ const errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 try {
   await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForFunction(()=>document.querySelector('#v123-story')&&document.querySelectorAll('.v123-story-card').length===3,{timeout:60000});
+  await page.waitForFunction(()=>document.querySelector('#v123-story')&&document.querySelectorAll('.v123-story-card').length===3,null,{timeout:60000});
   const desktop = await page.evaluate(()=>{
     const hero=document.querySelector('#v29-home-layer .v29-hero');
     const story=document.querySelector('#v123-story');
@@ -26,12 +26,12 @@ try {
   assert.equal(desktop.homeClass,true,'cinematic design must apply only to public home');
 
   await page.locator('#v123-hero-cta [data-v123-scroll="experience"]').click();
-  await page.waitForFunction(()=>window.scrollY>80,{timeout:10000});
+  await page.waitForFunction(()=>window.scrollY>80,null,{timeout:10000});
 
   await page.locator('#v55-language').selectOption('nl');
-  await page.waitForFunction(()=>document.querySelector('#v123-story-title')?.textContent?.includes('potentieel'),{timeout:20000});
+  await page.waitForFunction(()=>document.querySelector('#v123-story-title')?.textContent?.includes('potentieel'),null,{timeout:20000});
   await page.locator('#v55-language').selectOption('en');
-  await page.waitForFunction(()=>document.querySelector('#v123-story-title')?.textContent?.includes('potential'),{timeout:20000});
+  await page.waitForFunction(()=>document.querySelector('#v123-story-title')?.textContent?.includes('potential'),null,{timeout:20000});
 
   await page.setViewportSize({width:390,height:844});
   const mobile = await page.evaluate(()=>{
@@ -48,10 +48,10 @@ try {
   assert.equal(mobile.motion,'none','respect reduced motion setting');
 
   await page.evaluate(()=>location.hash='#ai');
-  await page.waitForFunction(()=>!document.body.classList.contains('v123-cinematic-home'),{timeout:20000});
+  await page.waitForFunction(()=>!document.body.classList.contains('v123-cinematic-home'),null,{timeout:20000});
   assert.equal(await page.evaluate(()=>document.querySelector('#v123-progress')?.hidden),true,'progress must not cover the workspace');
   await page.evaluate(()=>location.hash='#home');
-  await page.waitForFunction(()=>document.body.classList.contains('v123-cinematic-home'),{timeout:20000});
+  await page.waitForFunction(()=>document.body.classList.contains('v123-cinematic-home'),null,{timeout:20000});
   assert.equal(await page.locator('#v123-story').count(),1,'returning home should not duplicate the story');
   assert.equal(await page.locator('#v123-home-nav').count(),1,'returning home should not duplicate navigation');
   assert.deepEqual(errors,[],'page should not emit uncaught JavaScript exceptions');
