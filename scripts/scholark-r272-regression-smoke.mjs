@@ -46,7 +46,7 @@ assert.equal(made, 2);
 assert.equal(cleared, 2, 'Successful and failed session checks must release their timers');
 
 // Retain r272 behavioral regression tests while advancing the deployed release.
-const release = 'r280-editorial-home';
+const release = 'r281-motion-home';
 const cache = '20261017-' + release;
 assert.ok(runtime.includes("const VERSION = '" + cache + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
