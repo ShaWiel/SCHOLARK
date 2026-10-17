@@ -114,10 +114,34 @@
   const state={active:'dashboard'};
   let workspaceEntryEpoch=0,homeTransitionEpoch=0,workspaceEntryTimer=0,workspaceEntryFailsafe=0;
   const DASHBOARD_SOURCE={
-    kicker:'A LITTLE CURIOSITY. A WORLD OF POSSIBILITY.',
-    title:'What will you discover today?',
-    copy:'A clear space to think, learn and move your ideas forward.'
+    kicker:'YOUR WORLD. YOUR NEXT STEP.',
+    title:'Your next breakthrough starts here.',
+    copy:'Learn, create and move forward. This is your SCHOLAVERUM.'
   };
+  function workspaceIcon(id,fallback=''){
+    const paths={
+      dashboard:'<rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/>',
+      ai:'<path d="M16 6c-1-1-2-1.5-4-1.5-3 0-5 1.5-5 3.5 0 5 10 2 10 7 0 2.5-2.5 4-5.5 4-2 0-3.5-.7-4.5-2"/><path d="M3 12a9 9 0 0 1 17-4M21 12a9 9 0 0 1-17 4" opacity=".45"/>',
+      tutor:'<path d="m2 9 10-5 10 5-10 5L2 9Z"/><path d="M6 11v6c3 3 9 3 12 0v-6M22 9v7"/>',
+      education:'<path d="M3 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H3V4ZM21 4h-6a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h5V4Z"/>',
+      language:'<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6h14M5 18h14"/>',
+      planner:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M8 15h3M14 15h2"/>',
+      focus:'<circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 2h6M17 5l2-2"/>',
+      flashcards:'<rect x="5" y="7" width="15" height="14" rx="2"/><path d="M3 15V5a2 2 0 0 1 2-2h12M9 12h7M9 16h4"/>',
+      assignments:'<rect x="4" y="5" width="16" height="16" rx="2"/><rect x="8" y="2" width="8" height="5" rx="1"/><path d="m8 14 3 3 5-6"/>',
+      reminders:'<path d="M5 9a7 7 0 0 1 14 0c0 8 3 7 3 9H2c0-2 3-1 3-9ZM9 21h6"/>',
+      progress:'<path d="M3 3v18h18M7 15l5-5 4 3 5-8M17 5h4v4"/>',
+      goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+      files:'<path d="M5 3h9l5 5v13H5V3ZM14 3v6h5M8 13h8M8 17h6"/>',
+      project:'<path d="M3 6h7l2 3h9v11H3V6Z"/><path d="M3 6V4h7l2 2h7v3"/>',
+      schools:'<path d="m3 9 9-6 9 6M5 9v12h14V9M9 21v-6h6v6M9 10h1M14 10h1"/>',
+      study:'<path d="M5 20h14M8 16V9M12 16V4M16 16v-5M9 7l3-3 3 3"/>',
+      connect:'<circle cx="5" cy="12" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="19" cy="19" r="3"/><path d="m8 11 8-5M8 13l8 5"/>',
+      studio:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m8 16 4-5 5 5M15 8h2"/>',
+      book:'<path d="M3 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H3V4ZM21 4h-6a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h5V4Z"/>'
+    };
+    return paths[id]?'<svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">'+paths[id]+'</svg>':esc(fallback);
+  }
 
   // The dashboard is rendered from one source. Route recovery must reuse this
   // exact structure rather than resurrecting the retired card-wall dashboard.
@@ -139,49 +163,63 @@
     ['study','↗','Study Ahead','Get ready for your next chapter.'],
     ['connect','◉','Connect',''],['studio','✦','Studio AI',''],['book','▤','Book Studio','']
   ];
-  function dashboardMarkup(){return `<div class="v51-shell v284-desk" data-workspace-owner="r284">
-    <header class="v284-topline"><span>SCHOLAVERUM <span class="v284-divider">/</span> <span>Workspace</span></span><span class="v284-date"></span></header>
+  function dashboardMarkup(){return `<div class="v51-shell v284-desk v285-workspace" data-workspace-owner="r284" data-workspace-layout="r285">
+    <header class="v284-topline"><span><b>SCHOLAVERUM</b> <span class="v284-divider">/</span> <span>Workspace</span></span><div class="v285-command-actions"><span class="v284-date"></span><button type="button" data-v285-library><span>All tools</span> <span aria-hidden="true">↗</span></button></div></header>
     <section class="v284-welcome" aria-labelledby="v284-title">
-      <div class="v284-spark" aria-hidden="true">✺</div>
       <div class="v51-head"><div><small>${DASHBOARD_SOURCE.kicker}</small><h1 id="v284-title">${DASHBOARD_SOURCE.title}</h1><p>${DASHBOARD_SOURCE.copy}</p></div></div>
+      <div class="v285-orbit" aria-hidden="true"><div class="v285-orbit-ring one"></div><div class="v285-orbit-ring two"></div><div class="v285-orbit-core"><img src="/scholaverum-logo-r246.png" alt="" width="116" height="94"></div><i class="v285-orbit-point one"></i><i class="v285-orbit-point two"></i><span class="v285-orbit-caption">LEARN · CREATE · GROW</span></div>
+    </section>
+    <section class="v285-launch-grid" aria-label="Start your next step">
+     <article class="v285-ask"><div class="v285-panel-heading"><span class="v285-index">01</span><h2>Make it happen</h2><span class="v285-assistant-tag">ARKI + AI Tutor</span></div>
       <form class="v284-composer" id="v284-compose">
         <label class="v284-sr" for="v284-prompt">What would you like to learn or create?</label>
         <textarea id="v284-prompt" rows="2" maxlength="12000" placeholder="What would you like to learn or create?"></textarea>
-        <div class="v284-composer-bottom"><div class="v284-modes" role="group" aria-label="Choose your assistant"><button type="button" data-v284-mode="ai" aria-pressed="true">✺ <span>ARKI</span></button><button type="button" data-v284-mode="tutor" aria-pressed="false">✧ <span>AI Tutor</span></button></div><button class="v284-submit" type="submit" aria-label="Open your question in the selected assistant">↑</button></div>
+        <div class="v284-composer-bottom"><div class="v284-modes" role="group" aria-label="Choose your assistant"><button type="button" data-v284-mode="ai" aria-pressed="true">S <span>ARKI</span></button><button type="button" data-v284-mode="tutor" aria-pressed="false">◎ <span>AI Tutor</span></button></div><button class="v284-submit" type="submit" aria-label="Open your question in the selected assistant">↗</button></div>
+        <p class="v285-compose-status" aria-live="polite" hidden></p>
       </form>
-      <div class="v284-starters"><button type="button" data-v284-open="tutor">✧ <span>Explain a topic</span></button><button type="button" data-v284-open="planner">▦ <span>Plan my study</span></button><button type="button" data-v284-open="flashcards">▤ <span>Review flashcards</span></button><button type="button" data-v284-open="language">Aa <span>Learn a language</span></button></div>
+      <div class="v284-starters"><button type="button" data-v284-open="tutor"><i>◎</i><span>Explain a topic</span></button><button type="button" data-v284-open="planner"><i>▦</i><span>Plan my study</span></button><button type="button" data-v284-open="flashcards"><i>▤</i><span>Review flashcards</span></button><button type="button" data-v284-open="language"><i>Aa</i><span>Learn a language</span></button></div>
+     </article>
+     <article class="v284-today"><div class="v285-panel-heading"><span class="v285-index">02</span><h2>Your next step</h2><span aria-hidden="true">↗</span></div><div id="v284-next"></div><div class="v285-focus-lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div></article>
     </section>
-    <section class="v284-overview" aria-label="Your learning at a glance"><article class="v284-continue"><div class="v284-section-label"><h2>Pick up where you left off</h2><button type="button" data-v284-open="project">View projects <span aria-hidden="true">↗</span></button></div><div id="v284-recent"></div></article><article class="v284-today"><div class="v284-section-label"><h2>A little focus goes a long way</h2><span aria-hidden="true">◷</span></div><div id="v284-next"></div></article></section>
+    <section class="v285-metrics" aria-label="Your week in motion"><div class="v285-metric"><span aria-hidden="true">✓</span><div><strong data-v285-stat="completed">0</strong><span>Tasks completed this week</span></div></div><div class="v285-metric"><span aria-hidden="true">◷</span><div><strong data-v285-stat="focus">0</strong><span>Focus minutes this week</span></div></div><div class="v285-metric"><span aria-hidden="true">↗</span><div><strong data-v285-stat="goals">0</strong><span>Active learning goals</span></div></div></section>
+    <section class="v284-overview" aria-label="Your learning at a glance"><article class="v284-continue"><div class="v284-section-label"><h2>Pick up where you left off</h2><button type="button" data-v284-open="project"><span>View projects</span> <span aria-hidden="true">↗</span></button></div><div id="v284-recent"></div></article><article class="v285-paths"><span class="v285-index">03</span><h2>Find your direction</h2><p>Get ready for your next chapter.</p><div><button type="button" data-v284-open="schools"><span>Schools Near Me</span><span aria-hidden="true">↗</span></button><button type="button" data-v284-open="study"><span>Study Ahead</span><span aria-hidden="true">↗</span></button></div></article></section>
+    <section class="v285-personalize" aria-label="Make this space your own">
     <details class="v284-setup"><summary><span>✧ <span>Make this space your own</span></span><span>Quick setup ⌄</span></summary></details>
     <details class="v284-level-picker"><summary><span>◎ <span>Your learning level</span></span><span class="v284-current-level"></span></summary><div class="v51-level-top"><div class="v51-level-label">CHOOSE HOW SCHOLAVERUM SHOULD WORK & TEACH</div></div><div class="v51-levels"></div></details>
-    <section class="v284-library" aria-labelledby="v284-tools-title"><div class="v284-section-label"><h2 id="v284-tools-title">A tool for every next step</h2><span>YOUR WORKSPACE</span></div><div class="v51-grid">${DASHBOARD_TOOLS.map(([id,ic,title,desc])=>card(id,ic,id==='tutor'?tutorDisplayName():title,desc)).join('')}</div></section>
-    <footer class="v284-footer"><span>SCHOLAVERUM</span><span>A little more understanding, every day.</span></footer>
+    </section>
+    <section class="v284-library" aria-labelledby="v284-tools-title"><div class="v284-section-label"><div><span class="v285-eyebrow">YOUR WORKSPACE</span><h2 id="v284-tools-title">A tool for every next step</h2></div><label class="v285-search"><span aria-hidden="true">⌕</span><span class="v284-sr">Find a tool</span><input type="search" id="v285-tool-search" placeholder="Find a tool" autocomplete="off" aria-controls="v285-tool-grid"></label></div><div class="v51-grid" id="v285-tool-grid">${DASHBOARD_TOOLS.map(([id,ic,title,desc])=>card(id,ic,id==='tutor'?tutorDisplayName():title,desc)).join('')}</div><p class="v285-no-tools" role="status" hidden>No matching tools</p></section>
+    <footer class="v284-footer"><span>SCHOLAVERUM</span><span>Learn. Create. Grow.</span></footer>
   </div>`}
-  let dashboardMode='ai',dashboardPaintTimer=0;
+  let dashboardMode='ai',dashboardPaintTimer=0,dashboardSubmitEpoch=0;
+  window.addEventListener('hashchange',()=>{dashboardSubmitEpoch++});
   function paintDashboardData(){
     dashboardPaintTimer=0;const desk=$('[data-workspace-owner="r284"]',main);if(!desk)return;
     let s;try{s=window.__SCHOLARK_WORKSPACE_CORE__?.compute?.()}catch{}
     const date=$('.v284-date',desk);if(date)date.textContent=new Intl.DateTimeFormat(workspaceUiLang(),{weekday:'short',month:'short',day:'numeric'}).format(new Date());
     const level=$('.v284-current-level',desk);if(level)level.textContent=dashboardLevels().find(x=>x[0]===levelId())?.[2]||'';
+    for(const [key,value] of Object.entries({completed:s?.planner?.completed7d||0,focus:s?.focus?.minutes7d||0,goals:s?.goals?.active?.length||0})){const el=desk.querySelector('[data-v285-stat="'+key+'"]');if(el)el.textContent=new Intl.NumberFormat(workspaceUiLang()).format(value)}
     const next=$('#v284-next',desk),recent=$('#v284-recent',desk);
-    if(next){const n=s?.next;const markup=n?`<h3>${esc(n.title)}</h3><p>${esc(n.reason)}</p><button type="button" data-v284-open="${esc(n.tool)}">Continue <span aria-hidden="true">↗</span></button>`:'<h3>Make space for your next idea.</h3><p>Start a focused session and give your curiosity a little time.</p><button type="button" data-v284-open="focus">Start a focus session <span aria-hidden="true">↗</span></button>';if(next.dataset.signature!==markup){next.innerHTML=markup;next.dataset.signature=markup}}
+    if(next){const n=s?.next;const markup=n?`<h3 data-v106-user="1">${esc(n.title)}</h3><p>${esc(n.reason)}</p><button type="button" data-v284-open="${esc(n.tool)}">Continue <span aria-hidden="true">↗</span></button>`:'<h3>Make space for your next idea.</h3><p>Start a focused session and give your curiosity a little time.</p><button type="button" data-v284-open="focus">Start a focus session <span aria-hidden="true">↗</span></button>';if(next.dataset.signature!==markup){next.innerHTML=markup;next.dataset.signature=markup}}
     if(recent){
       const events=(s?.activity?.all||[]).filter(x=>x.tool&&x.tool!=='dashboard'&&DASHBOARD_TOOLS.some(t=>t[0]===x.tool)&&!INACTIVE.has(x.tool));
       const ids=[...new Set(events.slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(x=>x.tool))].slice(0,3);
-      const markup=ids.length?ids.map(id=>{const t=DASHBOARD_TOOLS.find(x=>x[0]===id);return `<button type="button" class="v284-recent-row" data-v284-open="${id}"><span class="v284-recent-icon">${esc(t[1])}</span><span><b>${esc(id==='tutor'?tutorDisplayName():t[2])}</b><small>Continue exploring</small></span><span aria-hidden="true">↗</span></button>`}).join(''):'<div class="v284-empty"><span aria-hidden="true">▧</span><p>Your next chapter starts here.<small>Open a tool to begin. Your recent work will appear here.</small></p></div>';
+      const markup=ids.length?ids.map(id=>{const t=DASHBOARD_TOOLS.find(x=>x[0]===id);return `<button type="button" class="v284-recent-row" data-v284-open="${id}"><span class="v284-recent-icon">${workspaceIcon(id,t[1])}</span><span><b>${esc(id==='tutor'?tutorDisplayName():t[2])}</b><small>Continue exploring</small></span><span aria-hidden="true">↗</span></button>`}).join(''):'<div class="v284-empty"><span aria-hidden="true">▧</span><p>Your next chapter starts here.<small>Open a tool to begin. Your recent work will appear here.</small></p></div>';
       if(recent.dataset.signature!==markup){recent.innerHTML=markup;recent.dataset.signature=markup}
     }
-    window.__SCHOLARK_I18N__?.apply?.(desk);
+    window.__SCHOLARK_I18N__?.apply?.(desk);filterDashboardTools(desk);
   }
   function scheduleDashboardData(){clearTimeout(dashboardPaintTimer);dashboardPaintTimer=setTimeout(paintDashboardData,100)}
+  function filterDashboardTools(desk){const query=($('#v285-tool-search',desk)?.value||'').trim().toLocaleLowerCase();let matches=0;desk.querySelectorAll('.v51-grid .v51-card').forEach(card=>{const match=!query||(card.textContent||'').toLocaleLowerCase().includes(query);if(card.hidden===match)card.hidden=!match;if(match)matches++});const empty=$('.v285-no-tools',desk);if(empty)empty.hidden=matches!==0}
   function wireDashboard(){
     const desk=$('[data-workspace-owner="r284"]',main);if(!desk||desk.dataset.wired==='1')return;desk.dataset.wired='1';
     desk.addEventListener('click',e=>{
       const open=e.target.closest('[data-v284-open]');if(open){e.preventDefault();openTool(open.dataset.v284Open);return}
+      if(e.target.closest('[data-v285-library]')){$('.v284-library',desk)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('#v285-tool-search',desk)?.focus({preventScroll:true});return}
       const mode=e.target.closest('[data-v284-mode]');if(mode){dashboardMode=mode.dataset.v284Mode;desk.querySelectorAll('[data-v284-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)))}
     });
     const form=$('#v284-compose',desk),prompt=$('#v284-prompt',desk);
-    form?.addEventListener('submit',e=>{e.preventDefault();const value=prompt.value.trim();if(!value){prompt.focus();return}const api=window.__SCHOLARK_V114_ORCHESTRATOR__;if(api?.handoff)api.handoff(dashboardMode,{prompt:value});else{try{sessionStorage.setItem('scholark_v108_arki_prompt',value)}catch{}openTool(dashboardMode)}});
+    form?.addEventListener('submit',async e=>{e.preventDefault();const value=prompt.value.trim();if(!value){prompt.focus();return}if(form.getAttribute('aria-busy')==='true')return;const target=dashboardMode,epoch=++dashboardSubmitEpoch,submit=$('[type="submit"]',form),status=$('.v285-compose-status',form);form.setAttribute('aria-busy','true');if(submit)submit.disabled=true;if(status)status.hidden=true;try{await window.__SCHOLARK_RUNTIME__?.ensure?.('dashboard');if(epoch!==dashboardSubmitEpoch||!form.isConnected||route()!=='#dashboard')return;const api=window.__SCHOLARK_V114_ORCHESTRATOR__;if(!api?.handoff)throw new Error('Workspace handoff unavailable');await api.handoff(target,{prompt:value})}catch{if(form.isConnected&&epoch===dashboardSubmitEpoch&&status){status.textContent='Your question is saved here. Please try again.';status.hidden=false;window.__SCHOLARK_I18N__?.apply?.(status)}}finally{if(form.isConnected){form.removeAttribute('aria-busy');if(submit)submit.disabled=false}}});
+    $('#v285-tool-search',desk)?.addEventListener('input',()=>filterDashboardTools(desk));
     prompt?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();form.requestSubmit()}});
     desk.querySelectorAll('.v51-card[data-v51-tool]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openTool(b.dataset.v51Tool)}));
     paintDashboardData();
@@ -247,9 +285,10 @@
     const pages=Array.from(main.querySelectorAll('[data-v51-page="dashboard"]')),dash=pages[0];
     pages.slice(1).forEach(x=>x.remove());
     if(!dash)return false;
-    const draft=$('#v284-prompt',dash)?.value||'';
+    const draft=$('#v284-prompt',dash)?.value||'',query=$('#v285-tool-search',dash)?.value||'';
     dash.innerHTML=dashboardMarkup();wireDashboard();
     const prompt=$('#v284-prompt',dash);if(prompt)prompt.value=draft;
+    const search=$('#v285-tool-search',dash);if(search)search.value=query;filterDashboardTools(dash);
     dash.querySelectorAll('[data-v284-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v284Mode===dashboardMode)));
     renderLevels();resetDashboardCanonical();scheduleDashboardData();
     return true;
@@ -340,7 +379,7 @@
     [side,main,toggle].filter(x=>x?.isConnected).forEach(x=>x.remove());
     document.querySelectorAll('#v51-top-actions').forEach(el=>el.remove());
     side=main=home=toggle=sidebarActions=null;
-    side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${ic}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${ic}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
+    side=document.createElement('aside');side.id='v51-sidebar';side.innerHTML=`<div class="v51-brand"><div class="v51-logo"></div><div class="v51-brand-copy"><span>WORKSPACE</span></div></div><div class="v51-section">WORKSPACE</div>${TOOLS.map(([id,ic,l])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${workspaceIcon(id,ic)}</i><span>${l}</span>${INACTIVE.has(id)?'<em>COMING SOON</em>':''}</button>`).join('')}<div class="v51-section">FUTURE & PRO</div>${PRO.map(([id,ic,l,b])=>`<button class="v51-nav ${INACTIVE.has(id)?'v51-inactive':''}" data-v51-tool="${id}" ${INACTIVE.has(id)?'data-v51-inactive="1" aria-disabled="true"':''}><i>${workspaceIcon(id,ic)}</i><span>${l}</span><em>${b}</em></button>`).join('')}<div class="v51-section">COMING SOON</div>${COMING.map(([id,ic,l])=>`<button class="v51-nav v51-inactive" data-v51-tool="${id}" data-v51-inactive="1" aria-disabled="true"><i>${workspaceIcon(id,ic)}</i><span>${l}</span><em>COMING SOON</em></button>`).join('')}`;document.body.appendChild(side);
     ensureSidebarActions('build');
     toggle=document.createElement('button');toggle.id='v51-side-toggle';toggle.type='button';toggle.onclick=()=>setCollapsed(!document.body.classList.contains('v51-collapsed'));document.body.appendChild(toggle);
     main=document.createElement('main');main.id='v51-main';main.innerHTML=`<section class="v51-page" data-v51-page="dashboard">${dashboardMarkup()}</section><section class="v51-page" data-v51-page="fallback"><div id="v51-fallback"></div></section>`;document.body.appendChild(main);
@@ -434,7 +473,7 @@
     workspaceEntryTimer=setTimeout(()=>finishWorkspaceEntry(epoch),0);
   }
 
-  function card(id,ic,title,desc,primary=false){const inactive=INACTIVE.has(id);return `<button class="v51-card ${primary?'primary':''} ${inactive?'inactive':''}" data-v51-tool="${id}" ${inactive?'data-v51-inactive="1" aria-disabled="true"':''}><span class="icon">${ic}</span><h3>${title}</h3>${inactive?'':'<p>'+desc+'</p>'}<b>${inactive?'COMING SOON':'OPEN '+title.toUpperCase()+' →'}</b></button>`}
+  function card(id,ic,title,desc,primary=false){const inactive=INACTIVE.has(id);return `<button class="v51-card ${primary?'primary':''} ${inactive?'inactive':''}" data-v51-tool="${id}" ${inactive?'data-v51-inactive="1" aria-disabled="true"':''}><span class="icon">${workspaceIcon(id,ic)}</span><h3>${title}</h3>${inactive?'':'<p>'+desc+'</p>'}<b>${inactive?'COMING SOON':'OPEN '+title.toUpperCase()+' →'}</b></button>`}
   function wireLevelScroll(){
     const host=$('.v51-levels',main);if(!host)return;
     const horizontal=host.classList.contains('v51-levels-suriname');

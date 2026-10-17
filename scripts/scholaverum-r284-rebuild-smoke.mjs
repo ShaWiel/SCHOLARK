@@ -40,7 +40,7 @@ try{
   assert.match(response.headers()['cache-control']||'',/no-store|must-revalidate/,path+' must revalidate');
   assert.doesNotMatch(response.headers()['cache-control']||'',/immutable/,path+' must not remain frozen');
  }
- const asset=await context.request.get(base+'/scholark-v51-workspace-shell.js?v=20261017-r284-workspace-rebuild');
+ const asset=await context.request.get(base+'/scholark-v51-workspace-shell.js?v=20261017-r285-scholaverum-workspace');
  assert.equal(asset.status(),200,'release-qualified modules must load');
  assert.match(await asset.text(),/data-workspace-owner=\"r284\"/,'release-qualified module must contain the canonical dashboard');
 
@@ -90,7 +90,7 @@ try{
  await page.waitForFunction(()=>location.hash==='#tutor'&&document.querySelector('#v52-tutor-q')?.value==='Help me understand fractions.',null,{timeout:25000});
  await dashboard();
 
- for(const [code,title] of [['nl','Wat ga jij vandaag ontdekken?'],['es','¿Qué descubrirás hoy?'],['en','What will you discover today?']]){
+ for(const [code,title] of [['nl','Jouw volgende doorbraak begint hier.'],['es','Tu próximo gran paso empieza aquí.'],['en','Your next breakthrough starts here.']]){
   await page.evaluate(c=>window.__SCHOLARK_I18N__.changeLanguage(c),code);
   await page.waitForFunction(t=>document.querySelector('#v284-title')?.textContent===t,title,{timeout:12000});
   await check();

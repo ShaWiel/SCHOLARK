@@ -93,3 +93,5 @@ jobs:
         run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
       - name: Verify live r284 Workspace, legacy first paint and cinematic transitions
         run: node scripts/scholaverum-r284-rebuild-smoke.mjs https://scholark-app-shawiel.onrender.com
+      - name: Verify live SCHOLAVERUM r285 identity and Workspace interactions
+        run: node scripts/scholaverum-r285-identity-smoke.mjs https://scholark-app-shawiel.onrender.com

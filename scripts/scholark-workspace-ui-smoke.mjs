@@ -574,7 +574,7 @@ const languageLayout=await page.evaluate(()=>{
     overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open')===true
   };
 });
-check(languageLayout.title==='¿Qué descubrirás hoy?',`Rapid language switching left wrong dashboard title: ${languageLayout.title}`);
+check(languageLayout.title==='Tu próximo gran paso empieza aquí.',`Rapid language switching left wrong dashboard title: ${languageLayout.title}`);
 check(languageLayout.h1Count===1,`Dashboard headline duplicated after language stress: ${languageLayout.h1Count}`);
 check(languageLayout.visibleHuge.length===0,`Oversized workspace text appeared after language stress: ${JSON.stringify(languageLayout.visibleHuge)}`);
 check(languageLayout.titleBottom<=languageLayout.gridTop,`Translated dashboard headline overlaps tool grid: ${JSON.stringify(languageLayout)}`);
@@ -628,7 +628,7 @@ check(reentryState.route==='#dashboard'&&reentryState.workspace&&reentryState.wo
 check(!reentryState.entering&&!reentryState.bodyPublic&&!reentryState.htmlPublic,`Home state leaked into Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.topbarDisplay===''&&reentryState.homeDisplay==='none',`Home UI remained visible over Workspace after rapid re-entry: ${JSON.stringify(reentryState)}`);
 check(reentryState.mainCount===1&&reentryState.sidebarCount===1&&reentryState.homeCount===1&&reentryState.h1Count===1,`Workspace/home surfaces duplicated after rapid re-entry: ${JSON.stringify(reentryState)}`);
-check(reentryState.title==='¿Qué descubrirás hoy?',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
+check(reentryState.title==='Tu próximo gran paso empieza aquí.',`Workspace title corrupted after Home round-trip: ${reentryState.title}`);
 check(reentryState.huge.length===0&&reentryState.titleBottom<=reentryState.gridTop,`Workspace layout glitched after Home round-trip: ${JSON.stringify(reentryState)}`);
 
 // Also exercise the actual Home CTA route once, not only direct hash return.
@@ -656,7 +656,7 @@ const ctaReentry=await page.evaluate(()=>{
     titleBottom:hr?.bottom||0,gridTop:gr?.top||0
   };
 });
-check(ctaReentry.title==='¿Qué descubrirás hoy?'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='missing'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
+check(ctaReentry.title==='Tu próximo gran paso empieza aquí.'&&ctaReentry.h1Count===1&&ctaReentry.topbar==='missing'&&ctaReentry.home==='none'&&!ctaReentry.bodyPublic&&!ctaReentry.htmlPublic&&ctaReentry.titleBottom<=ctaReentry.gridTop,`Home CTA re-entry is not clean: ${JSON.stringify(ctaReentry)}`);
 
 await checkWorkspaceSingletons('Home CTA re-entry 1');
 for(let cycle=2;cycle<=6;cycle++){

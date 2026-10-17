@@ -6,7 +6,7 @@ const $=(s,r=document)=>r?.querySelector?.(s)||null;
 const $$=(s,r=document)=>Array.from(r?.querySelectorAll?.(s)||[]);
 const dashboard=()=>String(location.hash||'').replace(/^#/,'').split(/[?&]/)[0].toLowerCase()==='dashboard';
 const workspace=()=>document.body?.classList.contains('v51-workspace');
-if(!document.getElementById('scholaverum-workspace-style')){const sheet=document.createElement('link');sheet.id='scholaverum-workspace-style';sheet.rel='stylesheet';sheet.href='scholark-v126-workspace-integrity.css?v=20261017-r284';document.head.appendChild(sheet)}
+if(!document.getElementById('scholaverum-workspace-style')){const sheet=document.createElement('link');sheet.id='scholaverum-workspace-style';sheet.rel='stylesheet';sheet.href='scholark-v126-workspace-integrity.css?v=20261017-r285';document.head.appendChild(sheet)}
 let timer=0,repairing=false,checks=0,repairs=0;
 function audit(){
  timer=0;if(!workspace()||!dashboard()||repairing)return;
