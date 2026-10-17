@@ -48,6 +48,7 @@ jobs:
           node --check scripts/scholark-gemini-router-smoke.mjs
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-language-nonblocking-smoke.mjs
+          node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
           node --check scripts/scholark-security-smoke.mjs
@@ -173,6 +174,7 @@ jobs:
         run: |
           node scripts/scholark-i18n-visual-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-language-nonblocking-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-r278-live-i18n-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
