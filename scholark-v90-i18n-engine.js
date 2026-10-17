@@ -440,6 +440,21 @@
     ["Workspace rescue view. SCHOLAVERUM no longer sends you back to Dashboard when a legacy view is unavailable.","Workspace-herstelweergave. SCHOLAVERUM stuurt je niet meer terug naar Dashboard wanneer een oudere weergave niet beschikbaar is.","Vista de recuperación del espacio de trabajo. SCHOLAVERUM ya no te devuelve al panel cuando una vista anterior no está disponible.","Vue de récupération de l’espace de travail. SCHOLAVERUM ne vous renvoie plus au tableau de bord lorsqu’une ancienne vue est indisponible.","Workspace-Rettungsansicht. SCHOLAVERUM schickt dich nicht mehr zum Dashboard zurück, wenn eine ältere Ansicht nicht verfügbar ist.","Visualização de recuperação do espaço de trabalho. O SCHOLAVERUM não envia mais você ao painel quando uma visualização antiga está indisponível.","Vista di recupero dell’area di lavoro. SCHOLAVERUM non ti rimanda più alla Dashboard quando una vista precedente non è disponibile."]
   ].forEach(r=>add(...r));
 
+  // Offline core copy for common ARKI, AI Tutor and account controls.
+  [
+    ['Ask me anything.','Vraag me alles.','Pregúntame lo que quieras.','Posez-moi toutes vos questions.','Frag mich alles.','Pergunte-me qualquer coisa.','Chiedimi qualsiasi cosa.'],
+    ['New chat','Nieuw gesprek','Chat nuevo','Nouvelle discussion','Neuer Chat','Nova conversa','Nuova chat'],
+    ['Restore previous device chats','Eerdere gesprekken op dit apparaat herstellen','Restaurar chats anteriores del dispositivo','Restaurer les anciennes discussions de cet appareil','Frühere Chats auf diesem Gerät wiederherstellen','Restaurar conversas anteriores deste dispositivo','Ripristina le chat precedenti su questo dispositivo'],
+    ['Rename chat','Gesprek hernoemen','Renombrar chat','Renommer la discussion','Chat umbenennen','Renomear conversa','Rinomina chat'],
+    ['Delete chat','Gesprek verwijderen','Eliminar chat','Supprimer la discussion','Chat löschen','Excluir conversa','Elimina chat'],
+    ['Website preview inside SCHOLAVERUM','Websitevoorbeeld in SCHOLAVERUM','Vista previa del sitio en SCHOLAVERUM','Aperçu du site dans SCHOLAVERUM','Website-Vorschau in SCHOLAVERUM','Prévia do site no SCHOLAVERUM','Anteprima del sito in SCHOLAVERUM'],
+    ['Close website preview','Websitevoorbeeld sluiten','Cerrar vista previa','Fermer l’aperçu','Website-Vorschau schließen','Fechar prévia','Chiudi anteprima'],
+    ['Learning progress','Leervoortgang','Progreso de aprendizaje','Progression de l’apprentissage','Lernfortschritt','Progresso de aprendizagem','Progresso di apprendimento'],
+    ['Still thinking…','Nog aan het nadenken…','Aún pensando…','Réflexion en cours…','Denke noch nach…','Ainda pensando…','Sto ancora pensando…'],
+    ['Send message','Bericht verzenden','Enviar mensaje','Envoyer le message','Nachricht senden','Enviar mensagem','Invia messaggio'],
+    ['Check your answer','Controleer je antwoord','Comprueba tu respuesta','Vérifiez votre réponse','Überprüfe deine Antwort','Confira sua resposta','Controlla la risposta']
+  ].forEach(r=>add(...r));
+
   const RTL=new Set(['ar','he','ur','fa','ps']);
   const STATIC_KEYS=new Set(Object.values(STATIC_UI).flatMap(m=>Object.keys(m)));
   const CORE=[
@@ -783,7 +798,7 @@
     try{
       for(let pass=0;pass<2&&epoch===translationEpoch;pass++){
         upgradeSelectors();applyVisible();
-        const strings=[...new Set(collectDom(480))].filter(eligibleText);
+        const strings=[...new Set(collectDom(840))].filter(eligibleText);
         const missing=strings.filter(s=>!map[s]);
         if(!missing.length)break;
         const add=await translateBatch(target,missing,part=>{if(epoch!==translationEpoch||pageSignal?.aborted)return;map={...map,...part};saveMap(target,map);scheduleApplyVisible()},'ui',null,pageSignal);
@@ -864,12 +879,12 @@
   }
 
   function visibleRoots(){
-    const h=String(location.hash||'').toLowerCase(),publicRoute=h===''||h==='#home'||h==='#pricing',roots=[];
+    const h=String(location.hash||'').toLowerCase(),publicRoute=isHomeRoute(),roots=[];
     const push=el=>{if(el&&el.isConnected&&!roots.includes(el))roots.push(el)};
     push($('#v55-topbar'));
     authDialogRoots().forEach(push);
     if(publicRoute&&!document.body.classList.contains('v51-workspace')){
-      push($('#v29-home-layer:not([hidden])'));
+      push($('#v29-home-layer:not([hidden])'));push($('#v55-workspace-cta'));
     }else{
       push($('#v51-sidebar'));push($('#v51-main'));
       // Route ownership is authoritative. A view may be mounting before its
@@ -914,7 +929,7 @@
       if(completionRunning){completionQueued=true;return}
       completionRunning=true;
       try{
-        const strings=[...new Set(collectDom(620))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
+        const strings=[...new Set(collectDom(1050))].filter(eligibleText),missing=strings.filter(s=>!map[s]);
         if(missing.length){
           const primed=primeDeviceTranslator(target);
           const add=await translateBatch(target,missing,part=>{
@@ -1048,7 +1063,9 @@
   function boot(){
     // Never declare a locale ready while a newer language-switch epoch owns it.
     if(document.documentElement.classList.contains('scholark-language-switching')){upgradeSelectors();return}
-    const normalized=code();if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized);
+    const normalized=code();
+    try{if(localStorage.getItem('scholark_ui_language')!==normalized)localStorage.setItem('scholark_ui_language',normalized)}
+    catch{document.documentElement.dataset.scholarkFallbackLanguage=normalized}
     document.documentElement.lang=normalized;document.documentElement.dir=RTL.has(normalized)?'rtl':'ltr';syncDocumentTitle(normalized);
     if(isHomeRoute()&&!STATIC_CORE_LANGS.has(normalized)&&bootLocalePrime!==normalized){
       bootLocalePrime=normalized;
@@ -1068,34 +1085,38 @@
     }
     const roots=[...pendingRoots];pendingRoots.clear();
     const authRoots=authDialogRoots();
-    if(code()!=='en'){
-      if(roots.length>18)applyKnown(activeRoot());
-      else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
-      authRoots.forEach(r=>applyKnown(r));
-    }else{
-      // English must actively restore canonical copy in auth dialogs after
-      // switching away from another language; previously these dialogs were skipped.
-      authRoots.forEach(r=>applyKnown(r));
-    }
+    // English also has to capture/revert new content on reused nodes, not
+    // only on login dialogs.
+    if(roots.length>18)applyVisible();
+    else roots.forEach(r=>{if(r?.isConnected)applyKnown(r)});
+    authRoots.forEach(r=>applyKnown(r));
     if(selectorPending){selectorPending=false;upgradeSelectors()}
     if(code()!=='en')scheduleUnknown();
   }
   const obs=new MutationObserver(muts=>{
     for(const m of muts){
+      if(m.type==='characterData'){
+        const node=m.target,root=node?.parentElement;
+        if(!root||protectedNode(root)||clean(node.nodeValue)===textRendered.get(node))continue;
+        pendingRoots.add(root);continue;
+      }
+      if(m.type==='attributes'){
+        const el=m.target,attr=m.attributeName;
+        if(!el||protectedNode(el)||clean(el.getAttribute(attr))===attrRendered.get(el)?.[attr])continue;
+        pendingRoots.add(el);continue;
+      }
       if(!m.addedNodes?.length)continue;
       for(const n of m.addedNodes){
         const root=n.nodeType===1?n:n.parentElement;if(root)pendingRoots.add(root);
         if(n.nodeType===1&&(n.matches?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')||n.querySelector?.('select,#v51-sidebar,#v55-topbar,.v36-shell-controls')))selectorPending=true;
       }
     }
-    if(code()==='en'){
-      pendingRoots.clear();
-      if(selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,70)}
-      return;
-    }
-    if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,60)}
+    if(pendingRoots.size||selectorPending){clearTimeout(mutationTimer);mutationTimer=setTimeout(flushMutations,75)}
   });
-  obs.observe(document.body||document.documentElement,{subtree:true,childList:true});
+  obs.observe(document.body||document.documentElement,{
+    subtree:true,childList:true,characterData:true,attributes:true,
+    attributeFilter:['placeholder','aria-label','title','alt']
+  });
   function scheduleRouteLocalization(delay=55){
     const run=()=>{
       if(document.documentElement.classList.contains('scholark-language-switching')||document.documentElement.classList.contains('scholark-workspace-entering')){setTimeout(run,90);return}
