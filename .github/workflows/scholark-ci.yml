@@ -54,6 +54,7 @@ jobs:
           node --check scholark-v125-guided-tour.js
           node --check scholark-v126-workspace-integrity.js
           node --check scripts/scholaverum-r282-integrated-smoke.mjs
+          node --check scripts/scholaverum-r283-workspace-visual-smoke.mjs
           node --check scripts/scholaverum-r281-motion-contract.mjs
           node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
@@ -189,6 +190,8 @@ jobs:
         run: node scripts/scholaverum-r281-motion-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r283 premium Workspace and mobile layout
+        run: node scripts/scholaverum-r283-workspace-visual-smoke.mjs http://127.0.0.1:10000
       - name: Exercise every workspace option in Chromium
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Exercise critical flows in Firefox and WebKit
