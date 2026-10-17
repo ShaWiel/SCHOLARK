@@ -620,7 +620,25 @@
   function clickExternalTool(tool){const c=qsa(`[data-tool="${tool}"]`).filter(el=>!el.closest('#v51-sidebar,#v51-main'))[0];if(c){try{c.click();return true}catch{}}return false}
   function openPro(id){
     setCollapsed(false,true);clearModes();forceQuality();state.active=id;syncNav();setRoute(id);document.body.classList.add('v51-pro','v51-'+id);
-    if(id==='schools'){let t=$('[data-v50-school]');if(t){try{t.click()}catch{}}else{const old=$('[data-v48-tool="schools"]');try{old?.click()}catch{}}setTimeout(()=>{if(route()!=='#schools')return;const x=$('#v50-school');x?.classList.add('open');window.__SCHOLARK_I18N__?.apply?.(x)},35);return}
+    if(id==='schools'){
+      // The school finder is lazy-loaded: a legacy button click or a single
+      // 35 ms timer can silently lose a direct Workspace-tool transition.
+      let settled=false;
+      const mountSchools=()=>{
+        if(route()!=='#schools'||!document.body.classList.contains('v51-schools'))return false;
+        const api=window.__SCHOLARK_V50_SCHOOLS__;
+        if(!api?.open)return false;
+        api.open();settled=!!$('#v50-school.open');
+        if(settled)window.__SCHOLARK_I18N__?.apply?.($('#v50-school'));
+        return settled;
+      };
+      if(mountSchools())return;
+      window.__SCHOLARK_RUNTIME__?.ensure?.('schools')?.then(ok=>{
+        if(ok&&!settled)mountSchools();
+        if(!settled&&route()==='#schools')showFallback('schools');
+      }).catch(e=>{if(route()==='#schools')console.warn('[SCHOLAVERUM] Schools Near Me load failed:',e?.message||e)});
+      return;
+    }
     if(id==='study'){
       $('#v25-study')?.classList.remove('open');
       let settled=false;
