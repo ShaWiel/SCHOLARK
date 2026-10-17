@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\\/$/,'');
+const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
 const errors=[];
@@ -10,7 +10,7 @@ try{
  assert.equal(svg.status(),200,'approved orbital SVG must be shipped in production image');
  const graphic=await svg.text();
  assert.match(graphic,/<ellipse/,'quiet orbital rings are present');
- assert.match(graphic,/data:image\\/png;base64,/,'the original official logo is embedded in the emblem');
+ assert.ok(graphic.includes('data:image/png;base64,'),'the original official logo is embedded in the emblem');
  assert.doesNotMatch(graphic,/LEARN[ .·•]+CREATE[ .·•]+GROW/i,'approved emblem must not contain the tagline');
  await page.goto(base+'/#dashboard',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForSelector('[data-workspace-layout="r285"] .v288-orbit-emblem img',{state:'visible',timeout:30000});
