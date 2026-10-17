@@ -19,3 +19,6 @@ The approved transparent purple/lime orbital SCHOLAVERUM image is now the offici
 
 ## QA retry — historical navigation brand guard
 The first release-gate run passed the new brand-specific QA, including the homepage sphere exception, but detected a legacy foundation brand predicate during history reload. The r290 fix updates the V113 hardening module to repair the canonical logo before its audit and updates the V53 emergency logo to match. The full browser gate is rerun; deployment remains blocked until green.
+
+## Live release verification
+The approved r290 SHA `e54bb7b75917e80d682705f086ccaf1aa0c1f30e` passed Release Gate, CI, and CodeQL and is live on Render `scholark-web` via `dep-db9pap8m7kps73e85gf0`. Production retains `/scholaverum-logo-r246.png` on both rotating homepage sphere faces. This documentation-only commit requests post-deployment live browser verification without changing the deployed runtime assets.
