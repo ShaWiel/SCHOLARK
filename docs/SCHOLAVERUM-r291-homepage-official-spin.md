@@ -18,3 +18,6 @@
 The production release must pass full CI, CodeQL, all browser QA (Chromium, Firefox, WebKit, mobile), and the gated Docker/API build before manual Render deployment. Afterwards trigger live verification on exact deployed SHA. No backend or user data changes.
 ## Gate retry
 The first gated build passed all official brand, 360-degree spin and loading-screen checks, but one older r283 premium Workspace test was pinned to CSS cache `20261017-r290`. The assertion is now updated to r291. This was a test-version conflict, not an application regression.
+
+## Deployed build and post-release verification
+Approved commit `7ca2ae55789d59b6c24b2870b3910f6f0ebd2797` passed CI, CodeQL, and complete Release Gate. Render deployment `dep-db9q6nfavr4c73f18e5g` entered LIVE status successfully. This documentation-only commit triggers read-only browser verification against that exact deployed binary; no application source is modified after the approved release.
