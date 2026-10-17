@@ -17,6 +17,7 @@
     'body.v123-cinematic-home #v55-topbar{background:rgba(9,13,24,.96)!important;border-bottom:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important}',
     'body.v123-cinematic-home #v55-topbar .v55-brand{flex-shrink:0}',
     '#v123-home-nav{display:flex;align-items:center;justify-content:center;gap:4px;flex:1 1 auto;min-width:0}',
+    '#v123-home-nav[hidden]{display:none!important}',
     '#v123-home-nav button{background:transparent;color:#cbd0d9;border:0;border-radius:999px;white-space:nowrap;padding:10px 13px;cursor:pointer;font:750 11px/1.2 Inter,system-ui,sans-serif;transition:background .18s,color .18s}',
     '#v123-home-nav button:hover,#v123-home-nav button:focus-visible{background:rgba(255,255,255,.10);color:white;outline-offset:3px}',
     '#v123-home-nav button[aria-current="true"]{color:#d5fa8e;background:rgba(205,255,119,.1)}',
@@ -128,6 +129,7 @@
     'story.threeTitle':'Weet wat er volgt.','story.threeBody':'Vind scholen, ontdek toekomstige studies en bereid je voor op je volgende stap.'
   };
   const translations = new Map([['en', BASE],['nl',NL]]);
+  const pendingTranslations = new Map();
   let translationEpoch = 0;
   function setText(root, dictionary) {
     if (!root) return;
@@ -148,7 +150,12 @@
       return;
     }
     try {
-      const translated = await api.translateStrings(current, Object.values(BASE), 'r279_home_experience');
+      if (!pendingTranslations.has(current)) {
+        const pending = Promise.resolve(api.translateStrings(current, Object.values(BASE), 'r279_home_experience'));
+        pendingTranslations.set(current,pending);
+        pending.finally(()=>{ if(pendingTranslations.get(current)===pending) pendingTranslations.delete(current); }).catch(()=>{});
+      }
+      const translated = await pendingTranslations.get(current);
       if (epoch !== translationEpoch || current !== lang()) return;
       const out = {};
       Object.keys(BASE).forEach(key => { out[key] = translated?.[BASE[key]] || BASE[key]; });
