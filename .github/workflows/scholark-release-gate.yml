@@ -43,6 +43,7 @@ jobs:
           node --check scripts/scholark-language-nonblocking-smoke.mjs
           node --check scholark-v124-editorial-home.js
           node --check scripts/scholaverum-r280-home-smoke.mjs
+          node --check scripts/scholaverum-r281-motion-smoke.mjs
           node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
           node --check scripts/scholark-capacity-smoke.mjs
@@ -139,6 +140,8 @@ jobs:
           node scripts/scholark-r278-live-i18n-smoke.mjs http://127.0.0.1:10000
       - name: Validate r280 rebuilt landing desktop and mobile
         run: node scripts/scholaverum-r280-home-smoke.mjs http://127.0.0.1:10000
+      - name: Validate r281 animated hero and performance accessibility
+        run: node scripts/scholaverum-r281-motion-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
         run: node scripts/scholark-workspace-ui-smoke.mjs http://127.0.0.1:10000
       - name: Firefox and WebKit critical regression
