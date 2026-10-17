@@ -5,7 +5,10 @@ const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1360,height:850},reducedMotion:'reduce'});
 const open=async name=>{
-  await page.evaluate(name=>{const api=window.__SCHOLARK_WORKSPACE__;if(api?.openTool)api.openTool(name);else location.hash='#'+name},name);
+  const button=page.locator('#v51-sidebar [data-v51-tool="'+name+'"]');
+  await button.waitFor({state:'visible',timeout:12000});
+  await button.click();
+  await page.waitForFunction(name=>location.hash==='#'+name,name,{timeout:12000});
 };
 const wait=async selector=>page.waitForSelector(selector,{state:'visible',timeout:30000});
 try{
@@ -23,7 +26,7 @@ try{
  assert.ok(arki.heading>=30&&arki.heading<=60,'ARKI heading should follow premium typography');
  assert.ok(arki.input>=13,'ARKI input must be legible');
  assert.ok(arki.radius>=18,'ARKI surface should use shared rounding');
- await open('tutor');await wait('.v52-tool[data-v52-tool="tutor"]');
+ await open('tutor');await wait('#v51-fallback .v52-tool');
  const tutor=await page.evaluate(()=>{
   const t=document.querySelector('.v52-tool[data-v52-tool="tutor"]');
   const heading=t?.querySelector('.v52-head h1');
