@@ -294,36 +294,40 @@ body.v280-home-rebuild #v29-home-layer > #v280-editorial-home{display:block!impo
 body.v280-home-rebuild #v28-home,body.v280-home-rebuild #v41-home-pricing{display:none!important;visibility:hidden!important;pointer-events:none!important}
 
 
-/* r288 — original SCHOLAVERUM mark travels with the slow, rotating hero sphere.
-   The home orb keeps the existing colors, atmosphere and cinematic cards. */
-#v280-editorial-home .v280-planet.v288-branded-sphere{
- overflow:hidden;perspective:900px;isolation:isolate;contain:paint;
+/* r291 — the entire approved official orbital logo IS the homepage hero visual.
+   It replaces the old gradient sphere and its legacy S, including both old CSS orbits.
+   The sphere in the official asset is 29.9% of its full image width; this sizing
+   preserves the previous .v280-planet's 76%-of-art diameter (76 / .30 = 253%).
+   Extra orbital rings extend beyond the old ball, behind the floating feature cards. */
+#v280-editorial-home .v291-official-hero-art{isolation:isolate}
+#v280-editorial-home .v291-official-logo-spin{
+ position:absolute;left:55%;top:50%;width:253.3%;height:auto;
+ aspect-ratio:3 / 2;pointer-events:none;user-select:none;
+ transform-origin:center center;
+ animation:v291FullOfficialLogoTurn 22s linear infinite!important;
+ animation-play-state:running!important;
+ will-change:transform;z-index:0;
 }
-#v280-editorial-home .v288-sphere-spin{
- position:absolute;inset:0;border-radius:50%;transform-style:preserve-3d;
- animation:v288SphereSpin 22s linear infinite;will-change:transform
+#v280-editorial-home .v291-official-logo-image{
+ display:block;width:100%;height:100%;object-fit:contain;
+ filter:none!important;opacity:1!important;pointer-events:none;
 }
-#v280-editorial-home .v288-sphere-face{
- position:absolute;inset:0;display:grid;place-items:center;transform-style:preserve-3d;
- backface-visibility:hidden;-webkit-backface-visibility:hidden
+@keyframes v291FullOfficialLogoTurn{
+ from{transform:translate(-50%,-50%) rotate(0deg)}
+ to{transform:translate(-50%,-50%) rotate(360deg)}
 }
-#v280-editorial-home .v288-sphere-face.v288-front{transform:rotateY(0deg) translateZ(18px)}
-#v280-editorial-home .v288-sphere-face.v288-back{transform:rotateY(180deg) translateZ(18px)}
-#v280-editorial-home .v288-sphere-face img{
- width:62%;height:auto;max-height:68%;object-fit:contain;
- filter:drop-shadow(0 9px 15px rgba(5,14,37,.35));
-}
-@keyframes v288SphereSpin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+#v280-editorial-home .v291-official-hero-art .v280-floating{z-index:2}
 @media(max-width:950px){
- #v280-editorial-home .v288-sphere-face img{width:65%}
+ #v280-editorial-home .v291-official-logo-spin{width:253.3%}
 }
 @media(max-width:780px){
- #v280-editorial-home .v288-sphere-spin{animation-duration:25s;will-change:auto}
- #v280-editorial-home .v288-sphere-face img{width:67%;filter:drop-shadow(0 5px 9px rgba(5,14,37,.24))}
+ #v280-editorial-home .v291-official-logo-spin{animation-duration:22s!important;will-change:auto}
 }
-/* Accessibility and carousel pause controls take precedence over movement. */
+/* Reduced motion remains an accessible user-controlled exception to auto-spin.
+   All other visitors see the uninterrupted complete 360-degree rotation. */
 @media(prefers-reduced-motion:reduce){
- #v280-editorial-home .v288-sphere-spin{animation:none!important;transform:rotateY(0deg)!important;will-change:auto!important}
- #v280-editorial-home .v288-back{display:none!important}
+ #v280-editorial-home .v291-official-logo-spin{
+  animation:none!important;transform:translate(-50%,-50%) rotate(0deg)!important;
+  will-change:auto!important
+ }
 }
-body.v281-motion-paused #v280-editorial-home .v288-sphere-spin{animation-play-state:paused!important}
