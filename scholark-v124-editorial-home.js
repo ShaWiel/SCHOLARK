@@ -189,7 +189,7 @@ function v281Setup(){
  const root=$('#v280-editorial-home');
  if(!root)return;
  // These illustrations get the same one-time scroll reveal as the editorial copy.
- $('.v280-panel-graphic',root).forEach(node=>node.setAttribute('data-v280-reveal',''));
+ $$('.v280-panel-graphic',root).forEach(node=>node.setAttribute('data-v280-reveal',''));
  if(v281StageObserver){v281Refresh();return}
  v281Targets=$('.v280-hero,.v280-tape,.v280-screen,.v280-panel-graphic',root);
  if('IntersectionObserver' in window){
