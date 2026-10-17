@@ -88,7 +88,7 @@ function markup(){
  '<p class="v280-hero-pitch">'+k('hero.pitch')+'</p><div class="v280-hero-actions">'+cta('hero.start','ai')+
  '<button type="button" class="v280-cta ghost" data-v280-scroll="v280-intro">'+k('hero.see')+' <span aria-hidden="true">↓</span></button></div>',
  '<p class="v280-hero-under">'+k('hero.note')+'</p></div>',
- '<div class="v280-hero-art" aria-hidden="true"><div class="v280-orbit"></div><div class="v280-orbit two"></div><div class="v280-planet v288-branded-sphere"><div class="v288-sphere-spin"><span class="v288-sphere-face v288-front"><img src="/scholaverum-logo-r246.png" width="420" height="315" loading="eager" decoding="async" alt=""></span><span class="v288-sphere-face v288-back"><img src="/scholaverum-logo-r246.png" width="420" height="315" loading="eager" decoding="async" alt=""></span></div></div>',
+ '<div class="v280-hero-art v291-official-hero-art" aria-hidden="true"><div class="v291-official-logo-spin"><img class="v291-official-logo-image" src="/scholaverum-official-logo-r290.webp" width="960" height="640" loading="eager" decoding="async" alt=""></div>',
  '<div class="v280-floating top"><span>AI TUTOR</span><strong>Understand more.</strong><div class="v280-mini-lines"><i></i><i></i><i></i><i></i></div></div>',
  '<div class="v280-floating bottom"><span>ARKI · AI COMPANION</span><strong>Ready for your next idea.</strong><small>✳ Thought → action</small></div></div>',
  '<div class="v280-scroll-prompt">'+k('hero.scroll')+'<b aria-hidden="true">↓</b></div></div></section>',
