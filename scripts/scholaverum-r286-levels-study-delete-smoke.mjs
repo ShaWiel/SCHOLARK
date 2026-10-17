@@ -19,6 +19,8 @@ await context.addInitScript(uid=>{
 },UID);
 const page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
+// Force the production-like lazy module race: slow school assets must not leave #schools blank.
+await page.route('**/scholark-v50-school-finder.js*',async route=>{await new Promise(resolve=>setTimeout(resolve,1500));await route.continue()});
 await page.route(SB+'/rest/v1/**',async route=>{
  const req=route.request(),url=new URL(req.url()),method=req.method();
  if(url.pathname.endsWith('/study_ahead')){
@@ -86,6 +88,7 @@ try{
  await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
  await page.waitForSelector('#v50-school.open',{state:'visible',timeout:20000});
  assert.equal(await page.locator('#v50-country').count(),1,'Schools Near Me mounts after Reminders');
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('v51-schools')),true,'lazy Schools Near Me retains its canonical body mode');
  assert.equal(await page.locator('#v50-school').count(),1,'school finder never renders twice');
  assert.deepEqual(errors,[],'expanded levels, route quarantine and study removal have no browser exceptions');
  console.log('PASS r286: complete desktop/mobile education grid, retired Home/Workspace quarantine, single removal, delete all, and user-scoped cloud state');
