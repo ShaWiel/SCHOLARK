@@ -32,6 +32,8 @@ try{
   assert.equal(desktop.stories,2,'two immersive language/schools panels');
   assert.equal(desktop.tools,6,'six complete feature descriptions');
   assert.ok(desktop.sections>=6&&desktop.title?.includes('LEARN'),'new editorial narrative must replace old landing');
+  await page.waitForSelector('#v55-workspace-cta .v55-entry',{state:'visible',timeout:8000});
+  assert.equal(await page.locator('#v280-hero #v55-workspace-cta .v55-entry').count(),1,'Canonical Workspace CTA must be visible within new hero');
   await page.locator('#v280-tab-tutor').click();
   assert.equal(await page.locator('#v280-tab-tutor').getAttribute('aria-selected'),'true');
   assert.match(await page.locator('#v280-app-preview').innerText(),/plant|sunlight/i);
