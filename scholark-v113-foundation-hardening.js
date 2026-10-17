@@ -114,9 +114,9 @@
     const experienceReport=window.__SCHOLARK_V111_EXPERIENCE__?.verify?.()||null,experienceHealthy=!window.__SCHOLARK_V111_EXPERIENCE__||experienceReport?.ok!==false;
     const i18n=window.__SCHOLARK_I18N__,i18nReport=i18n?.selftest?.()||null;
     const selectors=$$("#v55-language,#v36-language,#v90-language,#v89-lang"),selectorCounts=selectors.map(x=>x.options?.length||0);
-    const languageRegistry=!!i18n&&i18n.count===75&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
+    const languageRegistry=!!i18n&&i18n.count===74&&i18nReport?.ok===true&&!i18n.langs.some(([lc])=>lc==='srn');
     const languageResilience=i18nReport?.abortable===true&&i18nReport?.retryReady===true;
-    const selectorsHealthy=selectorCounts.every(n=>n===75);
+    const selectorsHealthy=selectorCounts.every(n=>n===74);
     const countryApi=window.__SCHOLARK_COUNTRY__,globalCountryRegistry=countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195;
     const globalSchools=r!=="schools"||(window.__SCHOLARK_V50_SCHOOLS__?.global===true&&globalCountryRegistry);
     const coverage=i18n?.coverage?.(620)||null;

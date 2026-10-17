@@ -149,14 +149,14 @@ const competingHeaders=await page.evaluate(()=>{
 });
 check(competingHeaders===0,`Legacy/competing homepage header is visible alongside the SCHOLARK topbar: ${competingHeaders}`);
 const languageCatalog=await page.evaluate(()=>({options:[...document.querySelectorAll('#v55-language option')].map(o=>o.value),report:window.__SCHOLARK_I18N__?.selftest?.()}));
-check(languageCatalog.options.length===75,`Homepage language selector should expose 75 languages, got ${languageCatalog.options.length}`);
-for(const code of ['ar','zh','cmn','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','cs','sv','da','no','fi','hu','id','ms','vi','th','tl','sw','he','ur','fa','ta','te','pa'])check(languageCatalog.options.includes(code),`Missing added interface language: ${code}`);
-check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===75&&languageCatalog.report?.dynamicCount===68&&languageCatalog.report?.sortedNames&&languageCatalog.report?.mandarinReady,'75-language i18n self-test failed');
+check(languageCatalog.options.length===74,`Homepage language selector should expose 74 languages, got ${languageCatalog.options.length}`);
+for(const code of ['ar','zh','hi','bn','ru','ja','ko','tr','pl','uk','ro','el','cs','sv','da','no','fi','hu','id','ms','vi','th','tl','sw','he','ur','fa','ta','te','pa'])check(languageCatalog.options.includes(code),`Missing added interface language: ${code}`);
+check(languageCatalog.report?.ok===true&&languageCatalog.report?.count===74&&languageCatalog.report?.dynamicCount===67&&languageCatalog.report?.sortedNames&&languageCatalog.report?.chineseReady,'74-language i18n self-test failed');
 check(await page.evaluate(()=>{
   const names=[...document.querySelectorAll('#v55-language option')].map(o=>o.textContent.trim());
   return names.every((name,i)=>i===0||names[i-1].localeCompare(name,'en',{sensitivity:'base'})<=0);
 }),'Homepage language choices must be alphabetized by their displayed labels');
-check((await page.locator('#v55-language option[value="cmn"]').innerText()).includes('Mandarin'),'Mandarin must be listed in interface languages');
+check(await page.locator('#v55-language option[value="cmn"]').count()===0,'Mandarin duplicate must not appear');
 await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
 await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
 check(await page.evaluate(()=>document.documentElement.classList.contains('scholark-home-language-adapting')),'Homepage did not enter atomic language-adaptation mode');
@@ -449,7 +449,7 @@ await page.evaluate(()=>{
 await page.reload({waitUntil:'domcontentloaded',timeout:30000});
 check(await visible('#v51-main [data-v51-page="dashboard"].active',10000),'Dashboard did not become active');
 check(await visible('.v51-levels.v51-levels-suriname',10000),'Suriname level strip did not mount');
-check(await page.locator('#v90-language option').count()===75,`Workspace language selector should expose 75 languages`);
+check(await page.locator('#v90-language option').count()===74,`Workspace language selector should expose 74 languages`);
 check(await page.evaluate(()=>{
   const selects=[...document.querySelectorAll('#v96-country,#v96-side-country select')];
   return selects.length>0&&selects.every(sel=>{
@@ -1478,8 +1478,8 @@ const languageMatrix=await page.evaluate(async()=>{
   await api.changeLanguage('nl');
   return {count:langs.length,issues};
 });
-check(languageMatrix.count===75,`Language matrix expected 75 languages, got ${languageMatrix.count}`);
-check(languageMatrix.issues.length===0,`75-language layout pass failed: ${languageMatrix.issues.slice(0,15).join(' | ')}`);
+check(languageMatrix.count===74,`Language matrix expected 74 languages, got ${languageMatrix.count}`);
+check(languageMatrix.issues.length===0,`74-language layout pass failed: ${languageMatrix.issues.slice(0,15).join(' | ')}`);
 
 // Representative route-language matrix: exercise changed surfaces under RTL, CJK,
 // Indic, African and static-European locales instead of validating Dashboard only.

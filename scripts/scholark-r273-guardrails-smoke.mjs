@@ -16,7 +16,7 @@ assert.match(sql, /REVOKE ALL PRIVILEGES ON TABLE public\.%I FROM PUBLIC, anon, 
 assert.doesNotMatch(sql, /\bDROP\s+(TABLE|FUNCTION)\b/i, 'Do not delete existing Connect data');
 assert.match(read('scholark-v122-connect.js'), /CONNECT_RELEASE_STATE='coming-soon'/);
 
-const release = 'r281-motion-home';
+const release = 'r282-workspace-tour';
 assert.ok(runtime.includes("const VERSION = '20261017-" + release + "'"));
 assert.ok(runtime.includes("connect:false,release:'" + release + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
