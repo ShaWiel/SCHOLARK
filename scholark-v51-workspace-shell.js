@@ -621,22 +621,29 @@
   function openPro(id){
     setCollapsed(false,true);clearModes();forceQuality();state.active=id;syncNav();setRoute(id);document.body.classList.add('v51-pro','v51-'+id);
     if(id==='schools'){
-      // The school finder is lazy-loaded: a legacy button click or a single
-      // 35 ms timer can silently lose a direct Workspace-tool transition.
+      // Direct transitions can race the on-demand school finder and route
+      // cleanup. A missing v51-schools class is NOT a reason to discard the
+      // still-current route: recover it before mounting the one school surface.
       let settled=false;
       const mountSchools=()=>{
-        if(route()!=='#schools'||!document.body.classList.contains('v51-schools'))return false;
+        if(route()!=='#schools'||settled)return settled;
         const api=window.__SCHOLARK_V50_SCHOOLS__;
         if(!api?.open)return false;
-        api.open();settled=!!$('#v50-school.open');
-        if(settled)window.__SCHOLARK_I18N__?.apply?.($('#v50-school'));
+        document.body.classList.add('v51-workspace','v51-pro','v51-schools');
+        try{api.open()}catch(e){console.warn('[SCHOLAVERUM] School surface recovery:',e?.message||e);return false}
+        const school=$('#v50-school');
+        settled=!!school?.classList.contains('open');
+        if(settled){window.__SCHOLARK_I18N__?.apply?.(school);syncWorkspaceLanguage(school)}
         return settled;
       };
       if(mountSchools())return;
-      window.__SCHOLARK_RUNTIME__?.ensure?.('schools')?.then(ok=>{
-        if(ok&&!settled)mountSchools();
-        if(!settled&&route()==='#schools')showFallback('schools');
-      }).catch(e=>{if(route()==='#schools')console.warn('[SCHOLAVERUM] Schools Near Me load failed:',e?.message||e)});
+      window.__SCHOLARK_RUNTIME__?.ensure?.('schools')?.then(()=>mountSchools()).catch(e=>{
+        if(route()==='#schools')console.warn('[SCHOLAVERUM] School module still loading:',e?.message||e);
+      });
+      [100,300,750,1500,3000,6000,9000].forEach((ms,index)=>setTimeout(()=>{
+        if(settled||route()!=='#schools')return;
+        if(!mountSchools()&&index===6)showFallback('schools');
+      },ms));
       return;
     }
     if(id==='study'){
