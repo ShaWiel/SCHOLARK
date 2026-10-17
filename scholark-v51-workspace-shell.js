@@ -167,7 +167,7 @@
     <header class="v284-topline"><span><b>SCHOLAVERUM</b> <span class="v284-divider">/</span> <span>Workspace</span></span><div class="v285-command-actions"><span class="v284-date"></span><button type="button" data-v285-library><span>All tools</span> <span aria-hidden="true">↗</span></button></div></header>
     <section class="v284-welcome" aria-labelledby="v284-title">
       <div class="v51-head"><div><small>${DASHBOARD_SOURCE.kicker}</small><h1 id="v284-title">${DASHBOARD_SOURCE.title}</h1><p>${DASHBOARD_SOURCE.copy}</p></div></div>
-      <div class="v285-orbit" aria-hidden="true"><div class="v285-orbit-ring one"></div><div class="v285-orbit-ring two"></div><div class="v285-orbit-core"><img src="/scholaverum-logo-r246.png" alt="" width="116" height="94"></div><i class="v285-orbit-point one"></i><i class="v285-orbit-point two"></i><span class="v285-orbit-caption">LEARN · CREATE · GROW</span></div>
+      <div class="v285-orbit v288-orbit-emblem" aria-hidden="true"><img src="/scholaverum-orbital-emblem-r288.svg" alt="" width="236" height="218" decoding="async"></div>
     </section>
     <section class="v285-launch-grid" aria-label="Start your next step">
      <article class="v285-ask"><div class="v285-panel-heading"><span class="v285-index">01</span><h2>Make it happen</h2><span class="v285-assistant-tag">ARKI + AI Tutor</span></div>
