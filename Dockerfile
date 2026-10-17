@@ -128,11 +128,13 @@ COPY scholark-v29-home-overlay.js \
 RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --check "$f" || exit 1; done \
     && unzip /tmp/scholark.zip -d /app \
     && rm -f /app/scholaverum-logo.webp /app/scholaverum-logo.png /app/scholark-logo.png /app/scholaverum-icon-512.webp \
-    && cp /tmp/scholaverum-icon-512.png /app/scholaverum-icon-512-r242.png \
-    && cp /tmp/scholaverum-icon-512.png /app/scholaverum-icon-512.png \
+    && cp /tmp/scholaverum-official-icon-r290.png /app/scholaverum-icon-512-r242.png \
+    && cp /tmp/scholaverum-official-icon-r290.png /app/scholaverum-icon-512.png \
     && cp /tmp/scholaverum-logo-r246.png /app/scholaverum-logo-r246.png \
-    && cp /tmp/scholaverum-logo-r246.png /app/scholaverum-logo.png \
-    && cp /tmp/scholaverum-logo-r246.png /app/scholark-logo.png \
+    && cp /tmp/scholaverum-official-logo-r290.webp /app/scholaverum-official-logo-r290.webp \
+    && cp /tmp/scholaverum-official-icon-r290.png /app/scholaverum-official-icon-r290.png \
+    && cp /tmp/scholaverum-official-icon-r290.png /app/scholaverum-logo.png \
+    && cp /tmp/scholaverum-official-icon-r290.png /app/scholark-logo.png \
     && cp /tmp/scholaverum-orbital-emblem-r288.svg /app/scholaverum-orbital-emblem-r288.svg \
     && base64 -d /tmp/scholark_v23_patch.gz.b64 | gunzip > /tmp/scholark_v23.patch \
     && patch -p1 -d /app < /tmp/scholark_v23.patch \
