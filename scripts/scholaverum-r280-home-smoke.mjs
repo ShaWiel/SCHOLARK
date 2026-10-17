@@ -5,6 +5,7 @@ const origin=process.argv[2]||'http://127.0.0.1:10000';
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});
 const errors=[];
+await page.addInitScript(()=>localStorage.setItem('scholark_ui_language','en'));
 page.on('pageerror',error=>errors.push(error.message));
 try{
   await page.goto(origin+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
