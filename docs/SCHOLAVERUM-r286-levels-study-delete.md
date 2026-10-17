@@ -17,3 +17,6 @@ The first release gate caught a browser test that required a retired Home elemen
 
 ## Live deployment
 The approved release `e8cff157e2124457c7b566c5f22695f0dec41483` is live on Render `scholark-web` via deployment `dep-db9k6j6q1p3s738iicfg`. This documentation-only commit requests read-only production browser verification of r286; no application assets changed after the approved release.
+
+## Final live smoke alignment
+The live application remains deployed at `e8cff157e2124457c7b566c5f22695f0dec41483`. The production smoke expectation was updated to recognize the stricter r286 canonical prepaint invariant (`#v51-main` singleton plus r285 layout). This documentation-only change triggers read-only live verification with no runtime deployment.
