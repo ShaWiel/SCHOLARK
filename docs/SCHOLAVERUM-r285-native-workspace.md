@@ -13,3 +13,7 @@ Validation covers the actual brand and responsive layout, live data updates, fil
 ## Production release candidate — October 17, 2026
 
 The new dashboard must replace the old Workspace at first entry, rather than merely decorating it. Its canonical `data-workspace-owner="r284"` is deliberately unchanged, while `data-workspace-layout="r285"` identifies the new DOM and visual system. The r285 CSS is loaded using a new cache-busted URL and the Docker runtime release marker is r285. Existing ARKI and AI Tutor, save-state, adaptive language, in-app tools, Home navigation, coming-soon feature locks and mobile interactions remain protected. Standard CI and CodeQL completed successfully on application commit `0354444f25453e5caa9df11317ba4b53191d3a6f`. This release-candidate commit triggers the mandatory production release gate; deployment should only follow a green gate and must be followed by live verification.
+
+## Live verification trigger
+
+Render `scholark-web` successfully deployed the gated application release `d6ebe71b5de260b35241d129f715f39be228ff29` on October 17, 2026 (production deployment `dep-db9jh561egvs73fgr5cg`). This documentation-only follow-up starts the read-only production verification workflow against the live r285 Workspace; it does not change any application runtime assets.
