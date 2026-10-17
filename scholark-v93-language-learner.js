@@ -306,11 +306,11 @@
     $('#v93-review-later',box).onclick=()=>{box.remove();const st=$('#v93-status');if(st)st.textContent='Progress saved. Your review will still be waiting when you return.'};
     box.scrollIntoView({behavior:'smooth',block:'nearest'})
   }
-  function rollbackSaved(row){
+  function rollbackSaved(row, syncCloud=true){
     if(!row?.targetCode)return;const p=loadProgress(),x=p[row.targetCode]||{};
     if(row.kind==='review'&&row.reviewResult){x.reviewsCompleted=Math.max(0,(Number(x.reviewsCompleted)||0)-1);x.reviews=compactReviews((x.reviews||[]).filter(r=>r?.id!==row.id));const latest=x.reviews?.[0]||null;x.lastReviewLessonCount=latest?Number(x.lastReviewLessonCount)||0:0;x.lastReviewScore=latest?Number(latest.grade)||0:0;x.lastReviewPercent=latest?Number(latest.percent)||0:0}
     if(row.kind!=='review'&&row.completedAt){x.lessons=Math.max(0,(Number(x.lessons)||0)-1);x.xp=Math.max(0,(Number(x.xp)||0)-100);x.recentTopics=compactTopics((x.recentTopics||[]).filter(r=>r?.id!==row.id));if(x.lastCompletedLesson===row.id)x.lastCompletedLesson=''}
-    x.updatedAt=Date.now();p[row.targetCode]=x;saveProgress(p);renderStats(row.targetCode);pushCloudProgress(row.targetCode)
+    x.updatedAt=Date.now();p[row.targetCode]=x;saveProgress(p);renderStats(row.targetCode);if(syncCloud)pushCloudProgress(row.targetCode)
   }
   function removeSaved(row,confirmUser=true){
     if(!row)return false;if(confirmUser&&!confirm('Delete this saved '+(row.kind==='review'?'exam/review':'lesson')+'? Its saved progress for this item will also be removed.'))return false;
@@ -327,8 +327,10 @@
     if(!items.length)return false;
     if(!confirm('Delete all '+items.length+' saved language lessons and exams? Their saved attempt progress will also be adjusted. This cannot be undone.'))return false;
     // Roll back each saved attempt, then persist a single empty library.
-    for(const item of items)rollbackSaved(item);
+    const changedCodes=new Set();
+    for(const item of items){rollbackSaved(item,false);if(item.targetCode)changedCodes.add(item.targetCode)}
     writeHistory([]);
+    for(const code of changedCodes)pushCloudProgress(code);
     current=null;
     const out=$('#v93-results');if(out)out.innerHTML='';
     renderHistory();
