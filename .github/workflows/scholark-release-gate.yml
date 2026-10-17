@@ -51,6 +51,7 @@ jobs:
           node --check scripts/scholaverum-r284-rebuild-smoke.mjs
           node --check scripts/scholaverum-r285-identity-smoke.mjs
           node --check scripts/scholaverum-r286-levels-study-delete-smoke.mjs
+          node --check scripts/scholaverum-r288-branding-motion-smoke.mjs
           node --check scripts/scholaverum-r281-motion-contract.mjs
           node --check scripts/scholark-r278-live-i18n-smoke.mjs
           node --check scripts/scholark-foundation-network-smoke.mjs
@@ -160,6 +161,8 @@ jobs:
         run: node scripts/scholaverum-r285-identity-smoke.mjs http://127.0.0.1:10000
       - name: Verify r286 level grid and saved-study management
         run: node scripts/scholaverum-r286-levels-study-delete-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r288 approved branding and accessible rotating sphere
+        run: node scripts/scholaverum-r288-branding-motion-smoke.mjs http://127.0.0.1:10000
       - name: Validate r283 premium Workspace and mobile layout
         run: node scripts/scholaverum-r283-workspace-visual-smoke.mjs http://127.0.0.1:10000
       - name: Chromium full Workspace regression
