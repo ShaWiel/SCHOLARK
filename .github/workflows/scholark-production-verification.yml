@@ -95,3 +95,5 @@ jobs:
         run: node scripts/scholaverum-r284-rebuild-smoke.mjs https://scholark-app-shawiel.onrender.com
       - name: Verify live SCHOLAVERUM r285 identity and Workspace interactions
         run: node scripts/scholaverum-r285-identity-smoke.mjs https://scholark-app-shawiel.onrender.com
+      - name: Verify r286 education picker and cloud study list behavior
+        run: node scripts/scholaverum-r286-levels-study-delete-smoke.mjs https://scholark-app-shawiel.onrender.com
