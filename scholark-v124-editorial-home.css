@@ -287,3 +287,8 @@ body.v281-motion-paused #v280-editorial-home *::after{
   #v280-editorial-home .v280-orbit.two{transform:rotate(27deg) scaleY(.7)!important}
   #v280-editorial-home [data-v280-reveal]{opacity:1!important;transform:none!important}
 }
+
+/* Legacy homepage cannot become visible to public users after r282. The old V29 shell remains mounted only for route compatibility. */
+body.v280-home-rebuild #v29-home-layer > :not(#v280-editorial-home){display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.v280-home-rebuild #v29-home-layer > #v280-editorial-home{display:block!important;visibility:visible!important}
+body.v280-home-rebuild #v28-home,body.v280-home-rebuild #v41-home-pricing{display:none!important;visibility:hidden!important;pointer-events:none!important}
