@@ -14,3 +14,6 @@
 
 ## Gate retry
 The first release gate caught a browser test that required a retired Home element to remain present. The test now accepts the stronger condition where that element has been completely removed, as well as when it is hidden. The runtime implementation is unchanged.
+
+## Live deployment
+The approved release `e8cff157e2124457c7b566c5f22695f0dec41483` is live on Render `scholark-web` via deployment `dep-db9k6j6q1p3s738iicfg`. This documentation-only commit requests read-only production browser verification of r286; no application assets changed after the approved release.
