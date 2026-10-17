@@ -305,3 +305,5 @@ jobs:
           timeout 480s npx playwright install chromium
       - name: Run live prelaunch browser smoke
         run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
+      - name: Verify live r284 Workspace, legacy first paint and cinematic transitions
+        run: node scripts/scholaverum-r284-rebuild-smoke.mjs https://scholark-app-shawiel.onrender.com

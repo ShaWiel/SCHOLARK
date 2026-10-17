@@ -122,6 +122,11 @@ try{
   check(await page.locator('.v85-topbar-wallet-panel').count()===1,'live Workspace Wallet opens without duplication');
   await page.keyboard.press('Escape');
 
+  // The next checks intentionally inspect English product copy. Settle the
+  // language first instead of racing the preceding Dutch locale transition.
+  await page.evaluate(()=>window.__SCHOLARK_I18N__?.changeLanguage?.('en'));
+  await page.waitForFunction(()=>document.documentElement.lang==='en'&&!document.documentElement.classList.contains('scholark-language-switching'),null,{timeout:LANGUAGE_SETTLE_TIMEOUT});
+
   // Connect is held until a future launch; deep links cannot mount chats/calls.
   const connectAsset=await fetch(base+'/scholark-v122-connect.js?live-connect='+Date.now());
   const connectSource=await connectAsset.text();
