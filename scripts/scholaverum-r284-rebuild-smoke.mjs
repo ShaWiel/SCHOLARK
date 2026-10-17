@@ -65,6 +65,9 @@ try{
 
  await dashboard();
  const check=async()=>{
+  // The shell is interactive before deferred foundation modules finish over
+  // a real network. Wait for this module before checking its own health.
+  await page.waitForFunction(()=>window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.().ok===true,null,{timeout:25000});
   const s=await page.evaluate(()=>{
    const main=document.querySelector('#v51-main'),desk=main.querySelector('[data-workspace-owner="r284"]'),head=desk.querySelector('.v51-head').getBoundingClientRect(),compose=desk.querySelector('.v284-composer').getBoundingClientRect(),overview=desk.querySelector('.v284-overview').getBoundingClientRect();
    return{main:document.querySelectorAll('#v51-main').length,sidebar:document.querySelectorAll('#v51-sidebar').length,desk:document.querySelectorAll('[data-workspace-owner="r284"]').length,heads:desk.querySelectorAll('.v51-head').length,cards:desk.querySelectorAll('.v51-card').length,opacity:getComputedStyle(main).backgroundColor,headBeforeCompose:head.bottom<=compose.top+1,composeBeforeOverview:compose.bottom<=overview.top+1,width:main.getBoundingClientRect().width,left:main.getBoundingClientRect().left,viewport:innerWidth,orchestrator:window.__SCHOLARK_V114_ORCHESTRATOR__?.verify?.()};
