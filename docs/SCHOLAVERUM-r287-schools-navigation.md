@@ -13,3 +13,5 @@ A direct programmatic transition from Reminders to Schools Near Me could leave S
 
 ## Verification
 Run static and full CI, the gated browser regression, then deploy only the approved commit and rerun live verification. Browser smoke mocks Study Ahead records; it never deletes real user data.
+## Live deployment and verification
+Production release 34adf70148dbd1bd94a60f135a3fd56243f8cd2a deployed successfully to Render (dep-db9l67e1egvs73fmfrp0). This documentation-only verification trigger runs the existing production tests against the deployed r287 code; the runtime files are unchanged.
