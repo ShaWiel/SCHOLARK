@@ -26,6 +26,8 @@ COPY scholark-launch-route.mjs /app/scholark-launch-route.mjs
 COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 COPY scholark-v123-cinematic-homepage.js /tmp/scholark-v123-cinematic-homepage.js
+COPY scholark-v124-editorial-home.js /tmp/scholark-v124-editorial-home.js
+COPY scholark-v124-editorial-home.css /tmp/scholark-v124-editorial-home.css
 COPY scholark-v105-school-vwo.js /tmp/scholark-v105-school-vwo.js
 COPY scholark-v106-workspace-power-tools.js /tmp/scholark-v106-workspace-power-tools.js
 COPY scholark-v107-general-ai.js /tmp/scholark-v107-general-ai.js
@@ -134,9 +136,9 @@ RUN for f in /tmp/scholark-v*.js /tmp/scholark-runtime-loader.js; do node --chec
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#14\.99#__SCHOLARK_PRO_PRICE__#g; s#9\.99#14.99#g; s#__SCHOLARK_PRO_PRICE__#19.99#g' {} + \
     && find /app -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.html' -o -name '*.json' \) -exec sed -i 's#For learners and students who create more often\.#Billed Monthly. Cancel anytime#g; s#For intensive use and maximum AI quality\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $14.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#7 days free, then $19.99/month\. Cancel anytime\.#Billed Monthly. Cancel anytime#g; s#Start Plus free trial#Choose Plus#g; s#Start Pro free trial#Choose Pro#g; s#Start 7-day Plus trial#Choose Plus#g; s#Start 7-day Pro trial#Choose Pro#g' {} + \
     && find /app -type f -name '*.html' -exec sh -c 'snippet=$(sed "s/[&~\\\\]/\\\\&/g" /tmp/scholark-prepaint-head.html); sed -i "s~</head>~$snippet</head>~" "$1"' sh {} \; \
-    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261017-r279-cinematic-homepage\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
+    && find /app -type f -name '*.html' -exec sh -c 'dir=$(dirname "$1"); for f in /tmp/scholark-v*.js; do cp "$f" "$dir/$(basename "$f")"; done; cp /tmp/scholark-runtime-loader.js "$dir/scholark-runtime-loader.js"; cp /tmp/scholark-v124-editorial-home.css "$dir/scholark-v124-editorial-home.css"; sed -i "s#</body>#<script defer src=\"scholark-runtime-loader.js?v=20261017-r280-editorial-home\"></script><script defer src=\"scholark-v100-home-cinematics.js?v=20261007-r221\"></script><script defer src=\"scholark-v101-core-foundation.js?v=20261007-r221\"></script><script defer src=\"scholark-v104-school-filter-guard.js?v=20260918-school-filter-v4\"></script><script defer src=\"scholark-v105-school-vwo.js?v=20260918-school-vwo-v7\"></script></body>#" "$1"' sh {} \; \
     && find /app -type f -name 'scholark-v*.js' ! -name 'scholark-v98-brand-migration.js' -exec sed -i 's#\<SCHOLARK\>#SCHOLAVERUM#g' {} + \
-    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png
+    && rm -f /tmp/scholark.zip /tmp/scholark_v23_patch.gz.b64 /tmp/scholark_v23_education.gz.b64 /tmp/scholark_v23.patch /tmp/scholark-prepaint-head.html /tmp/scholark-runtime-loader.js /tmp/scholark-v*.js /tmp/scholaverum-logo.webp /tmp/scholaverum-icon-512.webp /tmp/scholaverum-icon-512.png /tmp/scholaverum-logo-compat.png /tmp/scholaverum-logo-r246.png /tmp/scholark-v124-editorial-home.css
 
 # Keep production builds deterministic and non-blocking. Security audits run separately;
 # npm audit must never make a Render release fail because the advisory endpoint is unavailable.
@@ -151,7 +153,7 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev --no-audit --no-fund; el
        sanitize-html@2.18.0
 
 ENV NODE_ENV=production
-ENV SCHOLARK_RELEASE=r279-cinematic-homepage
+ENV SCHOLARK_RELEASE=r280-editorial-home
 ENV SCHOLARK_TEST_MODE=0
 ENV SCHOLARK_FREE_AI_ONLY=1
 ENV SCHOLARK_AI_LIVE=1
