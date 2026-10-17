@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
-const languages=['en','nl','es','fr','de','pt','zh','cmn','ja','ko','hi','ru','ar','he','fa','ur'];
+const languages=['en','nl','es','fr','de','pt','zh','ja','ko','hi','ru','ar','he','fa','ur'];
 const rtl=new Set(['ar','he','fa','ur']);
 const failures=[],rows=[];
 const browser=await chromium.launch({headless:true});
@@ -26,7 +26,7 @@ try{
         return {dir:html.dir,lang:html.lang,overflow,optionCount:select?.options?.length||0,duplicateOverlays,title:document.title};
       },code);
       const expectedDir=rtl.has(code)?'rtl':'ltr';
-      const ok=m.dir===expectedDir&&m.lang===code&&m.overflow<=6&&m.optionCount===75&&m.duplicateOverlays===1;
+      const ok=m.dir===expectedDir&&m.lang===code&&m.overflow<=6&&m.optionCount===74&&m.duplicateOverlays===1;
       rows.push({viewport:viewport.name,code,...m,ok});
       if(!ok)failures.push({viewport:viewport.name,code,...m,expectedDir});
     }
