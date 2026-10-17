@@ -484,9 +484,10 @@ if(!live){
     check(power.includes('scheduleCard(card,rating)')&&power.includes("rating==='again'")&&power.includes("rating==='easy'"),'live Flashcards spaced scheduling is incomplete');
     check(power.includes('Break into Planner')&&power.includes('What should I do next?')&&power.includes("id='assignment-'"),'live Assignments integration is incomplete');
     check(shellRes.r.ok&&shell.includes("['focus','◷','Focus Sessions']")&&shell.includes("['flashcards','▤','Flashcards']")&&shell.includes("['assignments','✓','Assignments']"),'live workspace navigation lacks new tools');
-    check(shell.includes("card('focus','◷','Focus Sessions'")&&shell.includes("card('flashcards','▤','Flashcards'")&&shell.includes("card('assignments','✓','Assignments'"),'live Dashboard lacks new tool cards');
+    const dashboardTools=(shell.match(/const DASHBOARD_TOOLS=\[([\s\S]*?)\n  \];/)||[])[1]||'';
+    check(dashboardTools.includes("['focus','◷','Focus Sessions'")&&dashboardTools.includes("['flashcards','▤','Flashcards'")&&dashboardTools.includes("['assignments','✓','Assignments'")&&shell.includes('DASHBOARD_TOOLS.map(([id,ic,title,desc])=>card('),'live Dashboard lacks canonical power-tool cards');
     check(runtimeRes.r.ok&&runtime.includes("focus:['scholark-v106-workspace-power-tools.js']")&&runtime.includes("assignments:['scholark-v106-workspace-power-tools.js']"),'live runtime is not lazy-routing power tools');
-    check(prepaintRes.r.ok&&home.includes('focus|flashcards|assignments'),'live prepaint is not protecting new workspace routes');
+    check(prepaintRes.r.ok&&home.includes("h==='credit-store'?'credit-store':'workspace'")&&home.includes("if(r==='workspace')return document.getElementById('v51-main')")&&home.includes("cssReady('scholaverum-workspace-style')"),'live prepaint is not waiting for the canonical Workspace surface');
     check(power.includes('data-v106-user="1"'),'live power tools are not marking user content for localization isolation');
     results.push(`live:workspace_power_tools ${powerRes.r.status}/${shellRes.r.status}/${runtimeRes.r.status}/${prepaintRes.r.status}`);
   }catch(e){failures.push(`live:workspace_power_tools threw ${e?.message||e}`)}

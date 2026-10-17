@@ -1,0 +1,95 @@
+name: SCHOLARK Production Verification
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scholark-production-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+# Read-only/anonymous production checks run after an approved deployment.
+# The standard CI and release gate retain their full build/browser coverage.
+jobs:
+  live-resilience-smoke:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-verify]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Wait for live SCHOLARK resilience router
+        run: |
+          # Use the router version from the tested repository, not a stale
+          # hard-coded value. This also catches real code/deploy version drift.
+          EXPECTED_ROUTER_VERSION="$(sed -nE "s/.*const ROUTER_VERSION = '([^']+)'.*/\1/p" scholark-gemini-primary.mjs | head -n 1)"
+          test -n "$EXPECTED_ROUTER_VERSION"
+          for i in {1..90}; do
+            if curl --fail --silent --show-error https://scholark-app-shawiel.onrender.com/api/gemini/health >/tmp/gemini-health.json; then
+              if grep -q '"ok":true' /tmp/gemini-health.json && grep -q '"configured":true' /tmp/gemini-health.json && grep -Fq "\"routerVersion\":\"$EXPECTED_ROUTER_VERSION\"" /tmp/gemini-health.json; then
+                cat /tmp/gemini-health.json
+                exit 0
+              fi
+            fi
+            sleep 4
+          done
+          cat /tmp/gemini-health.json 2>/dev/null || true
+          exit 1
+      - name: Wait for deployed workspace and next lesson flow
+        run: |
+          for i in {1..90}; do
+            ok=1
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v105-school-vwo.js?ci=${GITHUB_SHA}" >/tmp/vwo.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v51-workspace-shell.js?ci=${GITHUB_SHA}" >/tmp/shell.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v104-school-filter-guard.js?ci=${GITHUB_SHA}" >/tmp/filter.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v52-workspace-qa.js?ci=${GITHUB_SHA}" >/tmp/tools.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v102-language-quiz.js?ci=${GITHUB_SHA}" >/tmp/quiz.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v103-language-next-lesson.js?ci=${GITHUB_SHA}" >/tmp/next.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v93-language-learner.js?ci=${GITHUB_SHA}" >/tmp/lang.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v62-learning-ai.js?ci=${GITHUB_SHA}" >/tmp/learning.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v106-workspace-power-tools.js?ci=${GITHUB_SHA}" >/tmp/power.js || ok=0
+            curl --fail --silent --show-error "https://scholark-app-shawiel.onrender.com/scholark-v114-workspace-orchestrator.js?ci=${GITHUB_SHA}" >/tmp/orchestrator.js || ok=0
+            if [ "$ok" = "1" ] && grep -q "20260918-school-vwo-v7" /tmp/vwo.js && grep -q "20260918-school-filter-v4" /tmp/filter.js && grep -q "SURINAME_LEVELS" /tmp/shell.js && grep -q "v51-levels-suriname" /tmp/shell.js && grep -q "label:'VOJ'" /tmp/shell.js && grep -q "label:'VOS'" /tmp/shell.js && grep -q "overflow-x:auto" /tmp/shell.js && grep -q "20260918-language-next-v2" /tmp/next.js && grep -q 'id="v93-next"' /tmp/lang.js && grep -q "async function nextLesson()" /tmp/lang.js && grep -q "Average goal progress" /tmp/tools.js && grep -q "20261007-language-choice-v4" /tmp/quiz.js && grep -q "scholark_v62_study_draft" /tmp/learning.js && grep -q "20260921-r176" /tmp/power.js && grep -q "function settleRoute(" /tmp/orchestrator.js && grep -q "addEventListener('popstate'" /tmp/orchestrator.js && grep -Fq "if(workspace&&!!core()&&root&&!bar&&!canonicalDashboard){" /tmp/orchestrator.js && grep -Fq 'data-workspace-owner="r284"' /tmp/shell.js; then
+              exit 0
+            fi
+            sleep 4
+          done
+          head -c 500 /tmp/vwo.js 2>/dev/null || true
+          exit 1
+      - name: Test live health, AI Tutor, Language Learner and Studio presentation
+        run: node scripts/scholark-smoke.mjs https://scholark-app-shawiel.onrender.com --live
+      - name: Validate live ARKI provider chain and public-fact guard
+        run: node scripts/scholark-arki-production-smoke.mjs https://scholark-app-shawiel.onrender.com --live
+      - name: Install live browser smoke dependency
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          # Keep live production validation independent from transient GitHub
+          # runner mirror failures. The Microsoft source is unnecessary here,
+          # and the official Ubuntu archive is equivalent for Playwright deps.
+          mapfile -t SCHOLARK_MS_SOURCES < <(grep -rl "packages.microsoft.com" /etc/apt/sources.list.d 2>/dev/null || true)
+          restore_ms_sources() {
+            for src in "${SCHOLARK_MS_SOURCES[@]}"; do
+              [ -f "${src}.scholark-disabled" ] && sudo mv "${src}.scholark-disabled" "${src}" || true
+            done
+          }
+          trap restore_ms_sources EXIT
+          for src in "${SCHOLARK_MS_SOURCES[@]}"; do sudo mv "${src}" "${src}.scholark-disabled"; done
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/apt-mirrors.txt
+          fi
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99scholark-network >/dev/null
+          timeout 600s npx playwright install-deps chromium
+          restore_ms_sources
+          trap - EXIT
+          timeout 480s npx playwright install chromium
+      - name: Run live prelaunch browser smoke
+        run: node scripts/scholark-live-prelaunch-smoke.mjs https://scholark-app-shawiel.onrender.com
+      - name: Verify live r284 Workspace, legacy first paint and cinematic transitions
+        run: node scripts/scholaverum-r284-rebuild-smoke.mjs https://scholark-app-shawiel.onrender.com
