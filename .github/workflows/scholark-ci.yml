@@ -207,7 +207,7 @@ jobs:
         run: |
           curl --fail --silent http://127.0.0.1:10000/ >/tmp/scholark-home.html
           grep -q 'scholark-prepaint-style' /tmp/scholark-home.html
-          grep -q '/scholaverum-logo-r246.png' /tmp/scholark-home.html
+          grep -q '/scholaverum-official-logo-r290.webp' /tmp/scholark-home.html
           VERSION=$(sed -n "s/.*const VERSION = '\([^']*\)'.*/\1/p" scholark-runtime-loader.js | head -1)
           test -n "$VERSION"
           grep -q "scholark-runtime-loader.js?v=$VERSION" /tmp/scholark-home.html
