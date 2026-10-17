@@ -11,3 +11,6 @@
 - r286 browser smoke uses mocked cloud requests and verifies account isolation without deleting any real production study data.
 - CI static checks and full cross-browser regression passed on application commit `036a0ced7867b32bcc25cf516e2dac11c3ac978c`.
 - Release gate must pass before manual Render deployment; then run production verification.
+
+## Gate retry
+The first release gate caught a browser test that required a retired Home element to remain present. The test now accepts the stronger condition where that element has been completely removed, as well as when it is hidden. The runtime implementation is unchanged.
