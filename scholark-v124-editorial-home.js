@@ -191,7 +191,7 @@ function v281Setup(){
  // These illustrations get the same one-time scroll reveal as the editorial copy.
  $$('.v280-panel-graphic',root).forEach(node=>node.setAttribute('data-v280-reveal',''));
  if(v281StageObserver){v281Refresh();return}
- v281Targets=$('.v280-hero,.v280-tape,.v280-screen,.v280-panel-graphic',root);
+ v281Targets=$$('.v280-hero,.v280-tape,.v280-screen,.v280-panel-graphic',root);
  if('IntersectionObserver' in window){
   v281StageObserver=new IntersectionObserver(entries=>{
    const enabled=home()&&!document.hidden&&!reduced();
