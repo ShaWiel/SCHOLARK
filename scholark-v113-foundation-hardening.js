@@ -73,7 +73,7 @@
       if(t==="AI QUALITY MAX"||t==="QUALITY MAX"||t==="PRIORITY MAX")el.remove();
     });
   }
-  const BRAND_LOGO="/scholaverum-logo-r246.png";
+  const BRAND_LOGO="/scholaverum-official-logo-r290.webp";
   function ensureBrandAssets(){
     const imgs=[...document.querySelectorAll(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo")];
     for(const img of imgs){
@@ -120,6 +120,8 @@
     const countryApi=window.__SCHOLARK_COUNTRY__,globalCountryRegistry=countryApi?.global===true&&Number(countryApi?.countryCount||0)>=195;
     const globalSchools=r!=="schools"||(window.__SCHOLARK_V50_SCHOOLS__?.global===true&&globalCountryRegistry);
     const coverage=i18n?.coverage?.(620)||null;
+    // Brand verification must also repair legacy assets after History API navigation.
+    ensureBrandAssets();
     const brandImgs=[...document.querySelectorAll(".v55-brand-logo,#v51-sidebar .v51-logo img,.v53-logo")];
     const brandHealthy=brandImgs.every(img=>img.getAttribute("src")===BRAND_LOGO)&&document.querySelectorAll("#v55-topbar .v55-brand-logo").length<=1&&document.querySelectorAll("#v51-sidebar .v51-logo").length<=1;
     const result={
