@@ -80,6 +80,13 @@ try{
  assert.equal(rows.filter(x=>x.user_id===UID).length,0);assert.equal(rows.filter(x=>x.user_id===BID).length,1,'bulk removal is scoped to signed-in user');
  assert.ok(calls.some(c=>c.method==='DELETE'&&c.uid===UID&&c.id==='not.is.null'),'remove-all must delete cloud entries, not only hide them');
  assert.ok(calls.every(c=>!c.uid||[UID,BID].includes(c.uid)),'queries must be user scoped');
+ // Programmatic navigation must mount the lazy school finder from other tools.
+ await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('reminders'));
+ await page.waitForSelector('#v51-fallback .v121',{state:'visible',timeout:18000});
+ await page.evaluate(()=>window.__SCHOLARK_WORKSPACE__?.openTool?.('schools'));
+ await page.waitForSelector('#v50-school.open',{state:'visible',timeout:20000});
+ assert.equal(await page.locator('#v50-country').count(),1,'Schools Near Me mounts after Reminders');
+ assert.equal(await page.locator('#v50-school').count(),1,'school finder never renders twice');
  assert.deepEqual(errors,[],'expanded levels, route quarantine and study removal have no browser exceptions');
  console.log('PASS r286: complete desktop/mobile education grid, retired Home/Workspace quarantine, single removal, delete all, and user-scoped cloud state');
 }finally{await browser.close()}
