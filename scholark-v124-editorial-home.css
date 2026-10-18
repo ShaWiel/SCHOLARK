@@ -405,10 +405,10 @@ body.v280-home-rebuild #v280-editorial-home #v41-home-pricing{
 }
 #v280-editorial-home #v41-home-pricing .v41-price-grid{
  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
- align-items:stretch;gap:clamp(13px,1.6vw,24px);
+ align-items:stretch;gap:clamp(13px,1.6vw,24px);width:100%;min-width:0;max-width:100%;
 }
 #v280-editorial-home #v41-home-pricing .v41-plan{
- min-width:0;min-height:650px;position:relative;
+ min-width:0;max-width:100%;width:100%;box-sizing:border-box;min-height:650px;position:relative;
  border-radius:clamp(22px,2.2vw,33px);padding:clamp(24px,2.5vw,38px);
  background:#192537;color:#f7f8f1;
  border:1px solid rgba(209,222,244,.17);
@@ -521,7 +521,7 @@ body.v280-home-rebuild #v280-editorial-home #v41-home-pricing{
 @media(max-width:950px){
  #v280-editorial-home #v41-home-pricing .v41-price-head{grid-template-columns:1fr}
  #v280-editorial-home #v41-home-pricing .v41-price-head p{max-width:620px;margin:0}
- #v280-editorial-home #v41-home-pricing .v41-price-grid{grid-template-columns:1fr;gap:18px}
+ #v280-editorial-home #v41-home-pricing .v41-price-grid{grid-template-columns:minmax(0,1fr);gap:18px}
  #v280-editorial-home #v41-home-pricing .v41-plan{min-height:0;padding:clamp(27px,5vw,42px)}
  #v280-editorial-home #v41-home-pricing .v41-desc{min-height:0}
  #v280-editorial-home #v41-home-pricing .v41-plan h3{font-size:34px}
