@@ -79,6 +79,23 @@ try{
  assert.equal(mobileHero.count,1,'responsive hero should not duplicate');
  assert.ok(mobileHero.diameter>100,'mobile globe remains visible and properly sized');
  assert.ok(mobileHero.overflow<=8,'mobile must not overflow horizontally');
+ const hasGPU=await page.locator('.v296-ball').evaluate(el=>!!el.getContext('webgl'));
+ if(hasGPU){
+  await page.locator('.v296-ball').evaluate(el=>el.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
+  await page.waitForFunction(()=>{
+   const atom=document.querySelector('.v296-atom'),canvas=atom?.querySelector('.v296-ball');
+   return atom?.dataset.status==='ready'&&!!canvas?.getContext('2d')&&canvas.width>0;
+  },null,{timeout:12000});
+  const cpuBefore=await page.locator('.v296-ball').getAttribute('data-yaw');
+  await page.waitForTimeout(420);
+  const cpuAfter=await page.locator('.v296-ball').getAttribute('data-yaw');
+  assert.notEqual(cpuBefore,cpuAfter,'CPU failover must keep globe rotating after GPU context loss');
+ }
+ const memory=await page.evaluate(()=>{
+  const c=document.querySelector('.v296-orbit-canvas');
+  return {width:c.width,height:c.height};
+ });
+ assert.ok(memory.width<=1400&&memory.height<=1400,'orbit canvases must cap their GPU/CPU buffer allocation');
  const reduced=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduced.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
  await reduced.waitForSelector('.v296-atom[data-status="ready"]',{state:'visible',timeout:30000});
