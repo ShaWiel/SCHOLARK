@@ -294,40 +294,63 @@ body.v280-home-rebuild #v29-home-layer > #v280-editorial-home{display:block!impo
 body.v280-home-rebuild #v28-home,body.v280-home-rebuild #v41-home-pricing{display:none!important;visibility:hidden!important;pointer-events:none!important}
 
 
-/* r291 — the entire approved official orbital logo IS the homepage hero visual.
-   It replaces the old gradient sphere and its legacy S, including both old CSS orbits.
-   The sphere in the official asset is 29.9% of its full image width; this sizing
-   preserves the previous .v280-planet's 76%-of-art diameter (76 / .30 = 253%).
-   Extra orbital rings extend beyond the old ball, behind the floating feature cards. */
-#v280-editorial-home .v291-official-hero-art{isolation:isolate}
-#v280-editorial-home .v291-official-logo-spin{
- position:absolute;left:55%;top:50%;width:253.3%;height:auto;
- aspect-ratio:3 / 2;pointer-events:none;user-select:none;
- transform-origin:center center;
- animation:v291FullOfficialLogoTurn 22s linear infinite!important;
+/* r292: small, genuinely 3D front-to-back official SCHOLAVERUM sphere.
+   The entire previous oversized r291 flat logo is retired. The sphere has the
+   old hero's exact 76%-of-art footprint, but ALL artwork is official r290.
+   No previous r246 logo or old gradient-ball element is restored. */
+#v280-editorial-home .v292-hero-art{isolation:isolate;perspective:1200px}
+#v280-editorial-home .v292-sphere-stage{
+ position:absolute;right:7%;bottom:11%;width:76%;height:auto;aspect-ratio:1;
+ transform-style:preserve-3d;perspective:1050px;z-index:0;
+}
+#v280-editorial-home .v292-sphere-volume{
+ position:absolute;inset:0;border-radius:50%;pointer-events:none;
+ background:radial-gradient(circle at 30% 22%,#4f86be 0%,#2d6195 29%,#183b69 59%,#091b36 90%);
+ box-shadow:inset -24px -34px 60px rgba(3,12,33,.63),inset 11px 12px 28px rgba(185,215,255,.19),0 24px 75px rgba(0,0,0,.27),0 0 52px rgba(106,159,225,.14);
+}
+#v280-editorial-home .v292-depth-spin{
+ position:absolute;inset:0;transform-style:preserve-3d;
+ animation:v292SphereSpinY 22s linear infinite!important;
  animation-play-state:running!important;
- will-change:transform;z-index:0;
+ will-change:transform;
 }
-#v280-editorial-home .v291-official-logo-image{
- display:block;width:100%;height:100%;object-fit:contain;
- filter:none!important;opacity:1!important;pointer-events:none;
+@keyframes v292SphereSpinY{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+#v280-editorial-home .v292-sphere-face{
+ position:absolute;inset:0;border-radius:50%;overflow:hidden;
+ backface-visibility:hidden;-webkit-backface-visibility:hidden;
+ transform-style:preserve-3d;transform:rotateY(0deg) translateZ(8px);
+ pointer-events:none;
 }
-@keyframes v291FullOfficialLogoTurn{
- from{transform:translate(-50%,-50%) rotate(0deg)}
- to{transform:translate(-50%,-50%) rotate(360deg)}
+#v280-editorial-home .v292-sphere-face.back{transform:rotateY(180deg) translateZ(8px)}
+#v280-editorial-home .v292-sphere-face img{
+ position:absolute;display:block;left:50%;top:50%;width:334%;height:auto;
+ max-width:none;max-height:none;object-fit:contain;
+ transform:translate(-50%,-50%);filter:none;opacity:1;user-select:none;
 }
-#v280-editorial-home .v291-official-hero-art .v280-floating{z-index:2}
-@media(max-width:950px){
- #v280-editorial-home .v291-official-logo-spin{width:253.3%}
+#v280-editorial-home .v292-sphere-face::after{
+ content:"";position:absolute;inset:0;pointer-events:none;border-radius:50%;
+ background:radial-gradient(ellipse at 24% 18%,rgba(255,255,255,.13),transparent 50%),
+ linear-gradient(108deg,rgba(196,216,252,.12),transparent 40%,rgba(3,11,31,.25));
+ box-shadow:inset 0 0 22px rgba(158,193,250,.13);
 }
+#v280-editorial-home .v292-orbit{
+ position:absolute;left:50%;top:50%;width:126%;height:59%;
+ border:1.5px solid rgba(203,251,97,.76);border-radius:50%;
+ transform:translate(-50%,-50%) rotate(-32deg);pointer-events:none;
+}
+#v280-editorial-home .v292-orbit.two{
+ width:123%;height:68%;border-color:rgba(157,185,244,.73);
+ transform:translate(-50%,-50%) rotate(38deg);
+}
+#v280-editorial-home .v292-hero-art .v280-floating{z-index:3}
 @media(max-width:780px){
- #v280-editorial-home .v291-official-logo-spin{animation-duration:22s!important;will-change:auto}
+ #v280-editorial-home .v292-depth-spin{will-change:auto;animation-duration:25s!important}
 }
-/* Reduced motion remains an accessible user-controlled exception to auto-spin.
-   All other visitors see the uninterrupted complete 360-degree rotation. */
+/* Reduced-motion is an accessibility safeguard; the default is uninterrupted
+   front-to-back 360-degree rotation, NOT a clockwise 2D spin. */
 @media(prefers-reduced-motion:reduce){
- #v280-editorial-home .v291-official-logo-spin{
-  animation:none!important;transform:translate(-50%,-50%) rotate(0deg)!important;
-  will-change:auto!important
+ #v280-editorial-home .v292-depth-spin{
+  animation:none!important;transform:rotateY(0deg)!important;will-change:auto!important
  }
+ #v280-editorial-home .v292-sphere-face.back{visibility:hidden!important}
 }
