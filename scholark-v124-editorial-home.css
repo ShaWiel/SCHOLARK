@@ -294,67 +294,52 @@ body.v280-home-rebuild #v29-home-layer > #v280-editorial-home{display:block!impo
 body.v280-home-rebuild #v28-home{display:none!important;visibility:hidden!important;pointer-events:none!important}
 
 
-/* r292: small, genuinely 3D front-to-back official SCHOLAVERUM sphere.
-   The entire previous oversized r291 flat logo is retired. The sphere has the
-   old hero's exact 76%-of-art footprint, but ALL artwork is official r290.
-   No previous r246 logo or old gradient-ball element is restored. */
-#v280-editorial-home .v292-hero-art{isolation:isolate;perspective:1200px}
-#v280-editorial-home .v292-sphere-stage{
- position:absolute;right:7%;bottom:11%;width:76%;height:auto;aspect-ratio:1;
- transform-style:preserve-3d;perspective:1050px;z-index:0;
+/* r294 — actual shader-mapped globe, using only the approved official r290 brand asset.
+   No planar rotating S/disc, no separate stationary blue ball, no Z-axis spin. */
+#v280-editorial-home .v294-hero-art{isolation:isolate;perspective:1100px}
+#v280-editorial-home .v294-globe-stage{
+ position:absolute;right:7%;bottom:11%;width:76%;aspect-ratio:1;
+ perspective:850px;transform-style:preserve-3d;z-index:0;
 }
-#v280-editorial-home .v292-sphere-volume{
- position:absolute;inset:0;border-radius:50%;pointer-events:none;
- background:radial-gradient(circle at 30% 22%,#4f86be 0%,#2d6195 29%,#183b69 59%,#091b36 90%);
- box-shadow:inset -24px -34px 60px rgba(3,12,33,.63),inset 11px 12px 28px rgba(185,215,255,.19),0 24px 75px rgba(0,0,0,.27),0 0 52px rgba(106,159,225,.14);
+#v280-editorial-home .v294-globe-shell{
+ position:absolute;inset:0;z-index:2;overflow:hidden;border-radius:50%;
+ background:radial-gradient(circle at 30% 22%,#5293d3 0%,#235587 43%,#07182e 92%);
+ box-shadow:0 46px 84px rgba(0,0,0,.35),0 0 65px rgba(129,181,255,.13),
+  inset -22px -20px 43px rgba(2,8,29,.38);
+ transform-style:preserve-3d;will-change:transform;
+ animation:v294GlobeEmerge 8s ease-in-out infinite alternate;
 }
-#v280-editorial-home .v292-depth-spin{
- position:absolute;inset:0;transform-style:preserve-3d;
- animation:v292SphereSpinY 22s linear infinite!important;
- animation-play-state:running!important;
- will-change:transform;
+#v280-editorial-home .v294-globe-canvas{
+ position:relative;z-index:2;display:block;width:100%;height:100%;border-radius:50%;
+ transform:translateZ(2px);image-rendering:auto;
 }
-@keyframes v292SphereSpinY{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-#v280-editorial-home .v292-sphere-face{
- position:absolute;inset:0;border-radius:50%;overflow:hidden;
- backface-visibility:hidden;-webkit-backface-visibility:hidden;
- transform-style:preserve-3d;transform:rotateY(0deg) translateZ(8px);
- pointer-events:none;
+#v280-editorial-home .v294-globe-fallback{
+ position:absolute;z-index:1;top:50%;left:50%;width:334%;height:auto;max-width:none;
+ transform:translate(-50%,-50%);pointer-events:none;user-select:none;
 }
-#v280-editorial-home .v292-sphere-face.back{transform:rotateY(180deg) translateZ(8px)}
-#v280-editorial-home .v292-sphere-face img{
- position:absolute;display:block;left:50%;top:50%;width:334%;height:auto;
- max-width:none;max-height:none;object-fit:contain;
- transform:translate(-50%,-50%);filter:none;opacity:1;user-select:none;
+#v280-editorial-home .v294-globe-canvas[data-globe-status="ready"] + .v294-globe-fallback{display:none}
+#v280-editorial-home .v294-orbit{
+ position:absolute;z-index:0;left:50%;top:50%;width:127%;height:61%;
+ border:1.5px solid rgba(206,255,112,.55);border-radius:50%;
+ transform:translate(-50%,-50%) rotate(-28deg);pointer-events:none;
+ box-shadow:0 0 22px rgba(211,255,131,.07);
 }
-#v280-editorial-home .v292-sphere-face::after{
- content:"";position:absolute;inset:0;pointer-events:none;border-radius:50%;
- background:radial-gradient(ellipse at 24% 18%,rgba(255,255,255,.13),transparent 50%),
- linear-gradient(108deg,rgba(196,216,252,.12),transparent 40%,rgba(3,11,31,.25));
- box-shadow:inset 0 0 22px rgba(158,193,250,.13);
+#v280-editorial-home .v294-orbit.two{
+ width:122%;height:73%;border-color:rgba(177,155,255,.52);
+ transform:translate(-50%,-50%) rotate(34deg);
 }
-#v280-editorial-home .v292-orbit{
- position:absolute;left:50%;top:50%;width:126%;height:59%;
- border:1.5px solid rgba(203,251,97,.76);border-radius:50%;
- transform:translate(-50%,-50%) rotate(-32deg);pointer-events:none;
+#v280-editorial-home .v294-hero-art .v280-floating{z-index:3}
+@keyframes v294GlobeEmerge{
+ from{transform:translate3d(0,2px,0) scale(.99)}
+ to{transform:translate3d(0,-9px,55px) scale(1.035)}
 }
-#v280-editorial-home .v292-orbit.two{
- width:123%;height:68%;border-color:rgba(157,185,244,.73);
- transform:translate(-50%,-50%) rotate(38deg);
-}
-#v280-editorial-home .v292-hero-art .v280-floating{z-index:3}
 @media(max-width:780px){
- #v280-editorial-home .v292-depth-spin{will-change:auto;animation-duration:25s!important}
+ #v280-editorial-home .v294-globe-stage{width:76%}
+ #v280-editorial-home .v294-globe-shell{animation-duration:10s}
 }
-/* Reduced-motion is an accessibility safeguard; the default is uninterrupted
-   front-to-back 360-degree rotation, NOT a clockwise 2D spin. */
 @media(prefers-reduced-motion:reduce){
- #v280-editorial-home .v292-depth-spin{
-  animation:none!important;transform:rotateY(0deg)!important;will-change:auto!important
- }
- #v280-editorial-home .v292-sphere-face.back{visibility:hidden!important}
+ #v280-editorial-home .v294-globe-shell{animation:none!important;transform:none!important;will-change:auto!important}
 }
-
 
 /* r293: canonical V41 price data, rebuilt inside r280 editorial homepage.
    Design-only. Buttons, data-plan, wallet, Paddle, prices and credit packs
