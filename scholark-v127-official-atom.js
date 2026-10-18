@@ -4,8 +4,8 @@
 (()=>{'use strict';
 if(window.__SCHOLAVERUM_ATOM_V296__)return;
 const TAU=Math.PI*2,LOGO='/scholaverum-official-logo-r290.webp',COLORS=[
- {color:'#BAF500',shine:'#f0ffa7',tilt:-.56,speed:7000,phase:-1},
- {color:'#812CF0',shine:'#cca8ff',tilt:.69,speed:9400,phase:1.25}
+ {color:'#BAF500',shine:'#f0ffa7',tilt:-.56,speed:7000,phase:2.35},
+ {color:'#812CF0',shine:'#cca8ff',tilt:.69,speed:9400,phase:-1.3}
 ];
 const css=[
  '#v280-editorial-home .v296-atom{position:absolute;right:35%;bottom:17%;width:76%;aspect-ratio:1;isolation:isolate;z-index:1;pointer-events:none}',
@@ -173,7 +173,7 @@ function mount(){
    [[false,behind],[true,ahead]].forEach(([frontLayer,ctx])=>{
     ctx.save();ctx.translate(n/2,n/2);
     COLORS.forEach(o=>orbitPath(ctx,o,base,clock,frontLayer));
-    COLORS.forEach(o=>{const p=at(o,o.phase+clock/o.speed*TAU,base,clock);if((p.z>=0)===frontLayer)satellite(ctx,p,base,o)});
+    COLORS.forEach(o=>{const p=at(o,o.phase+clock/o.speed*TAU,base,clock);if((p.z>=0)===frontLayer&&Math.hypot(p.x,p.y)>base*.56)satellite(ctx,p,base,o)});
     ctx.restore();
    });
    draw?.(clock/22000*TAU);
