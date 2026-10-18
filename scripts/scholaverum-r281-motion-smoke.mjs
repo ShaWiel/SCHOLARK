@@ -13,7 +13,7 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('v280-home-rebuild')&&
   !!window.__SCHOLAVERUM_R280_HOME__&&
   !!document.querySelector('#v280-hero.v281-inview')&&
-  !!document.querySelector('#v294-globe'),null,{timeout:60000});
+  /^ready/.test(document.querySelector('#v294-globe')?.dataset.globeStatus||''),null,{timeout:60000});
  const started=await page.evaluate(()=>{
   const planet=document.querySelector('#v294-globe'),headline=document.querySelector('#v280-headline > span'),
         orbit=document.querySelector('.v294-globe-fallback'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
