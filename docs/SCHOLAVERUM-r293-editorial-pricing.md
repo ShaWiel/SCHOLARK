@@ -40,3 +40,6 @@ The exact #pricing deep-link could leave the editorial home mounted but hidden: 
 
 ## Legacy test alignment
 The r284 first-paint guard still correctly quarantines the retired V29 homepage. Its previous pricing assertion demanded the price cards be attached directly to document.body, which conflicts with this explicitly requested editorial integration. That regression now requires the one existing pricing section to be a child of the official `#v280-pricing-slot`, inside `#v280-editorial-home`, and NOT a descendant of `.v29-shell`. Credit Store isolation and all first-paint guards remain active.
+
+## Production rollout and read-only verification
+Release candidate `a6932c558b82d1a0247ad30478cb8776f29c675f` passed full Release Gate, CI and CodeQL. Render deploy `dep-dba1t70m7kps73f594eg` is LIVE on `scholark-web`. This documentation-only commit triggers read-only browser verification against production r293; the deployed runtime and payment configuration remain unchanged.
