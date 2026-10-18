@@ -13,26 +13,26 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('v280-home-rebuild')&&
   !!window.__SCHOLAVERUM_R280_HOME__&&
   !!document.querySelector('#v280-hero.v281-inview')&&
-  !!document.querySelector('.v292-depth-spin'),null,{timeout:60000});
+  !!document.querySelector('.v296-atom[data-status="ready"]'),null,{timeout:60000});
  const started=await page.evaluate(()=>{
-  const planet=document.querySelector('.v292-depth-spin'),headline=document.querySelector('#v280-headline > span'),
-        orbit=document.querySelector('.v294-globe-side.front .v294-globe-strip img'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
+  const planet=document.querySelector('.v296-ball'),headline=document.querySelector('#v280-headline > span'),
+        orbit=document.querySelector('.v296-front'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
         hero=document.querySelector('#v280-hero');
-  return {planet:getComputedStyle(planet).animationName,play:getComputedStyle(planet).animationPlayState,
+  return {planet:planet.dataset.yaw,play:getComputedStyle(planet).animationPlayState,
           orbit:getComputedStyle(orbit).animationName,headline:getComputedStyle(headline).animationName,
           stage:getComputedStyle(stage).animationName,heroClass:hero.classList.contains('v281-inview'),
           version:window.__SCHOLAVERUM_R280_HOME__?.version};
  });
  assert.equal(started.version,'r281-motion-home');
- assert.equal(started.planet,'v292SphereSpinY','official orbital logo must complete repeated 360-degree rotations');
+ assert.ok(started.planet!==undefined,'official logo is mapped onto the globe texture');
  assert.equal(started.play,'running','visible planet motion should run');
- assert.equal(started.orbit,'none','official logo images move through the parent 3D sphere without separate 2D motion');
+ assert.equal(started.orbit,'none','orbit canvas and central globe never use a flat 2D clockwise spin');
  assert.equal(started.headline,'v281HeadlineRise','hero headline should animate on arrival');
  assert.equal(started.stage,'v281SceneReveal','product theater needs scene transitions');
 
- const before=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ const before=await page.locator('.v296-ball').getAttribute('data-yaw');
  await page.waitForTimeout(600);
- const after=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ const after=await page.locator('.v296-ball').getAttribute('data-yaw');
  assert.notEqual(after,before,'official full-circle logo must visibly rotate between frames');
 
  await page.locator('#v280-tab-tutor').click();
@@ -47,11 +47,14 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.waitForTimeout(120);
  const calm=await page.evaluate(()=>{
-  const planet=document.querySelector('.v292-depth-spin'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
-  return {planet:getComputedStyle(planet).animationName,headline:getComputedStyle(h).animationName,
+  const planet=document.querySelector('.v296-ball'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
+  return {planet:planet.dataset.yaw,depth:getComputedStyle(planet).animationName,headline:getComputedStyle(h).animationName,
           tape:getComputedStyle(tape).animationName,art:getComputedStyle(document.querySelector('.v280-hero-art')).transform};
  });
- assert.equal(calm.planet,'none','reduced motion must stop official logo animation');
+ assert.equal(calm.depth,'none','reduced motion must stop depth animation');
+ const frozen=await page.locator('.v296-ball').getAttribute('data-yaw');
+ await page.waitForTimeout(300);
+ assert.equal(await page.locator('.v296-ball').getAttribute('data-yaw'),frozen,'reduced motion freezes Y-axis movement');
  assert.equal(calm.headline,'none','reduced motion must stop typography');
  assert.equal(calm.tape,'none','reduced motion must stop marquees');
  assert.equal(calm.art,'none','reduced motion must disable scroll parallax');
