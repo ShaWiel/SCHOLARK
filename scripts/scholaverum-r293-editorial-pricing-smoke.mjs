@@ -21,7 +21,7 @@ try{
    heading:pricing.querySelector('.v41-price-head h2')?.innerText,
    cards:cards.map(x=>({name:x.querySelector('h3')?.textContent,
       cost:x.querySelector('.v41-price')?.innerText,
-      credits:x.querySelector('ul')?.innerText.match(/[\\d,]+ included AI credits\\/month/i)?.[0]||'',
+      credits:x.querySelector('ul')?.innerText.match(/[\d,]+ included AI credits\/month/i)?.[0]||'',
       button:x.querySelector('[data-plan]')?.dataset.plan,
       width:x.getBoundingClientRect().width,
       background:getComputedStyle(x).backgroundColor,
