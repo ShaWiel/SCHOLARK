@@ -49,7 +49,13 @@ try{
  assert.equal(d.paidButtons,2,'Paddle checkout plan ownership remains present');
  assert.ok(d.ctaOrder.indexOf('v280-pricing-slot')<d.ctaOrder.indexOf('v280-start'),'pricing appears before homepage final call to action');
  await page.goto(base+'/#pricing',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('#v280-pricing-slot #v41-home-pricing .v41-price-grid',{state:'visible',timeout:40000});
+ await page.waitForSelector('#v280-pricing-slot #v41-home-pricing .v41-price-grid',{state:'visible',timeout:18000}).catch(async e=>{
+  const detail=await page.evaluate(()=>{
+   const info=sel=>{const n=document.querySelector(sel);if(!n)return null;const c=getComputedStyle(n);return {hidden:n.hidden,display:c.display,visibility:c.visibility,offsetWidth:n.offsetWidth,offsetHeight:n.offsetHeight,inlineDisplay:n.style.display}};
+   return {hash:location.hash,body:document.body.className,routerHome:window.__SCHOLARK_ROUTES__?.isHome?.(),legacy:info('#v29-home-layer'),editorial:info('#v280-editorial-home'),slot:info('#v280-pricing-slot'),pricing:info('#v41-home-pricing'),grid:info('#v41-home-pricing .v41-price-grid')};
+  });
+  throw new Error('direct #pricing route failed to reveal canonical price cards: '+JSON.stringify(detail)+'; '+e.message);
+ });
  assert.equal(await page.evaluate(()=>document.body.classList.contains('v280-home-rebuild')),true,'direct #pricing route must not show the old homepage');
  assert.equal(await page.evaluate(()=>location.hash),'#home','pricing link normalizes to the canonical home route instead of reintroducing the retired page');
  await page.setViewportSize({width:390,height:844});
