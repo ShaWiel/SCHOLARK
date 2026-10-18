@@ -27,6 +27,7 @@ COPY scholark-prepaint-head.html /tmp/scholark-prepaint-head.html
 COPY scholark-runtime-loader.js /tmp/scholark-runtime-loader.js
 COPY scholark-v123-cinematic-homepage.js /tmp/scholark-v123-cinematic-homepage.js
 COPY scholark-v124-editorial-home.js /tmp/scholark-v124-editorial-home.js
+COPY scholark-v127-official-atom.js /tmp/scholark-v127-official-atom.js
 COPY scholark-v124-editorial-home.css /tmp/scholark-v124-editorial-home.css
 COPY scholark-v125-guided-tour.js /tmp/scholark-v125-guided-tour.js
 COPY scholark-v126-workspace-integrity.js /tmp/scholark-v126-workspace-integrity.js
