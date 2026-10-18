@@ -136,11 +136,72 @@ function mount(){
 }
 
 /* r294 — curved globe texture, not two flat front/back logo planes. */
+
+/* Fallback for browsers without WebGL. The same orbital bitmap is curved on a
+   2D canvas, not flattened into a rotating card. Draw at a mobile-safe cadence. */
+function v294Draw2D(canvas){
+ const ctx=canvas.getContext('2d',{alpha:true,willReadFrequently:false});
+ if(!ctx){canvas.dataset.globeStatus='fallback';return}
+ const img=new Image();img.decoding='async';
+ img.onload=()=>{
+  if(!canvas.isConnected)return;
+  const tex=document.createElement('canvas');tex.width=1024;tex.height=512;
+  const t=tex.getContext('2d',{willReadFrequently:true});
+  if(!t){canvas.dataset.globeStatus='fallback';return}
+  t.drawImage(img,272,96,480,320);
+  t.drawImage(img,-240,96,480,320);
+  t.drawImage(img,784,96,480,320);
+  const pixels=t.getImageData(0,0,1024,512).data;
+  const side=224,half=side/2,frame=ctx.createImageData(side,side),dest=frame.data;
+  canvas.width=side;canvas.height=side;
+  const surface=[];
+  for(let y=0;y<side;y++)for(let x=0;x<side;x++){
+   const nx=(x+.5-half)/half,ny=(half-y-.5)/half,r2=nx*nx+ny*ny;
+   if(r2>=1){surface.push(null);continue}
+   const z=Math.sqrt(1-r2),angle=Math.atan2(nx,z)/6.28318530718+.5;
+   const ty=Math.max(0,Math.min(511,Math.floor((.5-Math.asin(ny)/Math.PI)*512)));
+   const light=Math.max(0,nx*(-.48)+ny*.62+z*.89);
+   const shade=.44+.64*light;
+   const upper=Math.max(0,Math.min(1,.52+ny*.20));
+   surface.push([angle,ty,shade,Math.min(1,(1-Math.sqrt(r2))*half),
+    (9*(1-upper)+33*upper),(31*(1-upper)+110*upper),(66*(1-upper)+184*upper)]);
+  }
+  let yaw=0,last=0,painted=0;
+  function draw(){
+   for(let i=0;i<surface.length;i++){
+    const p=surface[i],at=i*4;
+    if(!p){dest[at+3]=0;continue}
+    const u=(p[0]+yaw/6.28318530718)%1,x=Math.min(1023,Math.floor(u*1024));
+    const ti=(p[1]*1024+x)*4,a=pixels[ti+3]/255;
+    const shade=p[2];
+    dest[at]=(p[4]*(1-a)+pixels[ti]*a)*shade;
+    dest[at+1]=(p[5]*(1-a)+pixels[ti+1]*a)*shade;
+    dest[at+2]=(p[6]*(1-a)+pixels[ti+2]*a)*shade;
+    dest[at+3]=p[3]*255;
+   }
+   ctx.putImageData(frame,0,0);canvas.dataset.globeYaw=yaw.toFixed(3);
+  }
+  function tick(now){
+   if(!canvas.isConnected)return;
+   requestAnimationFrame(tick);
+   if(document.hidden||!home()||reduced()){last=now;return}
+   const b=canvas.getBoundingClientRect();
+   if(b.bottom<=0||b.top>=innerHeight){last=now;return}
+   if(now-painted<45)return;
+   const dt=Math.max(0,Math.min(100,now-(last||now)));last=now;painted=now;
+   yaw=(yaw+dt*6.28318530718/22000)%6.28318530718;draw();
+  }
+  canvas.dataset.globeStatus='ready-2d';draw();requestAnimationFrame(tick);
+ };
+ img.onerror=()=>{canvas.dataset.globeStatus='fallback'};
+ img.src='/scholaverum-official-logo-r290.webp';
+}
+
 function v294MountGlobe(){
  const canvas=$('#v294-globe');if(!canvas||canvas.dataset.globeStatus)return;
  canvas.dataset.globeStatus='initializing';
  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false,powerPreference:'low-power'});
- if(!gl){canvas.dataset.globeStatus='fallback';return}
+ if(!gl){v294Draw2D(canvas);return}
  const vs='attribute vec2 pos;varying vec2 p;void main(){p=pos;gl_Position=vec4(pos,0.,1.);}';
  const fs=[
  'precision mediump float;',
