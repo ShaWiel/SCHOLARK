@@ -109,14 +109,14 @@
     },true);
   }
 
-  function priceMarkup(){return `<div class="v41-price-head"><small>SCHOLARK PLANS</small><h2>Choose how much advantage you want.</h2><p>Start free, move to Plus for more AI and research, or choose Pro when you want SCHOLARK to connect your planning, progress and future-study journey.</p></div><div class="v41-price-grid">
-    <article class="v41-plan"><div class="v41-kicker">FREE</div><h3>SCHOLARK Free</h3><div class="v41-desc">For everyday learning, practice, planning and AI support.</div><div class="v41-price">$0 <small>/ month</small></div><div class="v41-trial">No payment method required.</div><ul>
+  function priceMarkup(){return `<div class="v41-price-head"><small>PLANS &amp; PRICING · SCHOLAVERUM</small><h2>MORE SPACE.<br><em>MORE POSSIBILITY.</em></h2><p>Start free and grow at your own pace. Choose the plan that gives your questions, projects and progress the room they deserve.</p></div><div class="v41-price-grid">
+    <article class="v41-plan"><div class="v41-kicker">FREE</div><h3>SCHOLAVERUM Free</h3><div class="v41-desc">For everyday learning, practice, planning and AI support.</div><div class="v41-price">$0 <small>/ month</small></div><div class="v41-trial">No payment method required.</div><ul>
       <li>ARKI general AI + AI Tutor</li><li>Education & Learning: diagnostics, Mastery & Spaced Review</li><li>Planner, Focus Sessions, Goals & Progress</li><li>Flashcards + Assignments</li><li>Files & Notes analysis</li><li>Language Learner</li><li>My Projects workspace</li><li>30 included AI credits/month</li>
     </ul><button data-plan="free">Start free</button></article>
-    <article class="v41-plan plus"><div class="v41-kicker">PLUS</div><h3>SCHOLARK Plus</h3><div class="v41-desc">For serious learners who need more AI, research and project capacity.</div><div class="v41-price">$14.99 <small>/ month</small></div><div class="v41-trial">Billed Monthly. Cancel anytime</div><ul>
+    <article class="v41-plan plus"><div class="v41-kicker">PLUS</div><h3>SCHOLAVERUM Plus</h3><div class="v41-desc">For serious learners who need more AI, research and project capacity.</div><div class="v41-price">$14.99 <small>/ month</small></div><div class="v41-trial">Billed Monthly. Cancel anytime</div><ul>
       <li>Everything in Free</li><li>Research + citations and web sources</li><li>Cloud projects + version history</li><li>Advanced Files & Notes: Ask Files, worksheets and study tools</li><li>More ARKI, AI Tutor and learning workflow usage</li><li>750 included AI credits/month</li><li>Higher fair-use limits</li>
     </ul><button data-plan="plus">Choose Plus</button></article>
-    <article class="v41-plan pro"><span class="v41-most">MOST POPULAR</span><div class="v41-kicker">PRO</div><h3>SCHOLARK Pro</h3><div class="v41-desc">For ambitious learners who want SCHOLARK to plan, analyze and guide their full learning journey.</div><div class="v41-price">$19.99 <small>/ month</small></div><div class="v41-trial">Billed Monthly. Cancel anytime</div><ul>
+    <article class="v41-plan pro"><span class="v41-most">MOST POPULAR</span><div class="v41-kicker">PRO</div><h3>SCHOLAVERUM Pro</h3><div class="v41-desc">For ambitious learners who want SCHOLAVERUM to plan, analyze and guide their full learning journey.</div><div class="v41-price">$19.99 <small>/ month</small></div><div class="v41-trial">Billed Monthly. Cancel anytime</div><ul>
       <li>Everything in Plus</li><li>Smart Study Planning across Study Ahead, Planner, Goals & Mastery</li><li>Advanced Progress Insights: focus, flashcards, assignments & planner completion</li><li>Schools Near Me: country- and level-aware school discovery</li><li>Study Ahead: AI-powered future-study roadmap</li><li>Cross-tool ARKI support for files, lessons, roadmaps & school comparisons</li><li>2,500 included AI credits/month</li><li>Highest fair-use limits</li>
     </ul><button data-plan="pro">Choose Pro</button></article></div><div class="v41-coming-note"><b>COMING SOON:</b> Studio AI and Book Studio.</div>`;}
   let priceTimer=null;
@@ -124,7 +124,11 @@
     if(!landing())return;
     const layer=$('#v29-home-layer');if(!layer)return;
     let p=$('#v41-home-pricing');if(!p){p=document.createElement('section');p.id='v41-home-pricing';p.innerHTML=priceMarkup();document.body.appendChild(p);window.__SCHOLARK_I18N__?.apply?.(p);setTimeout(()=>window.__SCHOLARK_I18N__?.translateMissing?.(),60);$$('[data-plan]',p).forEach(b=>{const plan=b.dataset.plan;if(plan==='free'){b.onclick=()=>{history.replaceState(null,'',location.pathname+location.search+'#dashboard');window.dispatchEvent(new HashChangeEvent('hashchange'))}}else{b.onclick=null;b.dataset.billingOwner='v115';}});}
-    if(p){if(p.parentElement!==document.body)document.body.appendChild(p);p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity')}
+    // One canonical pricing surface: live inside the editorial homepage when
+    // available, otherwise keep a safe temporary home for early runtime load.
+    const editorialSlot=$('#v280-pricing-slot');
+    const pricingParent=editorialSlot||document.body;
+    if(p){if(p.parentElement!==pricingParent)pricingParent.appendChild(p);p.hidden=false;p.style.removeProperty('display');p.style.removeProperty('visibility');p.style.removeProperty('opacity')}
     if((location.hash||'').toLowerCase().includes('pricing'))setTimeout(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}),120);
   }
 
@@ -156,6 +160,9 @@
     else if(workspace()){ensureWorkspaceChrome();}
   }
 
+  // The rebuilt homepage can mount after this legacy-owned billing surface.
+  // Move the same nodes (and delegated Paddle events), never clone buttons.
+  addEventListener('scholaverum:editorial-home-mounted',()=>setTimeout(ensurePricing,0));
   interceptStudio();wirePricingNav();
   addEventListener('hashchange',()=>{setTimeout(sync,50);setTimeout(sync,220)});
   addEventListener('popstate',()=>{setTimeout(sync,50);setTimeout(sync,220)});
