@@ -37,3 +37,6 @@ The gate confirms direct #pricing successfully lands on the new homepage and pre
 
 ## Canonical routing notification
 The exact #pricing deep-link could leave the editorial home mounted but hidden: after replacing the hash with #home, history.replaceState did not emit hashchange, so legacy route owners retained hidden-state styles. The new owner explicitly fires a standard hashchange after normalization to bring existing homepage owners back into agreement. QA now emits DOM/route visibility diagnostics after a bounded wait if any old layer still blocks pricing.
+
+## Legacy test alignment
+The r284 first-paint guard still correctly quarantines the retired V29 homepage. Its previous pricing assertion demanded the price cards be attached directly to document.body, which conflicts with this explicitly requested editorial integration. That regression now requires the one existing pricing section to be a child of the official `#v280-pricing-slot`, inside `#v280-editorial-home`, and NOT a descendant of `.v29-shell`. Credit Store isolation and all first-paint guards remain active.
