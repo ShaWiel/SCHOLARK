@@ -95,6 +95,8 @@ jobs:
         run: node scripts/scholaverum-r284-rebuild-smoke.mjs https://scholark-app-shawiel.onrender.com
       - name: Verify live SCHOLAVERUM r285 identity and Workspace interactions
         run: node scripts/scholaverum-r285-identity-smoke.mjs https://scholark-app-shawiel.onrender.com
+      - name: Verify r293 editorial plans, monthly prices and billing hooks
+        run: node scripts/scholaverum-r293-editorial-pricing-smoke.mjs https://scholark-app-shawiel.onrender.com
       - name: Verify official r290 SCHOLAVERUM logo and protected rotating ball
         run: node scripts/scholaverum-r290-brand-unification-smoke.mjs https://scholark-app-shawiel.onrender.com
       - name: Verify r286 education picker and cloud study list behavior
