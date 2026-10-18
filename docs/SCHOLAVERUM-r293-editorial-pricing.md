@@ -28,3 +28,6 @@ The updated gate confirms editorial pricing heading, canonical ownership, all th
 
 ## Mobile CSS tightening
 The full gate verified pricing content and section ordering; the 390px responsive test flagged a card-size limit. The pricing grid and cards now explicitly use 100%-bounded widths, min-width zero and `minmax(0,1fr)` on mobile to stop text-driven grid overflow. The test also reports actual measured widths if that problem persists. No prices or billing hooks changed.
+
+## Direct #pricing route compatibility
+The responsive gate confirms the visual pricing grid and mobile card bounds. It also revealed that legacy route ownership could hide the editor homepage when the location hash was exactly #pricing. The modern home owner now normalizes #pricing to the canonical #home using history.replaceState, then scrolls to the existing V41 price cards once mounted. The price section and Paddle callbacks stay single-owned and no retired homepage is restored.
