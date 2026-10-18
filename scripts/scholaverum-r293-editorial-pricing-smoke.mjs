@@ -59,11 +59,13 @@ try{
   const cards=[...document.querySelectorAll('#v41-home-pricing .v41-plan')];
   return {columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
    cardWidths:cards.map(x=>x.getBoundingClientRect().width),
+   cardTops:cards.map(x=>Math.round(x.getBoundingClientRect().top)),
+   gridColumnsRaw:getComputedStyle(grid).gridTemplateColumns,
    documentOverflow:document.documentElement.scrollWidth-innerWidth,
    buttons:cards.map(x=>({width:x.querySelector('button').getBoundingClientRect().width,disabled:x.querySelector('button').disabled})),
    displayed:getComputedStyle(document.querySelector('#v41-home-pricing')).display};
  });
- assert.equal(mobile.columns,1,'mobile shows one spacious plan per row');
+ assert.ok(mobile.cardTops.length===3&&mobile.cardTops[1]>mobile.cardTops[0]+40&&mobile.cardTops[2]>mobile.cardTops[1]+40,'mobile plan cards must stack vertically: '+JSON.stringify(mobile));
  assert.ok(mobile.cardWidths.every(w=>w>=260&&w<=390),'cards fit mobile viewport: '+JSON.stringify(mobile));
  assert.ok(mobile.buttons.every(b=>b.width>220&&!b.disabled),'plan selection buttons stay accessible');
  assert.ok(mobile.documentOverflow<=8,'no horizontal page overflow from pricing');
