@@ -51,6 +51,7 @@ try{
  await page.goto(base+'/#pricing',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForSelector('#v280-pricing-slot #v41-home-pricing .v41-price-grid',{state:'visible',timeout:40000});
  assert.equal(await page.evaluate(()=>document.body.classList.contains('v280-home-rebuild')),true,'direct #pricing route must not show the old homepage');
+ assert.equal(await page.evaluate(()=>location.hash),'#home','pricing link normalizes to the canonical home route instead of reintroducing the retired page');
  await page.setViewportSize({width:390,height:844});
  await page.waitForTimeout(170);
  const mobile=await page.evaluate(()=>{
