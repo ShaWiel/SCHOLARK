@@ -546,3 +546,18 @@ body.v280-home-rebuild #v280-editorial-home #v41-home-pricing{
   transition:none!important;transform:none!important
  }
 }
+
+/* r294: longitude-sliced spherical mapping of the ACTUAL approved official logo.
+   Continuous horizontal globe rotation, not two flat stickers opening like doors. */
+#v280-editorial-home .v292-sphere-stage{perspective:950px;transform-style:preserve-3d;filter:drop-shadow(0 18px 36px rgba(5,13,38,.35))}
+#v280-editorial-home .v292-sphere-volume{z-index:2;opacity:.19;box-shadow:inset -19px -18px 40px rgba(2,6,24,.65);background:radial-gradient(circle at 27% 19%,rgba(225,239,255,.33),transparent 45%),radial-gradient(circle at 76% 75%,rgba(4,8,30,.47),transparent 65%);pointer-events:none}
+#v280-editorial-home .v292-depth-spin{z-index:1}
+#v280-editorial-home .v294-globe-side{position:absolute;inset:0;transform-style:preserve-3d;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translateZ(0)}
+#v280-editorial-home .v294-globe-side.back{transform:rotateY(180deg)}
+#v280-editorial-home .v294-globe-strip{position:absolute;top:0;bottom:0;left:calc(var(--i) * 100% / 24);width:calc(100% / 24 + .5px);overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-origin:center;transform:translateZ(calc(var(--z) * 24cqw)) rotateY(var(--a));transform-style:preserve-3d}
+#v280-editorial-home .v292-sphere-stage{container-type:inline-size}
+#v280-editorial-home .v294-globe-strip{transform:translateZ(calc(var(--z) * 50cqw)) rotateY(var(--a))}
+#v280-editorial-home .v294-globe-strip img{position:absolute;display:block;top:50%;left:calc(-1 * var(--i) * 100% - 2808%);width:8016%;height:auto;max-width:none;max-height:none;transform:translateY(-50%);pointer-events:none;user-select:none}
+/* Each panel = 1/24 diameter; source artwork is 334% of sphere diameter. */
+#v280-editorial-home .v292-orbit{z-index:3;transform-style:preserve-3d}
+@media(prefers-reduced-motion:reduce){#v280-editorial-home .v292-depth-spin{animation:none!important;transform:rotateY(-15deg)!important}}
