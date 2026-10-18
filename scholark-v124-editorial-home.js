@@ -88,7 +88,7 @@ function markup(){
  '<p class="v280-hero-pitch">'+k('hero.pitch')+'</p><div class="v280-hero-actions">'+cta('hero.start','ai')+
  '<button type="button" class="v280-cta ghost" data-v280-scroll="v280-intro">'+k('hero.see')+' <span aria-hidden="true">↓</span></button></div>',
  '<p class="v280-hero-under">'+k('hero.note')+'</p></div>',
- '<div class="v280-hero-art v292-hero-art" aria-hidden="true"><div class="v292-sphere-stage"><div class="v292-sphere-volume"></div><div class="v292-depth-spin"><div class="v292-orbit one"></div><div class="v292-orbit two"></div><div class="v292-sphere-face front"><img src="/scholaverum-official-logo-r290.webp" alt="" width="960" height="640" loading="eager" decoding="async"></div><div class="v292-sphere-face back"><img src="/scholaverum-official-logo-r290.webp" alt="" width="960" height="640" loading="eager" decoding="async"></div></div></div>',
+ '<div class="v280-hero-art v294-hero-art" aria-hidden="true"><div class="v294-globe-stage"><div class="v294-orbit one"></div><div class="v294-orbit two"></div><div class="v294-globe-shell"><canvas id="v294-globe" class="v294-globe-canvas" aria-hidden="true"></canvas><img class="v294-globe-fallback" src="/scholaverum-official-logo-r290.webp" alt="" loading="eager" decoding="async"></div></div></div>',
  '<div class="v280-floating top"><span>AI TUTOR</span><strong>Understand more.</strong><div class="v280-mini-lines"><i></i><i></i><i></i><i></i></div></div>',
  '<div class="v280-floating bottom"><span>ARKI · AI COMPANION</span><strong>Ready for your next idea.</strong><small>✳ Thought → action</small></div></div>',
  '<div class="v280-scroll-prompt">'+k('hero.scroll')+'<b aria-hidden="true">↓</b></div></div></section>',
@@ -134,6 +134,86 @@ function mount(){
  const root=document.createElement('div');root.id='v280-editorial-home';root.setAttribute('data-sch-i18n-owned','1');root.innerHTML=markup();layer.appendChild(root);choose(chosen);
  window.dispatchEvent(new Event('scholaverum:editorial-home-mounted'));
 }
+
+/* r294 — curved globe texture, not two flat front/back logo planes. */
+function v294MountGlobe(){
+ const canvas=$('#v294-globe');if(!canvas||canvas.dataset.globeStatus)return;
+ canvas.dataset.globeStatus='initializing';
+ const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false,powerPreference:'low-power'});
+ if(!gl){canvas.dataset.globeStatus='fallback';return}
+ const vs='attribute vec2 pos;varying vec2 p;void main(){p=pos;gl_Position=vec4(pos,0.,1.);}';
+ const fs=[
+ 'precision mediump float;',
+ 'varying vec2 p;uniform sampler2D brand;uniform float yaw;',
+ 'void main(){float r2=dot(p,p);if(r2>=1.)discard;',
+ ' float z=sqrt(max(0.,1.-r2));vec3 n=vec3(p.x,p.y,z);',
+ ' float lon=atan(n.x,n.z)+yaw;',
+ ' vec2 uv=vec2(fract(lon/6.2831853+.5),.5-asin(clamp(n.y,-1.,1.))/3.14159265);',
+ ' vec4 artwork=texture2D(brand,uv);',
+ ' vec3 blue=mix(vec3(.035,.12,.26),vec3(.13,.43,.72),clamp(.52+n.y*.20,0.,1.));',
+ ' vec3 color=mix(blue,artwork.rgb,artwork.a*.98);',
+ ' vec3 sun=normalize(vec3(-.48,.62,.89));',
+ ' float light=max(0.,dot(n,sun));',
+ ' float spec=pow(max(0.,dot(reflect(-sun,n),vec3(0.,0.,1.))),34.);',
+ ' float rim=pow(1.-z,2.);',
+ ' color=color*(.44+.64*light)+vec3(.29,.38,.55)*spec*.22+vec3(.09,.17,.30)*rim*.24;',
+ ' gl_FragColor=vec4(color,1.-smoothstep(.984,1.,r2));',
+ '}'
+ ].join('\n');
+ function shader(type,code){const sh=gl.createShader(type);gl.shaderSource(sh,code);gl.compileShader(sh);return gl.getShaderParameter(sh,gl.COMPILE_STATUS)?sh:null}
+ const a=shader(gl.VERTEX_SHADER,vs),b=shader(gl.FRAGMENT_SHADER,fs);
+ if(!a||!b){canvas.dataset.globeStatus='fallback';return}
+ const program=gl.createProgram();gl.attachShader(program,a);gl.attachShader(program,b);gl.linkProgram(program);
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS)){canvas.dataset.globeStatus='fallback';return}
+ const quad=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quad);
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+ gl.useProgram(program);
+ const attr=gl.getAttribLocation(program,'pos');gl.enableVertexAttribArray(attr);gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);
+ const uni=gl.getUniformLocation(program,'yaw'),sampler=gl.getUniformLocation(program,'brand');
+ let texture=null,raf=0,yaw=0,last=0,painted=0;
+ function draw(){
+  const box=canvas.getBoundingClientRect(),side=Math.min(640,Math.max(120,Math.round(box.width*Math.min(1.6,devicePixelRatio||1))));
+  if(canvas.width!==side||canvas.height!==side){canvas.width=side;canvas.height=side}
+  gl.viewport(0,0,side,side);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);
+  gl.uniform1i(sampler,0);gl.uniform1f(uni,yaw);gl.drawArrays(gl.TRIANGLES,0,6);
+  canvas.dataset.globeYaw=yaw.toFixed(3);
+ }
+ function tick(now){
+  if(!canvas.isConnected){raf=0;return}
+  raf=requestAnimationFrame(tick);
+  if(document.hidden||!home()||reduced()){last=now;return}
+  const box=canvas.getBoundingClientRect();if(box.bottom<=0||box.top>=innerHeight){last=now;return}
+  if(now-painted<32)return; // 30 fps cap; GPU-based spherical mapping
+  const dt=Math.max(0,Math.min(100,now-(last||now)));last=now;painted=now;
+  yaw=(yaw+dt*6.28318530718/22000)%6.28318530718;draw();
+ }
+ const img=new Image();img.decoding='async';
+ img.onload=()=>{
+  if(!canvas.isConnected)return;
+  const tex=document.createElement('canvas');tex.width=1024;tex.height=512;
+  const ctx=tex.getContext('2d');if(!ctx){canvas.dataset.globeStatus='fallback';return}
+  const w=480,h=320,y=(512-h)/2;
+  // Two faithful instances of the approved artwork on opposite hemispheres.
+  // A curved surface, not a card-like pair of images rotated in front of a sphere.
+  ctx.drawImage(img,512-w/2,y,w,h);
+  ctx.drawImage(img,-w/2,y,w,h);
+  ctx.drawImage(img,1024-w/2,y,w,h);
+  texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tex);
+  canvas.dataset.globeStatus='ready';draw();raf=requestAnimationFrame(tick);
+ };
+ img.onerror=()=>{canvas.dataset.globeStatus='fallback'};
+ canvas.addEventListener('webglcontextlost',ev=>{ev.preventDefault();cancelAnimationFrame(raf);raf=0;canvas.dataset.globeStatus='fallback'},{once:true});
+ img.src='/scholaverum-official-logo-r290.webp';
+}
+
 function bridgeWorkspaceCTA(){
  const existing=$('#v55-workspace-cta'),actions=$('#v280-hero .v280-hero-actions');
  if(existing&&actions&&existing.parentElement!==actions)actions.appendChild(existing);
@@ -249,7 +329,7 @@ function sync(){
  const active=home();document.body.classList.toggle('v280-home-rebuild',active);
  const bar=$('#v280-progress')||(()=>{const el=document.createElement('div');el.id='v280-progress';el.setAttribute('aria-hidden','true');document.body.appendChild(el);return el})();
  bar.hidden=!active;if(!active){v281Refresh();return;}
- mount();
+ mount();v294MountGlobe();
  const pricing=$('#v41-home-pricing'),slot=$('#v280-pricing-slot');
  if(pricing&&slot&&pricing.parentElement!==slot)slot.appendChild(pricing);
  bridgeWorkspaceCTA();nav();v281Setup();animate();pointer();translate();queueProgress();
@@ -272,7 +352,7 @@ window.addEventListener('scroll',queueProgress,{passive:true});window.addEventLi
 window.addEventListener('hashchange',()=>setTimeout(sync,60));window.addEventListener('pageshow',()=>setTimeout(sync,40));
 ['scholark:topbar-ready','scholark-runtime-ready','scholark-return-home','scholark-route-painted'].forEach(event=>window.addEventListener(event,()=>setTimeout(sync,50)));
 ['scholark-language-ready','scholark-language-applied','scholark-language-change'].forEach(event=>window.addEventListener(event,()=>setTimeout(translate,100)));
-if(!document.getElementById('scholaverum-home-style')){const css=document.createElement('link');css.id='scholaverum-home-style';css.rel='stylesheet';css.href='scholark-v124-editorial-home.css?v=20261017-r293';document.head.appendChild(css)}
+if(!document.getElementById('scholaverum-home-style')){const css=document.createElement('link');css.id='scholaverum-home-style';css.rel='stylesheet';css.href='scholark-v124-editorial-home.css?v=20261018-r294';document.head.appendChild(css)}
 [0,160,500,1300].forEach(ms=>setTimeout(sync,ms));
 window.__SCHOLAVERUM_R280_HOME__={sync,choose,home,version:'r281-motion-home'};
 })();
