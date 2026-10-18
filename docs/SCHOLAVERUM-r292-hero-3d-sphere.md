@@ -13,3 +13,5 @@
 - r281 cinematic smoke now expects the single r292 3D rotor.
 - Refresh stylesheet and runtime version to r292 to invalidate old cached 2D animation.
 - Run full code checks, Docker image build and browser release gate, CI and CodeQL; only after green release deploy the tested commit to Render and re-run read-only live verification.
+## Live deployment
+Gated commit `87625a26930e528b635e0a9acc05be0bff472682` passed Release Gate, CI and CodeQL. Render deploy `dep-dba0uffavr4c73fnteug` entered LIVE state. This documentation-only commit triggers read-only production browser verification; no deployed runtime content is changed.
