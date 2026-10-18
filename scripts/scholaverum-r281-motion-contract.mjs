@@ -7,4 +7,7 @@ assert.ok(app.includes("v281Targets=$$('.v280-hero,.v280-tape,.v280-screen,.v280
 assert.doesNotMatch(app,/(?<!\$)\$\('\.v280-panel-graphic',root\)\.forEach/,'Singleton selector must not be iterated');
 for(const marker of ['v281StageObserver','v281Refresh','v281Parallax','visibilitychange','prefers-reduced-motion'])assert.ok(app.includes(marker),'Missing motion lifecycle: '+marker);
 for(const marker of ['v281PlanetFloat','v281Orbit','v281SceneReveal','@media(prefers-reduced-motion:reduce)'])assert.ok(css.includes(marker),'Missing motion/reduced-motion stylesheet: '+marker);
+const orbital=readFileSync('scholark-v127-official-atom.js','utf8');
+assert.match(orbital, /color:'#BAF500'[^\n]*speed:7000/, 'lime satellite must travel forward');
+assert.match(orbital, /color:'#812CF0'[^\n]*speed:-9400/, 'purple satellite must travel in the opposite direction');
 console.log('PASS r281 motion static contract: collection selector, lifecycle, reduced motion, keyframes');
