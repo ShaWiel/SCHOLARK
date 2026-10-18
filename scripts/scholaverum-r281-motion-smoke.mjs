@@ -16,7 +16,7 @@ try{
   !!document.querySelector('.v292-depth-spin'),null,{timeout:60000});
  const started=await page.evaluate(()=>{
   const planet=document.querySelector('.v292-depth-spin'),headline=document.querySelector('#v280-headline > span'),
-        orbit=document.querySelector('.v292-sphere-face.front img'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
+        orbit=document.querySelector('.v294-globe-side.front .v294-globe-strip img'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
         hero=document.querySelector('#v280-hero');
   return {planet:getComputedStyle(planet).animationName,play:getComputedStyle(planet).animationPlayState,
           orbit:getComputedStyle(orbit).animationName,headline:getComputedStyle(headline).animationName,
