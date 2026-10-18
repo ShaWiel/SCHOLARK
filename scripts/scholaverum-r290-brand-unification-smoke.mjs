@@ -41,43 +41,63 @@ try{
  await page.waitForTimeout(100);
  const mobile=await page.locator('.v288-orbit-emblem img').evaluate(el=>({width:el.getBoundingClientRect().width,natural:el.naturalWidth,display:getComputedStyle(el).display}));
  assert.ok(mobile.width>90&&mobile.natural>0&&mobile.display!=='none','official Dashboard brand remains visible on mobile');
+ await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('.v291-official-hero-art .v291-official-logo-spin',{state:'visible',timeout:30000});
+ await page.waitForSelector('.v292-hero-art .v292-depth-spin',{state:'visible',timeout:30000});
  const hero=await page.evaluate(async()=>{
-  const art=document.querySelector('#v280-editorial-home .v291-official-hero-art');
-  const rotor=art?.querySelector('.v291-official-logo-spin');
-  const img=rotor?.querySelector('img');
-  await img.decode();
+  const art=document.querySelector('#v280-editorial-home .v292-hero-art');
+  const sphere=art?.querySelector('.v292-sphere-stage');
+  const rot=sphere?.querySelector('.v292-depth-spin');
+  const imgs=[...rot.querySelectorAll('.v292-sphere-face img')];
+  await Promise.all(imgs.map(i=>i.decode()));
   const topbar=document.querySelector('.v55-brand-logo');
-  return {rendered:document.querySelectorAll('.v291-official-logo-spin').length,
-    oldBall:document.querySelectorAll('.v280-planet,.v288-branded-sphere,.v288-sphere-spin').length,
-    oldOrbits:art.querySelectorAll('.v280-orbit').length,
-    path:img.getAttribute('src'),natural:img.naturalWidth,
-    spin:getComputedStyle(rotor).animationName,
-    duration:getComputedStyle(rotor).animationDuration,
-    repeat:getComputedStyle(rotor).animationIterationCount,
-    main:rotor.offsetWidth*.30,legacyDiameter:art.getBoundingClientRect().width*.76,
-    topbarSrc:topbar?.getAttribute('src')||null};
+  const keyframes=[...document.styleSheets].flatMap(sheet=>{try{return [...sheet.cssRules]}catch{return []}}).filter(rule=>rule.name==='v292SphereSpinY');
+  return {rendered:document.querySelectorAll('.v292-sphere-stage').length,
+   oldBall:document.querySelectorAll('.v280-planet,.v288-branded-sphere,.v288-sphere-spin,.v291-official-logo-spin').length,
+   legacyArtwork:[...document.querySelectorAll('#v280-hero img')].filter(i=>(i.getAttribute('src')||'').includes('scholaverum-logo-r246')).length,
+   path:imgs.map(i=>i.getAttribute('src')),loaded:imgs.every(i=>i.naturalWidth>0),
+   sphereDiameter:sphere.getBoundingClientRect().width,oldBallDiameter:art.getBoundingClientRect().width*.76,
+   orbitCount:art.querySelectorAll('.v292-orbit').length,
+   spin:getComputedStyle(rot).animationName,duration:getComputedStyle(rot).animationDuration,
+   repeat:getComputedStyle(rot).animationIterationCount,
+   volumetric:getComputedStyle(sphere.querySelector('.v292-sphere-volume')).borderRadius,
+   keyframes:keyframes.map(x=>x.cssText).join('\n'),
+   topbarSrc:topbar?.getAttribute('src')||null};
  });
- assert.equal(hero.rendered,1,'new official hero logo is mounted once');
- assert.equal(hero.oldBall,0,'previous gradient ball and old S must be removed entirely');
- assert.equal(hero.oldOrbits,0,'no legacy orbit overlays');
- assert.equal(hero.path,NEW,'whole homepage hero uses approved official orbital image');
- assert.ok(hero.natural>0,'approved official artwork must load');
- assert.equal(hero.spin,'v291FullOfficialLogoTurn','entire official artwork must rotate, not just the S');
+ assert.equal(hero.rendered,1,'single compact official-logo sphere');
+ assert.equal(hero.oldBall,0,'no old r246 gradient sphere or flat oversized artwork');
+ assert.equal(hero.legacyArtwork,0,'old S image never returns to the homepage hero');
+ assert.deepEqual(hero.path,[NEW,NEW],'both 3D faces use the approved official logo');
+ assert.ok(hero.loaded,'the original official-logo asset decodes on both faces');
+ assert.equal(hero.orbitCount,2,'the orbit motif remains attached to the branded sphere');
+ assert.ok(Math.abs(hero.sphereDiameter-hero.oldBallDiameter)<=2,'new official sphere restores the old ball size');
+ assert.ok(hero.sphereDiameter<hero.oldBallDiameter*1.03,'official sphere must not be oversized');
+ assert.equal(hero.spin,'v292SphereSpinY','rotate the sphere on the front-to-back Y axis, never clockwise Z');
+ assert.match(hero.keyframes,/rotateY\(360deg\)/,'full 360 degree 3D Y turn is explicitly defined');
+ assert.doesNotMatch(hero.keyframes,/rotate\(360deg\)/,'no flat 2D rotation');
  assert.equal(hero.duration,'22s');
- assert.equal(hero.repeat,'infinite','rotation has no automatic stopping point');
- assert.ok(Math.abs(hero.main-hero.legacyDiameter)/hero.legacyDiameter<.10,'official center sphere must retain prior ball diameter');
- if(hero.topbarSrc)assert.equal(hero.topbarSrc,NEW,'topbar uses canonical official logo');
- const from=await page.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).transform);
- await page.waitForTimeout(300);
- const to=await page.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).transform);
- assert.notEqual(from,to,'logo must physically turn over time');
+ assert.equal(hero.repeat,'infinite','3D sphere must turn continuously');
+ assert.equal(hero.volumetric,'50%','sphere must remain rounded during the Y-axis turn');
+ if(hero.topbarSrc)assert.equal(hero.topbarSrc,NEW,'topbar stays branded');
+ const before=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ await page.waitForTimeout(280);
+ const after=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ assert.notEqual(before,after,'3D sphere must genuinely rotate over time');
+ await page.setViewportSize({width:390,height:844});
+ const mob=await page.evaluate(()=>{
+  const art=document.querySelector('.v292-hero-art'),sphere=art.querySelector('.v292-sphere-stage');
+  return {sphere:sphere.getBoundingClientRect().width,oldDiameter:art.getBoundingClientRect().width*.76,
+   duration:getComputedStyle(art.querySelector('.v292-depth-spin')).animationDuration,
+   overflow:document.documentElement.scrollWidth-innerWidth};
+ });
+ assert.ok(Math.abs(mob.sphere-mob.oldDiameter)<2,'same compact visual proportion on mobile');
+ assert.equal(mob.duration,'25s','mobile sphere rotation runs gently without stops');
+ assert.ok(mob.overflow<=8,'mobile homepage has no horizontal scroll caused by 3D sphere');
  const reduced=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduced.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await reduced.waitForSelector('.v291-official-logo-spin',{state:'attached',timeout:30000});
- assert.equal(await reduced.locator('.v291-official-logo-spin').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await reduced.waitForSelector('.v292-depth-spin',{state:'attached',timeout:30000});
+ assert.equal(await reduced.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).animationName),'none','accessible reduced-motion preference respected');
  await reduced.close();
  assert.deepEqual(errors,[],'branding change must not throw page errors');
- console.log('PASS r291 unified official logo: Dashboard, sidebar, loading, PWA, topbar, and entire 360-degree rotating homepage artwork share new brand');
+ console.log('PASS r292 official brand: full-size unchanged Workspace branding and old-size official-logo sphere with a genuine infinite 360-degree Y-axis turn');
 }finally{await browser.close()}
