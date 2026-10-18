@@ -31,3 +31,6 @@ The full gate verified pricing content and section ordering; the 390px responsiv
 
 ## Direct #pricing route compatibility
 The responsive gate confirms the visual pricing grid and mobile card bounds. It also revealed that legacy route ownership could hide the editor homepage when the location hash was exactly #pricing. The modern home owner now normalizes #pricing to the canonical #home using history.replaceState, then scrolls to the existing V41 price cards once mounted. The price section and Paddle callbacks stay single-owned and no retired homepage is restored.
+
+## Precise visual mobile check
+The gate confirms direct #pricing successfully lands on the new homepage and presents the cards; a brittle assertion split the browser-serialized `grid-template-columns` string by whitespace, resulting in a false count. Mobile QA now inspects the actual 3 cards' `getBoundingClientRect()` positions, actual widths, button widths and whole-page overflow. Billing source and pricing stylesheet are unchanged.
