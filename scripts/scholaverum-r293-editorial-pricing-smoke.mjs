@@ -47,7 +47,7 @@ try{
  assert.notEqual(d.cards[0].background,d.cards[1].background,'editorial pricing has differentiated dark/cream cards');
  assert.ok(d.nav?.includes('pricing'),'homepage navigation opens the integrated price section');
  assert.equal(d.paidButtons,2,'Paddle checkout plan ownership remains present');
- assert.ok(d.ctaOrder.indexOf('v280-pricing-slot')<d.ctaOrder.indexOf('v280-final'),'pricing appears before homepage final call to action');
+ assert.ok(d.ctaOrder.indexOf('v280-pricing-slot')<d.ctaOrder.indexOf('v280-start'),'pricing appears before homepage final call to action');
  await page.goto(base+'/#pricing',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForSelector('#v280-pricing-slot #v41-home-pricing .v41-price-grid',{state:'visible',timeout:40000});
  assert.equal(await page.evaluate(()=>document.body.classList.contains('v280-home-rebuild')),true,'direct #pricing route must not show the old homepage');
