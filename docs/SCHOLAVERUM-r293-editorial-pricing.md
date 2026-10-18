@@ -20,3 +20,5 @@ Bring subscriptions visually and functionally into the approved modern SCHOLAVER
 - New browser smoke verifies placement, no old/duplicate pricing, plan descriptions and prices/credit totals, checkout button ownership, direct `#pricing`, mobile responsive layout/overflow and login-first Plus behavior.
 - Run full CI, CodeQL and Release Gate including Docker API/browser/mobile QA; deploy only the approved SHA to Render and follow with read-only production verification.
 - No production user data, quotas, paid product configuration, payment credentials or databases are modified.
+## Release candidate verification retry
+First gate confirmed the V41 price grid mounted in the V280 editorial slot. The test read an offscreen headline using `innerText` and got an empty string; it now reads DOM text using `textContent` and separately verifies a positive rendered heading height and visible CSS. The identical adjustment applies to offscreen monthly price and credits assertions; application data/behavior has not changed.
