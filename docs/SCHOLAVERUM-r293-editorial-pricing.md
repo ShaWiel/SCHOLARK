@@ -34,3 +34,6 @@ The responsive gate confirms the visual pricing grid and mobile card bounds. It 
 
 ## Precise visual mobile check
 The gate confirms direct #pricing successfully lands on the new homepage and presents the cards; a brittle assertion split the browser-serialized `grid-template-columns` string by whitespace, resulting in a false count. Mobile QA now inspects the actual 3 cards' `getBoundingClientRect()` positions, actual widths, button widths and whole-page overflow. Billing source and pricing stylesheet are unchanged.
+
+## Canonical routing notification
+The exact #pricing deep-link could leave the editorial home mounted but hidden: after replacing the hash with #home, history.replaceState did not emit hashchange, so legacy route owners retained hidden-state styles. The new owner explicitly fires a standard hashchange after normalization to bring existing homepage owners back into agreement. QA now emits DOM/route visibility diagnostics after a bounded wait if any old layer still blocks pricing.
