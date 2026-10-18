@@ -154,6 +154,19 @@ function mount(){
   if(!stage.isConnected)return;
   const ball=$('.v296-ball',stage),back=$('.v296-back',stage),front=$('.v296-front',stage);
   let draw=null;try{draw=webgl(ball,image)}catch(e){console.warn('SCHOLAVERUM GPU globe unavailable',e)}
+  if(draw){
+   // WebGL can be lost after initial success (mobile app switch, GPU reset).
+   // Replace the lost canvas and keep the sphere turning with the CPU renderer.
+   ball.addEventListener('webglcontextlost',()=>{
+    if(!stage.isConnected)return;
+    const replacement=document.createElement('canvas');
+    replacement.className=ball.className;replacement.setAttribute('aria-hidden','true');
+    ball.replaceWith(replacement);
+    try{draw=cpu(replacement,image)}catch(e){draw=null;console.warn('SCHOLAVERUM CPU failover unavailable',e)}
+    stage.dataset.status=draw?'ready':'fallback';
+    if(!draw){const fallback=$('.v296-fallback',stage);fallback.src=LOGO;fallback.style.transform='scale(1.35)'}
+   },{once:true});
+  }
   if(!draw){try{draw=cpu(ball,image)}catch(e){console.warn('SCHOLAVERUM CPU globe unavailable',e)}}
   stage.dataset.status=draw?'ready':'fallback';
   if(!draw){const fallback=$('.v296-fallback',stage);fallback.src=LOGO;fallback.style.transform='scale(1.35)'}
@@ -167,7 +180,7 @@ function mount(){
    if(now-painted<34)return;
    const dt=Math.max(0,Math.min(80,now-(last||now)));last=now;painted=now;
    if(!reduced())clock+=dt;
-   const dpr=Math.min(1.6,devicePixelRatio||1),base=rect.width*dpr,n=Math.max(150,Math.round(base*2));
+   const dpr=Math.min(1.6,devicePixelRatio||1),base=Math.min(700,rect.width*dpr),n=Math.max(150,Math.round(base*2));
    if(size!==n){size=n;back.width=back.height=front.width=front.height=n}
    behind.clearRect(0,0,n,n);ahead.clearRect(0,0,n,n);
    [[false,behind],[true,ahead]].forEach(([frontLayer,ctx])=>{
