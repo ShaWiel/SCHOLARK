@@ -223,8 +223,25 @@ function v281Parallax(){
 
 function progress(){scrollFrame=0;if(!home())return;const bar=$('#v280-progress');if(!bar)return;const max=Math.max(1,document.documentElement.scrollHeight-innerHeight);bar.style.transform='scaleX('+Math.max(0,Math.min(1,scrollY/max))+')';v281Parallax()}
 const queueProgress=()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(progress)};
+let pricingEntryPending=false;
+function normalizePricingEntry(){
+ if((location.hash||'').toLowerCase()!=='#pricing')return;
+ pricingEntryPending=true;
+ // All homepage owners already agree on #home. Avoid reopening the retired
+ // route-dependent homepage while preserving a direct link to its price cards.
+ history.replaceState(null,'',location.pathname+location.search+'#home');
+}
+function revealPricingOnEntry(attempt=0){
+ if(!pricingEntryPending)return;
+ const pricing=$('#v41-home-pricing'),slot=$('#v280-pricing-slot');
+ if(pricing&&slot&&pricing.parentElement===slot&&getComputedStyle(pricing).display!=='none'){
+  pricingEntryPending=false;
+  setTimeout(()=>slot.scrollIntoView({behavior:reduced()?'instant':'smooth',block:'start'}),120);
+ }else if(attempt<18)setTimeout(()=>revealPricingOnEntry(attempt+1),150);
+}
 function sync(){
  if(!document.body)return;
+ normalizePricingEntry();
  const active=home();document.body.classList.toggle('v280-home-rebuild',active);
  const bar=$('#v280-progress')||(()=>{const el=document.createElement('div');el.id='v280-progress';el.setAttribute('aria-hidden','true');document.body.appendChild(el);return el})();
  bar.hidden=!active;if(!active){v281Refresh();return;}
@@ -232,7 +249,7 @@ function sync(){
  const pricing=$('#v41-home-pricing'),slot=$('#v280-pricing-slot');
  if(pricing&&slot&&pricing.parentElement!==slot)slot.appendChild(pricing);
  bridgeWorkspaceCTA();nav();v281Setup();animate();pointer();translate();queueProgress();
- if((location.hash||'').toLowerCase()==='#pricing')setTimeout(()=>slot?.scrollIntoView({behavior:reduced()?'instant':'smooth',block:'start'}),130);
+ revealPricingOnEntry();
 }
 document.addEventListener('click',ev=>{
  const hit=ev.target.closest?.('[data-v280-route],[data-v280-scroll],[data-v280-tab],[data-v280-open-feature]');if(!hit||!home())return;
