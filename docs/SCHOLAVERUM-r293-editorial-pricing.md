@@ -25,3 +25,6 @@ First gate confirmed the V41 price grid mounted in the V280 editorial slot. The 
 
 ## Release gate QA correction 2
 The updated gate confirms editorial pricing heading, canonical ownership, all three existing prices/credit allowances, and all billing hooks. The pricing-position assertion had referred to the visual class `.v280-final` instead of the actual final section ID `v280-start`. The test now compares the real DOM element IDs. No runtime behavior was modified.
+
+## Mobile CSS tightening
+The full gate verified pricing content and section ordering; the 390px responsive test flagged a card-size limit. The pricing grid and cards now explicitly use 100%-bounded widths, min-width zero and `minmax(0,1fr)` on mobile to stop text-driven grid overflow. The test also reports actual measured widths if that problem persists. No prices or billing hooks changed.
