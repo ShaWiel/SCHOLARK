@@ -18,14 +18,16 @@ try{
   return {home:document.body.classList.contains('v280-home-rebuild'),
    slot:slot.id,pricingCount:document.querySelectorAll('#v41-home-pricing').length,
    oldHidden:old?getComputedStyle(old).display==='none':true,
-   heading:pricing.querySelector('.v41-price-head h2')?.innerText,
+   heading:pricing.querySelector('.v41-price-head h2')?.textContent,
    cards:cards.map(x=>({name:x.querySelector('h3')?.textContent,
-      cost:x.querySelector('.v41-price')?.innerText,
-      credits:x.querySelector('ul')?.innerText.match(/[\d,]+ included AI credits\/month/i)?.[0]||'',
+      cost:x.querySelector('.v41-price')?.textContent,
+      credits:x.querySelector('ul')?.textContent.match(/[\d,]+ included AI credits\/month/i)?.[0]||'',
       button:x.querySelector('[data-plan]')?.dataset.plan,
       width:x.getBoundingClientRect().width,
       background:getComputedStyle(x).backgroundColor,
       color:getComputedStyle(x).color})),
+   headingSize:pricing.querySelector('.v41-price-head h2')?.getBoundingClientRect().height,
+   headingVisibility:getComputedStyle(pricing.querySelector('.v41-price-head h2')).visibility,
    grid:getComputedStyle(pricing.querySelector('.v41-price-grid')).gridTemplateColumns,
    nav:nav.find(x=>x.dataset.v280Scroll==='v280-pricing-slot')?.textContent,
    ctaOrder:[...root.children].map(x=>x.id||x.className),
@@ -36,6 +38,7 @@ try{
  assert.equal(d.pricingCount,1,'legacy pricing must not be duplicated');
  assert.equal(d.oldHidden,true,'legacy homepage never returns');
  assert.match(d.heading,/MORE SPACE/);
+ assert.ok(d.headingSize>50&&d.headingVisibility==='visible','editorial pricing headline must render visibly');
  assert.equal(d.cards.length,3,'retain Free Plus Pro');
  assert.deepEqual(d.cards.map(x=>x.button),['free','plus','pro'],'billing data-plan hooks unchanged');
  assert.deepEqual(d.cards.map(x=>x.cost.replace(/\s+/g,' ').trim()),['$0 / month','$14.99 / month','$19.99 / month'],'subscription amounts are unchanged');
