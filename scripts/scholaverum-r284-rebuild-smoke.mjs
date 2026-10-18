@@ -58,7 +58,10 @@ try{
  assert.equal(await page.locator('#v117-credit-store-page').evaluate(el=>!!el.dataset.v30LegacyHome||!!el.dataset.v109Quarantined),false,'the live Credit Store must never be classified as retired Home content');
  await page.evaluate(()=>location.hash='#pricing');
  await page.waitForSelector('#v41-home-pricing [data-plan=\"plus\"]',{state:'visible',timeout:15000});
- assert.equal(await page.locator('#v41-home-pricing').evaluate(el=>el.parentElement===document.body),true,'Pricing must not live inside the retired homepage shell');
+ assert.equal(await page.locator('#v41-home-pricing').evaluate(el=>{
+   const slot=el.parentElement;
+   return slot?.id==='v280-pricing-slot'&&!!slot.closest('#v280-editorial-home')&&!slot.closest('.v29-shell');
+ }),true,'Pricing belongs in the canonical editorial home, never the retired V29 shell');
  await page.evaluate(()=>location.hash='#home');
  await page.waitForSelector('#v280-hero',{state:'visible',timeout:15000});
 
