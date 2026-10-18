@@ -48,7 +48,7 @@ try{
   const art=document.querySelector('#v280-editorial-home .v292-hero-art');
   const sphere=art?.querySelector('.v292-sphere-stage');
   const rot=sphere?.querySelector('.v292-depth-spin');
-  const imgs=[...rot.querySelectorAll('.v292-sphere-face img')];
+  const imgs=[...rot.querySelectorAll('.v294-globe-strip img')];
   await Promise.all(imgs.map(i=>i.decode()));
   const topbar=document.querySelector('.v55-brand-logo');
   const keyframes=[...document.styleSheets].flatMap(sheet=>{try{return [...sheet.cssRules]}catch{return []}}).filter(rule=>rule.name==='v292SphereSpinY');
@@ -67,8 +67,9 @@ try{
  assert.equal(hero.rendered,1,'single compact official-logo sphere');
  assert.equal(hero.oldBall,0,'no old r246 gradient sphere or flat oversized artwork');
  assert.equal(hero.legacyArtwork,0,'old S image never returns to the homepage hero');
- assert.deepEqual(hero.path,[NEW,NEW],'both 3D faces use the approved official logo');
- assert.ok(hero.loaded,'the original official-logo asset decodes on both faces');
+ assert.equal(hero.path.length,48,'globe uses curved longitude segments on front and back');
+ assert.ok(hero.path.every(src=>src===NEW),'all curved 3D strips use the approved official logo');
+ assert.ok(hero.loaded,'the official-logo asset decodes on every globe segment');
  assert.equal(hero.orbitCount,2,'the orbit motif remains attached to the branded sphere');
  assert.ok(Math.abs(hero.sphereDiameter-hero.oldBallDiameter)<=2,'new official sphere restores the old ball size');
  assert.ok(hero.sphereDiameter<hero.oldBallDiameter*1.03,'official sphere must not be oversized');
@@ -99,5 +100,5 @@ try{
  assert.equal(await reduced.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).animationName),'none','accessible reduced-motion preference respected');
  await reduced.close();
  assert.deepEqual(errors,[],'branding change must not throw page errors');
- console.log('PASS r292 official brand: full-size unchanged Workspace branding and old-size official-logo sphere with a genuine infinite 360-degree Y-axis turn');
+ console.log('PASS r294 official brand: curved 3D logo strips, compact sphere and continuous 360-degree Y-axis globe rotation');
 }finally{await browser.close()}
