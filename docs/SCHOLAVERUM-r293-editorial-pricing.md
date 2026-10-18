@@ -22,3 +22,6 @@ Bring subscriptions visually and functionally into the approved modern SCHOLAVER
 - No production user data, quotas, paid product configuration, payment credentials or databases are modified.
 ## Release candidate verification retry
 First gate confirmed the V41 price grid mounted in the V280 editorial slot. The test read an offscreen headline using `innerText` and got an empty string; it now reads DOM text using `textContent` and separately verifies a positive rendered heading height and visible CSS. The identical adjustment applies to offscreen monthly price and credits assertions; application data/behavior has not changed.
+
+## Release gate QA correction 2
+The updated gate confirms editorial pricing heading, canonical ownership, all three existing prices/credit allowances, and all billing hooks. The pricing-position assertion had referred to the visual class `.v280-final` instead of the actual final section ID `v280-start`. The test now compares the real DOM element IDs. No runtime behavior was modified.
