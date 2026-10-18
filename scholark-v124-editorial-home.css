@@ -291,7 +291,7 @@ body.v281-motion-paused #v280-editorial-home *::after{
 /* Legacy homepage cannot become visible to public users after r282. The old V29 shell remains mounted only for route compatibility. */
 body.v280-home-rebuild #v29-home-layer > :not(#v280-editorial-home){display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.v280-home-rebuild #v29-home-layer > #v280-editorial-home{display:block!important;visibility:visible!important}
-body.v280-home-rebuild #v28-home,body.v280-home-rebuild #v41-home-pricing{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.v280-home-rebuild #v28-home{display:none!important;visibility:hidden!important;pointer-events:none!important}
 
 
 /* r292: small, genuinely 3D front-to-back official SCHOLAVERUM sphere.
@@ -353,4 +353,196 @@ body.v280-home-rebuild #v28-home,body.v280-home-rebuild #v41-home-pricing{displa
   animation:none!important;transform:rotateY(0deg)!important;will-change:auto!important
  }
  #v280-editorial-home .v292-sphere-face.back{visibility:hidden!important}
+}
+
+
+/* r293: canonical V41 price data, rebuilt inside r280 editorial homepage.
+   Design-only. Buttons, data-plan, wallet, Paddle, prices and credit packs
+   continue to be owned by the existing billing implementation. */
+body.v280-home-rebuild #v280-pricing-slot{
+ position:relative;isolation:isolate;overflow:hidden;
+ background:
+ radial-gradient(ellipse at 96% 6%,rgba(120,99,207,.15),transparent 37%),
+ radial-gradient(ellipse at 4% 95%,rgba(201,255,106,.065),transparent 33%),
+ #0b111e;
+ border-top:1px solid rgba(255,255,255,.10);
+ padding:clamp(78px,10vw,145px) clamp(20px,5.2vw,90px) clamp(82px,9vw,128px);
+ scroll-margin-top:85px;
+}
+body.v280-home-rebuild #v280-pricing-slot::before{
+ content:"";position:absolute;right:-15vw;top:-29vw;
+ width:min(78vw,1000px);aspect-ratio:1;border:1px solid rgba(201,255,106,.14);
+ border-radius:50%;pointer-events:none;box-shadow:0 0 0 130px rgba(201,255,106,.018);
+}
+body.v280-home-rebuild #v280-editorial-home #v41-home-pricing{
+ position:relative!important;z-index:1;display:block!important;visibility:visible!important;
+ opacity:1!important;pointer-events:auto!important;
+ margin:0 auto!important;padding:0!important;max-width:1440px!important;
+ width:100%!important;box-sizing:border-box!important;background:transparent!important;
+ color:#f6f5ef!important;overflow:visible!important;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-head{
+ max-width:none;margin:0 0 clamp(32px,4vw,60px);
+ display:grid;grid-template-columns:minmax(0,1.5fr) minmax(230px,.55fr);
+ gap:20px 52px;align-items:end;text-align:left;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-head small{
+ display:block;grid-column:1/-1;margin:0;
+ color:#c9ff6a;font:850 10px/1.5 Inter,system-ui,sans-serif;
+ text-transform:uppercase;letter-spacing:.22em;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-head h2{
+ color:#f8f7f3;font:900 clamp(56px,8vw,126px)/.88 Inter,system-ui,sans-serif;
+ letter-spacing:-.076em;text-transform:uppercase;margin:0;max-width:1000px;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-head h2 em{
+ font-style:normal;color:#c9ff6a;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-head p{
+ align-self:end;margin:0 0 9px;max-width:340px;
+ font:520 clamp(14px,1.4vw,17px)/1.7 Inter,system-ui,sans-serif;
+ color:#b7c2d0;
+}
+#v280-editorial-home #v41-home-pricing .v41-price-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ align-items:stretch;gap:clamp(13px,1.6vw,24px);
+}
+#v280-editorial-home #v41-home-pricing .v41-plan{
+ min-width:0;min-height:650px;position:relative;
+ border-radius:clamp(22px,2.2vw,33px);padding:clamp(24px,2.5vw,38px);
+ background:#192537;color:#f7f8f1;
+ border:1px solid rgba(209,222,244,.17);
+ box-shadow:0 24px 80px rgba(0,0,0,.18);
+ display:flex;flex-direction:column;gap:0;overflow:hidden;
+ transform:none;transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan::after{
+ content:"↗";position:absolute;top:19px;right:26px;
+ color:rgba(216,232,255,.55);font:400 27px/1 Inter,system-ui;pointer-events:none;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan.plus{
+ background:#f6f4e9;color:#111827;border-color:rgba(255,255,255,.45);
+ box-shadow:0 27px 75px rgba(0,0,0,.20);
+}
+#v280-editorial-home #v41-home-pricing .v41-plan.pro{
+ background:linear-gradient(147deg,#1d283a 0%,#151c2e 48%,#25203c 100%);
+ color:#f9f8f2;border:1.5px solid rgba(201,255,106,.85);
+ box-shadow:0 24px 80px rgba(56,85,45,.13),inset 0 0 0 1px rgba(201,255,106,.08);
+}
+#v280-editorial-home #v41-home-pricing .v41-plan.pro::after{color:#c9ff6a;top:64px}
+#v280-editorial-home #v41-home-pricing .v41-plan.v41-focus,
+#v280-editorial-home #v41-home-pricing .v41-plan:hover{
+ transform:translateY(-6px);
+ box-shadow:0 30px 90px rgba(0,0,0,.29);
+ border-color:rgba(201,255,106,.7);
+}
+#v280-editorial-home #v41-home-pricing .v41-kicker{
+ color:#c9ff6a;font:900 10px/1.3 Inter,system-ui;letter-spacing:.2em;
+ text-transform:uppercase;
+}
+#v280-editorial-home #v41-home-pricing .plus .v41-kicker{color:#5f527e}
+#v280-editorial-home #v41-home-pricing .v41-plan h3{
+ color:inherit;font:870 clamp(25px,2.8vw,39px)/1.03 Inter,system-ui;
+ letter-spacing:-.055em;margin:15px 0 12px;
+}
+#v280-editorial-home #v41-home-pricing .v41-desc{
+ color:inherit;opacity:.72;font:560 13px/1.6 Inter,system-ui;
+ margin:0;min-height:59px;max-width:340px;
+}
+#v280-editorial-home #v41-home-pricing .v41-price{
+ color:inherit;font:900 clamp(49px,5.5vw,79px)/.95 Inter,system-ui;
+ letter-spacing:-.075em;white-space:nowrap;margin:23px 0 9px;
+}
+#v280-editorial-home #v41-home-pricing .v41-price small{
+ font:680 13px/1 Inter,system-ui;letter-spacing:0;
+ vertical-align:baseline;white-space:nowrap;opacity:.64;
+}
+#v280-editorial-home #v41-home-pricing .v41-trial{
+ color:inherit;opacity:.68;font:680 11px/1.5 Inter,system-ui;
+ margin:0 0 23px;min-height:28px;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan ul{
+ margin:0 0 27px;padding:0;list-style:none;flex:1;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan li{
+ position:relative;display:block;padding:11px 0 11px 26px;
+ color:inherit;font:580 12.5px/1.53 Inter,system-ui;
+ border-bottom:1px solid rgba(185,204,227,.18);overflow-wrap:anywhere;
+}
+#v280-editorial-home #v41-home-pricing .plus li{border-color:rgba(27,34,55,.12)}
+#v280-editorial-home #v41-home-pricing .v41-plan li::before{
+ content:"✓";display:grid;place-items:center;
+ position:absolute;left:0;top:10px;width:17px;height:17px;
+ border:1px solid rgba(201,255,106,.6);border-radius:50%;
+ color:#c9ff6a;font:900 10px Inter,system-ui;
+}
+#v280-editorial-home #v41-home-pricing .plus li::before{
+ border-color:#76815b;color:#395022;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan button[data-plan]{
+ margin-top:auto;min-height:53px;width:100%;display:flex;
+ justify-content:center;align-items:center;
+ border:1px solid rgba(255,255,255,.2);
+ border-radius:999px;padding:14px 20px;
+ font:850 13px/1.3 Inter,system-ui;cursor:pointer;
+ color:#101723;background:#c9ff6a;
+ transition:transform .22s ease,background .22s ease,box-shadow .22s ease;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan:not(.plus):not(.pro) button[data-plan]{
+ color:#fff;background:transparent;border-color:rgba(255,255,255,.39);
+}
+#v280-editorial-home #v41-home-pricing .v41-plan.plus button[data-plan]{
+ color:#fff;background:#111b2d;border-color:#111b2d;
+}
+#v280-editorial-home #v41-home-pricing .v41-plan button[data-plan]:hover:not(:disabled){
+ transform:translateY(-2px);box-shadow:0 8px 26px rgba(0,0,0,.16);
+}
+#v280-editorial-home #v41-home-pricing .v41-plan button[data-plan]:focus-visible{
+ outline:3px solid #9885ff;outline-offset:4px;
+}
+#v280-editorial-home #v41-home-pricing .v41-most{
+ position:absolute;right:20px;top:19px;border-radius:999px;
+ background:#c9ff6a;color:#16202b;padding:9px 13px;
+ font:900 9px/1 Inter,system-ui;letter-spacing:.09em;
+ box-shadow:none;animation:none;
+}
+#v280-editorial-home #v41-home-pricing .v41-coming-note{
+ margin:32px 0 0;padding:19px 22px;border-radius:17px;
+ background:rgba(191,171,255,.085);border:1px solid rgba(187,171,255,.19);
+ color:#c6cbdd;font:650 12px/1.6 Inter,system-ui;
+}
+#v280-editorial-home #v41-home-pricing .v41-coming-note b{color:#c9ff6a}
+#v280-editorial-home #v41-home-pricing .v115-card-status{font-size:11px}
+@media(max-width:1180px){
+ #v280-editorial-home #v41-home-pricing .v41-price-head h2{font-size:clamp(52px,7.6vw,90px)}
+ #v280-editorial-home #v41-home-pricing .v41-plan{padding:24px}
+ #v280-editorial-home #v41-home-pricing .v41-price{font-size:clamp(42px,5vw,64px)}
+}
+@media(max-width:950px){
+ #v280-editorial-home #v41-home-pricing .v41-price-head{grid-template-columns:1fr}
+ #v280-editorial-home #v41-home-pricing .v41-price-head p{max-width:620px;margin:0}
+ #v280-editorial-home #v41-home-pricing .v41-price-grid{grid-template-columns:1fr;gap:18px}
+ #v280-editorial-home #v41-home-pricing .v41-plan{min-height:0;padding:clamp(27px,5vw,42px)}
+ #v280-editorial-home #v41-home-pricing .v41-desc{min-height:0}
+ #v280-editorial-home #v41-home-pricing .v41-plan h3{font-size:34px}
+ #v280-editorial-home #v41-home-pricing .v41-price{font-size:65px}
+}
+@media(max-width:560px){
+ body.v280-home-rebuild #v280-pricing-slot{padding:83px 17px 93px;scroll-margin-top:65px}
+ #v280-editorial-home #v41-home-pricing .v41-price-head{margin-bottom:30px}
+ #v280-editorial-home #v41-home-pricing .v41-price-head h2{
+  font-size:clamp(45px,12vw,68px);line-height:.94;overflow-wrap:normal
+ }
+ #v280-editorial-home #v41-home-pricing .v41-price{font-size:59px}
+ #v280-editorial-home #v41-home-pricing .v41-price small{font-size:12px}
+ #v280-editorial-home #v41-home-pricing .v41-plan{border-radius:25px;padding:27px 23px}
+ #v280-editorial-home #v41-home-pricing .v41-plan h3{font-size:32px}
+ #v280-editorial-home #v41-home-pricing .v41-plan.v41-focus,
+ #v280-editorial-home #v41-home-pricing .v41-plan:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ #v280-editorial-home #v41-home-pricing .v41-plan,
+ #v280-editorial-home #v41-home-pricing .v41-plan button[data-plan]{
+  transition:none!important;transform:none!important
+ }
 }
