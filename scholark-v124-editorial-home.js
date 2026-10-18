@@ -4,11 +4,11 @@ if(window.__SCHOLAVERUM_R280_REBUILD__)return;
 window.__SCHOLAVERUM_R280_REBUILD__=true;
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const home=()=>{const p=(location.pathname||'/').replace(/\/+$/,'')||'/';const h=(location.hash||'').replace(/^#/,'').split(/[?&]/)[0].toLowerCase();return(p==='/'||p==='/index.html')&&(h===''||h==='home'||h==='start')};
+const home=()=>{const p=(location.pathname||'/').replace(/\/+$/,'')||'/';const h=(location.hash||'').replace(/^#/,'').split(/[?&]/)[0].toLowerCase();return(p==='/'||p==='/index.html')&&(h===''||h==='home'||h==='start'||h==='pricing')};
 const reduced=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 const lang=()=>{try{return localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en'}catch{return document.documentElement.lang||'en'}};
 const EN={
-'nav.how':'The idea','nav.demo':'Explore','nav.future':'Go further','nav.tools':'Everything inside',
+'nav.how':'The idea','nav.pricing':'Plans & pricing','nav.demo':'Explore','nav.future':'Go further','nav.tools':'Everything inside',
 'hero.eyebrow':'THE FUTURE OF LEARNING, REIMAGINED','hero.1':'LEARN','hero.2':'WITHOUT','hero.3':'LIMITS.',
 'hero.pitch':'One beautiful space to ask bigger questions, understand the hard stuff and build what comes next. Meet SCHOLAVERUM.',
 'hero.start':'Start with ARKI','hero.see':'Explore the experience','hero.note':'One workspace. More possibilities. Built around you.','hero.scroll':'Scroll to explore',
@@ -40,7 +40,7 @@ const EN={
 'final.button':'Enter the workspace','footer.copy':'Built for curiosity. Designed for what comes next.'
 };
 const NL={
-'nav.how':'Het idee','nav.demo':'Ontdekken','nav.future':'Verder groeien','nav.tools':'Alle functies',
+'nav.how':'Het idee','nav.pricing':'Prijzen & plannen','nav.demo':'Ontdekken','nav.future':'Verder groeien','nav.tools':'Alle functies',
 'hero.eyebrow':'DE TOEKOMST VAN LEREN, OPNIEUW BEDACHT','hero.1':'LEER','hero.2':'ZONDER','hero.3':'GRENZEN.',
 'hero.pitch':'Eén prachtige plek om grotere vragen te stellen, moeilijke onderwerpen te begrijpen en je toekomst vorm te geven. Ontdek SCHOLAVERUM.',
 'hero.start':'Begin met ARKI','hero.see':'Ontdek de ervaring','hero.note':'Eén werkruimte. Meer mogelijkheden. Speciaal voor jou.','hero.scroll':'Scroll om te ontdekken',
@@ -108,6 +108,7 @@ function markup(){
  '<h2 id="v280-school-head" data-v280-reveal>'+k('duo.schools.head')+'</h2><p data-v280-reveal>'+k('duo.schools.body')+'</p>'+cta('duo.schools.btn','schools','ink'),
  '<div class="v280-panel-graphic" aria-hidden="true"><div class="v280-navigator"></div></div></section></div>',
  '<section class="v280-toolkit" id="v280-tools" aria-labelledby="v280-tools-title"><div class="v280-max"><div data-v280-reveal>'+over('tools.over')+'</div><h2 id="v280-tools-title" data-v280-reveal>'+k('tools.title')+'</h2><div class="v280-tools">'+tools+'</div></div></section>',
+ '<div class="v280-pricing-slot" id="v280-pricing-slot" aria-label="SCHOLAVERUM plans and pricing"></div>',
  '<section class="v280-final" id="v280-start" aria-labelledby="v280-start-title"><div class="v280-overline v280-acid" data-v280-reveal>'+k('final.over')+'</div><h2 id="v280-start-title" data-v280-reveal>'+k('final.head')+'</h2><p>'+k('final.sub')+'</p>'+cta('final.button','dashboard')+'</section>',
  '<footer class="v280-footer"><strong>SCHOLAVERUM</strong><span>'+k('footer.copy')+'</span><a href="#home" data-v280-scroll="v280-hero">↑ Back to top</a></footer>'
  ].join('');
@@ -131,6 +132,7 @@ function mount(){
  const layer=$('#v29-home-layer');if(!layer)return;
  if($('#v280-editorial-home',layer))return;
  const root=document.createElement('div');root.id='v280-editorial-home';root.setAttribute('data-sch-i18n-owned','1');root.innerHTML=markup();layer.appendChild(root);choose(chosen);
+ window.dispatchEvent(new Event('scholaverum:editorial-home-mounted'));
 }
 function bridgeWorkspaceCTA(){
  const existing=$('#v55-workspace-cta'),actions=$('#v280-hero .v280-hero-actions');
@@ -139,7 +141,7 @@ function bridgeWorkspaceCTA(){
 function nav(){
  const bar=$('#v55-topbar');if(!bar||$('#v280-header-links',bar))return;
  const n=document.createElement('nav');n.id='v280-header-links';n.setAttribute('aria-label','Homepage navigation');
- n.innerHTML=[['how','v280-intro'],['demo','v280-theater'],['future','v280-future'],['tools','v280-tools']].map(([key,id])=>'<button type="button" data-v280-scroll="'+id+'" data-v280-copy="nav.'+key+'">'+esc(t('nav.'+key))+'</button>').join('');
+ n.innerHTML=[['how','v280-intro'],['demo','v280-theater'],['future','v280-future'],['tools','v280-tools'],['pricing','v280-pricing-slot']].map(([key,id])=>'<button type="button" data-v280-scroll="'+id+'" data-v280-copy="nav.'+key+'">'+esc(t('nav.'+key))+'</button>').join('');
  const actions=$('.v55-actions',bar);if(actions)bar.insertBefore(n,actions);else bar.appendChild(n);
 }
 function renderCopy(dict){
@@ -226,7 +228,11 @@ function sync(){
  const active=home();document.body.classList.toggle('v280-home-rebuild',active);
  const bar=$('#v280-progress')||(()=>{const el=document.createElement('div');el.id='v280-progress';el.setAttribute('aria-hidden','true');document.body.appendChild(el);return el})();
  bar.hidden=!active;if(!active){v281Refresh();return;}
- mount();bridgeWorkspaceCTA();nav();v281Setup();animate();pointer();translate();queueProgress();
+ mount();
+ const pricing=$('#v41-home-pricing'),slot=$('#v280-pricing-slot');
+ if(pricing&&slot&&pricing.parentElement!==slot)slot.appendChild(pricing);
+ bridgeWorkspaceCTA();nav();v281Setup();animate();pointer();translate();queueProgress();
+ if((location.hash||'').toLowerCase()==='#pricing')setTimeout(()=>slot?.scrollIntoView({behavior:reduced()?'instant':'smooth',block:'start'}),130);
 }
 document.addEventListener('click',ev=>{
  const hit=ev.target.closest?.('[data-v280-route],[data-v280-scroll],[data-v280-tab],[data-v280-open-feature]');if(!hit||!home())return;
