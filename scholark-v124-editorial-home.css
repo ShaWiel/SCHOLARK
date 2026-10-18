@@ -317,7 +317,7 @@ body.v280-home-rebuild #v28-home{display:none!important;visibility:hidden!import
  position:absolute;z-index:1;top:50%;left:50%;width:334%;height:auto;max-width:none;
  transform:translate(-50%,-50%);pointer-events:none;user-select:none;
 }
-#v280-editorial-home .v294-globe-canvas[data-globe-status="ready"] + .v294-globe-fallback{display:none}
+#v280-editorial-home .v294-globe-canvas[data-globe-status^="ready"] + .v294-globe-fallback{display:none}
 #v280-editorial-home .v294-orbit{
  position:absolute;z-index:0;left:50%;top:50%;width:127%;height:61%;
  border:1.5px solid rgba(206,255,112,.55);border-radius:50%;
