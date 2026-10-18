@@ -5,7 +5,7 @@
 if(window.__SCHOLAVERUM_ATOM_V296__)return;
 const TAU=Math.PI*2,LOGO='/scholaverum-official-logo-r290.webp',COLORS=[
  {color:'#BAF500',shine:'#f0ffa7',tilt:-.56,speed:7000,phase:2.35},
- {color:'#812CF0',shine:'#cca8ff',tilt:.69,speed:9400,phase:-1.3}
+ {color:'#812CF0',shine:'#cca8ff',tilt:.69,speed:-9400,phase:-1.3}
 ];
 const css=[
  '#v280-editorial-home .v296-atom{position:absolute;right:35%;bottom:17%;width:76%;aspect-ratio:1;isolation:isolate;z-index:1;pointer-events:none}',
