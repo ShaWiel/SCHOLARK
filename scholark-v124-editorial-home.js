@@ -229,7 +229,11 @@ function normalizePricingEntry(){
  pricingEntryPending=true;
  // All homepage owners already agree on #home. Avoid reopening the retired
  // route-dependent homepage while preserving a direct link to its price cards.
+ // history.replaceState never emits hashchange; older route owners otherwise
+ // keep #v29-home-layer hidden after the URL has already become #home.
+ const oldURL=location.href;
  history.replaceState(null,'',location.pathname+location.search+'#home');
+ window.dispatchEvent(new HashChangeEvent('hashchange',{oldURL,newURL:location.href}));
 }
 function revealPricingOnEntry(attempt=0){
  if(!pricingEntryPending)return;
