@@ -13,26 +13,26 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('v280-home-rebuild')&&
   !!window.__SCHOLAVERUM_R280_HOME__&&
   !!document.querySelector('#v280-hero.v281-inview')&&
-  !!document.querySelector('.v292-depth-spin'),null,{timeout:60000});
+  !!document.querySelector('#v294-globe'),null,{timeout:60000});
  const started=await page.evaluate(()=>{
-  const planet=document.querySelector('.v292-depth-spin'),headline=document.querySelector('#v280-headline > span'),
-        orbit=document.querySelector('.v292-sphere-face.front img'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
+  const planet=document.querySelector('#v294-globe'),headline=document.querySelector('#v280-headline > span'),
+        orbit=document.querySelector('.v294-globe-fallback'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
         hero=document.querySelector('#v280-hero');
-  return {planet:getComputedStyle(planet).animationName,play:getComputedStyle(planet).animationPlayState,
+  return {planet:planet.dataset.globeStatus,play:planet.dataset.globeYaw,
           orbit:getComputedStyle(orbit).animationName,headline:getComputedStyle(headline).animationName,
           stage:getComputedStyle(stage).animationName,heroClass:hero.classList.contains('v281-inview'),
           version:window.__SCHOLAVERUM_R280_HOME__?.version};
  });
  assert.equal(started.version,'r281-motion-home');
- assert.equal(started.planet,'v292SphereSpinY','official orbital logo must complete repeated 360-degree rotations');
- assert.equal(started.play,'running','visible planet motion should run');
- assert.equal(started.orbit,'none','official logo images move through the parent 3D sphere without separate 2D motion');
+ assert.match(started.planet,/^ready/,'globe renders official artwork as a spherical texture');
+ assert.ok(started.play!==undefined,'globe presents a rotation angle');
+ assert.equal(started.orbit,'none','approved image fallback does not rotate separately');
  assert.equal(started.headline,'v281HeadlineRise','hero headline should animate on arrival');
  assert.equal(started.stage,'v281SceneReveal','product theater needs scene transitions');
 
- const before=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ const before=await page.locator('#v294-globe').getAttribute('data-globe-yaw');
  await page.waitForTimeout(600);
- const after=await page.locator('.v292-depth-spin').evaluate(el=>getComputedStyle(el).transform);
+ const after=await page.locator('#v294-globe').getAttribute('data-globe-yaw');
  assert.notEqual(after,before,'official full-circle logo must visibly rotate between frames');
 
  await page.locator('#v280-tab-tutor').click();
@@ -47,11 +47,14 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.waitForTimeout(120);
  const calm=await page.evaluate(()=>{
-  const planet=document.querySelector('.v292-depth-spin'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
-  return {planet:getComputedStyle(planet).animationName,headline:getComputedStyle(h).animationName,
+  const planet=document.querySelector('#v294-globe'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
+  return {planet:planet.dataset.globeYaw,depth:getComputedStyle(document.querySelector('.v294-globe-shell')).animationName,headline:getComputedStyle(h).animationName,
           tape:getComputedStyle(tape).animationName,art:getComputedStyle(document.querySelector('.v280-hero-art')).transform};
  });
- assert.equal(calm.planet,'none','reduced motion must stop official logo animation');
+ assert.equal(calm.depth,'none','reduced motion must stop 3D pop-out animation');
+ const still=await page.locator('#v294-globe').getAttribute('data-globe-yaw');
+ await page.waitForTimeout(200);
+ assert.equal(await page.locator('#v294-globe').getAttribute('data-globe-yaw'),still,'reduced motion must pause globe rotation');
  assert.equal(calm.headline,'none','reduced motion must stop typography');
  assert.equal(calm.tape,'none','reduced motion must stop marquees');
  assert.equal(calm.art,'none','reduced motion must disable scroll parallax');
