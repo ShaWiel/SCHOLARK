@@ -231,8 +231,8 @@ function loop(now){
  if(!reduced())raf=requestAnimationFrame(loop);
 }
 function playback(on){
- inView=!!on&&home()&&!document.hidden;
- if(!inView){if(raf)cancelAnimationFrame(raf);raf=0;return}
+ inView=!!on&&home()&&!document.hidden&&!reduced();
+ if(!inView){if(raf)cancelAnimationFrame(raf);raf=0;if(on&&reduced()&&home()&&!document.hidden){size();paint(16)}return}
  if(!raf)raf=requestAnimationFrame(loop);
 }
 function skipIntro(){
@@ -252,7 +252,7 @@ function mount(){
  if(!stage?.isConnected){
   host.querySelectorAll('.v298-engine,.v296-atom,.v292-sphere-stage,.v299-universe').forEach(n=>n.remove());
   stage=document.createElement('div');stage.className='v299-universe';
-  stage.setAttribute('aria-label','SCHOLAVERUM knowledge planet cinematic');stage.setAttribute('role','img');
+  stage.setAttribute('aria-label','SCHOLAVERUM knowledge planet cinematic');stage.setAttribute('role','group');
   stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-official-icon-r290.png" alt="" aria-hidden="true" decoding="async"><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
   host.prepend(stage);canvas=$('.v299-planet-canvas',stage);
   $('.v299-skip',stage).addEventListener('click',skipIntro);
@@ -270,8 +270,8 @@ function mount(){
   if('ResizeObserver' in window){resizeObserver=new ResizeObserver(()=>{size();if(reduced())paint(16)});resizeObserver.observe(canvas)}
  }
  const bounds=host.getBoundingClientRect();
- if(bounds.bottom>0&&bounds.top<innerHeight)playback(true);
- if(reduced()){size();paint(16)}
+ if(reduced()){playback(false);size();paint(16)}
+ else if(bounds.bottom>0&&bounds.top<innerHeight)playback(true);
 }
 if(!document.getElementById('scholaverum-planet-style')){
  const link=document.createElement('link');link.id='scholaverum-planet-style';link.rel='stylesheet';link.href='scholark-v129-knowledge-planet.css?v=20261020-r299';document.head.appendChild(link);
