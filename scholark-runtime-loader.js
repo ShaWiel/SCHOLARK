@@ -21,9 +21,9 @@
   const landingHome = () => appPath() && ['', 'home', 'pricing', 'start'].includes(routeHash());
   const publicHome = () => landingHome() || creditStore();
   window.__SCHOLARK_ROUTES__ = Object.freeze({isAppPath:appPath,hash:routeHash,isHome:publicHome,isLanding:landingHome,isCreditStore:creditStore,homeKeys:Object.freeze(['home','pricing','start','credit-store'])});
-  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,connect:false,release:'r300-cosmic-cinematics'});
+  window.__SCHOLARK_FEATURE_FLAGS__ = Object.assign({},window.__SCHOLARK_FEATURE_FLAGS__||{},{studio:false,book:false,connect:false,release:'r301-celestial-front-orbits'});
 
-  const VERSION = '20261020-r300-cosmic-cinematics';
+  const VERSION = '20261020-r301-celestial-front-orbits';
   const ASSET_VERSION = () => VERSION;
   const ACTIVE = [
     'scholark-v29-home-overlay.js','scholark-v30-native-home-autodemo.js','scholark-v32-mode-preview.js','scholark-v33-preview-compat.js',
