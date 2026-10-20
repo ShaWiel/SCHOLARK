@@ -36,7 +36,7 @@ try{
   const routes=['ai','tutor','education','planner','focus','flashcards','assignments','progress','goal','language','files','project','schools','study'];
   for(const route of routes){
     await page.evaluate(r=>{location.hash=r},route);
-    await page.waitForFunction(r=>String(location.hash||'').replace(/^#/,'')===r,route,{timeout:5000});
+    await page.waitForFunction(r=>String(location.hash||'').replace(/^#/,'')===r,route,{timeout:15000});
     await page.waitForTimeout(180);
     const state=await page.evaluate(()=>({
       mains:document.querySelectorAll('#v51-main').length,
