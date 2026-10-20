@@ -44,7 +44,7 @@ try{
  await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
  await page.waitForSelector('.v298-engine-canvas',{state:'visible',timeout:35000});
- await page.waitForFunction(()=>document.querySelector('.v298-engine-canvas')?.width>0,null,{timeout:15000});
+ await page.waitForFunction(()=>{const c=document.querySelector('.v298-engine-canvas');return !!c&&c.width>300&&c.height>300},null,{timeout:20000});
  const hero=await page.evaluate(()=>{
   const art=document.querySelector('#v280-editorial-home .v280-hero-art'),engine=art?.querySelector('.v298-engine'),canvas=engine?.querySelector('canvas'),img=engine?.querySelector('img');
   return {engines:art?.querySelectorAll('.v298-engine').length,oldGlobe:art?.querySelectorAll('.v296-atom,.v292-sphere-stage').length,canvasWidth:canvas?.width,canvasHeight:canvas?.height,logo:img?.getAttribute('src'),heroCards:art?.querySelectorAll('.v280-floating').length,nav:!!document.querySelector('#v298-nav-what')};
