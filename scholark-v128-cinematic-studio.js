@@ -109,7 +109,8 @@ function galleryMount(){
  intro.insertAdjacentElement('afterend',section);gallerySync();
  if(!galleryTimer)galleryTimer=setInterval(()=>{
   if(!home()||document.hidden||reduce()||storyOpen||window.__SCHOLAVERUM_TOUR__?.state?.()?.running)return;
-  const rect=section.getBoundingClientRect();
+  const currentSection=$('#v298-discover');if(!currentSection?.isConnected)return;
+  const rect=currentSection.getBoundingClientRect();
   if(rect.bottom<0||rect.top>innerHeight)return;
   galleryIndex=(galleryIndex+1)%gallery.length;gallerySync();
  },5800);
