@@ -6,7 +6,8 @@
   const $$=(s,r=document)=>[...r.querySelectorAll(s)];
   const text=e=>(e?.textContent||'').replace(/\s+/g,' ').trim();
   const lower=e=>text(e).toLowerCase();
-  const publicHome=()=>window.__SCHOLARK_ROUTES__?.isHome?.()??(()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)})();
+  // URL authority: a stale Workspace route object may never hide the public topbar.
+  const publicHome=()=>{const p=String(location.pathname||'/').replace(/\/+$/,'')||'/',h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return (p==='/'||p==='/index.html')&&['','home','pricing','start','credit-store'].includes(h)};
   const workspace=()=>!publicHome();
   const publicTopbarRoute=()=>{const h=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0].replace(/\/+$/,'');return h==='credit-store'||publicHome()};
 
@@ -42,7 +43,7 @@
   style.textContent=`
     #v41-dashboard-entry{display:none!important;visibility:hidden!important;pointer-events:none!important}
     #v55-topbar{position:fixed;z-index:2147483500;left:0;right:0;top:0;min-height:66px;background:linear-gradient(180deg,rgba(9,18,30,.98),rgba(15,28,44,.98));backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);display:none;align-items:center;justify-content:space-between;gap:14px;padding:10px 26px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif;color:#fff;box-shadow:0 10px 30px rgba(4,10,18,.16)}
-    body.v55-public-home #v55-topbar,html.v55-public-home #v55-topbar{display:flex}body.v51-workspace #v55-topbar,html.v51-workspace-root #v55-topbar{display:none!important;visibility:hidden!important;pointer-events:none!important}
+    body.v55-public-home #v55-topbar,html.v55-public-home #v55-topbar{display:flex}html[data-scholaverum-surface="home"] body.v55-public-home #v55-topbar,html[data-scholaverum-surface="pricing"] body.v55-public-home #v55-topbar,html[data-scholaverum-surface="credit-store"] body.v55-public-home #v55-topbar{display:flex!important;visibility:visible!important;pointer-events:auto!important}body.v51-workspace #v55-topbar,html.v51-workspace-root #v55-topbar{display:none!important;visibility:hidden!important;pointer-events:none!important}
     body.v55-public-home #v55-language,html.v55-public-home #v55-language{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
     body.v55-public-home #v29-home-layer,html.v55-public-home #v29-home-layer{top:66px!important;padding-top:0!important}
     .v55-brand{display:flex;align-items:center;gap:10px;color:#fff;min-width:0}.v55-brand-logo{display:block;width:58px;height:44px;object-fit:contain;object-position:center;flex:0 0 58px}.v55-brand small{display:block;font:800 7px/1 Inter;color:#a9b1bd;letter-spacing:.12em;margin-top:4px}
@@ -259,6 +260,11 @@
 
   function sync(){
     const home=publicHome();
+    if(home){
+      // A delayed Workspace mount must not win the CSS visibility cascade on #home.
+      document.body.classList.remove('v51-workspace','v51-native','v51-collapsed','v51-studio');
+      document.documentElement.classList.remove('v51-workspace-root','scholark-workspace-entering');
+    }
     document.body.classList.toggle('v55-public-home',home);document.documentElement.classList.toggle('v55-public-home',home);
     $('#v41-dashboard-entry')?.remove();
     if(!home){
