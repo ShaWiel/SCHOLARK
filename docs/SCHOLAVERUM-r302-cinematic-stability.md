@@ -23,3 +23,9 @@
 - New `scripts/scholaverum-r302-cinematic-stability-smoke.mjs` checks loader CSS, duplicate-engine protection, real orb pixel motion, wordmark opacity, mobile, reduced motion, and route lifecycle.
 - Keep r299 and r301 globe/orbit tests, pricing, subscriptions, account isolation, language, AI, file safety, Workspace and release gates. CodeQL and CI must pass before Render deployment.
 - This is a targeted front-end fix with full automated regression coverage, not a claim that every feature of the production site is defect-free.
+
+## WebKit desktop topbar hardening
+- Critical desktop WebKit regression showed a hidden (but mounted) public topbar during `#home` startup; Firefox and mobile WebKit passed.
+- Fix public topbar route ownership: explicit URL hash is authoritative, remove stale Workspace classes on public routes, and win the public topbar visibility cascade only when the public surface owns the page.
+- Cross-browser smoke diagnostics now report relevant HTML/body classes, surface, URL, prepaint and topbar computed visibility if the regression recurs.
+- Final release candidate includes this fix and retains all r302 homepage, loader, cinematic, ARKI, Tutor, Schools, security and Workspace regression coverage. Do not deploy unless full release gate, CI and CodeQL pass on the exact same SHA.
