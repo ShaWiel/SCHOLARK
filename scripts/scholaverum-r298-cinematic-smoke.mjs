@@ -19,7 +19,8 @@ try{
  assert.equal(await page.locator('#v280-pricing-slot #v41-home-pricing').count(),1,'pricing cards remain canonical');
  await page.locator('#v298-nav-what').click();
  await page.waitForFunction(()=>window.__SCHOLAVERUM_R298_CINEMA__?.state?.()?.open&&
-   document.querySelector('#v298-cinema .v298-story-canvas')?.width>0,null,{timeout:18000});
+   document.querySelector('#v298-cinema .v298-story-canvas')?.width>=1400&&
+   document.querySelector('#v298-cinema .v298-story-canvas')?.height>=800,null,{timeout:18000});
  const first=await page.evaluate(()=>({
    stage:document.querySelector('#v298-cinema')?.getAttribute('role'),
    modal:document.querySelector('#v298-cinema')?.getAttribute('aria-modal'),
