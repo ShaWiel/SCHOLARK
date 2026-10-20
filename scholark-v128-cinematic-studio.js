@@ -9,6 +9,10 @@ const reduce=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matc
 const lang=()=>{try{return (localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase().startsWith('nl')?'nl':'en'}catch{return 'en'}};
 const tr=(en,nl)=>lang()==='nl'?nl:en;
 const logo='scholaverum-official-icon-r290.png';
+if(!document.getElementById('scholaverum-r302-polish')){
+ const link=document.createElement('link');link.id='scholaverum-r302-polish';
+ link.rel='stylesheet';link.href='scholark-v132-cinematic-polish.css?v=20261020-r302';document.head.appendChild(link);
+}
 if(!document.getElementById('scholaverum-cinema-style')){const link=document.createElement('link');link.id='scholaverum-cinema-style';link.rel='stylesheet';link.href='scholark-v128-cinematic-studio.css?v=20261020-r298';document.head.appendChild(link)}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ease=t=>1-Math.pow(1-t,3);
