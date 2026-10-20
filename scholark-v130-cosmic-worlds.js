@@ -138,7 +138,7 @@ function satellite(c,x,y,unit,t,world){
 function spaceDetails(c,w,h,index,time,kind,world){
  const small=Math.min(w,h),t=REDUCE()?0:time/1000,view=kind==='hero';
  const seed=index*.53;
- smoothPlanet(c,w*(.92-.04*Math.sin(seed)),h*(.18+.05*Math.cos(seed)),small*(view?.084:.075),world,t,.58);
+ smoothPlanet(c,w*(view?.92:.92-.04*Math.sin(seed)),h*(view?.13:.18+.05*Math.cos(seed)),small*(view?.050:.075),world,t,.58);
  smoothPlanet(c,w*(.61+.025*Math.cos(seed)),h*(.79-.045*Math.sin(seed)),small*(view?.067:.052),world,t,.52);
  if(index===0||index===6||index===7)smoothPlanet(c,w*.98,h*.82,small*.031,world,t,.41);
  if(index!==5){
@@ -180,9 +180,9 @@ function screen(c,w,h,index,time,kind){
  else if(index===6){smoothPlanet(c,w*.87,h*.67,size*.31,world,time*.001,.56)}
  else if(index===2){smoothPlanet(c,w*.90,h*.77,size*.23,world,time*.001,.40)}
  else if(index===7){smoothPlanet(c,w*.87,h*.56,size*.30,world,time*.001,.45)}
- else if(index===0){smoothPlanet(c,w*.91,h*.65,size*.27,world,time*.001,.52)}
+ // Hero already contains the branded planet at this depth. No giant ghost planet.
  const r=size*(kind==='hero'?.57:.40);
- arcBand(c,px,py,r,-.30,kind==='hero'?.35:.22,world.purple,world.lime,time*.0003);
+ if(kind!=='hero')arcBand(c,px,py,r,-.30,.22,world.purple,world.lime,time*.0003);
  const rng=RAND(world.seed+285);
  for(let a=0;a<(kind==='hero'?30:20);a++){
   const theta=rng()*TAU,d=size*(.17+rng()*1.04),ax=w*.68+Math.cos(theta)*d,ay=h*.46+Math.sin(theta)*d*.54,sz=2+rng()*(kind==='hero'?16:11);
