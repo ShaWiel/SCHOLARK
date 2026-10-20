@@ -168,6 +168,7 @@ function screen(c,w,h,index,time,kind){
  blurred(c,w*.68,h*.27,Math.min(w,h)*.65,world.purple,index===5?.075:.23);
  blurred(c,w*.92,h*.62,Math.min(w,h)*.55,world.lime,index===5?.025:.12);
  blurred(c,w*.46,h*.11,Math.min(w,h)*.43,world.nebula,index===5?.04:.12);
+ blurred(c,w*.28,h*.69,Math.min(w,h)*.57,world.nebula,index===5?.015:.075);
  // Side planets and the galaxy halo create actual depth layers behind the copy/UI.
  const size=Math.min(w,h),px=w*(kind==='hero'?.77:.79),py=h*(index===5?.78:.60);
  if(index===0||index===7){
@@ -190,8 +191,8 @@ function screen(c,w,h,index,time,kind){
  spaceDetails(c,w,h,index,time,kind,world);
  // Screen-space illuminated foreground dust and vignette for readability.
  const veil=c.createLinearGradient(0,0,w,0);
- veil.addColorStop(0,'rgba(5,6,15,.91)');veil.addColorStop(.32,'rgba(5,6,15,.73)');
- veil.addColorStop(.54,'rgba(5,6,15,.26)');veil.addColorStop(1,'rgba(4,5,13,.05)');
+ veil.addColorStop(0,'rgba(5,6,15,.79)');veil.addColorStop(.32,'rgba(5,6,15,.60)');
+ veil.addColorStop(.54,'rgba(5,6,15,.20)');veil.addColorStop(1,'rgba(4,5,13,.05)');
  c.fillStyle=veil;c.fillRect(0,0,w,h);
  const bottom=c.createLinearGradient(0,0,0,h);
  bottom.addColorStop(0,'rgba(4,5,13,.23)');bottom.addColorStop(.6,'rgba(6,7,15,.04)');bottom.addColorStop(1,'rgba(4,5,15,.7)');
