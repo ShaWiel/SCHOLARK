@@ -160,7 +160,15 @@ for(const cfg of engines){
     check(pageErrors.length===0,cfg.name+': browser errors '+[...new Set(pageErrors)].slice(0,6).join(' | '));
     console.log('✓ '+cfg.name+' critical browser pass');
   }catch(e){
-    failures.push(cfg.name+': '+String(e?.stack||e?.message||e));
+    const diagnostics=await page.evaluate(()=>{
+      const root=document.documentElement,body=document.body,t=document.querySelector('#v55-topbar');
+      return {hash:location.hash,htmlClass:root.className,bodyClass:body?.className,
+       surface:root.dataset.scholaverumSurface,prepaint:root.classList.contains('scholark-prepaint'),
+       isHome:window.__SCHOLARK_V55_TOPBAR__?.publicHome?.(),topbarCount:document.querySelectorAll('#v55-topbar').length,
+       display:t?getComputedStyle(t).display:null,visibility:t?getComputedStyle(t).visibility:null,
+       home:!!document.querySelector('#v280-editorial-home'),errors:window.__SCHOLARK_RUNTIME__?.errors?.()?.slice(-3)};
+    }).catch(()=>null);
+    failures.push(cfg.name+': '+String(e?.stack||e?.message||e)+' | STATE '+JSON.stringify(diagnostics));
   }finally{
     await context.close();
     await browser.close();
