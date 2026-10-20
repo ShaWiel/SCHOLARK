@@ -219,7 +219,7 @@ function togglePlay(){
 function step(n){if(!storyOpen)return;displayScene(storyIndex+n);if(!storyRaf)storyBackground(performance.now())}
 function mount(){
  if(!home())return;
- makeHero();galleryMount();nav();
+ window.__SCHOLAVERUM_R299_PLANET__?.mount?.();galleryMount();nav();
  if(mounted)return;mounted=true;
  if('ResizeObserver' in window){resizeObserver=new ResizeObserver(()=>{if(activeHero&&!heroRaf)renderHero(performance.now());if(storyOpen&&!storyRaf)storyBackground(performance.now())});if(heroCanvas)resizeObserver.observe(heroCanvas)}
 }
