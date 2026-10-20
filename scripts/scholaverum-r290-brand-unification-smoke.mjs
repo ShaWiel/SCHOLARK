@@ -43,11 +43,11 @@ try{
  assert.ok(mobile.width>90&&mobile.natural>0&&mobile.display!=='none','official Dashboard brand remains visible on mobile');
  await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('.v298-engine-canvas',{state:'visible',timeout:35000});
- await page.waitForFunction(()=>{const c=document.querySelector('.v298-engine-canvas');return !!c&&c.width>300&&c.height>300},null,{timeout:20000});
+ await page.waitForSelector('.v299-planet-canvas',{state:'visible',timeout:35000});
+ await page.waitForFunction(()=>{const c=document.querySelector('.v299-planet-canvas');return !!c&&c.width>300&&c.height>300},null,{timeout:20000});
  const hero=await page.evaluate(()=>{
-  const art=document.querySelector('#v280-editorial-home .v280-hero-art'),engine=art?.querySelector('.v298-engine'),canvas=engine?.querySelector('canvas'),img=engine?.querySelector('img');
-  return {engines:art?.querySelectorAll('.v298-engine').length,oldGlobe:art?.querySelectorAll('.v296-atom,.v292-sphere-stage').length,canvasWidth:canvas?.width,canvasHeight:canvas?.height,logo:img?.getAttribute('src'),heroCards:art?.querySelectorAll('.v280-floating').length,nav:!!document.querySelector('#v298-nav-what')};
+  const art=document.querySelector('#v280-editorial-home .v280-hero-art'),engine=art?.querySelector('.v299-universe'),canvas=engine?.querySelector('canvas'),img=engine?.querySelector('img');
+  return {engines:art?.querySelectorAll('.v299-universe').length,oldGlobe:art?.querySelectorAll('.v296-atom,.v292-sphere-stage').length,canvasWidth:canvas?.width,canvasHeight:canvas?.height,logo:img?.getAttribute('src'),heroCards:art?.querySelectorAll('.v280-floating').length,nav:!!document.querySelector('#v298-nav-what')};
  });
  assert.equal(hero.engines,1,'exactly one cinematic engine is mounted');
  assert.equal(hero.oldGlobe,0,'retired globe and flattened strips must not remain');
@@ -57,18 +57,18 @@ try{
  assert.equal(hero.nav,true,'cinematic presentation entry is available');
  await page.setViewportSize({width:390,height:844});
  const mobileHero=await page.evaluate(()=>({
-  count:document.querySelectorAll('#v280-hero .v298-engine').length,
-  width:document.querySelector('.v298-engine')?.getBoundingClientRect().width,
+  count:document.querySelectorAll('#v280-hero .v299-universe').length,
+  width:document.querySelector('.v299-universe')?.getBoundingClientRect().width,
   overflow:document.documentElement.scrollWidth-innerWidth
  }));
- assert.equal(mobileHero.count,1,'returning home should not duplicate the orbital engine');
+ assert.equal(mobileHero.count,1,'returning home should not duplicate the planetary cinematic engine');
  assert.ok(mobileHero.width>100,'mobile visual must stay visible');
  assert.ok(mobileHero.overflow<=8,'no mobile horizontal overflow');
  const reduced=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduced.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await reduced.waitForSelector('.v298-core img',{state:'visible',timeout:30000});
- assert.equal(await reduced.locator('.v298-core img').evaluate(el=>getComputedStyle(el).animationName),'none','reduced motion disables rotating image');
+ await reduced.waitForSelector('.v299-logo',{state:'visible',timeout:30000});
+ assert.equal(await reduced.locator('.v299-logo').evaluate(el=>getComputedStyle(el).animationName),'none','reduced motion disables rotating image');
  await reduced.close();
  assert.deepEqual(errors,[],'branding and cinematic swap must not throw page errors');
- console.log('PASS r298 official brand: native logo, new double orbit engine, workspace identity, reduced motion and responsive layout');
+ console.log('PASS r298 official brand: native logo, new eclipse planetary engine, workspace identity, reduced motion and responsive layout');
 }finally{await browser.close()}
