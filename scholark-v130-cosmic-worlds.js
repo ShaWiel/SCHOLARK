@@ -17,7 +17,7 @@ const worlds=[
  {seed:814,purple:'#8d38ef',lime:'#c9ff6a',nebula:'#ae4ab7',light:'#fff0dc',angle:-.15,planet:.83,halo:1.6}
 ];
 const RAND=seed=>()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;};
-let hero=null,heroCanvas=null,heroCtx=null,heroResize=null,view=null,raf=0,last=0,frames=0,pointerX=0,pointerY=0,visible=false,heroTexture=null;
+let hero=null,heroCanvas=null,heroCtx=null,heroResize=null,view=null,raf=0,last=0,frames=0,pointerX=0,pointerY=0,visible=false,heroTexture=null,lastStillSize='';
 const textures=new Map(),ctxCache=new Map();
 function ellipse(c,x,y,rX,rY,angle=0){c.beginPath();c.ellipse(x,y,rX,rY,angle,0,TAU)}
 function blurred(c,x,y,r,color,opacity){
@@ -139,7 +139,9 @@ function heroFrame(now){
  raf=0;if(!visible||document.hidden||!HOME()||!heroCanvas?.isConnected)return;
  if(now-last<42&&!REDUCE()){raf=requestAnimationFrame(heroFrame);return}
  last=now;const target=resizeCanvas(heroCanvas,2400);
- if(target){const [ctx,w,h]=target;screen(ctx,w,h,0,now,'hero');frames++}
+ if(target){const [ctx,w,h]=target,still=REDUCE(),key=heroCanvas.width+'x'+heroCanvas.height;
+  if(!still||key!==lastStillSize){screen(ctx,w,h,0,now,'hero');frames++;lastStillSize=still?key:''}
+ }
  if(!REDUCE())raf=requestAnimationFrame(heroFrame);
 }
 function setVisible(on){
@@ -154,6 +156,7 @@ function mountHero(){
  const old=document.querySelector('#v300-cosmos-field');
  if(old?.parentElement!==host){old?.remove();hero=null;heroCanvas=null}
  if(!hero){
+  lastStillSize='';
   hero=document.createElement('div');hero.id='v300-cosmos-field';hero.setAttribute('aria-hidden','true');
   hero.innerHTML='<canvas id="v300-cosmos-canvas"></canvas>';
   host.insertBefore(hero,host.firstChild);heroCanvas=hero.querySelector('canvas');
