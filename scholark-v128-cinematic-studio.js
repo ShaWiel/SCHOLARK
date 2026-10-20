@@ -33,7 +33,7 @@ let lastHeroFrame=0,lastStoryFrame=0,galleryTimer=0,galleryIndex=0,storyTimer=0,
 function sizeCanvas(canvas,maximumWidth=3840,maximumHeight=2160){
  if(!canvas)return [0,0,1];
  const rect=canvas.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
- const dpr=Math.min(window.devicePixelRatio||1,2.25,maximumWidth/w,maximumHeight/h);
+ const dpr=Math.min(window.devicePixelRatio||1,window.innerWidth<700?1.5:2.25,maximumWidth/w,maximumHeight/h);
  const pxw=Math.max(1,Math.round(w*dpr)),pxh=Math.max(1,Math.round(h*dpr));
  if(canvas.width!==pxw||canvas.height!==pxh){canvas.width=pxw;canvas.height=pxh}
  const c=canvas.getContext('2d',{alpha:true});if(c)c.setTransform(dpr,0,0,dpr,0,0);
@@ -120,7 +120,7 @@ function nav(){
  const btn=document.createElement('button');btn.id='v298-nav-what';btn.type='button';btn.dataset.v298Action='open';btn.textContent=tr('What is SCHOLAVERUM','Wat is SCHOLAVERUM');
  btn.setAttribute('aria-haspopup','dialog');btn.setAttribute('aria-controls','v298-cinema');
  const links=$('#v280-header-links',bar),actions=$('.v55-actions',bar);
- if(links)bar.insertBefore(btn,links);else if(actions)bar.insertBefore(btn,actions);else bar.appendChild(btn);
+ if(actions)actions.prepend(btn);else if(links)bar.insertBefore(btn,links);else bar.appendChild(btn);
 }
 function previewMarkup(s){
  if(s.id==='vision'||s.id==='final')return '<div class="v298-vision-emblem"><img src="'+logo+'" alt=""></div><div class="v298-ui-caption">SCHOLAVERUM / THE FUTURE OF LEARNING</div>';
