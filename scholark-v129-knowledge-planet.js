@@ -290,7 +290,7 @@ function mount(){
  else if(bounds.bottom>0&&bounds.top<innerHeight)playback(true);
 }
 if(!document.getElementById('scholaverum-planet-style')){
- const link=document.createElement('link');link.id='scholaverum-planet-style';link.rel='stylesheet';link.href='scholark-v129-knowledge-planet.css?v=20261020-r299';document.head.appendChild(link);
+ const link=document.createElement('link');link.id='scholaverum-planet-style';link.rel='stylesheet';link.href='scholark-v129-knowledge-planet.css?v=20261020-r302';document.head.appendChild(link);
 }
 document.addEventListener('visibilitychange',()=>playback(!document.hidden));
 window.addEventListener('hashchange',()=>{if(!home())playback(false);setTimeout(mount,65)});
