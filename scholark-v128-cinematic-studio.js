@@ -84,14 +84,20 @@ function heroState(value){
 }
 function makeHero(){
  const host=$('#v280-editorial-home .v280-hero-art');
- if(!host||$('.v298-engine',host))return;
+ if(!host)return;
+ if($('.v298-engine',host)){
+  // Resuming Home from Workspace must reactivate a previously paused canvas.
+  const r=host.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight)heroState(true);
+  return;
+ }
  // The r296 globe and the r292 fallback must never render underneath the new engine.
  $('.v296-atom',host)?.remove();$('.v292-sphere-stage',host)?.remove();
  const stage=document.createElement('div');stage.className='v298-engine';
  stage.setAttribute('aria-hidden','true');
  stage.innerHTML='<canvas class="v298-engine-canvas"></canvas><div class="v298-core-halo"></div><div class="v298-core"><img alt="" decoding="async" src="'+logo+'"></div><span class="v298-particle a"></span><span class="v298-particle b"></span>';
  host.prepend(stage);heroCanvas=$('.v298-engine-canvas',stage);
- if('IntersectionObserver' in window){heroObserver=new IntersectionObserver(entries=>entries.forEach(e=>heroState(e.isIntersecting)),{threshold:0,rootMargin:'110px 0px'});heroObserver.observe(host)}else heroState(true);
+ if('IntersectionObserver' in window){heroObserver=new IntersectionObserver(entries=>entries.forEach(e=>heroState(e.isIntersecting)),{threshold:0,rootMargin:'110px 0px'});heroObserver.observe(host)}
+ const view=host.getBoundingClientRect();if(view.bottom>0&&view.top<innerHeight)heroState(true);
 }
 function galleryMarkup(g,i){
  return '<article class="v298-feature '+(i===galleryIndex?'is-active':'')+'" data-v298-gallery="'+i+'"><div class="v298-feature-meta">'+esc(g.type)+' <span>0'+(i+1)+'</span></div><div class="v298-feature-graphic '+esc(g.key)+'" aria-hidden="true"><span class="v298-glass-window"><i></i><i></i><i></i></span><div class="v298-graphic-main">'+(g.key==='arki'?'✳':g.key==='tutor'?'∑':g.key==='language'?'あ':'◉')+'</div><div class="v298-feature-wave"></div></div><div class="v298-feature-bottom"><div><strong>'+esc(g.name)+'</strong><p>'+esc(lang()==='nl'?g.nl:g.body)+'</p></div><span aria-hidden="true">↗</span></div></article>';
