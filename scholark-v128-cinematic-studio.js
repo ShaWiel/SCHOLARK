@@ -104,14 +104,14 @@ function galleryMarkup(g,i){
 }
 function gallerySync(){
  const el=$('#v298-feature-gallery');if(!el)return;
- el.innerHTML=gallery.map(galleryMarkup).join('');
- $$('.v298-feature',el).forEach((card,i)=>card.setAttribute('aria-current',String(i===galleryIndex)));
+ if(el.children.length!==gallery.length)el.innerHTML=gallery.map(galleryMarkup).join('');
+ $('.v298-feature',el).forEach((card,i)=>{card.classList.toggle('is-active',i===galleryIndex);card.setAttribute('aria-current',String(i===galleryIndex))});
 }
 function galleryMount(){
  if($('#v298-feature-gallery'))return;
  const intro=$('#v280-intro');if(!intro)return;
  const section=document.createElement('section');section.id='v298-discover';section.className='v298-discover';
- section.innerHTML='<div class="v298-discover-top"><div><small>SCHOLAVERUM / THE EXPERIENCE</small><h2>'+tr('A world of possibilities.','Een wereld vol mogelijkheden.')+'</h2></div><button type="button" data-v298-action="open" class="v298-discover-cta">'+tr('Watch the cinematic presentation','Bekijk de cinematic presentatie')+' <span aria-hidden="true">↗</span></button></div><div id="v298-feature-gallery" class="v298-feature-gallery" aria-label="SCHOLAVERUM Workspace highlights"></div><p class="v298-discover-note">'+tr('A closer look at the tools that move with you.','Ontdek de tools die met je meegroeien.')+'</p>';
+ section.innerHTML='<div class="v298-discover-top"><div><small>SCHOLAVERUM / THE EXPERIENCE</small><h2>'+tr('A world of possibilities.','Een wereld vol mogelijkheden.')+'</h2></div><span class="v302-feature-kicker">'+tr('Explore the tools below','Ontdek de functies hieronder')+'</span></div><div id="v298-feature-gallery" class="v298-feature-gallery" aria-label="SCHOLAVERUM Workspace highlights"></div><p class="v298-discover-note">'+tr('A closer look at the tools that move with you.','Ontdek de tools die met je meegroeien.')+'</p>';
  intro.insertAdjacentElement('afterend',section);gallerySync();
  if(!galleryTimer)galleryTimer=setInterval(()=>{
   if(!home()||document.hidden||reduce()||storyOpen||window.__SCHOLAVERUM_TOUR__?.state?.()?.running)return;
@@ -122,11 +122,8 @@ function galleryMount(){
  },5800);
 }
 function nav(){
- const bar=$('#v55-topbar');if(!bar||$('#v298-nav-what',bar))return;
- const btn=document.createElement('button');btn.id='v298-nav-what';btn.type='button';btn.dataset.v298Action='open';btn.textContent=tr('What is SCHOLAVERUM','Wat is SCHOLAVERUM');
- btn.setAttribute('aria-haspopup','dialog');btn.setAttribute('aria-controls','v298-cinema');
- const links=$('#v280-header-links',bar),actions=$('.v55-actions',bar);
- if(actions)actions.prepend(btn);else if(links)bar.insertBefore(btn,links);else bar.appendChild(btn);
+ $('#v298-nav-what')?.remove();
+ $('#v298-cinema')?.remove();
 }
 function previewMarkup(s){
  if(s.id==='vision'||s.id==='final')return '<div class="v298-vision-emblem"><img src="'+logo+'" alt=""></div><div class="v298-ui-caption">SCHOLAVERUM / THE FUTURE OF LEARNING</div>';
@@ -203,6 +200,8 @@ function stopStory(){
  if(storyFocus?.isConnected)storyFocus.focus({preventScroll:true});
 }
 function startStory(){
+ // Public presentation intentionally removed from homepage in r302.
+ return false;
  if(!home())return;
  window.__SCHOLAVERUM_TOUR__?.stop?.();
  const n=storyNode();if(storyOpen){displayScene(0);return}
@@ -228,7 +227,7 @@ document.addEventListener('click',event=>{
  const btn=event.target.closest?.('[data-v298-action],[data-v298-jump],[data-v298-gallery]');if(!btn)return;
  if(btn.hasAttribute('data-v298-gallery')){galleryIndex=Number(btn.dataset.v298Gallery)||0;gallerySync();return}
  if(btn.hasAttribute('data-v298-jump')){if(storyOpen){displayScene(Number(btn.dataset.v298Jump)||0);if(!storyRaf)storyBackground(performance.now())}return}
- const action=btn.dataset.v298Action;if(action==='open'){event.preventDefault();startStory()}
+ const action=btn.dataset.v298Action;if(action==='open'){event.preventDefault();return}
  else if(action==='close')stopStory();
  else if(action==='play')togglePlay();
  else if(action==='prev')step(-1);
@@ -251,5 +250,5 @@ const mq=window.matchMedia?.('(prefers-reduced-motion: reduce)');mq?.addEventLis
 ['scholaverum:editorial-home-mounted','scholark:topbar-ready','scholark-runtime-ready','scholark-return-home'].forEach(e=>window.addEventListener(e,()=>setTimeout(mount,60)));
 ['scholark-language-applied','scholark-language-change'].forEach(e=>window.addEventListener(e,()=>{if($('#v298-nav-what'))$('#v298-nav-what').textContent=tr('What is SCHOLAVERUM','Wat is SCHOLAVERUM');if($('#v298-discover')){$('#v298-discover').remove();galleryMount()}if(storyOpen)displayScene(storyIndex,false)}));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,80),{once:true});else setTimeout(mount,80);
-window.__SCHOLAVERUM_R298_CINEMA__={open:startStory,close:stopStory,step,version:R,state:()=>({open:storyOpen,playing:storyPlaying,index:storyIndex,scenes:scenes.length,canvas:storyCanvas?[storyCanvas.width,storyCanvas.height]:null})};
+window.__SCHOLAVERUM_R298_CINEMA__={open:()=>false,close:stopStory,step,version:R,state:()=>({open:storyOpen,playing:storyPlaying,index:storyIndex,scenes:scenes.length,canvas:storyCanvas?[storyCanvas.width,storyCanvas.height]:null})};
 })();
