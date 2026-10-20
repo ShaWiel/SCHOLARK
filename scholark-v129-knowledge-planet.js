@@ -253,7 +253,7 @@ function mount(){
   host.querySelectorAll('.v298-engine,.v296-atom,.v292-sphere-stage,.v299-universe').forEach(n=>n.remove());
   stage=document.createElement('div');stage.className='v299-universe';
   stage.setAttribute('aria-label','SCHOLAVERUM knowledge planet cinematic');stage.setAttribute('role','group');
-  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-official-icon-r290.png" alt="" aria-hidden="true" decoding="async"><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
+  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-planet-crest-r300.webp" alt="" aria-hidden="true" decoding="async"><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
   host.prepend(stage);canvas=$('.v299-planet-canvas',stage);
   $('.v299-skip',stage).addEventListener('click',skipIntro);
   let seen=false;try{seen=sessionStorage.getItem('scholaverum_eclipse_seen')==='yes'}catch{}
