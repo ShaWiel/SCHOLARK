@@ -11,9 +11,9 @@ try{
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>!!window.__SCHOLAVERUM_R298_CINEMA__&&
    !!document.querySelector('#v298-nav-what')&&
-   document.querySelector('.v298-engine-canvas')?.width>0&&
+   document.querySelector('.v299-planet-canvas')?.width>0&&
    document.querySelectorAll('#v298-feature-gallery .v298-feature').length===4,null,{timeout:60000});
- assert.equal(await page.locator('.v298-engine').count(),1,'one canonical orbital engine');
+ assert.equal(await page.locator('.v299-universe').count(),1,'one canonical planet engine');
  assert.equal(await page.locator('.v296-atom,.v292-sphere-stage').count(),0,'retired sphere not mounted');
  assert.equal(await page.locator('#v298-nav-what').innerText(),'Wat is SCHOLAVERUM','requested Dutch nav label');
  assert.equal(await page.locator('#v280-pricing-slot #v41-home-pricing').count(),1,'pricing cards remain canonical');
@@ -69,7 +69,7 @@ try{
  const res=await high.evaluate(()=>({
    canvas:[document.querySelector('.v298-story-canvas').width,document.querySelector('.v298-story-canvas').height],
    paused:window.__SCHOLAVERUM_R298_CINEMA__.state().playing,
-   emblemAnimation:getComputedStyle(document.querySelector('.v298-core img')).animationName
+   emblemAnimation:getComputedStyle(document.querySelector('.v299-logo')).animationName
  }));
  assert.ok(res.canvas[0]>=3800&&res.canvas[1]>=2100,'2x 1080p display creates native ~4K render target: '+res.canvas);
  assert.equal(res.paused,false,'reduced-motion slideshow must not automatically advance');
