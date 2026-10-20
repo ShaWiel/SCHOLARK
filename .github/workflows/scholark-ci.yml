@@ -49,6 +49,8 @@ jobs:
           node --check scripts/scholark-i18n-visual-smoke.mjs
           node --check scripts/scholark-language-nonblocking-smoke.mjs
           node --check scholark-v124-editorial-home.js
+          node --check scholark-v128-cinematic-studio.js
+          node --check scripts/scholaverum-r298-cinematic-smoke.mjs
           node --check scripts/scholaverum-r280-home-smoke.mjs
           node --check scripts/scholaverum-r281-motion-smoke.mjs
           node --check scholark-v125-guided-tour.js
@@ -193,6 +195,8 @@ jobs:
         run: node scripts/scholaverum-r293-editorial-pricing-smoke.mjs http://127.0.0.1:10000
       - name: Validate r281 animated hero and performance accessibility
         run: node scripts/scholaverum-r281-motion-smoke.mjs http://127.0.0.1:10000
+      - name: Verify immersive r298 cinema, 4K and mobile accessibility
+        run: node scripts/scholaverum-r298-cinematic-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
