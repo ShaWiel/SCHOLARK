@@ -1,0 +1,44 @@
+/* SCHOLAVERUM r302 — four distinct micro-cinematic worlds; no retired slideshow. */
+#v298-nav-what,#v298-cinema{display:none!important}
+#v280-editorial-home .v298-discover{
+ background:radial-gradient(ellipse at 14% 14%,rgba(105,74,190,.17),transparent 40%),
+ radial-gradient(ellipse at 95% 78%,rgba(149,190,112,.12),transparent 42%),#eeece8;
+}
+#v280-editorial-home .v302-feature-kicker{border-top:1px solid #a8a1b8;border-bottom:1px solid #a8a1b8;padding:12px 1px;color:#514569;white-space:nowrap;letter-spacing:.12em;font:850 10px/1.4 Inter,system-ui,sans-serif;align-self:center}
+#v280-editorial-home .v298-feature{box-shadow:0 16px 38px rgba(24,20,64,.075),inset 0 1px 0 rgba(255,255,255,.6);transform:translateZ(0);will-change:auto}
+#v280-editorial-home .v298-feature.is-active{box-shadow:0 29px 66px rgba(52,37,102,.23),inset 0 1px 0 rgba(255,255,255,.7)}
+#v280-editorial-home .v298-feature-graphic{overflow:hidden;isolation:isolate;border-radius:21px;margin:14px -9px 10px;border:1px solid rgba(175,165,214,.18);transform-style:preserve-3d}
+#v280-editorial-home .v298-feature-graphic:before{content:"";position:absolute;inset:-35%;z-index:-1;background:radial-gradient(ellipse at 34% 23%,rgba(147,98,237,.54),transparent 38%),radial-gradient(ellipse at 74% 81%,rgba(182,250,104,.35),transparent 40%),linear-gradient(132deg,#12132b 7%,#34306a 53%,#0b1228 100%);transform:rotate(-7deg)}
+#v280-editorial-home .v298-feature-graphic:after{content:"";position:absolute;z-index:0;width:62%;aspect-ratio:1;border-radius:50%;left:11%;top:8%;border:1px solid rgba(219,209,252,.32);box-shadow:0 0 0 17px rgba(176,146,238,.045),0 0 0 44px rgba(201,255,106,.025);transform:rotate(-28deg) scaleY(.65)}
+#v280-editorial-home .v298-feature-graphic .v298-glass-window{z-index:1;background:linear-gradient(130deg,rgba(244,240,255,.78),rgba(196,190,238,.30));backdrop-filter:blur(8px);border:1px solid rgba(234,223,255,.61);box-shadow:0 25px 44px rgba(2,2,15,.38),inset 0 1px 0 rgba(255,255,255,.5)}
+#v280-editorial-home .v298-feature-graphic .v298-graphic-main{z-index:2;box-shadow:10px 25px 60px rgba(6,8,32,.53),inset -11px -11px 22px rgba(21,16,64,.31),inset 5px 5px 18px rgba(255,255,255,.34);border:1px solid rgba(255,255,255,.5)}
+#v280-editorial-home .v298-feature-wave{z-index:0;inset:12% -15%;border-color:rgba(210,249,168,.31);box-shadow:0 0 22px rgba(173,122,242,.15)}
+#v280-editorial-home .v302-micro{position:absolute;z-index:4;display:flex;align-items:center;gap:4px;color:#f5f6ff;letter-spacing:.10em;font:800 9px/1.1 Inter,system-ui,sans-serif;background:rgba(12,13,37,.64);border:1px solid rgba(205,194,247,.40);border-radius:99px;padding:9px 10px;backdrop-filter:blur(8px);box-shadow:0 12px 27px rgba(3,4,20,.28)}
+#v280-editorial-home .v302-micro.a{left:5%;top:10%}
+#v280-editorial-home .v302-micro.b{right:5%;bottom:12%}
+#v280-editorial-home .v302-lightnode{position:absolute;z-index:3;right:13%;top:14%;width:8px;height:8px;border-radius:50%;background:#cbff76;box-shadow:0 0 0 5px rgba(201,255,106,.11),0 0 19px rgba(201,255,106,.75)}
+/* AI Tutor — orbital learning cards, precision lines and lime accent. */
+#v280-editorial-home .v298-feature-graphic.tutor:before{background:radial-gradient(ellipse at 30% 20%,rgba(135,202,120,.38),transparent 38%),radial-gradient(ellipse at 76% 80%,rgba(137,103,237,.40),transparent 38%),linear-gradient(135deg,#14222d,#253c43 53%,#12152c)}
+#v280-editorial-home .v298-feature-graphic.tutor .v298-glass-window{border-color:rgba(190,252,154,.65);transform:perspective(700px) rotateX(13deg) rotateY(14deg) rotateZ(6deg)}
+#v280-editorial-home .v298-feature-graphic.tutor .v298-graphic-main{transform:translate(-16px,30px) rotate(12deg);color:#1b3f2a}
+/* Language Learner — more airy violet, flowing accent and language fragments. */
+#v280-editorial-home .v298-feature-graphic.language:before{background:radial-gradient(ellipse at 22% 76%,rgba(211,135,238,.55),transparent 42%),radial-gradient(ellipse at 70% 17%,rgba(201,255,106,.24),transparent 41%),linear-gradient(120deg,#211436,#4a255c 56%,#111528)}
+#v280-editorial-home .v298-feature-graphic.language:after{border-radius:35%;transform:rotate(26deg) scaleY(.45)}
+/* Focus Sessions — calmer midnight sky with rhythmic concentric clock halos. */
+#v280-editorial-home .v298-feature-graphic.focus:before{background:radial-gradient(ellipse at 51% 52%,rgba(100,153,213,.33),transparent 48%),radial-gradient(ellipse at 80% 88%,rgba(137,112,208,.32),transparent 39%),linear-gradient(135deg,#101828,#1a3049 50%,#0b1022)}
+#v280-editorial-home .v298-feature-graphic.focus:after{border:2px solid rgba(195,235,255,.23);box-shadow:0 0 0 13px rgba(150,191,230,.08),0 0 0 29px rgba(150,191,230,.045),0 0 0 46px rgba(150,191,230,.02)}
+#v280-editorial-home .v298-feature-graphic.focus .v298-graphic-main{border-radius:50%;transform:translate(20px,17px)}
+/* Smooth enough to feel alive but never force a constant reflow of all four cards. */
+@keyframes v302-micro-drift{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-8px,0)}}
+@keyframes v302-halo-sway{0%,100%{transform:rotate(-28deg) scaleY(.65)}50%{transform:rotate(-19deg) scaleY(.70)}}
+#v280-editorial-home .v298-feature.is-active .v302-micro.a{animation:v302-micro-drift 6.5s ease-in-out infinite}
+#v280-editorial-home .v298-feature.is-active .v302-micro.b{animation:v302-micro-drift 6.5s 1.8s ease-in-out infinite}
+#v280-editorial-home .v298-feature.is-active .v298-feature-graphic:after{animation:v302-halo-sway 12s ease-in-out infinite}
+#v280-editorial-home .v280-feature-theater:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 76% 29%,rgba(132,84,217,.17),transparent 41%),radial-gradient(ellipse at 21% 83%,rgba(168,228,114,.085),transparent 36%)}
+#v280-editorial-home #v280-app-preview{box-shadow:0 40px 110px rgba(3,6,22,.57),0 0 0 1px rgba(220,208,255,.22);filter:drop-shadow(0 13px 42px rgba(90,56,164,.19));transform:perspective(1800px) rotateY(-3deg)}
+#v280-editorial-home .v280-panel-graphic{filter:drop-shadow(0 20px 48px rgba(28,17,60,.20))}
+@media(max-width:900px){#v280-editorial-home #v280-app-preview{transform:none}#v280-editorial-home .v302-feature-kicker{display:none}}
+@media(prefers-reduced-motion:reduce){
+ #v280-editorial-home .v302-micro,#v280-editorial-home .v298-feature-graphic:after{animation:none!important}
+ #v280-editorial-home #v280-app-preview{transform:none!important}
+}
