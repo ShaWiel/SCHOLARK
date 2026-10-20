@@ -28,7 +28,6 @@ body.v280-home-rebuild #v280-editorial-home .v298-engine{display:none!important}
  border-color:#c9ff6a;color:#fff;background:rgba(27,30,44,.9);outline:2px solid #c9ff6a;outline-offset:3px;
 }
 #v280-editorial-home .v299-skip[hidden]{display:none!important}
-body.v281-motion-paused #v280-editorial-home .v299-universe{visibility:hidden}
 @media(max-width:950px){
  body.v280-home-rebuild #v280-editorial-home .v280-hero-art{right:-12%;width:65vw;opacity:.88}
 }
