@@ -99,8 +99,17 @@ function makeHero(){
  if('IntersectionObserver' in window){heroObserver=new IntersectionObserver(entries=>entries.forEach(e=>heroState(e.isIntersecting)),{threshold:0,rootMargin:'110px 0px'});heroObserver.observe(host)}
  const view=host.getBoundingClientRect();if(view.bottom>0&&view.top<innerHeight)heroState(true);
 }
+function galleryDetails(key){
+ const bits={
+  arki:'<span class="v302-micro a">✦ 01</span><span class="v302-micro b">AI / THINKING</span><span class="v302-lightnode"></span>',
+  tutor:'<span class="v302-micro a">∑ 02</span><span class="v302-micro b">STEP BY STEP</span><span class="v302-lightnode"></span>',
+  language:'<span class="v302-micro a">Aa 文</span><span class="v302-micro b">37+ LANGUAGES</span><span class="v302-lightnode"></span>',
+  focus:'<span class="v302-micro a">25:00</span><span class="v302-micro b">DEEP WORK</span><span class="v302-lightnode"></span>'
+ };
+ return bits[key]||'';
+}
 function galleryMarkup(g,i){
- return '<article class="v298-feature '+(i===galleryIndex?'is-active':'')+'" data-v298-gallery="'+i+'"><div class="v298-feature-meta">'+esc(g.type)+' <span>0'+(i+1)+'</span></div><div class="v298-feature-graphic '+esc(g.key)+'" aria-hidden="true"><span class="v298-glass-window"><i></i><i></i><i></i></span><div class="v298-graphic-main">'+(g.key==='arki'?'✳':g.key==='tutor'?'∑':g.key==='language'?'あ':'◉')+'</div><div class="v298-feature-wave"></div></div><div class="v298-feature-bottom"><div><strong>'+esc(g.name)+'</strong><p>'+esc(lang()==='nl'?g.nl:g.body)+'</p></div><span aria-hidden="true">↗</span></div></article>';
+ return '<article class="v298-feature '+(i===galleryIndex?'is-active':'')+'" data-v298-gallery="'+i+'"><div class="v298-feature-meta">'+esc(g.type)+' <span>0'+(i+1)+'</span></div><div class="v298-feature-graphic '+esc(g.key)+'" aria-hidden="true"><span class="v298-glass-window"><i></i><i></i><i></i></span><div class="v298-graphic-main">'+(g.key==='arki'?'✳':g.key==='tutor'?'∑':g.key==='language'?'あ':'◉')+'</div><div class="v298-feature-wave"></div>'+galleryDetails(g.key)+'</div><div class="v298-feature-bottom"><div><strong>'+esc(g.name)+'</strong><p>'+esc(lang()==='nl'?g.nl:g.body)+'</p></div><span aria-hidden="true">↗</span></div></article>';
 }
 function gallerySync(){
  const el=$('#v298-feature-gallery');if(!el)return;
