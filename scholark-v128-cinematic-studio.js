@@ -188,6 +188,7 @@ function storyBackground(now){
  for(let i=0;i<90;i++){const seed=i*19.17,px=((Math.sin(seed*2.4)*.5+.5)*w+time*(3+i%8))%w,py=(Math.cos(seed*1.2)*.5+.5)*h;
  ctx.globalAlpha=.09+(i%9)*.025;ctx.fillStyle=i%3?'#c5b8f9':'#d2ff92';ctx.beginPath();ctx.arc(px,py,Math.max(.45,Math.min(w*.0009,1.5)),0,Math.PI*2);ctx.fill()}
  ctx.globalAlpha=1;
+ window.__SCHOLAVERUM_R300_COSMOS__?.paintStory?.(now,storyIndex,storyOpen);
  if(storyPlaying&&!reduce()){
   const elapsed=now-storyStarted;const fraction=clamp(1-(storyRemaining-elapsed)/7500,0,1);$('.v298-story-progress i')?.style.setProperty('transform','scaleX('+fraction+')');
   if(elapsed>=storyRemaining){displayScene(storyIndex+1);storyStarted=now}
