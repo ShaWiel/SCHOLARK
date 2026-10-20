@@ -54,6 +54,7 @@ jobs:
           node --check scholark-v130-cosmic-worlds.js
           node --check scripts/scholaverum-r300-cosmic-worlds-smoke.mjs
           node --check scripts/scholaverum-r301-front-orbits-smoke.mjs
+          node --check scripts/scholaverum-r302-cinematic-stability-smoke.mjs
           node --check scripts/scholaverum-r299-planet-eclipse-smoke.mjs
           node --check scripts/scholaverum-r298-cinematic-smoke.mjs
           node --check scripts/scholaverum-r280-home-smoke.mjs
@@ -208,6 +209,8 @@ jobs:
         run: node scripts/scholaverum-r300-cosmic-worlds-smoke.mjs http://127.0.0.1:10000
       - name: Verify r301 foreground moons and rich animated space elements
         run: node scripts/scholaverum-r301-front-orbits-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r302 motion, eclipse, loader and removed presentation
+        run: node scripts/scholaverum-r302-cinematic-stability-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
