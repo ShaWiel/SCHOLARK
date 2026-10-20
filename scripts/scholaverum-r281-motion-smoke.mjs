@@ -13,27 +13,27 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('v280-home-rebuild')&&
   !!window.__SCHOLAVERUM_R280_HOME__&&
   !!document.querySelector('#v280-hero.v281-inview')&&
-  !!document.querySelector('.v298-engine-canvas[width]'),null,{timeout:60000});
+  !!document.querySelector('.v299-planet-canvas[width]'),null,{timeout:60000});
  const started=await page.evaluate(()=>{
-  const planet=document.querySelector('.v298-core img'),headline=document.querySelector('#v280-headline > span'),
-        orbit=document.querySelector('.v298-engine-canvas'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
+  const planet=document.querySelector('.v299-logo'),headline=document.querySelector('#v280-headline > span'),
+        orbit=document.querySelector('.v299-planet-canvas'),stage=document.querySelector('#v280-app-preview .v280-app-inner'),
         hero=document.querySelector('#v280-hero');
-  return {planet:getComputedStyle(planet).animationName,play:getComputedStyle(planet).animationPlayState,
+  return {planet:getComputedStyle(planet).animationName,frames:window.__SCHOLAVERUM_R299_PLANET__?.state?.().renderedFrames,
           orbit:getComputedStyle(orbit).animationName,headline:getComputedStyle(headline).animationName,
           stage:getComputedStyle(stage).animationName,heroClass:hero.classList.contains('v281-inview'),
           version:window.__SCHOLAVERUM_R280_HOME__?.version};
  });
  assert.equal(started.version,'r281-motion-home');
- assert.equal(started.planet,'v298-core-tilt','official icon uses the new cinematic orbital engine');
- assert.equal(started.play,'running','visible planet motion should run');
+ assert.equal(started.planet,'none','logo is composited onto the new Canvas planet');
+ assert.ok(started.frames>0,'visible planet cinematic should animate');
  assert.equal(started.orbit,'none','orbital trails use drawn perspective, not a flat CSS spin');
  assert.equal(started.headline,'v281HeadlineRise','hero headline should animate on arrival');
  assert.equal(started.stage,'v281SceneReveal','product theater needs scene transitions');
 
- const before=await page.locator('.v298-core img').evaluate(el=>getComputedStyle(el).transform);
+ const before=await page.evaluate(()=>window.__SCHOLAVERUM_R299_PLANET__.state().renderedFrames);
  await page.waitForTimeout(600);
- const after=await page.locator('.v298-core img').evaluate(el=>getComputedStyle(el).transform);
- assert.notEqual(after,before,'new emblem and orbital composition should animate');
+ const after=await page.evaluate(()=>window.__SCHOLAVERUM_R299_PLANET__.state().renderedFrames);
+ assert.ok(after>before,'cinematic engine must advance its frame counter');
 
  await page.locator('#v280-tab-tutor').click();
  assert.equal(await page.locator('#v280-tab-tutor').getAttribute('aria-selected'),'true');
@@ -47,14 +47,14 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.waitForTimeout(120);
  const calm=await page.evaluate(()=>{
-  const planet=document.querySelector('.v298-core img'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
+  const planet=document.querySelector('.v299-logo'),h=document.querySelector('#v280-headline>span'),tape=document.querySelector('.v280-tape-inner');
   return {planet:getComputedStyle(planet).transform,depth:getComputedStyle(planet).animationName,headline:getComputedStyle(h).animationName,
           tape:getComputedStyle(tape).animationName,art:getComputedStyle(document.querySelector('.v280-hero-art')).transform};
  });
  assert.equal(calm.depth,'none','reduced motion must stop depth animation');
- const frozen=await page.locator('.v298-core img').evaluate(el=>getComputedStyle(el).transform);
+ const frozen=await page.locator('.v299-logo').evaluate(el=>getComputedStyle(el).transform);
  await page.waitForTimeout(300);
- assert.equal(await page.locator('.v298-core img').evaluate(el=>getComputedStyle(el).transform),frozen,'reduced motion freezes emblem movement');
+ assert.equal(await page.locator('.v299-logo').evaluate(el=>getComputedStyle(el).transform),frozen,'reduced motion freezes emblem movement');
  assert.equal(calm.headline,'none','reduced motion must stop typography');
  assert.equal(calm.tape,'none','reduced motion must stop marquees');
  assert.equal(calm.art,'none','reduced motion must disable scroll parallax');
