@@ -107,7 +107,7 @@ function meteor(c,x,y,len,color,alpha=.85){
  c.restore();
 }
 function rocket(c,x,y,unit,t,world){
- if(unit<1)return;c.save();c.translate(x,y);c.rotate(-.58);c.scale(unit,unit);
+ if(unit<.3)return;c.save();c.translate(x,y);c.rotate(-.58);c.scale(unit,unit);
  const hull=c.createLinearGradient(-4,0,4,0);
  hull.addColorStop(0,'#343752');hull.addColorStop(.30,'#f0f0fc');hull.addColorStop(.53,'#9c9dca');hull.addColorStop(1,'#3c365d');
  c.fillStyle=hull;c.beginPath();c.moveTo(0,-16);c.bezierCurveTo(5,-12,6,8,4,12);c.lineTo(-4,12);c.bezierCurveTo(-6,8,-5,-12,0,-16);c.fill();
@@ -259,5 +259,5 @@ else setTimeout(mountHero,100);
 if(!document.getElementById('scholaverum-r300-style')){
  const l=document.createElement('link');l.id='scholaverum-r300-style';l.rel='stylesheet';l.href='scholark-v130-cosmic-worlds.css?v=20261020-r300';document.head.appendChild(l);
 }
-window.__SCHOLAVERUM_R300_COSMOS__={version:VERSION,paintStory:renderPresentation,mount:mountHero,state:()=>({mounted:!!hero?.isConnected,fullscreen:!!document.getElementById('v300-story-world'),textures:textures.size,frames,scenes:sceneList.length,visible})};
+window.__SCHOLAVERUM_R300_COSMOS__={version:VERSION,paintStory:renderPresentation,mount:mountHero,state:()=>({mounted:!!hero?.isConnected,fullscreen:!!document.getElementById('v300-story-world'),textures:textures.size,frames,scenes:sceneList.length,visible,cosmicDetails:{distantPlanets:2,meteors:4,rocket:1,satellites:2}})};
 })();
