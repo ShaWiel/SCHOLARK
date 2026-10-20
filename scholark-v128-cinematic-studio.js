@@ -9,6 +9,7 @@ const reduce=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matc
 const lang=()=>{try{return (localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'en').toLowerCase().startsWith('nl')?'nl':'en'}catch{return 'en'}};
 const tr=(en,nl)=>lang()==='nl'?nl:en;
 const logo='scholaverum-official-icon-r290.png';
+if(!document.getElementById('scholaverum-cinema-style')){const link=document.createElement('link');link.id='scholaverum-cinema-style';link.rel='stylesheet';link.href='scholark-v128-cinematic-studio.css?v=20261020-r298';document.head.appendChild(link)}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ease=t=>1-Math.pow(1-t,3);
 const scenes=[
@@ -28,7 +29,7 @@ const gallery=[
  {key:'focus',name:'Focus Sessions',type:'STUDY FLOW',body:'Build your momentum, one focused session at a time.',nl:'Bouw je ritme op, studiesessie voor studiesessie.'}
 ];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let galleryTimer=0,galleryIndex=0,storyTimer=0,storyStarted=0,storyRemaining=7500,storyIndex=0,storyPlaying=false,storyOpen=false,storyRaf=0,heroRaf=0,heroClock=0,storyClock=0,storyFocus=null,storyPreviousOverflow='',mounted=false,heroCanvas=null,storyCanvas=null,heroObserver=null,activeHero=false,resizeObserver=null,screenW=0,screenH=0,screenDpr=1,heroW=0,heroH=0,heroDpr=1;
+let lastHeroFrame=0,lastStoryFrame=0,galleryTimer=0,galleryIndex=0,storyTimer=0,storyStarted=0,storyRemaining=7500,storyIndex=0,storyPlaying=false,storyOpen=false,storyRaf=0,heroRaf=0,heroClock=0,storyClock=0,storyFocus=null,storyPreviousOverflow='',mounted=false,heroCanvas=null,storyCanvas=null,heroObserver=null,activeHero=false,resizeObserver=null,screenW=0,screenH=0,screenDpr=1,heroW=0,heroH=0,heroDpr=1;
 function sizeCanvas(canvas,maximumWidth=3840,maximumHeight=2160){
  if(!canvas)return [0,0,1];
  const rect=canvas.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
@@ -55,6 +56,7 @@ function orbit(ctx,cx,cy,radius,phase,tilt,speed,w,h,bright){
 }
 function renderHero(now){
  heroRaf=0;if(!activeHero||!home()||!heroCanvas||document.hidden)return;
+ if(!reduce()&&now-lastHeroFrame<33){heroRaf=requestAnimationFrame(renderHero);return}lastHeroFrame=now;
  const [w,h,dpr]=sizeCanvas(heroCanvas,2200,2200);heroW=w;heroH=h;heroDpr=dpr;
  const ctx=heroCanvas.getContext('2d');if(!ctx)return;
  ctx.clearRect(0,0,w,h);
@@ -117,7 +119,7 @@ function nav(){
  const btn=document.createElement('button');btn.id='v298-nav-what';btn.type='button';btn.dataset.v298Action='open';btn.textContent=tr('What is SCHOLAVERUM','Wat is SCHOLAVERUM');
  btn.setAttribute('aria-haspopup','dialog');btn.setAttribute('aria-controls','v298-cinema');
  const links=$('#v280-header-links',bar),actions=$('.v55-actions',bar);
- if(links)links.prepend(btn);else if(actions)bar.insertBefore(btn,actions);else bar.appendChild(btn);
+ if(links)bar.insertBefore(btn,links);else if(actions)bar.insertBefore(btn,actions);else bar.appendChild(btn);
 }
 function previewMarkup(s){
  if(s.id==='vision'||s.id==='final')return '<div class="v298-vision-emblem"><img src="'+logo+'" alt=""></div><div class="v298-ui-caption">SCHOLAVERUM / THE FUTURE OF LEARNING</div>';
@@ -160,6 +162,7 @@ function updatePlay(){
 function storyBackground(now){
  storyRaf=0;if(!storyOpen||document.hidden)return;
  const c=storyCanvas;if(!c)return;
+ if(!reduce()&&now-lastStoryFrame<33){storyRaf=requestAnimationFrame(storyBackground);return}lastStoryFrame=now;
  const [w,h,dpr]=sizeCanvas(c,3840,2160);screenW=w;screenH=h;screenDpr=dpr;
  const ctx=c.getContext('2d');if(!ctx)return;ctx.clearRect(0,0,w,h);
  const time=reduce()?1:now/1000;const cx=w*(.53+Math.sin(time*.085)*.06),cy=h*(.47+Math.cos(time*.07)*.04);
