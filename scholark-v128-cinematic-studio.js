@@ -118,7 +118,7 @@ function galleryMarkup(g,i){
 function gallerySync(){
  const el=$('#v298-feature-gallery');if(!el)return;
  if(el.children.length!==gallery.length)el.innerHTML=gallery.map(galleryMarkup).join('');
- $('.v298-feature',el).forEach((card,i)=>{card.classList.toggle('is-active',i===galleryIndex);card.setAttribute('aria-current',String(i===galleryIndex))});
+ $$('.v298-feature',el).forEach((card,i)=>{card.classList.toggle('is-active',i===galleryIndex);card.setAttribute('aria-current',String(i===galleryIndex))});
 }
 function galleryMount(){
  if($('#v298-feature-gallery'))return;
