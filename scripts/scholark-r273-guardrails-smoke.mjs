@@ -16,12 +16,14 @@ assert.match(sql, /REVOKE ALL PRIVILEGES ON TABLE public\.%I FROM PUBLIC, anon, 
 assert.doesNotMatch(sql, /\bDROP\s+(TABLE|FUNCTION)\b/i, 'Do not delete existing Connect data');
 assert.match(read('scholark-v122-connect.js'), /CONNECT_RELEASE_STATE='coming-soon'/);
 
-const release = 'r294-official-globe';
-assert.ok(runtime.includes("const VERSION = '20261018-" + release + "'"));
+const cache = (runtime.match(/const VERSION = '([^']+)'/)||[])[1]||'';
+const release = (cache.match(/^\d{8}-(r\d+-[a-z0-9-]+)$/)||[])[1]||'';
+assert.ok(/^20\d{6}-r\d+-[a-z0-9-]+$/.test(cache),'Version must be a valid dated release');
+assert.ok(runtime.includes("const VERSION = '" + cache + "'"));
 assert.ok(runtime.includes("connect:false,release:'" + release + "'"));
 assert.ok(foundation.includes("const RELEASE = '" + release + "'"));
 assert.ok(docker.includes('ENV SCHOLARK_RELEASE=' + release));
-assert.ok(docker.includes('?v=20261018-' + release));
+assert.ok(docker.includes('?v=' + cache));
 
 function extract(start, stop) {
   const a = billing.indexOf(start);
