@@ -24,7 +24,7 @@ const rings=[
  {radius:1.65,tilt:.15,depth:.29,color:'#dbf7be',speed:.08,line:1},
  {radius:1.84,tilt:-.66,depth:.26,color:'#9a8ed0',speed:-.025,line:.72}
 ];
-let stage=null,canvas=null,ctx=null,observer=null,resizeObserver=null,raf=0,prevFrame=0;
+let stage=null,canvas=null,ctx=null,frontCanvas=null,frontCtx=null,observer=null,resizeObserver=null,raf=0,prevFrame=0;
 let inView=false,mouse=[0,0],started=0,progress=0,introMs=12000,quality=1,seq=0,elapsedPause=0;
 let renderedFrames=0,dimension=[0,0],lastPhase='',lastWidth=0,lastHeight=0;
 function circle(c,x,y,r){c.beginPath();c.arc(x,y,r,0,TAU)}
@@ -137,27 +137,33 @@ function eclipse(c,center,R,t){
  c.strokeStyle='rgba(223,219,255,.20)';c.lineWidth=2;circle(c,x,y,radius);c.stroke();
  c.restore();
 }
-function moon(c,center,R,kind,t,intro,opacity){
+// The five feature moons belong to their own FOREGROUND canvas above the logo.
+function moon(c,center,R,kind,t,opacity){
  if(opacity<.01)return;
- const spec=moons[kind];
  if(mobile()&&kind>=3)return;
- const theta=t*spec.speed+spec.seed;
- const tilt=spec.tilt;
- const r=R*spec.r,depth=Math.sin(theta)*.32;
- const x=center.x+Math.cos(theta)*r*Math.cos(tilt)-Math.sin(theta)*r*.33*Math.sin(tilt);
- const y=center.y+Math.cos(theta)*r*Math.sin(tilt)+Math.sin(theta)*r*.33*Math.cos(tilt);
- const size=R*(mobile()?.079:.095)*spec.size*(1+depth*.16);
+ const spec=moons[kind];
+ // Stable front-facing semi-orbits; they never cross behind or through the S mark.
+ const anchors=[-1.02,.05,-2.37,2.24,.90];
+ const angles=anchors[kind]+Math.sin(t*(.060+kind*.006)+kind*.85)*.13;
+ const orbitRadius=R*[1.24,1.42,1.36,1.37,1.57][kind];
+ const x=center.x+Math.cos(angles)*orbitRadius;
+ const y=center.y+Math.sin(angles)*orbitRadius*.91+Math.sin(t*.15+kind*1.35)*R*.040;
+ const size=R*(mobile()?.075:.087)*spec.size*(1+.045*Math.sin(t*.11+kind));
  c.save();c.globalAlpha=opacity;
- glow(c,x,y,size*2.6,spec.color,.16);
- const fill=c.createRadialGradient(x-size*.35,y-size*.34,1,x,y,size*1.3);
- fill.addColorStop(0,'#4d5167');fill.addColorStop(.48,'#252b42');fill.addColorStop(1,'#0b0e1b');
- c.fillStyle=fill;circle(c,x,y,size);c.fill();
- c.lineWidth=1.2;c.strokeStyle=spec.color;circle(c,x,y,size);c.stroke();
- c.fillStyle=spec.color;c.textAlign='center';c.textBaseline='middle';c.font='600 '+Math.max(11,size*.70)+'px Inter,Arial,sans-serif';c.fillText(spec.mark,x,y-1);
+ glow(c,x,y,size*2.8,spec.color,.25);
+ const shadow=c.createRadialGradient(x-size*.36,y-size*.44,0,x,y,size*1.25);
+ shadow.addColorStop(0,'#777c9e');shadow.addColorStop(.26,'#45416a');shadow.addColorStop(.68,'#241b3d');shadow.addColorStop(1,'#080a1b');
+ c.fillStyle=shadow;circle(c,x,y,size);c.fill();
+ c.strokeStyle=spec.color;c.lineWidth=Math.max(1,size*.095);circle(c,x,y,size);c.stroke();
+ c.save();c.globalAlpha=.45*opacity;c.strokeStyle='#fff';c.lineWidth=.8;
+ c.beginPath();c.arc(x-size*.14,y-size*.15,size*.68,-2.6,-1.12);c.stroke();c.restore();
+ c.fillStyle=spec.color;c.textAlign='center';c.textBaseline='middle';
+ c.font='700 '+Math.max(10,size*.65)+'px Inter,Arial,sans-serif';c.fillText(spec.mark,x,y-1);
  if(!mobile()){
-  c.globalAlpha=opacity*.86;c.font='700 '+Math.max(8,Math.min(12,R*.052))+'px Inter,Arial,sans-serif';
-  c.letterSpacing='1px';c.fillStyle='#e7e7ed';
-  c.fillText(spec.name,x,y+size+17);
+  const label=spec.name;
+  c.globalAlpha=opacity*.95;c.font='800 '+Math.max(9,Math.min(12,R*.052))+'px Inter,Arial,sans-serif';
+  c.fillStyle='#fff';c.shadowColor='#040412';c.shadowBlur=8;
+  c.fillText(label,x,y+size+18);c.shadowBlur=0;
  }
  c.restore();
 }
@@ -181,6 +187,11 @@ function size(){
  if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh}
  if(!ctx)ctx=canvas.getContext('2d',{alpha:true});
  if(ctx)ctx.setTransform(dpr,0,0,dpr,0,0);
+ if(frontCanvas){
+  if(frontCanvas.width!==dw||frontCanvas.height!==dh){frontCanvas.width=dw;frontCanvas.height=dh}
+  if(!frontCtx)frontCtx=frontCanvas.getContext('2d',{alpha:true});
+  frontCtx?.setTransform(dpr,0,0,dpr,0,0);
+ }
  quality=mobile()?.78:1;dimension=[width,height];
 }
 function paint(seconds){
@@ -200,11 +211,15 @@ function paint(seconds){
  drawRings(ctx,center,radius,t,ringFade,false);
  planet(ctx,center,radius,t,reveal);
  drawRings(ctx,center,radius,t,ringFade,true);
- for(let i=0;i<moons.length;i++){
-  const appear=reduced()?1:smooth((t-(7.25+i*.48))/.78);
-  moon(ctx,center,radius,i,t,moonFade*appear,moonFade*appear);
- }
  eclipse(ctx,center,radius,t);
+ // Foreground passes AFTER the eclipse/planet. Canvas layer is above the S logo.
+ if(frontCtx){
+  frontCtx.clearRect(0,0,w,h);
+  for(let i=0;i<moons.length;i++){
+   const appear=reduced()?1:smooth((t-(7.25+i*.48))/.78);
+   moon(frontCtx,center,radius,i,t,moonFade*appear);
+  }
+ }
  // Cinematic star glint on the limb during the planet reveal.
  if(t>=2.2&&t<=5.4&&!reduced()){
   const glint=Math.sin(smooth((t-2.2)/3.2)*Math.PI)*.47;
@@ -243,7 +258,7 @@ function skipIntro(){
 }
 function clean(){
  playback(false);observer?.disconnect();observer=null;resizeObserver?.disconnect();resizeObserver=null;
- if(stage?.isConnected)stage.remove();stage=null;canvas=null;ctx=null;
+ if(stage?.isConnected)stage.remove();stage=null;canvas=null;ctx=null;frontCanvas=null;frontCtx=null;
 }
 function mount(){
  if(!home())return;
@@ -253,8 +268,8 @@ function mount(){
   host.querySelectorAll('.v298-engine,.v296-atom,.v292-sphere-stage,.v299-universe').forEach(n=>n.remove());
   stage=document.createElement('div');stage.className='v299-universe';
   stage.setAttribute('aria-label','SCHOLAVERUM knowledge planet cinematic');stage.setAttribute('role','group');
-  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-planet-crest-r300.webp" alt="" aria-hidden="true" decoding="async"><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
-  host.prepend(stage);canvas=$('.v299-planet-canvas',stage);
+  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-planet-crest-r300.webp" alt="" aria-hidden="true" decoding="async"><canvas class="v301-front-orbs-canvas" aria-hidden="true"></canvas><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
+  host.prepend(stage);canvas=$('.v299-planet-canvas',stage);frontCanvas=$('.v301-front-orbs-canvas',stage);
   $('.v299-skip',stage).addEventListener('click',skipIntro);
   let seen=false;try{seen=sessionStorage.getItem('scholaverum_eclipse_seen')==='yes'}catch{}
   introMs=seen?3000:(mobile()?8000:12000);
@@ -288,6 +303,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 window.__SCHOLAVERUM_R299_PLANET__={
  version:VERSION,mount,skip:skipIntro,
  state:()=>({mounted:!!stage?.isConnected,phase:lastPhase,progress:progress,introMs,renderedFrames,
-  canvas:canvas?[canvas.width,canvas.height]:null,moons:5,rings:4,paused:!inView,reduced:reduced()})
+  canvas:canvas?[canvas.width,canvas.height]:null,frontCanvas:frontCanvas?[frontCanvas.width,frontCanvas.height]:null,frontOrbs:!!frontCanvas?.isConnected,moons:5,rings:4,paused:!inView,reduced:reduced()})
 };
 })();
