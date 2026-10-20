@@ -225,7 +225,7 @@ function loop(now){
  prevFrame=now;
  size();
  progress=reduced()?16:Math.min(16,((now-started)/1000)*(12000/introMs));
- if(progress>=12&&introMs===12000&&!elapsedPause){elapsedPause=1;try{sessionStorage.setItem('scholaverum_eclipse_seen','yes')}catch{}}
+ if(progress>=12&&!elapsedPause){elapsedPause=1;try{sessionStorage.setItem('scholaverum_eclipse_seen','yes')}catch{}}
  paint(progress>=12?(12+(now-started-introMs)/1000):progress);
  renderedFrames++;
  if(!reduced())raf=requestAnimationFrame(loop);
@@ -267,7 +267,7 @@ function mount(){
    observer.observe(host);
   }
   resizeObserver?.disconnect();resizeObserver=null;
-  if('ResizeObserver' in window){resizeObserver=new ResizeObserver(()=>{size();if(reduced())paint(16)});resizeObserver.observe(host)}
+  if('ResizeObserver' in window){resizeObserver=new ResizeObserver(()=>{size();if(reduced())paint(16)});resizeObserver.observe(canvas)}
  }
  const bounds=host.getBoundingClientRect();
  if(bounds.bottom>0&&bounds.top<innerHeight)playback(true);
