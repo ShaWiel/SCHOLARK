@@ -51,6 +51,8 @@ jobs:
           node --check scholark-v124-editorial-home.js
           node --check scholark-v128-cinematic-studio.js
           node --check scholark-v129-knowledge-planet.js
+          node --check scholark-v130-cosmic-worlds.js
+          node --check scripts/scholaverum-r300-cosmic-worlds-smoke.mjs
           node --check scripts/scholaverum-r299-planet-eclipse-smoke.mjs
           node --check scripts/scholaverum-r298-cinematic-smoke.mjs
           node --check scripts/scholaverum-r280-home-smoke.mjs
@@ -201,6 +203,8 @@ jobs:
         run: node scripts/scholaverum-r298-cinematic-smoke.mjs http://127.0.0.1:10000
       - name: Verify r299 Knowledge Planet Eclipse and route continuity
         run: node scripts/scholaverum-r299-planet-eclipse-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r300 full-screen cosmic backgrounds and uploaded logo
+        run: node scripts/scholaverum-r300-cosmic-worlds-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
