@@ -123,18 +123,18 @@ function planet(c,center,R,t,reveal){
  c.restore();
 }
 function eclipse(c,center,R,t){
- const leaving=smooth((t-.8)/2.55);
- const x=center.x+mix(-R*.28,-R*2.55,leaving),y=center.y+mix(-R*.03,-R*.49,leaving);
- const radius=R*1.08;
- const opacity=1-smooth((t-2.75)/1.5);
- if(opacity<=.01)return;
+ // One bounded eclipse silhouette; never paint a second dark giant planet in idle.
+ const leaving=smooth((t-.65)/2.9);
+ const opacity=1-smooth((t-2.70)/1.1);
+ if(opacity<=0)return;
+ const x=center.x+mix(-R*.06,-R*2.40,leaving),y=center.y+mix(-R*.025,-R*.30,leaving);
+ const radius=R*.98;
  c.save();c.globalAlpha=opacity;
- glow(c,center.x+R*.14,center.y-R*.13,R*1.48,'#efebfc',.14);
- glow(c,x+R*.28,y-R*.12,R*1.18,'#a899f3',.15);
- const shell=c.createRadialGradient(x-radius*.4,y-radius*.48,6,x,y,radius*1.16);
- shell.addColorStop(0,'#161b2e');shell.addColorStop(.75,'#090d1c');shell.addColorStop(1,'#01040a');
+ glow(c,center.x+R*.1,center.y-R*.06,R*1.29,'#d8c7ff',.14);
+ const shell=c.createRadialGradient(x-radius*.25,y-radius*.3,1,x,y,radius*1.02);
+ shell.addColorStop(0,'#111728');shell.addColorStop(.83,'#070b19');shell.addColorStop(1,'#050716');
  c.fillStyle=shell;circle(c,x,y,radius);c.fill();
- c.strokeStyle='rgba(223,219,255,.20)';c.lineWidth=2;circle(c,x,y,radius);c.stroke();
+ c.strokeStyle='rgba(221,214,255,.27)';c.lineWidth=1.25;circle(c,x,y,radius);c.stroke();
  c.restore();
 }
 // The five feature moons belong to their own FOREGROUND canvas above the logo.
@@ -144,10 +144,11 @@ function moon(c,center,R,kind,t,opacity){
  const spec=moons[kind];
  // Stable front-facing semi-orbits; they never cross behind or through the S mark.
  const anchors=[-1.02,.05,-2.37,2.24,.90];
- const angles=anchors[kind]+Math.sin(t*(.060+kind*.006)+kind*.85)*.13;
- const orbitRadius=R*[1.24,1.42,1.36,1.37,1.57][kind];
- const x=center.x+Math.cos(angles)*orbitRadius;
- const y=center.y+Math.sin(angles)*orbitRadius*.91+Math.sin(t*.15+kind*1.35)*R*.040;
+ // Visible but gentle floating: roughly 30–60px arc travel, not static orbits.
+ const angles=anchors[kind]+Math.sin(t*(.34+kind*.035)+kind*.85)*.37;
+ const orbitRadius=R*[1.30,1.47,1.43,1.49,1.61][kind];
+ const x=center.x+Math.cos(angles)*orbitRadius+Math.cos(t*(.45+kind*.022)+kind)*R*.048;
+ const y=center.y+Math.sin(angles)*orbitRadius*.91+Math.sin(t*(.49+kind*.055)+kind*1.35)*R*.115;
  const size=R*(mobile()?.075:.087)*spec.size*(1+.045*Math.sin(t*.11+kind));
  c.save();c.globalAlpha=opacity;
  glow(c,x,y,size*2.8,spec.color,.25);
@@ -226,7 +227,7 @@ function paint(seconds){
   glow(ctx,center.x-radius*.66,center.y-radius*.73,radius*.38,'#efebff',glint);
  }
  if(stage){
-  stage.style.setProperty('--v299-logo-alpha',String(reveal*smooth((t-3.1)/1.6)*.93));
+  stage.style.setProperty('--v299-logo-alpha',String(reveal*smooth((t-3.1)/1.6)*.98));
   stage.dataset.phase=phaseFor(t);lastPhase=stage.dataset.phase;
   stage.dataset.intro=String(t<12&&!reduced());
   const skip=$('.v299-skip',stage);
@@ -268,7 +269,7 @@ function mount(){
   host.querySelectorAll('.v298-engine,.v296-atom,.v292-sphere-stage,.v299-universe').forEach(n=>n.remove());
   stage=document.createElement('div');stage.className='v299-universe';
   stage.setAttribute('aria-label','SCHOLAVERUM knowledge planet cinematic');stage.setAttribute('role','group');
-  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-planet-crest-r300.webp" alt="" aria-hidden="true" decoding="async"><canvas class="v301-front-orbs-canvas" aria-hidden="true"></canvas><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
+  stage.innerHTML='<canvas class="v299-planet-canvas" aria-hidden="true"></canvas><img class="v299-logo" src="scholaverum-planet-crest-r300.webp" alt="" aria-hidden="true" decoding="async"><span class="v302-wordmark" aria-hidden="true">SCHOLAVERUM</span><canvas class="v301-front-orbs-canvas" aria-hidden="true"></canvas><button class="v299-skip" type="button" aria-label="Skip cinematic introduction">Skip intro →</button>';
   host.prepend(stage);canvas=$('.v299-planet-canvas',stage);frontCanvas=$('.v301-front-orbs-canvas',stage);
   $('.v299-skip',stage).addEventListener('click',skipIntro);
   let seen=false;try{seen=sessionStorage.getItem('scholaverum_eclipse_seen')==='yes'}catch{}
