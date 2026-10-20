@@ -43,67 +43,32 @@ try{
  assert.ok(mobile.width>90&&mobile.natural>0&&mobile.display!=='none','official Dashboard brand remains visible on mobile');
  await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('.v296-atom[data-status="ready"]',{state:'visible',timeout:30000});
+ await page.waitForSelector('.v298-engine-canvas',{state:'visible',timeout:35000});
+ await page.waitForFunction(()=>document.querySelector('.v298-engine-canvas')?.width>0,null,{timeout:15000});
  const hero=await page.evaluate(()=>{
-  const art=document.querySelector('#v280-editorial-home .v280-hero-art');
-  const atom=art?.querySelector('.v296-atom');
-  const canvas=atom?.querySelector('.v296-ball');
-  return {
-   count:document.querySelectorAll('#v280-hero .v296-atom').length,
-   oldBall:document.querySelectorAll('#v280-hero .v292-sphere-stage,#v280-hero .v294-globe-strip').length,
-   diameter:atom?.getBoundingClientRect().width,
-   oldDiameter:art?.getBoundingClientRect().width*.76,
-   orbitCount:atom?.querySelectorAll('.v296-orbit-canvas').length,
-   pixelSize:canvas?.width,spinAngle:canvas?.dataset.yaw,
-   topbarSrc:document.querySelector('.v55-brand-logo')?.getAttribute('src')||null,
-   heroCards:art?.querySelectorAll('.v280-floating').length
-  };
+  const art=document.querySelector('#v280-editorial-home .v280-hero-art'),engine=art?.querySelector('.v298-engine'),canvas=engine?.querySelector('canvas'),img=engine?.querySelector('img');
+  return {engines:art?.querySelectorAll('.v298-engine').length,oldGlobe:art?.querySelectorAll('.v296-atom,.v292-sphere-stage').length,canvasWidth:canvas?.width,canvasHeight:canvas?.height,logo:img?.getAttribute('src'),heroCards:art?.querySelectorAll('.v280-floating').length,nav:!!document.querySelector('#v298-nav-what')};
  });
- assert.equal(hero.count,1,'exactly one approved spherical logo renderer');
- assert.equal(hero.oldBall,0,'old 48 flat rotating logo strips must be completely removed');
- assert.ok(Math.abs(hero.diameter-hero.oldDiameter)<=2,'central sphere retains the original compact proportions');
- assert.equal(hero.orbitCount,2,'two independently layered purple and lime orbital canvases');
- assert.ok(hero.pixelSize>0,'WebGL/CPU renderer must draw nonzero spherical pixels');
- assert.ok(hero.heroCards>=2,'preserve existing ARKI and AI Tutor cards');
- if(hero.topbarSrc)assert.equal(hero.topbarSrc,NEW,'topbar branding remains unchanged');
- const before=await page.locator('.v296-ball').getAttribute('data-yaw');
- await page.waitForTimeout(600);
- const after=await page.locator('.v296-ball').getAttribute('data-yaw');
- assert.notEqual(before,after,'UV texture must make observable Y-axis progress');
+ assert.equal(hero.engines,1,'exactly one cinematic engine is mounted');
+ assert.equal(hero.oldGlobe,0,'retired globe and flattened strips must not remain');
+ assert.ok(hero.canvasWidth>300&&hero.canvasHeight>300,'orbital visuals render as a sharp canvas');
+ assert.equal(hero.logo,ICON.slice(1),'retain the official brand icon within a new visual concept');
+ assert.equal(hero.heroCards,2,'preserve ARKI and AI Tutor hero cards');
+ assert.equal(hero.nav,true,'cinematic presentation entry is available');
  await page.setViewportSize({width:390,height:844});
- const mobileHero=await page.evaluate(()=>{
-  const art=document.querySelector('.v280-hero-art'),atom=art.querySelector('.v296-atom');
-  return {count:document.querySelectorAll('#v280-hero .v296-atom').length,
-   diameter:atom.getBoundingClientRect().width,overflow:document.documentElement.scrollWidth-innerWidth};
- });
- assert.equal(mobileHero.count,1,'responsive hero should not duplicate');
- assert.ok(mobileHero.diameter>100,'mobile globe remains visible and properly sized');
- assert.ok(mobileHero.overflow<=8,'mobile must not overflow horizontally');
- const hasGPU=await page.locator('.v296-ball').evaluate(el=>!!el.getContext('webgl'));
- if(hasGPU){
-  await page.locator('.v296-ball').evaluate(el=>el.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
-  await page.waitForFunction(()=>{
-   const atom=document.querySelector('.v296-atom'),canvas=atom?.querySelector('.v296-ball');
-   return atom?.dataset.status==='ready'&&!!canvas?.getContext('2d')&&canvas.width>0;
-  },null,{timeout:12000});
-  const cpuBefore=await page.locator('.v296-ball').getAttribute('data-yaw');
-  await page.waitForTimeout(420);
-  const cpuAfter=await page.locator('.v296-ball').getAttribute('data-yaw');
-  assert.notEqual(cpuBefore,cpuAfter,'CPU failover must keep globe rotating after GPU context loss');
- }
- const memory=await page.evaluate(()=>{
-  const c=document.querySelector('.v296-orbit-canvas');
-  return {width:c.width,height:c.height};
- });
- assert.ok(memory.width<=1400&&memory.height<=1400,'orbit canvases must cap their GPU/CPU buffer allocation');
+ const mobileHero=await page.evaluate(()=>({
+  count:document.querySelectorAll('#v280-hero .v298-engine').length,
+  width:document.querySelector('.v298-engine')?.getBoundingClientRect().width,
+  overflow:document.documentElement.scrollWidth-innerWidth
+ }));
+ assert.equal(mobileHero.count,1,'returning home should not duplicate the orbital engine');
+ assert.ok(mobileHero.width>100,'mobile visual must stay visible');
+ assert.ok(mobileHero.overflow<=8,'no mobile horizontal overflow');
  const reduced=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:'reduce'});
  await reduced.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await reduced.waitForSelector('.v296-atom[data-status="ready"]',{state:'visible',timeout:30000});
- assert.equal(await reduced.locator('.v296-ball').evaluate(el=>getComputedStyle(el).animationName),'none','accessibility freezes depth animation');
- const paused=await reduced.locator('.v296-ball').getAttribute('data-yaw');
- await reduced.waitForTimeout(320);
- assert.equal(await reduced.locator('.v296-ball').getAttribute('data-yaw'),paused,'accessibility freezes globe rotation');
+ await reduced.waitForSelector('.v298-core img',{state:'visible',timeout:30000});
+ assert.equal(await reduced.locator('.v298-core img').evaluate(el=>getComputedStyle(el).animationName),'none','reduced motion disables rotating image');
  await reduced.close();
- assert.deepEqual(errors,[],'branding change must not throw page errors');
- console.log('PASS r296 official brand: actual spherical projection, enlarged purple/lime orbits, desktop/mobile and reduced motion');
+ assert.deepEqual(errors,[],'branding and cinematic swap must not throw page errors');
+ console.log('PASS r298 official brand: native logo, new double orbit engine, workspace identity, reduced motion and responsive layout');
 }finally{await browser.close()}
