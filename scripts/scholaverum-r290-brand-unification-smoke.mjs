@@ -52,7 +52,7 @@ try{
  assert.equal(hero.engines,1,'exactly one cinematic engine is mounted');
  assert.equal(hero.oldGlobe,0,'retired globe and flattened strips must not remain');
  assert.ok(hero.canvasWidth>300&&hero.canvasHeight>300,'orbital visuals render as a sharp canvas');
- assert.equal(hero.logo,ICON.slice(1),'retain the official brand icon within a new visual concept');
+ assert.equal(hero.logo,'scholaverum-planet-crest-r300.webp','custom uploaded graduation S replaces the former planet logo');
  assert.equal(hero.heroCards,2,'preserve ARKI and AI Tutor hero cards');
  assert.equal(hero.nav,true,'cinematic presentation entry is available');
  await page.setViewportSize({width:390,height:844});
