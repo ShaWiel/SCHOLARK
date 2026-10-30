@@ -248,11 +248,31 @@ function focus(c,w,h,t,world,camera){
  c.fillStyle='#dfe8ff';c.textAlign='center';c.fillText('25:00',cx,cy+r*1.28);
 }
 function schools(c,w,h,t,world,camera){
- languages(c,w,h,t,world,camera);
- // Discovery pins make this separate from language, but reuse our dimensional globe.
- const r=Math.min(w,h),spots=[[.63,.27],[.29,.47],[.69,.69]];
- spots.forEach(([a,b],i)=>{glow(c,w*a,h*b,14,world.light,.24);c.fillStyle=world.light;circ(c,w*a,h*b,2.5);c.fill()});
- arc(c,w*.51,h*.51,r*.47,r*.18,-.35,world.light,.45,1.3);
+ // Independent education-discovery atlas instead of a duplicate language scene.
+ const s=Math.min(w,h),x=w*.51+camera[0]*.15,y=h*.51+camera[1]*.12,r=s*.255;
+ sphere(c,x,y,r,world,t,{pale:'#dae7ff',middle:'#183e64',glow:.28});
+ c.save();circ(c,x,y,r*.98);c.clip();
+ for(let i=-3;i<=3;i++){
+  const yy=y+i*r*.225,span=Math.sqrt(Math.max(0,r*r-(i*r*.225)**2));
+  arc(c,x,yy,span,Math.max(1,span*.22),0,world.accent,.24,1);
+ }
+ for(let i=0;i<6;i++)arc(c,x,y,Math.max(1,Math.abs(Math.sin(i*pi/6+t*.11))*r),r,0,world.light,.21,1);
+ c.restore();
+ arc(c,x,y,r*1.66,r*.58,-.43,world.light,.46,1.4);
+ arc(c,x,y,r*1.86,r*.67,.47,world.accent,.22,1);
+ const pins=[[-.48,-.35],[.41,-.42],[-.12,.51],[.57,.25]];
+ pins.forEach(([dx,dy],i)=>{
+  const px=x+dx*r,py=y+dy*r;
+  glow(c,px,py,r*.24,world.light,.17);
+  c.fillStyle='#091729';c.strokeStyle=world.light;c.lineWidth=Math.max(1,s*.004);
+  circ(c,px,py,Math.max(4,r*.075));c.fill();c.stroke();
+  c.fillStyle=world.light;circ(c,px,py,Math.max(1.8,r*.022));c.fill();
+  if(i){const last=pins[i-1];polyline(c,[[x+last[0]*r,y+last[1]*r],[px,py]],world.accent,.25,1.2)}
+ });
+ const a=t*.12,sx=x+Math.cos(a)*r*1.66,sy=y+Math.sin(a)*r*.58;
+ glow(c,sx,sy,r*.18,world.light,.20);c.fillStyle=world.light;circ(c,sx,sy,Math.max(1.5,r*.028));c.fill();
+ c.font='700 '+Math.max(9,s*.041)+'px Inter,system-ui,sans-serif';
+ c.textAlign='center';c.fillStyle='#e4eeff';c.fillText('DISCOVER',x,y+r*1.44);
 }
 function paintWorld(ctx,w,h,key,now,camera,large=false){
  const world=cfg[key]||cfg.arki,t=reduce()?2:now*.001,focusTime=large;
