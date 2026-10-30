@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 if(window.__SCHOLAVERUM_R303_WORLDS__)return;
-const VERSION='r303-cinematic-universe-2';
+const VERSION='r304-cinematic-depth-stability';
 const $=(selector,root=document)=>root.querySelector(selector);
 const $$=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
 const pi=Math.PI,TWO=2*pi;
@@ -249,7 +249,7 @@ function renderOnce(now){
  const elements=activeCards();
  const current=elements.find(el=>el.classList.contains('is-active'))||elements[0];
  elements.forEach(card=>{
-  if(card===current)draw(card,now);
+  if(card===current){if(cardInView||card.dataset.v303Painted!=='1'){draw(card,now);card.dataset.v303Painted='1'}}
   else if(card.dataset.v303Painted!=='1'){draw(card,2e3+cards.indexOf(card.dataset.v303World)*400);card.dataset.v303Painted='1'}
  });
  if(theaterInView)drawTheater(now);
@@ -277,7 +277,7 @@ function mount(){
  const cardsNow=activeCards(),section=$('#v298-discover'),theater=$('#v280-demo');
  if(!cardsNow.length||!section||!theater)return;
  if(cardSection===section&&theaterSection===theater&&cardsNow.every(card=>!!$('canvas.v303-world-canvas',card)))return;
- detach();state.mounts++;
+ detach();state.mounts++;lastMotion=0;
  cardSection=section;theaterSection=theater;
  cardsNow.forEach((card,i)=>{
   const key=cards[i];card.dataset.v303World=key;
@@ -287,6 +287,8 @@ function mount(){
    canvas.setAttribute('aria-hidden','true');canvas.dataset.world=key;graphic.prepend(canvas);
   }
   card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',key+' cinematic preview');
+  if(card.dataset.v303Bound==='1')return;
+  card.dataset.v303Bound='1';
   const activate=()=>{
    cardsNow.forEach(el=>{el.classList.toggle('is-active',el===card);el.setAttribute('aria-current',String(el===card))});
    state.active=key;wake();
@@ -301,11 +303,14 @@ function mount(){
   const canvas=document.createElement('canvas');canvas.id='v303-theater-world';
   canvas.setAttribute('aria-hidden','true');screen.prepend(canvas);
  }
- screen.addEventListener('pointermove',e=>{if(reduce()||mobile())return;
+ if(screen.dataset.v303Bound!=='1'){
+  screen.dataset.v303Bound='1';
+  screen.addEventListener('pointermove',e=>{if(reduce()||mobile())return;
   const b=screen.getBoundingClientRect();
   state.parallax=[((e.clientX-b.left)/b.width-.5)*30,((e.clientY-b.top)/b.height-.5)*20];
  },{passive:true});
  screen.addEventListener('pointerleave',()=>{state.parallax=[0,0]},{passive:true});
+ }
  if('IntersectionObserver'in window){
   observer=new IntersectionObserver(entries=>{
    for(const entry of entries){
@@ -321,11 +326,20 @@ function mount(){
 }
 if(!document.getElementById('scholaverum-r303-worlds-css')){
  const l=document.createElement('link');l.id='scholaverum-r303-worlds-css';l.rel='stylesheet';
- l.href='scholark-v133-cinematic-worlds.css?v=20261030-r303';document.head.appendChild(l);
+ l.href='scholark-v133-cinematic-worlds.css?v=20261030-r304';document.head.appendChild(l);
 }
 window.addEventListener('hashchange',()=>{if(!home())detach();setTimeout(mount,85)});
 window.addEventListener('pageshow',()=>setTimeout(mount,80));
 window.addEventListener('pagehide',detach);
+let resizeQueued=false;
+window.addEventListener('resize',()=>{
+ if(resizeQueued)return;resizeQueued=true;
+ requestAnimationFrame(()=>{
+  resizeQueued=false;if(!home())return;
+  activeCards().forEach(card=>{delete card.dataset.v303Painted});
+  renderOnce(performance.now());wake();
+ });
+},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0}else wake()});
 window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change',()=>{state.reduced=reduce();wake()});
 ['scholaverum:editorial-home-mounted','scholark-runtime-ready','scholark-language-applied','scholark-language-change','scholark-return-home'].forEach(name=>window.addEventListener(name,()=>{setTimeout(mount,120);setTimeout(mount,550)}));
