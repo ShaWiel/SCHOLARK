@@ -1,3 +1,20 @@
+# SCHOLAVERUM r304 — production live verification (2026-10-30)
+
+- Render application commit: `a23547d57065d11cbb21743d6244c81bd2190106`
+- Render deployment: `dep-dbig8m942hec73f3s1qg`
+- Production service: `scholark-web`; manual deploy, Auto Deploy off
+- Live URL: https://scholark-app-shawiel.onrender.com
+- Release: `r304-cinematic-depth-stability`
+- Standard GitHub CI and CodeQL: successful on PR source SHA `62e96f83813229a9161fd428a60049ba6b63b061`.
+- Production release gate: run `41125798675`, successful on deployed merge SHA.
+- Render deploy: confirmed **live** and commit matches approved release.
+- Postdeploy smoke: triggered by this documentation-only `[live-smoke]` commit.
+- No Supabase schema migration, data mutation, Edge Function replacement or secret changes required for these public Canvas2D/CSS homepage refinements.
+- Paddle remains Sandbox, Connect remains Coming Soon.
+- The GitHub live-smoke trigger only changes this document, not the already deployed application binary.
+
+---
+
 # SCHOLAVERUM r278 production live validation
 
 ## Release identity
