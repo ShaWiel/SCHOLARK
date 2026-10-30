@@ -10,11 +10,11 @@ const reduce=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matc
 const home=()=>!!document.body?.classList.contains('v280-home-rebuild')&&!!$('#v280-editorial-home');
 const mobile=()=>innerWidth<760;
 const cfg={
- arki:{name:'Intelligence Core',shade:'#9b65f8',light:'#c9ff6a',base:'#09081c',accent:'#e6b9ff',stars:101},
- tutor:{name:'Knowledge Galaxy',shade:'#537bc9',light:'#c9ff6a',base:'#071621',accent:'#d7eaff',stars:119},
- language:{name:'Global Connection',shade:'#9b67eb',light:'#aaffb0',base:'#130c2c',accent:'#f6d0ff',stars:137},
- focus:{name:'Time Observatory',shade:'#547bbb',light:'#adc7f9',base:'#0a1228',accent:'#b8ffdf',stars:151},
- schools:{name:'Discovery Planet',shade:'#735bd7',light:'#c9ff6a',base:'#091529',accent:'#c6eaf9',stars:163}
+ arki:{name:'Intelligence Core',shade:'#9b65f8',light:'#c9ff6a',base:'#09081c',mid:'#27163f',accent:'#e6b9ff',stars:101},
+ tutor:{name:'Knowledge Galaxy',shade:'#537bc9',light:'#c9ff6a',base:'#071621',mid:'#19344b',accent:'#d7eaff',stars:119},
+ language:{name:'Global Connection',shade:'#9b67eb',light:'#aaffb0',base:'#130c2c',mid:'#342052',accent:'#f6d0ff',stars:137},
+ focus:{name:'Time Observatory',shade:'#547bbb',light:'#adc7f9',base:'#0a1228',mid:'#17334e',accent:'#b8ffdf',stars:151},
+ schools:{name:'Discovery Planet',shade:'#735bd7',light:'#c9ff6a',base:'#091529',mid:'#182e51',accent:'#c6eaf9',stars:163}
 };
 const cards=['arki','tutor','language','focus'];
 const state={mounts:0,frames:0,visible:false,active:'arki',theater:'arki',reduced:reduce(),parallax:[0,0],last:0};
@@ -47,7 +47,7 @@ function starTexture(key){
 function frame(c,w,h,theme,t,camera,intense){
  const world=cfg[theme]||cfg.arki;
  const grad=c.createLinearGradient(0,0,w,h);
- grad.addColorStop(0,world.base);grad.addColorStop(.60,'#18132c');grad.addColorStop(1,'#060819');
+ grad.addColorStop(0,world.base);grad.addColorStop(.56,world.mid);grad.addColorStop(1,'#050715');
  c.fillStyle=grad;c.fillRect(0,0,w,h);
  const m=Math.min(w,h),move=reduce()?0:Math.sin(t*.11)*.025*m;
  glow(c,w*.23-camera[0]*.2,h*.24-camera[1]*.15,m*.83,world.shade,intense?.22:.16);
@@ -86,6 +86,43 @@ function polyline(c,pts,color,opacity,width){
  c.save();c.strokeStyle=color;c.lineWidth=width;c.globalAlpha=opacity;c.lineJoin='round';
  c.beginPath();pts.forEach(([x,y],i)=>i===0?c.moveTo(x,y):c.lineTo(x,y));c.stroke();c.restore();
 }
+
+/* Restrained background depth: slow star current and an occasional comet. */
+function atmosphere(c,w,h,key,t){
+ const world=cfg[key],s=Math.min(w,h),rand=seedRand(world.stars*57+19);
+ c.save();
+ for(let i=0;i<18;i++){
+  const px=rand(),py=rand(),speed=.0015+rand()*.0045;
+  const x=(((px+t*speed)%1)+1)%1*w,y=(py+Math.sin(t*.08+i)*.008)*h;
+  c.globalAlpha=.16+(i%4)*.075;c.fillStyle=i%5===0?world.light:'#edf0ff';
+  circ(c,x,y,.5+(i%5)*.19);c.fill();
+ }
+ c.globalAlpha=1;
+ arc(c,w*.48,h*.52,s*.62,s*.19,-.32,world.shade,.17,1.15,-.32,2.70);
+ arc(c,w*.59,h*.55,s*.52,s*.12,.37,world.light,.10,.9,pi,5.8);
+ if(!reduce()){
+  const phase=((t+world.stars*.093)%19+19)%19;
+  if(phase<1.85){
+   const fade=Math.sin(pi*phase/1.85),headX=w*(.89-phase*.15),headY=h*(.10+phase*.12),len=s*.12;
+   const streak=c.createLinearGradient(headX-len,headY-len*.54,headX,headY);
+   streak.addColorStop(0,hexRGBA(world.accent,0));streak.addColorStop(1,hexRGBA(world.light,.74));
+   c.strokeStyle=streak;c.lineWidth=Math.max(.7,s*.004);c.globalAlpha=fade*.65;
+   c.beginPath();c.moveTo(headX-len,headY-len*.54);c.lineTo(headX,headY);c.stroke();
+   c.globalAlpha=1;glow(c,headX,headY,s*.025,world.light,fade*.17);
+  }
+ }
+ c.restore();
+}
+function foregroundDust(c,w,h,key,t){
+ const world=cfg[key],s=Math.min(w,h),rand=seedRand(world.stars*19+7);c.save();
+ for(let i=0;i<8;i++){
+  const a=rand(),b=rand(),x=w*a+(reduce()?0:Math.sin(t*.12+i)*s*.012),y=h*b;
+  c.globalAlpha=.11+(i%3)*.055;c.fillStyle=i%3===0?world.light:world.accent;
+  circ(c,x,y,.7+(i%4)*.36);c.fill();
+ }
+ c.restore();
+}
+
 function arki(c,w,h,t,world,camera,hero){
  const scale=Math.min(w,h),cx=w*.54+camera[0]*.20,cy=h*.53+camera[1]*.14,r=scale*.20;
  const spin=t*.12,connections=[];
@@ -119,6 +156,11 @@ function arki(c,w,h,t,world,camera,hero){
  });
  const pulse=(t*.20)%TWO;
  arc(c,cx,cy,r*1.31,r*1.31,0,world.light,.25,1.4,pulse,pulse+.67);
+ for(let i=0;i<3;i++){
+  const a=t*(i%2?-.18:.21)+i*TWO/3,px=cx+Math.cos(a)*r*1.75,py=cy+Math.sin(a)*r*.76;
+  glow(c,px,py,r*.21,i%2?world.accent:world.light,.23);
+  c.fillStyle=i%2?world.accent:world.light;circ(c,px,py,Math.max(1.7,r*.025));c.fill();
+ }
 }
 function tutor(c,w,h,t,world,camera){
  const s=Math.min(w,h),x=w*.50+camera[0]*.2,y=h*.51+camera[1]*.13;
@@ -141,7 +183,7 @@ function tutor(c,w,h,t,world,camera){
  }
  c.font='600 '+Math.round(s*.13)+'px Inter,system-ui,sans-serif';
  c.textAlign='center';c.textBaseline='middle';c.fillStyle='#f3f7ff';c.fillText('∑',x,y);
- const coords=[[.17,.21,'x²'],[.81,.24,'π'],[.20,.75,'√'],[.78,.76,'f(x)']];
+ const coords=[[.17,.21,'x²'],[.81,.24,'π'],[.20,.75,'√'],[.78,.76,'f(x)'],[.52,.13,'E = mc²'],[.45,.91,'Δt']];
  coords.forEach(([fx,fy,txt],i)=>{
   c.font='600 '+Math.round(s*.036)+'px Inter,system-ui';c.fillStyle=world.light;
   c.globalAlpha=.48+.17*Math.sin(t*.5+i);c.fillText(txt,w*fx,h*fy);c.globalAlpha=1;
@@ -170,6 +212,12 @@ function languages(c,w,h,t,world,camera){
   [ [a,b],[d,e] ].forEach(([xx,yy])=>{glow(c,w*xx,h*yy,10,world.light,.25);circ(c,w*xx,h*yy,3);c.fillStyle=world.light;c.fill()});
   c.restore();
  });
+ pairs.forEach(([a,b,d,e],i)=>{
+  const p=(t*.045+i*.31)%1,q=1-p;
+  const px=q*q*w*a+2*q*p*w*.53+p*p*w*d;
+  const py=q*q*h*b+2*q*p*h*(i===1?.02:.42)+p*p*h*e;
+  glow(c,px,py,s*.045,world.light,.22);c.fillStyle=world.light;circ(c,px,py,Math.max(1.8,s*.008));c.fill();
+ });
  const words=[['Hola',.17,.17],['你好',.82,.14],['Hello',.16,.84],['Bonjour',.79,.83]];
  words.forEach(([word,fx,fy],i)=>{c.fillStyle='#e9e0ff';c.globalAlpha=.78;c.textAlign='center';
   c.font='700 '+Math.max(9,s*.045)+'px Inter,system-ui';
@@ -194,6 +242,8 @@ function focus(c,w,h,t,world,camera){
  c.lineWidth=2.5;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(secondAngle)*r*.72,Math.sin(secondAngle)*r*.72);c.stroke();
  c.strokeStyle='#ebf9ff';c.lineWidth=3.5;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(minuteAngle)*r*.47,Math.sin(minuteAngle)*r*.47);c.stroke();
  c.fillStyle=world.light;circ(c,0,0,4);c.fill();c.restore();
+ const sweep=(t*.065)%TWO;
+ arc(c,cx,cy,r*1.26,r*1.26,0,world.light,.35,Math.max(1.5,s*.007),sweep,sweep+.43);
  c.font='750 '+Math.max(10,s*.048)+'px Inter,system-ui';
  c.fillStyle='#dfe8ff';c.textAlign='center';c.fillText('25:00',cx,cy+r*1.28);
 }
@@ -207,8 +257,10 @@ function schools(c,w,h,t,world,camera){
 function paintWorld(ctx,w,h,key,now,camera,large=false){
  const world=cfg[key]||cfg.arki,t=reduce()?2:now*.001,focusTime=large;
  frame(ctx,w,h,key,t,camera,focusTime);
+ atmosphere(ctx,w,h,key,t);
  const draw=key==='arki'?arki:key==='tutor'?tutor:key==='language'?languages:key==='focus'?focus:schools;
  draw(ctx,w,h,t,world,camera,large);
+ foregroundDust(ctx,w,h,key,t);
  const fade=ctx.createLinearGradient(0,0,0,h);
  fade.addColorStop(0,'rgba(6,7,19,.08)');fade.addColorStop(.77,'rgba(6,7,19,0)');fade.addColorStop(1,'rgba(5,7,20,.21)');
  ctx.fillStyle=fade;ctx.fillRect(0,0,w,h);
