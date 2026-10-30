@@ -312,7 +312,9 @@ check(await visible('#v29-home-layer',8000),'History stress: Home did not recove
 await checkTransitionSingletons('history-final-home');
 
 await page.evaluate(()=>{location.hash='pricing'});
-await page.waitForFunction(()=>location.hash==='#pricing',{timeout:3000});
+// Editorial pricing intentionally normalizes #pricing to #home, then scrolls to the
+// canonical pricing section. Waiting for #pricing races against the route owner.
+await page.waitForFunction(()=>location.hash==='#home' && !!document.querySelector('#v280-pricing-slot #v41-home-pricing'),null,{timeout:10000});
 const plusCheckout='#v41-home-pricing .v41-plan.plus [data-plan="plus"]';
 check(await visible(plusCheckout,5000),'Plus checkout action is not visible on Pricing');
 await page.click(plusCheckout);

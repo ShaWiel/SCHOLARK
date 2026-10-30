@@ -57,3 +57,63 @@
  #v280-editorial-home .v298-feature *,
  #v280-editorial-home #v280-app-preview{animation:none!important;transition:none!important;transform:none!important}
 }
+
+/* SCHOLAVERUM r304 — sophisticated cinematic finish without neon, DOM duplication or expensive blur filters. */
+#v280-editorial-home .v303-world-canvas{
+ filter:saturate(1.13) contrast(1.035);
+}
+#v280-editorial-home .v298-feature{
+ transition:transform .48s cubic-bezier(.2,.8,.2,1),box-shadow .48s ease,border-color .48s ease;
+}
+#v280-editorial-home .v298-feature.is-active,
+#v280-editorial-home .v298-feature:focus-visible{
+ transform:translateY(-3px);border-color:rgba(139,112,202,.42);
+}
+#v280-editorial-home .v298-feature-graphic{
+ box-shadow:inset 0 0 0 1px rgba(245,239,255,.08),0 20px 44px rgba(6,8,23,.16);
+}
+#v280-editorial-home .v298-feature-graphic .v298-glass-window{
+ box-shadow:0 22px 48px rgba(2,3,15,.43),inset 0 1px 0 rgba(255,255,255,.23);
+}
+#v280-editorial-home .v298-feature-graphic .v298-glass-window i{
+ border-radius:99px;
+ box-shadow:0 0 8px rgba(223,213,255,.18);
+}
+#v280-editorial-home .v298-feature-graphic .v302-lightnode{
+ animation:v304-light-breathe 5s ease-in-out infinite;
+}
+#v280-editorial-home .v298-feature.is-active .v298-graphic-main{
+ box-shadow:0 21px 42px rgba(3,4,20,.48),inset 0 1px 0 rgba(255,255,255,.22);
+}
+#v280-editorial-home .v298-feature-graphic.arki .v298-glass-window{
+ border-color:rgba(196,179,254,.40);
+}
+#v280-editorial-home .v298-feature-graphic.tutor .v298-glass-window{
+ border-color:rgba(181,234,214,.43);
+}
+#v280-editorial-home .v298-feature-graphic.language .v298-glass-window{
+ border-color:rgba(234,193,248,.40);
+}
+#v280-editorial-home .v298-feature-graphic.focus .v298-glass-window{
+ border-color:rgba(173,206,251,.42);
+}
+#v280-editorial-home #v280-demo:after{
+ box-shadow:inset 0 0 85px rgba(2,4,17,.36);
+}
+@keyframes v304-light-breathe{
+ 0%,100%{opacity:.72;box-shadow:0 0 0 4px rgba(201,255,106,.08),0 0 14px rgba(201,255,106,.30)}
+ 50%{opacity:1;box-shadow:0 0 0 7px rgba(201,255,106,.12),0 0 23px rgba(201,255,106,.48)}
+}
+@media (max-width:760px){
+ #v280-editorial-home .v298-feature.is-active,
+ #v280-editorial-home .v298-feature:focus-visible{transform:none}
+ #v280-editorial-home .v303-world-canvas{filter:saturate(1.07)}
+ #v280-editorial-home .v298-feature-graphic .v298-glass-window{backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+ #v280-editorial-home .v298-feature,
+ #v280-editorial-home .v298-feature-graphic .v302-lightnode{
+  animation:none!important;transition:none!important;
+ }
+ #v280-editorial-home .v298-feature.is-active{transform:none!important}
+}

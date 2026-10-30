@@ -174,6 +174,11 @@ function screen(c,w,h,index,time,kind){
  if(index===0||index===7){
   blurred(c,w*.69,h*.28,size*.55,world.purple,.21);
   blurred(c,w*.88,h*.52,size*.41,world.lime,.10);
+   // Rich dark-violet atmosphere; keep the approved main planet and no ghost disc.
+   if(kind==='hero'){
+    blurred(c,w*.36,h*.37,size*.62,'#5c308d',.14);
+    blurred(c,w*.94,h*.42,size*.44,'#a17de3',.11);
+   }
  }
  if(index===5){smoothPlanet(c,w*.89,h*.77,size*.42,world,time*.001,.48)}
  else if(index===4){smoothPlanet(c,w*.94,h*.69,size*.39,world,time*.001,.40)}

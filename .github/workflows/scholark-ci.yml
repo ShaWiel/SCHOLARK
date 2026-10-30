@@ -54,6 +54,7 @@ jobs:
           node --check scholark-v130-cosmic-worlds.js
           node --check scholark-v133-cinematic-worlds.js
           node --check scripts/scholaverum-r303-cinematic-worlds-smoke.mjs
+          node --check scripts/scholaverum-r304-cinematic-depth-smoke.mjs
           node --check scripts/scholaverum-r300-cosmic-worlds-smoke.mjs
           node --check scripts/scholaverum-r301-front-orbits-smoke.mjs
           node --check scripts/scholaverum-r302-cinematic-stability-smoke.mjs
@@ -215,6 +216,8 @@ jobs:
         run: node scripts/scholaverum-r302-cinematic-stability-smoke.mjs http://127.0.0.1:10000
       - name: Verify r303 interactive cinematic feature worlds and performance
         run: node scripts/scholaverum-r303-cinematic-worlds-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r304 homepage depth, user control and animation stability
+        run: node scripts/scholaverum-r304-cinematic-depth-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle

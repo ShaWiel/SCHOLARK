@@ -131,6 +131,10 @@ function galleryMount(){
   const currentSection=$('#v298-discover');if(!currentSection?.isConnected)return;
   const rect=currentSection.getBoundingClientRect();
   if(rect.bottom<0||rect.top>innerHeight)return;
+  // Keep the user-selected scene visible while hovered or keyboard-focused.
+  if(currentSection.matches(':hover')||currentSection.contains(document.activeElement))return;
+  const chosen=$('.v298-feature.is-active',currentSection);
+  if(chosen)galleryIndex=Math.max(0,Math.min(gallery.length-1,Number(chosen.dataset.v298Gallery)||0));
   galleryIndex=(galleryIndex+1)%gallery.length;gallerySync();
  },5800);
 }
