@@ -92,10 +92,10 @@ function markup(){
  '<div class="v280-floating top"><span>AI TUTOR</span><strong>Understand more.</strong><div class="v280-mini-lines"><i></i><i></i><i></i><i></i></div></div>',
  '<div class="v280-floating bottom"><span>ARKI · AI COMPANION</span><strong>Ready for your next idea.</strong><small>✳ Thought → action</small></div></div>',
  '</div><div class="v306-hero-dock" aria-label="SCHOLAVERUM feature navigation"><div class="v306-dock-label"><b>EXPLORE / 01—04</b><span>SCHOLAVERUM</span></div>',
- '<button class="v306-journey" type="button" data-v280-route="ai"><span class="v306-journey-symbol">✳</span><span class="v306-journey-text"><b>ARKI</b><small>INTELLIGENCE</small></span><i aria-hidden="true">↗</i></button>',
- '<button class="v306-journey" type="button" data-v280-route="tutor"><span class="v306-journey-symbol">∑</span><span class="v306-journey-text"><b>AI TUTOR</b><small>DISCOVERY</small></span><i aria-hidden="true">↗</i></button>',
- '<button class="v306-journey" type="button" data-v280-route="language"><span class="v306-journey-symbol">文</span><span class="v306-journey-text"><b>LANGUAGES</b><small>CONNECTION</small></span><i aria-hidden="true">↗</i></button>',
- '<button class="v306-journey" type="button" data-v280-route="schools"><span class="v306-journey-symbol">⌖</span><span class="v306-journey-text"><b>SCHOOLS</b><small>EXPLORATION</small></span><i aria-hidden="true">↗</i></button></div>',
+ '<button class="v306-journey" type="button" data-v306-go="ai"><span class="v306-journey-symbol">✳</span><span class="v306-journey-text"><b>ARKI</b><small>INTELLIGENCE</small></span><i aria-hidden="true">↗</i></button>',
+ '<button class="v306-journey" type="button" data-v306-go="tutor"><span class="v306-journey-symbol">∑</span><span class="v306-journey-text"><b>AI TUTOR</b><small>DISCOVERY</small></span><i aria-hidden="true">↗</i></button>',
+ '<button class="v306-journey" type="button" data-v306-go="language"><span class="v306-journey-symbol">文</span><span class="v306-journey-text"><b>LANGUAGES</b><small>CONNECTION</small></span><i aria-hidden="true">↗</i></button>',
+ '<button class="v306-journey" type="button" data-v306-go="schools"><span class="v306-journey-symbol">⌖</span><span class="v306-journey-text"><b>SCHOOLS</b><small>EXPLORATION</small></span><i aria-hidden="true">↗</i></button></div>',
  '<div class="v280-scroll-prompt">'+k('hero.scroll')+'<b aria-hidden="true">↓</b></div></section>',
  '<div class="v280-tape" aria-hidden="true"><div class="v280-tape-inner">'+tapeWords+tapeWords+'</div></div>',
  '<section class="v280-intro" id="v280-intro" aria-labelledby="v280-intro-title"><div class="v280-max">',
@@ -262,8 +262,9 @@ function sync(){
  revealPricingOnEntry();
 }
 document.addEventListener('click',ev=>{
- const hit=ev.target.closest?.('[data-v280-route],[data-v280-scroll],[data-v280-tab],[data-v280-open-feature]');if(!hit||!home())return;
+ const hit=ev.target.closest?.('[data-v280-route],[data-v306-go],[data-v280-scroll],[data-v280-tab],[data-v280-open-feature]');if(!hit||!home())return;
  if(hit.dataset.v280Tab){choose(hit.dataset.v280Tab);return}
+ if(hit.hasAttribute('data-v306-go')){ev.preventDefault();location.hash='#'+hit.dataset.v306Go;return}
  if(hit.hasAttribute('data-v280-route')){ev.preventDefault();location.hash='#'+hit.dataset.v280Route;return}
  if(hit.hasAttribute('data-v280-open-feature')){ev.preventDefault();location.hash='#'+(chosen==='arki'?'ai':chosen);return}
  if(hit.hasAttribute('data-v280-scroll')){ev.preventDefault();document.getElementById(hit.dataset.v280Scroll)?.scrollIntoView({behavior:reduced()?'instant':'smooth',block:'start'})}
