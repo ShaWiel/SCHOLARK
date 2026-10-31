@@ -1,3 +1,18 @@
+# SCHOLAVERUM r305 — live deployment verification
+
+- Application release: `r305-cinematic-worlds-reimagined`
+- Approved Render app commit: `8e9fcc43682ed876ef5be6d13ddb94a842b0b29a`
+- Render production service: `scholark-web`
+- Render deployment: `dep-dbildjmtlv9c73b2b9k0` (live)
+- Public URL: https://scholark-app-shawiel.onrender.com
+- Production logs confirmed release r305 and Supabase credit health self-test PASS (HTTP 200).
+- Full PR CI, CodeQL and merged production Release Gate all succeeded on their respective exact commits.
+- Supabase project is ACTIVE_HEALTHY; no SQL migration or Edge Function change required for frontend-only cinematic work.
+- No changes to the official logo, Paddle sandbox or Connect Coming Soon controls.
+- This document-only `[live-smoke]` commit requests post-deploy browser + API production validation without rebuilding or redeploying the application binary.
+
+---
+
 # SCHOLAVERUM r304 — production live verification (2026-10-30)
 
 - Render application commit: `a23547d57065d11cbb21743d6244c81bd2190106`
