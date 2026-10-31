@@ -252,10 +252,35 @@ function attach(host,key,role){
  if(watcher)watcher.observe(host);
  else{obj.visible=true;draw(obj,performance.now(),true)}
 }
+function decorateTools(root){
+ const keys=['arki','tutor','planner','flashcards','progress','schools'];
+ const routes=['ai','tutor','planner','flashcards','progress','schools'];
+ const cards=[...root.querySelectorAll('.v280-tool')];
+ cards.forEach((card,i)=>{
+  if(i>=keys.length||card.dataset.v307Tool)return;
+  card.dataset.v307Tool=keys[i];
+  const scene=document.createElement('div');scene.className='v307-tool-sculpture';
+  scene.setAttribute('aria-hidden','true');
+  scene.innerHTML='<div class="v307-sculpt-body"><i></i><i></i><i></i><i></i><span></span></div>';
+  const icon=card.querySelector('.v280-symbol');
+  if(icon)icon.insertAdjacentElement('afterend',scene);else card.prepend(scene);
+  const link=document.createElement('button');link.className='v307-tool-open';link.type='button';link.dataset.v280Route=routes[i];
+  link.innerHTML='<span class="v307-tool-open-copy"></span><span aria-hidden="true">↗</span>';
+  link.setAttribute('aria-label','Open '+(card.querySelector('h3')?.textContent||keys[i]));
+  card.append(link);
+ });
+ updateToolLabels(root);
+}
+function updateToolLabels(root){
+ let dutch=(document.documentElement.lang||'').toLowerCase().startsWith('nl');
+ try{dutch=(localStorage.getItem('scholark_ui_language')||document.documentElement.lang||'').toLowerCase().startsWith('nl')}catch{}
+ root.querySelectorAll('.v307-tool-open-copy').forEach(el=>{el.textContent=dutch?'Open deze functie':'Explore this feature'});
+}
 function mount(){
  const root=ROOT();if(!HOME()||!root){if(mountedRoot)clear();return}
  if(mountedRoot===root&&stages.size)return;
  clear();mountedRoot=root;root.classList.add('v307-universe');
+ decorateTools(root);
  if('IntersectionObserver'in window){
   watcher=new IntersectionObserver(entries=>{for(const e of entries){
    for(const obj of stages.values())if(obj.node.parentElement===e.target){obj.visible=e.isIntersecting;if(obj.visible)draw(obj,performance.now(),true)}
@@ -280,7 +305,7 @@ if(!document.querySelector('#scholaverum-r307-3d-style')){
  link.href='scholark-v134-immersive-3d.css?v=20261031-r307';document.head.appendChild(link);
 }
 for(const name of ['scholaverum:editorial-home-mounted','scholark-runtime-ready','scholark-return-home','scholark-language-applied','scholark-language-change','pageshow']){
- window.addEventListener(name,()=>setTimeout(mount,85));
+ window.addEventListener(name,()=>{setTimeout(mount,85);setTimeout(()=>{const root=ROOT();if(root)updateToolLabels(root)},130)});
 }
 window.addEventListener('hashchange',()=>{if(!HOME())clear();setTimeout(mount,110)});
 window.addEventListener('pagehide',()=>{if(raf)cancelAnimationFrame(raf);raf=0});
