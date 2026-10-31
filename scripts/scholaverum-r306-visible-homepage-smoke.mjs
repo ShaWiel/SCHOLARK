@@ -9,6 +9,20 @@ try {
  const page=await desktop.newPage();
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForTimeout(1800);
+ const state=await page.evaluate(()=>({
+  release:document.documentElement.dataset.scholarkRelease,
+  root:!!document.querySelector('#v280-editorial-home'),
+  hero:!!document.querySelector('#v280-hero'),
+  dockButtons:document.querySelectorAll('#v280-hero .v306-journey').length,
+  intro:!!document.querySelector('.v306-intro-track'),
+  worldCanvas:!!document.querySelector('.v303-world-canvas'),
+  brand:!!document.querySelector('#v280-hero .v298-core img'),
+  dockStyle:document.querySelector('.v306-hero-dock')?getComputedStyle(document.querySelector('.v306-hero-dock')).display:null,
+  scripts:[...document.scripts].map(x=>x.src.split('/').pop()).filter(x=>/v124|v128|v133/.test(x)),
+  css:[...document.styleSheets].map(x=>x.href?.split('/').pop()).filter(x=>x&&/v124|v133/.test(x))
+ }));
+ console.log('R306 VISIBLE HOME INITIAL STATE',JSON.stringify(state));
  await page.waitForFunction(()=>document.querySelectorAll('#v280-hero .v306-journey').length===4 &&
   document.querySelector('.v306-intro-track') && document.querySelector('.v303-world-canvas') &&
   document.querySelector('#v280-hero .v298-core img') &&
