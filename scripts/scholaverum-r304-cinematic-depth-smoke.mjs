@@ -21,8 +21,8 @@ try{
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.__SCHOLAVERUM_R303_WORLDS__?.state?.()?.canvases===4 &&
   document.querySelector('#v303-theater-world')?.width>0,null,{timeout:60000});
- assert.equal(await page.evaluate(()=>window.__SCHOLAVERUM_R303_WORLDS__.version),
-  'r304-cinematic-depth-stability','new cinematic engine active');
+ assert.ok(['r304-cinematic-depth-stability','r305-cinematic-worlds-reimagined'].includes(
+  await page.evaluate(()=>window.__SCHOLAVERUM_R303_WORLDS__.version)),'r304 baseline remains compatible with upgraded cinematic engine');
  assert.equal(await page.locator('.v303-world-canvas').count(),4);
  const mountsBefore=await page.evaluate(()=>window.__SCHOLAVERUM_R303_WORLDS__.state().mounts);
  await page.evaluate(()=>{for(let i=0;i<4;i++)window.__SCHOLAVERUM_R303_WORLDS__.mount()});
