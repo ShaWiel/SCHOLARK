@@ -53,6 +53,16 @@ function frame(c,w,h,theme,t,camera,intense){
  glow(c,w*.23-camera[0]*.2,h*.24-camera[1]*.15,m*.83,world.shade,intense?.22:.16);
  glow(c,w*.83+move,h*.74,m*.62,world.light,intense?.15:.10);
  glow(c,w*.57,h*.40,m*.54,world.accent,.08);
+ // Volumetric, deep-space shafts amplify the sense of scale on large screens.
+ c.save();c.globalCompositeOperation='screen';
+ for(let i=0;i<3;i++){
+  const sx=w*(.14+i*.32),sy=h*(i%2?.02:.98),ex=sx+w*.24,ey=i%2?h*.96:h*.04;
+  const ray=c.createLinearGradient(sx,sy,ex,ey);
+  ray.addColorStop(0,hexRGBA(world.shade,.10));ray.addColorStop(.55,hexRGBA(world.accent,.028));
+  ray.addColorStop(1,hexRGBA(world.shade,0));
+  c.fillStyle=ray;c.beginPath();c.moveTo(sx-w*.11,sy);c.lineTo(sx+w*.11,sy);c.lineTo(ex,ey);c.closePath();c.fill();
+ }
+ c.restore();
  const sheet=starTexture(theme);
  c.save();c.globalAlpha=.65;c.drawImage(sheet,-w*.04-camera[0]*.6,-h*.04-camera[1]*.6,w*1.08,h*1.08);c.restore();
  for(let i=0;i<22;i++){
@@ -396,7 +406,7 @@ function prepare(canvas,limit=820){
 }
 function draw(card,now){
  const canvas=$('canvas.v303-world-canvas',card);if(!canvas)return;
- const p=prepare(canvas,card.classList.contains('is-active')?720:440);if(!p)return;
+ const p=prepare(canvas,card.classList.contains('is-active')?960:720);if(!p)return;
  const key=card.dataset.v303World||'arki';
  const tilt=[state.parallax[0]*.28,state.parallax[1]*.28];
  paintWorld(p.ctx,p.w,p.h,key,now,tilt);
@@ -419,8 +429,15 @@ function renderOnce(now){
  const elements=activeCards();
  const current=elements.find(el=>el.classList.contains('is-active'))||elements[0];
  elements.forEach(card=>{
-  if(card===current){if(cardInView||card.dataset.v303Painted!=='1'){draw(card,now);card.dataset.v303Painted='1'}}
-  else if(card.dataset.v303Painted!=='1'){draw(card,2e3+cards.indexOf(card.dataset.v303World)*400);card.dataset.v303Painted='1'}
+  // Previously only the selected card moved; the other three stayed frozen.
+  // r305 gives every card its own animation while throttling offscreen work.
+  const rect=card.getBoundingClientRect();
+  const visible=cardInView&&rect.bottom>-120&&rect.top<innerHeight+120;
+  const previous=Number(card.dataset.v305LastDraw||0);
+  const cadence=card===current?(mobile()?90:42):(mobile()?230:125);
+  if(card.dataset.v303Painted!=='1'||(visible&&!reduce()&&now-previous>=cadence)){
+   draw(card,now);card.dataset.v303Painted='1';card.dataset.v305LastDraw=String(now);
+  }
  });
  if(theaterInView)drawTheater(now);
  state.active=current?.dataset.v303World||'arki';state.frames++;
