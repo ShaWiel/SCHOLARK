@@ -477,11 +477,17 @@ function mount(){
   if(card.dataset.v303Bound==='1')return;
   card.dataset.v303Bound='1';
   const activate=()=>{
-   cardsNow.forEach(el=>{el.classList.toggle('is-active',el===card);el.setAttribute('aria-current',String(el===card))});
+   // Always select the live gallery; language changes can replace card elements.
+   activeCards().forEach(el=>{el.classList.toggle('is-active',el===card);el.setAttribute('aria-current',String(el===card))});
    state.active=key;wake();
   };
-  card.addEventListener('pointerenter',activate);
+  card.addEventListener('pointerenter',()=>{
+   const focused=document.activeElement?.closest?.('#v298-feature-gallery .v298-feature');
+   if(focused&&focused!==card)return; // keyboard selection wins over stale hover
+   activate();
+  });
   card.addEventListener('focus',activate);
+  card.addEventListener('focusin',activate);
   card.addEventListener('click',activate);
   card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}});
  });
