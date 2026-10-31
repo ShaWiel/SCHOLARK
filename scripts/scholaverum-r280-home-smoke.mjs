@@ -65,7 +65,7 @@ try{
   assert.ok(mobile.cardsFit,'feature cards must be inside mobile viewport');
   assert.equal(mobile.motion,'none','reduced-motion preference must stop marquee');
   assert.equal(mobile.mobileMenu,'none','mobile topbar must stay uncluttered');
-  await page.locator('#v280-hero [data-v280-route="ai"]').click();
+  await page.locator('#v280-hero .v280-hero-actions [data-v280-route="ai"]').click();
   await page.waitForFunction(()=>location.hash==='#ai'&&!document.body.classList.contains('v280-home-rebuild'),null,{timeout:20000});
   await page.evaluate(()=>location.hash='#home');
   await page.waitForFunction(()=>document.body.classList.contains('v280-home-rebuild')&&!!document.querySelector('#v280-editorial-home'),null,{timeout:20000});
