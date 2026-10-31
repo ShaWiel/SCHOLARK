@@ -984,3 +984,24 @@ body.v280-home-rebuild #v280-editorial-home #v280-hero{
  #v280-editorial-home .v306-journey,
  #v280-editorial-home .v280-tool{transition:none!important}
 }
+
+
+/* r306 mobile GPU budget: preserve the visual language while avoiding
+   WebKit's expensive translucent backdrop compositing above high-DPR canvases. */
+@media(max-width:680px){
+ #v280-editorial-home .v306-hero-dock{
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  background:#17112f;box-shadow:0 15px 39px rgba(4,3,19,.33);
+ }
+ #v280-editorial-home .v306-intro-track::before,
+ #v280-editorial-home .v306-intro-track::after,
+ #v280-editorial-home .v280-languages,
+ #v280-editorial-home .v280-navigator{
+  animation:none!important;will-change:auto!important;
+ }
+ #v280-editorial-home #v280-hero .v280-hero-art{
+  filter:none!important;
+ }
+ #v280-editorial-home .v280-tool,
+ #v280-editorial-home .v306-journey{box-shadow:none}
+}
