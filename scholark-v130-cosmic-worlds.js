@@ -159,6 +159,38 @@ function spaceDetails(c,w,h,index,time,kind,world){
   meteor(c,w*(right-cycle*.08),h*(top+cycle*.049),small*(.10+i*.033),colors[i],active*(i===0?.88:.56));
  }
 }
+/* r305: broad celestial aurora and moving constellations behind the official
+   hero planet. No duplicate planet layer and no decorative object above copy. */
+function cinematicAurora(c,w,h,time,world){
+ const t=REDUCE()?1.4:time*.00011,short=Math.min(w,h);
+ c.save();c.globalCompositeOperation='screen';
+ for(let ribbon=0;ribbon<3;ribbon++){
+  const origin=.05+ribbon*.17,phase=t+ribbon*.9;
+  const beginX=w*(.43+ribbon*.07),beginY=h*(origin+.04*Math.sin(phase));
+  const endX=w*(1.07+ribbon*.06),endY=h*(.32+ribbon*.18);
+  for(let band=5;band>=0;band--){
+   c.strokeStyle=ribbon%2?'#9d6cd9':ribbon===2?'#c9ff6a':'#674ba8';
+   c.globalAlpha=(ribbon===2?.015:.026)*(6-band)/6;
+   c.lineWidth=short*(.012+band*.015);
+   c.beginPath();c.moveTo(beginX,beginY);
+   c.bezierCurveTo(w*.64,h*(.01+ribbon*.10)+Math.sin(phase)*h*.035,w*.78,h*(.75-ribbon*.06),endX,endY);
+   c.stroke();
+  }
+ }
+ c.restore();
+ const stars=RAND(90451);
+ for(let i=0;i<64;i++){
+  const x=w*(.34+stars()*.67),y=h*(.04+stars()*.92),a=(.22+.35*stars())*(.75+.25*Math.sin(t*13+i));
+  const r=Math.max(.55,Math.min(2.4,short*(.00065+stars()*.0014)));
+  c.fillStyle=i%6===0?world.lime:'#ece2ff';c.globalAlpha=a;
+  ellipse(c,x,y,r,r);c.fill();
+  if(i%13===0){
+   c.strokeStyle='#d1c2f5';c.globalAlpha=a*.35;c.lineWidth=.7;
+   c.beginPath();c.moveTo(x-r*5,y);c.lineTo(x+r*5,y);c.moveTo(x,y-r*5);c.lineTo(x,y+r*5);c.stroke();
+  }
+ }
+ c.globalAlpha=1;
+}
 function screen(c,w,h,index,time,kind){
  const world=worlds[index]||worlds[0],tex=nebula(world.seed,world.purple,world.lime,world.light,index);
  const zoom=1.08+(REDUCE()?0:.018*Math.sin(time*.00008+index)),pan=REDUCE()?0:Math.sin(time*.00012+index)*w*.012;
@@ -176,8 +208,8 @@ function screen(c,w,h,index,time,kind){
   blurred(c,w*.88,h*.52,size*.41,world.lime,.10);
    // Rich dark-violet atmosphere; keep the approved main planet and no ghost disc.
    if(kind==='hero'){
-    blurred(c,w*.36,h*.37,size*.62,'#5c308d',.14);
-    blurred(c,w*.94,h*.42,size*.44,'#a17de3',.11);
+    blurred(c,w*.36,h*.37,size*.75,'#6e379e',.23);
+    blurred(c,w*.94,h*.42,size*.55,'#a17de3',.18);
    }
  }
  if(index===5){smoothPlanet(c,w*.89,h*.77,size*.42,world,time*.001,.48)}
@@ -194,6 +226,7 @@ function screen(c,w,h,index,time,kind){
   asteroid(c,ax,ay,sz,a%3?'#695b8c':'#b1a3d5',theta+(REDUCE()?0:time*.000028*(a%3)));
  }
  spaceDetails(c,w,h,index,time,kind,world);
+ if(kind==='hero')cinematicAurora(c,w,h,time,world);
  // Screen-space illuminated foreground dust and vignette for readability.
  const veil=c.createLinearGradient(0,0,w,0);
  veil.addColorStop(0,'rgba(5,6,15,.79)');veil.addColorStop(.32,'rgba(5,6,15,.60)');
