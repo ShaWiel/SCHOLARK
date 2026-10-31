@@ -29,6 +29,7 @@ try{
  await page.locator('[data-v303-world="tutor"]').hover();
  await page.waitForFunction(()=>document.querySelector('[data-v303-world="tutor"]')?.classList.contains('is-active'),null,{timeout:6000});
  await page.locator('[data-v303-world="language"]').focus();
+ console.log('R303 KEYBOARD FOCUS',JSON.stringify(await page.evaluate(()=>({focused:document.activeElement?.getAttribute('data-v303-world'),active:[...document.querySelectorAll('#v298-feature-gallery .is-active')].map(e=>e.dataset.v303World),galleryCards:document.querySelectorAll('#v298-feature-gallery .v298-feature').length,gpu:window.__SCHOLAVERUM_R307_3D__?.state?.()}))));
  await page.waitForFunction(()=>document.querySelector('[data-v303-world="language"]')?.classList.contains('is-active'),null,{timeout:6000});
  await page.locator('#v280-demo').scrollIntoViewIfNeeded();
  await page.locator('[data-v280-tab="tutor"]').click();
