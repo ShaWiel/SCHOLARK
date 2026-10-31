@@ -12,6 +12,9 @@ const browser=await chromium.launch({headless:true});
 try{
   const context=await browser.newContext({viewport:{width:1280,height:800}});
   const page=await context.newPage();
+  // The lifecycle smoke validates Supabase session flows, not the external bot provider.
+  // Keep security configuration deterministic so CAPTCHA discovery cannot stall mocked requests.
+  await page.route('**/api/security/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({turnstile:{enabled:false}})}));
 
   await page.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
   await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
