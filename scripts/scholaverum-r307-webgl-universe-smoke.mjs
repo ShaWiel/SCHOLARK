@@ -15,6 +15,7 @@ try{
  await page.waitForFunction(()=>document.body?.classList.contains('v280-home-rebuild')&&
    window.__SCHOLAVERUM_R307_3D__?.state().scenes>=8 &&
    document.querySelector('#scholaverum-r307-3d-style'),null,{timeout:60000});
+ await page.waitForFunction(()=>!!document.querySelector('#v280-hero .v299-logo, #v280-hero img[src*="scholaverum-official-"]'),null,{timeout:60000});
  await page.waitForTimeout(950);
  let status=await page.evaluate(()=>({
    version:window.__SCHOLAVERUM_R307_3D__.version,
@@ -24,7 +25,7 @@ try{
    duo:document.querySelectorAll('.v280-panel-graphic > .v307-gpu').length,
    theater:!!document.querySelector('#v280-demo > .v307-theater-world'),
    hero:!!document.querySelector('#v280-hero > .v307-cosmic-background'),
-   officialLogo:!!document.querySelector('#v280-hero img[src*="scholaverum-official-"]'),
+   officialLogo:!!document.querySelector('#v280-hero .v299-logo, #v280-hero img[src*="scholaverum-official-"]'),
    tools:document.querySelectorAll('.v280-tool').length,
    toolSculptures:document.querySelectorAll('.v307-tool-sculpture').length,
    toolRoutes:[...document.querySelectorAll('.v307-tool-open')].map(n=>n.dataset.v280Route),
