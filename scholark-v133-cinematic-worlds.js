@@ -413,7 +413,7 @@ function draw(card,now){
 }
 function drawTheater(now){
  const root=$('#v280-demo'),preview=$('#v280-app-preview',root);
- const canvas=$('#v303-theater-world',root);if(!canvas||!preview||root.dataset.v307Gpu==='1')return;
+ const canvas=$('#v303-theater-world',root);if(!canvas||!preview)return;
  const key=preview.dataset.scene||'arki';
  const p=prepare(canvas,1100);if(!p)return;
  const tilt=[state.parallax[0]*.9,state.parallax[1]*.7];
