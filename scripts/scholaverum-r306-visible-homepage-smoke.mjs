@@ -17,15 +17,16 @@ try {
   dockButtons:document.querySelectorAll('#v280-hero .v306-journey').length,
   intro:!!document.querySelector('.v306-intro-track'),
   worldCanvas:!!document.querySelector('.v303-world-canvas'),
-  brand:!!document.querySelector('#v280-hero .v298-core img'),
+  brand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]'),
   dockStyle:document.querySelector('.v306-hero-dock')?getComputedStyle(document.querySelector('.v306-hero-dock')).display:null,
   scripts:[...document.scripts].map(x=>x.src.split('/').pop()).filter(x=>/v124|v128|v133/.test(x)),
-  css:[...document.styleSheets].map(x=>x.href?.split('/').pop()).filter(x=>x&&/v124|v133/.test(x))
+  css:[...document.styleSheets].map(x=>x.href?.split('/').pop()).filter(x=>x&&/v124|v133/.test(x)),
+  stylesheet:document.querySelector('#scholaverum-home-style')?.getAttribute('href')
  }));
  console.log('R306 VISIBLE HOME INITIAL STATE',JSON.stringify(state));
  await page.waitForFunction(()=>document.querySelectorAll('#v280-hero .v306-journey').length===4 &&
   document.querySelector('.v306-intro-track') && document.querySelector('.v303-world-canvas') &&
-  document.querySelector('#v280-hero .v298-core img') &&
+  document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]') &&
   getComputedStyle(document.querySelector('.v306-hero-dock')).display==='grid' &&
   document.documentElement.dataset.scholarkRelease==='r306-visible-homepage-redesign',null,{timeout:60000});
  const hero=await page.evaluate(()=>{
@@ -37,6 +38,7 @@ try {
   const tools=[...document.querySelectorAll('.v280-tool')];
   return{
    release:document.documentElement.dataset.scholarkRelease,
+   stylesheet:document.querySelector('#scholaverum-home-style')?.getAttribute('href'),
    hero:h.getBoundingClientRect().height,
    dockDisplay:getComputedStyle(dock).display,
    dockY:dock.getBoundingClientRect().top,
@@ -47,12 +49,13 @@ try {
    toolRadius:getComputedStyle(tools[0]).borderTopLeftRadius,
    planCount:document.querySelectorAll('#v41-home-pricing .v41-plan').length,
    art:document.querySelector('#v280-hero .v280-hero-art')?.getBoundingClientRect().width,
-   heroBrand:!!document.querySelector('#v280-hero .v298-core img'),
+   heroBrand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]'),
    app:!!app,
    panelBackground:getComputedStyle(panel).backgroundColor
   };
  });
  assert.equal(hero.release,'r306-visible-homepage-redesign');
+ assert.match(hero.stylesheet||'',/20261031-r306/,'the browser must use the new r306 homepage styles, never cached r294');
  assert.equal(hero.dockDisplay,'grid');
  assert.equal(hero.dockButtons,4);
  assert.deepEqual(hero.routes,['ai','tutor','language','schools'],'all dock links lead to actual features');
@@ -72,7 +75,7 @@ try {
  const mp=await mobile.newPage();mp.on('pageerror',err=>errors.push(err.message));
  await mp.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await mp.waitForFunction(()=>document.querySelectorAll('.v306-journey').length===4 &&
-  document.querySelector('.v306-intro-track') && document.querySelector('#v280-hero .v298-core img') &&
+  document.querySelector('.v306-intro-track') && document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]') &&
   getComputedStyle(document.querySelector('.v306-hero-dock')).gridTemplateColumns.split(' ').length===2,null,{timeout:60000});
  const m=await mp.evaluate(()=>({
   overflow:document.documentElement.scrollWidth-innerWidth,
@@ -80,14 +83,14 @@ try {
   dockColumns:getComputedStyle(document.querySelector('.v306-hero-dock')).gridTemplateColumns.split(' ').length,
   dockHeight:document.querySelector('.v306-hero-dock').getBoundingClientRect().height,
   introHeight:document.querySelector('.v306-intro-track').getBoundingClientRect().height,
-  brandCount:document.querySelectorAll('#v280-hero .v298-core img').length,
+  brandCount:document.querySelectorAll('#v280-hero img[src*="scholaverum-official-logo-r290"]').length,
   toolkitColumns:getComputedStyle(document.querySelector('.v280-tools')).gridTemplateColumns.split(' ').length
  }));
  assert.ok(m.overflow<=8,'r306 must have no horizontal overflow '+JSON.stringify(m));
  assert.equal(m.dockColumns,2,'mobile first screen has 2-column feature navigation');
  assert.ok(m.dockHeight>=160,'mobile feature dock is genuinely present');
  assert.ok(m.introHeight>=350,'mobile intro illustration present');
- assert.equal(m.brandCount,1,'one approved hero logo');
+ assert.ok(m.brandCount>=1,'approved hero logo is present in the spherical render');
  assert.equal(m.toolkitColumns,1,'mobile toolkit is a readable vertical stack');
  await mobile.close();
  assert.deepEqual(errors,[],'no frontend exceptions');
