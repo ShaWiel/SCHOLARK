@@ -171,7 +171,7 @@ void main(){
  float vignette=1.-.32*pow(length(uv-.5)*1.35,2.);
  pixel=vec4(pow(max(bg*vignette,0.),vec3(.87)),1.);
 }
-*/}).toString().split('/*')[1].split('*/')[0];
+*/}).toString().split('/*')[1].split('*/')[0].trimStart();
 const stages=new Map();
 let watcher=null,raf=0,previous=0,mountedRoot=null,resizeHandler=null;
 const SCENES={arki:0,tutor:1,language:2,focus:3,schools:4,cosmos:5};
@@ -183,10 +183,10 @@ function init(node,key){
  let gl;try{gl=node.getContext('webgl2',{alpha:false,antialias:false,depth:false,stencil:false,powerPreference:'low-power',preserveDrawingBuffer:false})}catch{}
  if(!gl)return null;
  const v=makeShader(gl,gl.VERTEX_SHADER,vertex),f=makeShader(gl,gl.FRAGMENT_SHADER,fragment);
- if(!v||!f)return null;
+ if(!v||!f){if(v)gl.deleteShader(v);if(f)gl.deleteShader(f);gl.getExtension('WEBGL_lose_context')?.loseContext();return null;}
  const program=gl.createProgram();gl.attachShader(program,v);gl.attachShader(program,f);gl.linkProgram(program);
  gl.deleteShader(v);gl.deleteShader(f);
- if(!gl.getProgramParameter(program,gl.LINK_STATUS)){gl.deleteProgram(program);return null}
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS)){console.warn('[SCHOLAVERUM] WebGL linking fallback:',gl.getProgramInfoLog(program));gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext();return null}
  const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
  gl.useProgram(program);const pos=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
  const obj={node,gl,program,buffer,key,visible:false,ready:false,lastSize:'',lastFrame:0,uniforms:{}};
