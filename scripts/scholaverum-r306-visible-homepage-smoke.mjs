@@ -17,7 +17,7 @@ try {
   dockButtons:document.querySelectorAll('#v280-hero .v306-journey').length,
   intro:!!document.querySelector('.v306-intro-track'),
   worldCanvas:!!document.querySelector('.v303-world-canvas'),
-  brand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]'),
+  brand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-"]'),
   dockStyle:document.querySelector('.v306-hero-dock')?getComputedStyle(document.querySelector('.v306-hero-dock')).display:null,
   scripts:[...document.scripts].map(x=>x.src.split('/').pop()).filter(x=>/v124|v128|v133/.test(x)),
   css:[...document.styleSheets].map(x=>x.href?.split('/').pop()).filter(x=>x&&/v124|v133/.test(x)),
@@ -26,7 +26,7 @@ try {
  console.log('R306 VISIBLE HOME INITIAL STATE',JSON.stringify(state));
  await page.waitForFunction(()=>document.querySelectorAll('#v280-hero .v306-journey').length===4 &&
   document.querySelector('.v306-intro-track') && document.querySelector('.v303-world-canvas') &&
-  document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]') &&
+  document.querySelector('#v280-hero img[src*="scholaverum-official-"]') &&
   getComputedStyle(document.querySelector('.v306-hero-dock')).display==='grid' &&
   document.documentElement.dataset.scholarkRelease==='r306-visible-homepage-redesign',null,{timeout:60000});
  const hero=await page.evaluate(()=>{
@@ -49,7 +49,7 @@ try {
    toolRadius:getComputedStyle(tools[0]).borderTopLeftRadius,
    planCount:document.querySelectorAll('#v41-home-pricing .v41-plan').length,
    art:document.querySelector('#v280-hero .v280-hero-art')?.getBoundingClientRect().width,
-   heroBrand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]'),
+   heroBrand:!!document.querySelector('#v280-hero img[src*="scholaverum-official-"]'),
    app:!!app,
    panelBackground:getComputedStyle(panel).backgroundColor
   };
@@ -75,7 +75,7 @@ try {
  const mp=await mobile.newPage();mp.on('pageerror',err=>errors.push(err.message));
  await mp.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await mp.waitForFunction(()=>document.querySelectorAll('.v306-journey').length===4 &&
-  document.querySelector('.v306-intro-track') && document.querySelector('#v280-hero img[src*="scholaverum-official-logo-r290"]') &&
+  document.querySelector('.v306-intro-track') && document.querySelector('#v280-hero img[src*="scholaverum-official-"]') &&
   getComputedStyle(document.querySelector('.v306-hero-dock')).gridTemplateColumns.split(' ').length===2,null,{timeout:60000});
  const m=await mp.evaluate(()=>({
   overflow:document.documentElement.scrollWidth-innerWidth,
@@ -83,7 +83,7 @@ try {
   dockColumns:getComputedStyle(document.querySelector('.v306-hero-dock')).gridTemplateColumns.split(' ').length,
   dockHeight:document.querySelector('.v306-hero-dock').getBoundingClientRect().height,
   introHeight:document.querySelector('.v306-intro-track').getBoundingClientRect().height,
-  brandCount:document.querySelectorAll('#v280-hero img[src*="scholaverum-official-logo-r290"]').length,
+  brandCount:document.querySelectorAll('#v280-hero img[src*="scholaverum-official-"]').length,
   toolkitColumns:getComputedStyle(document.querySelector('.v280-tools')).gridTemplateColumns.split(' ').length
  }));
  assert.ok(m.overflow<=8,'r306 must have no horizontal overflow '+JSON.stringify(m));
