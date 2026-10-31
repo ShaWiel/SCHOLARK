@@ -30,7 +30,7 @@ try{
  assert.deepEqual(desktop.worlds,['arki','tutor','language','focus']);
  assert.equal(desktop.oldDecor,'none','old generic glass illustration no longer obscures scenes');
  assert.ok(desktop.sceneSize.every(([w,h])=>w>100&&h>100),'all four worlds render correctly');
- assert.equal(desktop.release,'r305-cinematic-worlds-reimagined');
+ assert.ok(['r305-cinematic-worlds-reimagined','r306-visible-homepage-redesign'].includes(desktop.release),'r305 cinematic visual contract survives r306 overall release');
  const cards=page.locator('#v298-feature-gallery .v298-feature');
  await cards.nth(0).scrollIntoViewIfNeeded();
  await page.waitForTimeout(250);
