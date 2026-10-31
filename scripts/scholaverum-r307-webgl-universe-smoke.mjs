@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 
 const base=(process.argv[2]||'http://127.0.0.1:10000').replace(/\/$/,'');
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const errors=[];
 try{
  const ctx=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1});
  const page=await ctx.newPage();
  page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',m=>{if(['warning','error'].includes(m.type()))console.log('R307 BROWSER LOG',m.type(),m.text().slice(0,900))});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForTimeout(6000);
+ console.log('R307 PRECHECK',JSON.stringify(await page.evaluate(()=>({body:document.body?.className,root:!!document.querySelector('#v280-editorial-home'),loader:!!window.__SCHOLAVERUM_R307_3D__,state:window.__SCHOLAVERUM_R307_3D__?.state?.(),css:!!document.querySelector('#scholaverum-r307-3d-style'),webgl2:!!document.createElement('canvas').getContext('webgl2'),scripts:[...document.querySelectorAll('script[src]')].filter(x=>x.src.includes('v134')).map(x=>x.src)}))));
  await page.waitForFunction(()=>document.body?.classList.contains('v280-home-rebuild')&&
    window.__SCHOLAVERUM_R307_3D__?.state().scenes>=8 &&
    document.querySelector('#scholaverum-r307-3d-style'),null,{timeout:60000});
