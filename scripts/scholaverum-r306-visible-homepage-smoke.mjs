@@ -11,6 +11,8 @@ try {
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>document.querySelectorAll('#v280-hero .v306-journey').length===4 &&
   document.querySelector('.v306-intro-track') && document.querySelector('.v303-world-canvas') &&
+  document.querySelector('#v280-hero .v298-core img') &&
+  getComputedStyle(document.querySelector('.v306-hero-dock')).display==='grid' &&
   document.documentElement.dataset.scholarkRelease==='r306-visible-homepage-redesign',null,{timeout:60000});
  const hero=await page.evaluate(()=>{
   const h=document.querySelector('#v280-hero'),buttons=[...document.querySelectorAll('.v306-journey')];
@@ -56,7 +58,8 @@ try {
  const mp=await mobile.newPage();mp.on('pageerror',err=>errors.push(err.message));
  await mp.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:60000});
  await mp.waitForFunction(()=>document.querySelectorAll('.v306-journey').length===4 &&
-  document.querySelector('.v306-intro-track'),null,{timeout:60000});
+  document.querySelector('.v306-intro-track') && document.querySelector('#v280-hero .v298-core img') &&
+  getComputedStyle(document.querySelector('.v306-hero-dock')).gridTemplateColumns.split(' ').length===2,null,{timeout:60000});
  const m=await mp.evaluate(()=>({
   overflow:document.documentElement.scrollWidth-innerWidth,
   heroWidth:document.querySelector('#v280-hero').getBoundingClientRect().width,
