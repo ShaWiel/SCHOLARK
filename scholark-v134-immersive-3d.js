@@ -240,17 +240,29 @@ function tick(now){
  if(active&&!REDUCED())raf=requestAnimationFrame(tick);
 }
 function wake(){if(!HOME()||document.hidden)return;if(!raf)raf=requestAnimationFrame(tick)}
+/* Compile GPU programs only when a feature enters the viewport. Eight eager contexts
+   were slowing down cold starts, language switching and low-memory mobile browsers. */
+function prime(slot){
+ if(!slot||!slot.node?.isConnected)return null;
+ if(slot.gl)return slot;
+ const active=init(slot.node,slot.key);
+ if(!active){slot.visible=false;return null}
+ active.visible=slot.visible;stages.set(slot.node,active);
+ return active;
+}
 function attach(host,key,role){
  if(!host||host.querySelector(':scope > canvas.v307-gpu'))return;
  const node=document.createElement('canvas');node.className='v307-gpu '+role;node.setAttribute('aria-hidden','true');node.dataset.scene=key;
  host.prepend(node);
- const obj=init(node,key);
- if(!obj){node.remove();return}
- stages.set(node,obj);
- node.addEventListener('webglcontextlost',e=>{e.preventDefault();obj.visible=false;obj.ready=false;host.classList.remove('v307-has-gpu');delete host.dataset.v307Gpu;}, {passive:false});
- node.addEventListener('webglcontextrestored',()=>{stages.delete(node);node.remove();attach(host,key,role);wake();});
+ const slot={node,key,gl:null,visible:false,ready:false,lastSize:''};stages.set(node,slot);
+ node.addEventListener('webglcontextlost',e=>{
+  e.preventDefault();const current=stages.get(node);
+  if(current){current.visible=false;current.ready=false}
+  host.classList.remove('v307-has-gpu');delete host.dataset.v307Gpu;
+ },{passive:false});
+ node.addEventListener('webglcontextrestored',()=>{stages.delete(node);node.remove();attach(host,key,role);wake()});
  if(watcher)watcher.observe(host);
- else{obj.visible=true;draw(obj,performance.now(),true)}
+ else{slot.visible=true;const active=prime(slot);if(active)draw(active,performance.now(),true)}
 }
 function decorateTools(root){
  const keys=['arki','tutor','planner','flashcards','progress','schools'];
@@ -289,7 +301,10 @@ function mount(){
  decorateTools(root);
  if('IntersectionObserver'in window){
   watcher=new IntersectionObserver(entries=>{for(const e of entries){
-   for(const obj of stages.values())if(obj.node.parentElement===e.target){obj.visible=e.isIntersecting;if(obj.visible)draw(obj,performance.now(),true)}
+   for(const slot of stages.values())if(slot.node.parentElement===e.target){
+    slot.visible=e.isIntersecting;
+    if(slot.visible){const active=prime(slot);if(active){active.visible=true;draw(active,performance.now(),true)}}
+   }
   }wake();},{rootMargin:'80px 0px',threshold:0});
  }
  attach(root.querySelector('#v280-hero'),'cosmos','v307-cosmic-background');
