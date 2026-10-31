@@ -188,6 +188,8 @@ jobs:
         run: node scripts/scholaverum-r305-cinematic-redesign-smoke.mjs http://127.0.0.1:10000
       - name: Verify r307 real WebGL2 3D worlds, whole-homepage visuals and device fallbacks
         run: node scripts/scholaverum-r307-webgl-universe-smoke.mjs http://127.0.0.1:10000
+      - name: Early keyboard and feature-gallery compatibility regression
+        run: node scripts/scholaverum-r303-cinematic-worlds-smoke.mjs http://127.0.0.1:10000
       - name: Verify r306 visible homepage composition and responsive layout
         run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
