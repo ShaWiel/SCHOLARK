@@ -36,6 +36,7 @@ try{
    overflow:document.documentElement.scrollWidth-innerWidth
  }));
  console.log('R307 IMMERSIVE INITIAL',JSON.stringify(status));
+ console.log('R307 HERO BRAND DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({heroCount:document.querySelectorAll('#v280-hero').length,artHtml:document.querySelector('#v280-hero .v280-hero-art')?.outerHTML.slice(0,1100),heroImageSrcs:[...document.querySelectorAll('#v280-hero img')].map(n=>n.getAttribute('src')).slice(0,8),otherBrand:[...document.querySelectorAll('[class*=v299-logo],[class*=v292-sphere],img[src*=official]')].slice(0,12).map(n=>n.tagName+':'+n.className+':'+n.getAttribute('src'))}))));
  assert.equal(status.version,'r307-webgl-universe');
  assert.equal(status.surfaces,8,'hero + four illustrated features + theater + two full panels');
  assert.equal(status.gallery,4,'all four feature gallery cards have a distinct WebGL stage');
