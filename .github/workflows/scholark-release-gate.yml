@@ -49,6 +49,7 @@ jobs:
           node --check scripts/scholaverum-r303-cinematic-worlds-smoke.mjs
           node --check scripts/scholaverum-r304-cinematic-depth-smoke.mjs
           node --check scripts/scholaverum-r305-cinematic-redesign-smoke.mjs
+          node --check scripts/scholaverum-r306-visible-homepage-smoke.mjs
           node --check scripts/scholaverum-r300-cosmic-worlds-smoke.mjs
           node --check scripts/scholaverum-r301-front-orbits-smoke.mjs
           node --check scripts/scholaverum-r302-cinematic-stability-smoke.mjs
@@ -184,6 +185,8 @@ jobs:
         run: node scripts/scholaverum-r304-cinematic-depth-smoke.mjs http://127.0.0.1:10000
       - name: Verify r305 full-scene redesign, motion and responsive visual contracts
         run: node scripts/scholaverum-r305-cinematic-redesign-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r306 visible homepage composition and responsive layout
+        run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
