@@ -25,7 +25,7 @@ try {
    dockDisplay:getComputedStyle(dock).display,
    dockY:dock.getBoundingClientRect().top,
    dockButtons:buttons.length,
-   routes:buttons.map(b=>b.dataset.v280Route),
+   routes:buttons.map(b=>b.dataset.v306Go),
    introHeight:intro.getBoundingClientRect().height,
    toolsLayout:getComputedStyle(document.querySelector('.v280-tools')).gridTemplateColumns.split(' ').length,
    toolRadius:getComputedStyle(tools[0]).borderTopLeftRadius,
@@ -48,7 +48,7 @@ try {
  assert.ok(hero.heroBrand,'official logo remains intact');
  assert.ok(hero.art>450,'approved planet has not been lost');
  assert.ok(hero.app,'interactive workspace preview still exists');
- await page.locator('#v280-hero .v306-journey[data-v280-route="tutor"]').click();
+ await page.locator('#v280-hero .v306-journey[data-v306-go="tutor"]').click();
  await page.waitForFunction(()=>location.hash.toLowerCase().includes('tutor'),null,{timeout:15000});
  await desktop.close();
 
