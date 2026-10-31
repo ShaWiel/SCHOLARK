@@ -405,7 +405,7 @@ function prepare(canvas,limit=820){
  return {ctx,w:rect.width,h:rect.height};
 }
 function draw(card,now){
- const canvas=$('canvas.v303-world-canvas',card);if(!canvas)return;
+ const canvas=$('canvas.v303-world-canvas',card);if(!canvas||canvas.parentElement?.dataset.v307Gpu==='1')return;
  const p=prepare(canvas,card.classList.contains('is-active')?960:720);if(!p)return;
  const key=card.dataset.v303World||'arki';
  const tilt=[state.parallax[0]*.28,state.parallax[1]*.28];
@@ -413,7 +413,7 @@ function draw(card,now){
 }
 function drawTheater(now){
  const root=$('#v280-demo'),preview=$('#v280-app-preview',root);
- const canvas=$('#v303-theater-world',root);if(!canvas||!preview)return;
+ const canvas=$('#v303-theater-world',root);if(!canvas||!preview||root.dataset.v307Gpu==='1')return;
  const key=preview.dataset.scene||'arki';
  const p=prepare(canvas,1100);if(!p)return;
  const tilt=[state.parallax[0]*.9,state.parallax[1]*.7];
