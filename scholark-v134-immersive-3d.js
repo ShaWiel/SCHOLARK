@@ -278,7 +278,13 @@ function updateToolLabels(root){
 }
 function mount(){
  const root=ROOT();if(!HOME()||!root){if(mountedRoot)clear();return}
- if(mountedRoot===root&&stages.size)return;
+ if(mountedRoot===root&&stages.size){
+  const hosts=[root.querySelector('#v280-hero'),...root.querySelectorAll('.v298-feature-graphic'),root.querySelector('#v280-demo'),...root.querySelectorAll('.v280-panel-graphic')];
+  if(hosts.length===8 && hosts.every(host=>!!host?.querySelector(':scope > canvas.v307-gpu')) &&
+   [...stages.values()].every(o=>o.node.isConnected)){updateToolLabels(root);return}
+  // Language-switch and route integrations replace some sections in place.
+  // Recreate disconnected WebGL canvases instead of leaving stale contexts alive.
+ }
  clear();mountedRoot=root;root.classList.add('v307-universe');
  decorateTools(root);
  if('IntersectionObserver'in window){
