@@ -23,6 +23,8 @@ try{
    hero:!!document.querySelector('#v280-hero > .v307-cosmic-background'),
    officialLogo:!!document.querySelector('#v280-hero img[src*="scholaverum-official-"]'),
    tools:document.querySelectorAll('.v280-tool').length,
+   toolSculptures:document.querySelectorAll('.v307-tool-sculpture').length,
+   toolRoutes:[...document.querySelectorAll('.v307-tool-open')].map(n=>n.dataset.v280Route),
    dock:document.querySelectorAll('.v306-journey').length,
    pricing:document.querySelectorAll('#v41-home-pricing .v41-plan').length,
    stylesheet:[...document.styleSheets].some(s=>s.href?.includes('v134-immersive-3d.css')),
@@ -38,6 +40,8 @@ try{
  assert.ok(status.hero&&status.theater,'hero and feature theater have GPU backgrounds');
  assert.ok(status.officialLogo,'approved official SCHOLAVERUM logo must remain');
  assert.equal(status.tools,6,'all six toolkit cards must remain');
+ assert.equal(status.toolSculptures,6,'every toolkit feature gets its own dimensional sculpture');
+ assert.deepEqual(status.toolRoutes,['ai','tutor','planner','flashcards','progress','schools'],'all toolkit routes open actual feature screens');
  assert.equal(status.dock,4,'all four first-screen navigation buttons must remain');
  assert.ok(status.pricing>=2,'pricing must not disappear');
  assert.ok(status.stylesheet,'r307 CSS must load, never show r306-only homepage');
