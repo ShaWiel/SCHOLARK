@@ -168,14 +168,14 @@ jobs:
           restore_ms_sources
           trap - EXIT
           timeout 480s npx playwright install chromium firefox webkit
+      - name: Verify r306 first-screen and whole-homepage visual transformation
+        run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Run mobile device launch QA
         run: node scripts/scholark-mobile-device-smoke.mjs http://127.0.0.1:10000
       - name: Validate r218 foundation, runtime tuning and visual isolation
         run: node scripts/scholark-r218-foundation-smoke.mjs http://127.0.0.1:10000
       - name: Validate r219 sidebar and dashboard cleanup
         run: node scripts/scholark-r219-sidebar-dashboard-smoke.mjs http://127.0.0.1:10000
-      - name: Verify r306 first-screen and whole-homepage visual transformation
-        run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Exercise account lifecycle in Chromium
         run: |
           node <<'NODE'
