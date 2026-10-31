@@ -174,6 +174,8 @@ jobs:
         run: node scripts/scholark-r218-foundation-smoke.mjs http://127.0.0.1:10000
       - name: Validate r219 sidebar and dashboard cleanup
         run: node scripts/scholark-r219-sidebar-dashboard-smoke.mjs http://127.0.0.1:10000
+      - name: Verify r306 first-screen and whole-homepage visual transformation
+        run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Exercise account lifecycle in Chromium
         run: |
           node <<'NODE'
@@ -221,8 +223,6 @@ jobs:
         run: node scripts/scholaverum-r304-cinematic-depth-smoke.mjs http://127.0.0.1:10000
       - name: Verify r305 full-scene redesign, motion and responsive visual contracts
         run: node scripts/scholaverum-r305-cinematic-redesign-smoke.mjs http://127.0.0.1:10000
-      - name: Verify r306 first-screen and whole-homepage visual transformation
-        run: node scripts/scholaverum-r306-visible-homepage-smoke.mjs http://127.0.0.1:10000
       - name: Verify r282 tour, dashboard singleton and saved-item controls
         run: node scripts/scholaverum-r282-integrated-smoke.mjs http://127.0.0.1:10000
       - name: Validate r284 rebuilt Workspace, legacy first-paint lock and cinematic lifecycle
