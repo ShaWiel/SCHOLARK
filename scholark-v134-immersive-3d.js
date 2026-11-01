@@ -126,17 +126,102 @@ vec3 material(float id,vec3 p){
  if(id<5.5)return vec3(.79,.82,.89);
  return vec3(.23,.40,.68);
 }
+
+/* r308: analytic raycast keeps the hero photorealistic without costly SDF marching. */
+float hitOrb(vec3 ro,vec3 rd,vec3 c,float radius){
+ vec3 v=ro-c;float b=dot(v,rd),h=b*b-dot(v,v)+radius*radius;
+ return h<0.?-1.:-b-sqrt(h);
+}
+float surfaceDetail(vec3 p,float scale){
+ vec3 w=pow(abs(p),vec3(4.));w/=max(w.x+w.y+w.z,.0001);
+ return fbm(p.yz*scale+vec2(3.1,7.2))*w.x+
+        fbm(p.xz*scale+vec2(9.3,2.7))*w.y+
+        fbm(p.xy*scale+vec2(5.6,4.1))*w.z;
+}
+vec3 celestialWorld(vec3 ro,vec3 rd,vec2 screen,vec3 backdrop){
+ float aspect=resolution.x/max(1.,resolution.y);
+ float compact=1.-smoothstep(.75,1.23,aspect);
+ vec3 c=vec3(mix(1.36,.28,compact),mix(-.04,-.53,compact),0.);
+ float radius=mix(1.01,.73,compact);
+ vec3 sun=normalize(vec3(-.62,.55,1.18));
+ float body=hitOrb(ro,rd,c,radius);
+ vec3 nearPoint=ro+rd*max(0.,dot(c-ro,rd));
+ float halo=exp(-max(0.,length(nearPoint-c)-radius)*9.);
+ backdrop+=mix(vec3(.06,.18,.46),vec3(.20,.09,.48),clamp(screen.y*.5+.5,0.,1.))*halo*.35;
+ // Tilted debris rings have correct front/back sphere occlusion.
+ vec3 tilt=normalize(vec3(.27,.80,.53));
+ float denom=dot(rd,tilt),rt=-1.;
+ if(abs(denom)>.0008)rt=dot(c-ro,tilt)/denom;
+ float ringAlpha=0.,ringR=0.;
+ if(rt>0.){
+  vec3 point=ro+rd*rt-c;
+  ringR=length(point);
+  float inside=smoothstep(radius*1.11,radius*1.20,ringR);
+  float outside=1.-smoothstep(radius*1.78,radius*1.87,ringR);
+  float bands=.57+.43*sin(ringR*88.+sin(ringR*29.)*.7);
+  ringAlpha=inside*outside*(.30+.31*bands);
+ }
+ vec3 ringColor=mix(vec3(.37,.25,.67),vec3(.71,.95,.43),.5+.5*sin(ringR*21.));
+ if(ringAlpha>0.&&(body<0.||rt<body))backdrop=mix(backdrop,ringColor,ringAlpha);
+ if(body>0.){
+  vec3 n=normalize(ro+rd*body-c);
+  vec3 sampleN=spin(n,.22,time*.045);
+  float terrain=surfaceDetail(sampleN,2.85);
+  float detail=surfaceDetail(sampleN,10.7);
+  float land=smoothstep(.46,.58,terrain+.08*(detail-.5));
+  float coast=smoothstep(.42,.53,terrain)*(1.-smoothstep(.56,.64,terrain));
+  float snow=smoothstep(.70,.90,abs(sampleN.y)+.12*detail);
+  vec3 ocean=mix(vec3(.018,.038,.17),vec3(.07,.23,.37),clamp(detail*.92,0.,1.));
+  vec3 ground=mix(vec3(.06,.24,.26),vec3(.32,.38,.42),clamp(detail*.98,0.,1.));
+  ground=mix(ground,vec3(.43,.64,.37),.20+.26*terrain);
+  vec3 albedo=mix(ocean,ground,land)+coast*vec3(.11,.19,.16);
+  albedo=mix(albedo,vec3(.83,.90,.97),snow*.78);
+  float cloud=surfaceDetail(sampleN+vec3(time*.009,0.,time*.004),17.1);
+  albedo=mix(albedo,vec3(.77,.84,.94),smoothstep(.57,.72,cloud)*.67);
+  float light=max(0.,dot(n,sun));
+  float shade=.075+.93*pow(light,.83);
+  float rim=pow(1.-max(dot(n,-rd),0.),3.5);
+  vec3 lit=albedo*shade+vec3(.12,.25,.41)*rim*.72;
+  lit+=vec3(.22,.47,.62)*pow(max(0.,dot(reflect(-sun,n),-rd)),58.)*(1.-land)*.66;
+  float northern=max(0.,abs(sampleN.y)-.72);
+  lit+=vec3(.17,.52,.18)*max(0.,sin(sampleN.x*35.+time*.12))*northern*northern*.8*light;
+  float night=pow(1.-light,3.)*land;
+  lit+=vec3(.075,.07,.22)*night*step(.79,noise(sampleN.xz*150.))*.26;
+  backdrop=lit+vec3(.075,.18,.43)*rim*.25;
+ }
+ if(ringAlpha>0.&&rt>0.&&body>0.&&rt<body)
+  backdrop=mix(backdrop,ringColor*1.12,ringAlpha*.74);
+ // Feature satellites spin in opposite directions and at different altitudes.
+ for(int i=0;i<3;i++){
+  float k=float(i),a=time*(i==1?-.13:.16)+k*2.399;
+  vec3 moon=c+vec3(cos(a)*(1.80+k*.22)*radius,
+                   sin(a*.81+k)*(.79+k*.13)*radius,
+                   sin(a)*(1.07+k*.24)*radius);
+  float mt=hitOrb(ro,rd,moon,(.078+.017*k)*radius);
+  if(mt>0.&&(body<0.||mt<body)&&(rt<0.||mt<rt||ringAlpha<.1)){
+   vec3 mn=normalize(ro+rd*mt-moon);
+   float intensity=.16+.84*max(0.,dot(mn,sun));
+   float edge=pow(1.-max(dot(mn,-rd),0.),2.);
+   backdrop=mix(vec3(.37,.31,.57),vec3(.73,.93,.51),step(1.5,k))*intensity+
+            vec3(.23,.16,.36)*edge;
+  }
+ }
+ float arc=abs(length((screen-vec2(mix(.71,.15,compact),-.13))*vec2(1.0,1.34))-1.16);
+ backdrop+=vec3(.12,.29,.19)*exp(-arc*155.)*.20;
+ return backdrop;
+}
+
 void main(){
  vec2 p=(uv*2.-1.);p.x*=resolution.x/max(resolution.y,1.);
  vec2 look=(pointer-.5)*vec2(.19,.12);
  vec3 ro=vec3(look.x,look.y,5.45),rd=normalize(vec3(p*.95,-3.0));
  vec3 bg=atmosphere(p);
  if(scene==5){
-  float aurora=pow(max(0.,fbm(p*vec2(1.3,2.2)+vec2(time*.01,.4))-.51),2.)*1.75;
-  bg+=vec3(.15,.046,.25)*aurora;
-  float beam=pow(max(0.,1.-abs(p.x*.65-p.y*.23-.46)),9.);
-  bg+=vec3(.08,.13,.11)*beam*.22;
-  pixel=vec4(pow(bg,vec3(.9)),1.);return;
+  float aurora=pow(max(0.,fbm(p*vec2(1.3,2.2)+vec2(time*.008,.4))-.49),2.)*1.6;
+  bg+=vec3(.11,.045,.23)*aurora;
+  bg=celestialWorld(ro,rd,p,bg);
+  float fade=1.-.21*pow(length(uv-.5)*1.35,2.);
+  pixel=vec4(pow(max(bg*fade,0.),vec3(.88)),1.);return;
  }
  float distance=0.,id=-1.,stepD=0.;
  vec3 hit=ro;
@@ -213,7 +298,7 @@ function draw(obj,stamp,force){
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
  const err=gl.getError();
  if(err!==gl.NO_ERROR)return;
- if(!obj.ready){obj.ready=true;host.classList.add('v307-has-gpu');host.dataset.v307Gpu='1';}
+ if(!obj.ready){obj.ready=true;host.classList.add('v307-has-gpu');host.dataset.v307Gpu='1';if(obj.key==='cosmos')host.dataset.v308Planet='celestial-homeworld';}
  obj.lastSize=w+'x'+h+'-'+scene;obj.lastFrame=stamp;
 }
 function clear(){
@@ -323,7 +408,7 @@ function mount(){
 }
 if(!document.querySelector('#scholaverum-r307-3d-style')){
  const link=document.createElement('link');link.id='scholaverum-r307-3d-style';link.rel='stylesheet';
- link.href='scholark-v134-immersive-3d.css?v=20261031-r307';document.head.appendChild(link);
+ link.href='scholark-v134-immersive-3d.css?v=20261101-r308';document.head.appendChild(link);
 }
 for(const name of ['scholaverum:editorial-home-mounted','scholark-runtime-ready','scholark-return-home','scholark-language-applied','scholark-language-change','pageshow']){
  window.addEventListener(name,()=>{setTimeout(mount,85);setTimeout(()=>{const root=ROOT();if(root)updateToolLabels(root)},130)});
@@ -335,5 +420,5 @@ window.addEventListener('resize',()=>{for(const o of stages.values())o.lastSize=
 window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change',()=>{for(const o of stages.values())o.lastSize='';wake()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,160),{once:true});
 else setTimeout(mount,150);
-window.__SCHOLAVERUM_R307_3D__={version:VERSION,mount,state:()=>({scenes:stages.size,gpu:[...stages.values()].filter(o=>o.ready).length,active:[...stages.values()].filter(o=>o.visible).length,reduced:REDUCED()})};
+window.__SCHOLAVERUM_R307_3D__={version:VERSION,mount,state:()=>({scenes:stages.size,gpu:[...stages.values()].filter(o=>o.ready).length,active:[...stages.values()].filter(o=>o.visible).length,reduced:REDUCED(),planet:document.querySelector('#v280-hero')?.dataset.v308Planet||'fallback'})};
 })();
