@@ -38,6 +38,24 @@ try{
  }));
  console.log('R307 IMMERSIVE INITIAL',JSON.stringify(status));
  console.log('R307 HERO BRAND DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({heroCount:document.querySelectorAll('#v280-hero').length,artHtml:document.querySelector('#v280-hero .v280-hero-art')?.outerHTML.slice(0,1100),heroImageSrcs:[...document.querySelectorAll('#v280-hero img')].map(n=>n.getAttribute('src')).slice(0,8),otherBrand:[...document.querySelectorAll('[class*=v299-logo],[class*=v292-sphere],img[src*=official]')].slice(0,12).map(n=>n.tagName+':'+n.className+':'+n.getAttribute('src'))}))));
+ // r308 specifically validates that the former flat hero planet is replaced
+ // by the true 3D surface and the official brand remains on top.
+ const gpuAvailable=await page.evaluate(()=>!!document.createElement('canvas').getContext('webgl2'));
+ if(gpuAvailable){
+  await page.waitForFunction(()=>document.querySelector('#v280-hero')?.dataset.v308Planet==='celestial-homeworld',null,{timeout:15000});
+  const celestial=await page.evaluate(()=>({
+   renderer:window.__SCHOLAVERUM_R307_3D__?.state?.().planet,
+   legacyVisibility:getComputedStyle(document.querySelector('.v299-planet-canvas')).visibility,
+   orbVisibility:getComputedStyle(document.querySelector('.v301-front-orbs-canvas')).visibility,
+   mark:!!document.querySelector('#v280-hero .v299-logo'),
+   shader:document.querySelector('#v280-hero .v307-cosmic-background')?.dataset.scene
+  }));
+  assert.equal(celestial.renderer,'celestial-homeworld','new physically illuminated 3D hero scene active');
+  assert.equal(celestial.legacyVisibility,'hidden','2D planet cannot obscure real 3D scene');
+  assert.equal(celestial.orbVisibility,'hidden','legacy orbs cannot cover physical satellites');
+  assert.ok(celestial.mark,'official SCHOLAVERUM crest preserved on the 3D world');
+  assert.equal(celestial.shader,'cosmos');
+ }
  assert.equal(status.version,'r307-webgl-universe');
  assert.equal(status.surfaces,8,'hero + four illustrated features + theater + two full panels');
  assert.equal(status.gallery,4,'all four feature gallery cards have a distinct WebGL stage');
