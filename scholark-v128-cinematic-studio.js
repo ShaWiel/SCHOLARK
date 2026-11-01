@@ -118,7 +118,12 @@ function galleryMarkup(g,i){
 function gallerySync(){
  const el=$('#v298-feature-gallery');if(!el)return;
  if(el.children.length!==gallery.length)el.innerHTML=gallery.map(galleryMarkup).join('');
- $$('.v298-feature',el).forEach((card,i)=>{card.classList.toggle('is-active',i===galleryIndex);card.setAttribute('aria-current',String(i===galleryIndex))});
+ // Keep the last intentional pointer/keyboard choice instead of cycling over it.
+ const picked=String(el.dataset.v307UserChoice||'');
+ const recentlyChosen=Date.now()-Number(el.dataset.v307UserChoiceAt||0)<16000;
+ const held=recentlyChosen?gallery.findIndex(g=>g.key===picked):-1;
+ if(held>=0)galleryIndex=held;
+ $('.v298-feature',el).forEach((card,i)=>{card.classList.toggle('is-active',i===galleryIndex);card.setAttribute('aria-current',String(i===galleryIndex))});
 }
 function galleryMount(){
  if($('#v298-feature-gallery'))return;
