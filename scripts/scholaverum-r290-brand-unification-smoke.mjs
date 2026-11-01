@@ -43,13 +43,21 @@ try{
  assert.ok(mobile.width>90&&mobile.natural>0&&mobile.display!=='none','official Dashboard brand remains visible on mobile');
  await page.setViewportSize({width:1440,height:900});
  await page.goto(base+'/#home',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForSelector('.v299-planet-canvas',{state:'visible',timeout:35000});
+ // r308 preserves the old canvas only as a fallback. When WebGL2 succeeds,
+  // it must be attached but hidden under the physical 3D homeworld.
+  await page.waitForSelector('.v299-planet-canvas',{state:'attached',timeout:35000});
  await page.waitForFunction(()=>{const c=document.querySelector('.v299-planet-canvas');return !!c&&c.width>300&&c.height>300},null,{timeout:20000});
  const hero=await page.evaluate(()=>{
   const art=document.querySelector('#v280-editorial-home .v280-hero-art'),engine=art?.querySelector('.v299-universe'),canvas=engine?.querySelector('canvas'),img=engine?.querySelector('img');
   return {engines:art?.querySelectorAll('.v299-universe').length,oldGlobe:art?.querySelectorAll('.v296-atom,.v292-sphere-stage').length,canvasWidth:canvas?.width,canvasHeight:canvas?.height,logo:img?.getAttribute('src'),heroCards:art?.querySelectorAll('.v280-floating').length,nav:!!document.querySelector('#v298-nav-what')};
  });
- assert.equal(hero.engines,1,'exactly one cinematic engine is mounted');
+ const planetLayers=await page.evaluate(()=>({
+   gpu:document.querySelector('#v280-hero')?.dataset.v308Planet==='celestial-homeworld',
+   fallbackVisibility:getComputedStyle(document.querySelector('.v299-planet-canvas')).visibility
+  }));
+  if(planetLayers.gpu)assert.equal(planetLayers.fallbackVisibility,'hidden','r308 WebGL planet replaces old flat planetary layer');
+  else assert.notEqual(planetLayers.fallbackVisibility,'hidden','legacy planet remains visible when WebGL is unavailable');
+  assert.equal(hero.engines,1,'exactly one cinematic engine is mounted');
  assert.equal(hero.oldGlobe,0,'retired globe and flattened strips must not remain');
  assert.ok(hero.canvasWidth>300&&hero.canvasHeight>300,'orbital visuals render as a sharp canvas');
  assert.equal(hero.logo,'scholaverum-planet-crest-r300.webp','custom uploaded graduation S replaces the former planet logo');
