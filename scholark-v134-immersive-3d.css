@@ -7,7 +7,14 @@
 #v280-editorial-home .v307-has-gpu > #v303-theater-world{visibility:hidden}
 #v280-editorial-home #v280-hero{min-height:max(880px,100svh);background:radial-gradient(ellipse at 70% 42%,#27154d 0%,#0a0820 45%,#050614 100%)!important;isolation:isolate;overflow:hidden}
 #v280-editorial-home #v280-hero:after{content:"";pointer-events:none;position:absolute;z-index:1;inset:0;background:linear-gradient(90deg,rgba(5,6,18,.80) 0%,rgba(7,7,25,.55) 32%,transparent 69%),linear-gradient(0deg,#070615 0%,transparent 24%);opacity:.94}
-#v280-editorial-home #v280-hero > .v307-cosmic-background{z-index:0;mix-blend-mode:screen}
+/* r308: replace the old composited 2D foreground planet only when WebGL succeeds.
+   The official crest and wordmark remain visible, while the old scene is an exact
+   fallback on WebGL1/no-GPU/low-power browsers. */
+#v280-editorial-home #v280-hero.v307-has-gpu .v299-planet-canvas,
+#v280-editorial-home #v280-hero.v307-has-gpu .v301-front-orbs-canvas{opacity:0!important;visibility:hidden!important}
+#v280-editorial-home #v280-hero.v307-has-gpu .v299-logo{filter:drop-shadow(0 2px 19px rgba(172,255,111,.23))}
+#v280-editorial-home #v280-hero.v307-has-gpu .v302-wordmark{text-shadow:0 2px 16px #050819,0 0 24px rgba(198,255,121,.43)}
+#v280-editorial-home #v280-hero > .v307-cosmic-background{z-index:0;mix-blend-mode:normal}
 #v280-editorial-home #v280-hero .v280-grid-lines{z-index:1;opacity:.11;background-size:110px 110px;mask-image:linear-gradient(90deg,#000,transparent 70%)}
 #v280-editorial-home #v280-hero .v280-max{position:relative;z-index:4}
 #v280-editorial-home #v280-hero .v280-hero-copy{max-width:840px}
