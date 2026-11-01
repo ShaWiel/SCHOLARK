@@ -27,6 +27,7 @@ try{
  assert.equal(new Set(sample.map(s=>s.pixels.slice(0,3).join(','))).size,4,'four distinct colored world treatments');
  assert.ok(sample.every(s=>s.role==='button'&&s.tab===0),'gallery interactive using keyboard');
  await page.locator('[data-v303-world="tutor"]').hover();
+ console.log('R303 HOVER',JSON.stringify(await page.evaluate(()=>({active:[...document.querySelectorAll('#v298-feature-gallery .is-active')].map(n=>n.dataset.v303World),pointer:[...document.querySelectorAll('#v298-feature-gallery .v298-feature:hover')].map(n=>n.dataset.v303World),focused:document.activeElement?.dataset.v303World,choice:document.querySelector('#v298-feature-gallery')?.dataset.v307UserChoice,ready:window.__SCHOLAVERUM_R307_3D__?.state?.()}))));
  await page.waitForFunction(()=>document.querySelector('[data-v303-world="tutor"]')?.classList.contains('is-active'),null,{timeout:6000});
  await page.locator('[data-v303-world="language"]').focus();
  console.log('R303 KEYBOARD FOCUS',JSON.stringify(await page.evaluate(()=>({focused:document.activeElement?.getAttribute('data-v303-world'),active:[...document.querySelectorAll('#v298-feature-gallery .is-active')].map(e=>e.dataset.v303World),galleryCards:document.querySelectorAll('#v298-feature-gallery .v298-feature').length,gpu:window.__SCHOLAVERUM_R307_3D__?.state?.()}))));
