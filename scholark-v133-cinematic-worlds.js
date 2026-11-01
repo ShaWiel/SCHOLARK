@@ -405,7 +405,7 @@ function prepare(canvas,limit=820){
  return {ctx,w:rect.width,h:rect.height};
 }
 function draw(card,now){
- const canvas=$('canvas.v303-world-canvas',card);if(!canvas)return;
+ const canvas=$('canvas.v303-world-canvas',card);if(!canvas||canvas.parentElement?.dataset.v307Gpu==='1')return;
  const p=prepare(canvas,card.classList.contains('is-active')?960:720);if(!p)return;
  const key=card.dataset.v303World||'arki';
  const tilt=[state.parallax[0]*.28,state.parallax[1]*.28];
@@ -477,11 +477,19 @@ function mount(){
   if(card.dataset.v303Bound==='1')return;
   card.dataset.v303Bound='1';
   const activate=()=>{
-   cardsNow.forEach(el=>{el.classList.toggle('is-active',el===card);el.setAttribute('aria-current',String(el===card))});
+   // Mouse, touch and keyboard selections must survive the legacy auto-gallery timer.
+   const live=activeCards();const selected=live.find(el=>el===card)||live.find(el=>el.dataset.v303World===key);
+   if(!selected)return;
+   live.forEach(el=>{el.classList.toggle('is-active',el===selected);el.setAttribute('aria-current',String(el===selected))});
+   const gallery=$('#v298-feature-gallery');
+   if(gallery){gallery.dataset.v307UserChoice=key;gallery.dataset.v307UserChoiceAt=String(Date.now())}
    state.active=key;wake();
   };
-  card.addEventListener('pointerenter',activate);
+  // A focus() call can scroll a card under a stationary cursor. Only actual
+  // pointer movement should supersede keyboard focus, never incidental hover.
+  card.addEventListener('pointermove',activate,{passive:true});
   card.addEventListener('focus',activate);
+  card.addEventListener('focusin',activate);
   card.addEventListener('click',activate);
   card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();activate()}});
  });

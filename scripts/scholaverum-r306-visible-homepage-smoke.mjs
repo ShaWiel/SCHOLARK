@@ -28,7 +28,7 @@ try {
   document.querySelector('.v306-intro-track') && document.querySelector('.v303-world-canvas') &&
   document.querySelector('#v280-hero .v299-logo, #v280-hero img[src*="scholaverum-official-"]') &&
   getComputedStyle(document.querySelector('.v306-hero-dock')).display==='grid' &&
-  document.documentElement.dataset.scholarkRelease==='r306-visible-homepage-redesign',null,{timeout:60000});
+  document.documentElement.dataset.scholarkRelease==='r307-webgl-universe',null,{timeout:60000});
  const hero=await page.evaluate(()=>{
   const h=document.querySelector('#v280-hero'),buttons=[...document.querySelectorAll('.v306-journey')];
   const dock=document.querySelector('.v306-hero-dock');
@@ -54,7 +54,7 @@ try {
    panelBackground:getComputedStyle(panel).backgroundColor
   };
  });
- assert.equal(hero.release,'r306-visible-homepage-redesign');
+ assert.equal(hero.release,'r307-webgl-universe');
  assert.match(hero.stylesheet||'',/20261031-r306/,'the browser must use the new r306 homepage styles, never cached r294');
  assert.equal(hero.dockDisplay,'grid');
  assert.equal(hero.dockButtons,4);
