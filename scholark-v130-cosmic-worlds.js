@@ -17,7 +17,7 @@ const worlds=[
  {seed:814,purple:'#8d38ef',lime:'#c9ff6a',nebula:'#ae4ab7',light:'#fff0dc',angle:-.15,planet:.83,halo:1.6}
 ];
 const RAND=seed=>()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;};
-let hero=null,heroCanvas=null,heroCtx=null,heroResize=null,view=null,raf=0,last=0,frames=0,pointerX=0,pointerY=0,visible=false,heroTexture=null,lastStillSize='';
+let hero=null,heroCanvas=null,heroCtx=null,heroResize=null,view=null,raf=0,last=0,frames=0,pointerX=0,pointerY=0,visible=false,heroTexture=null,lastStillSize='',reducedPainted=false;
 const textures=new Map(),ctxCache=new Map();
 function ellipse(c,x,y,rX,rY,angle=0){c.beginPath();c.ellipse(x,y,rX,rY,angle,0,TAU)}
 function blurred(c,x,y,r,color,opacity){
@@ -250,7 +250,10 @@ function heroFrame(now){
  if(now-last<42&&!REDUCE()){raf=requestAnimationFrame(heroFrame);return}
  last=now;const target=resizeCanvas(heroCanvas,2400);
  if(target){const [ctx,w,h]=target,still=REDUCE(),key=heroCanvas.width+'x'+heroCanvas.height;
-  if(!still||key!==lastStillSize){screen(ctx,w,h,0,now,'hero');frames++;lastStillSize=still?key:''}
+  // Reduced-motion mode paints a single stable frame per navigation/viewport size.
+  // Layout observers can fire late after fonts and the GPU scene mount: they must
+  // never restart the cinematic for a user who requested no animation.
+  if(!still||!reducedPainted){screen(ctx,w,h,0,now,'hero');frames++;lastStillSize=still?key:'';if(still)reducedPainted=true}
  }
  if(!REDUCE())raf=requestAnimationFrame(heroFrame);
 }
@@ -266,7 +269,7 @@ function mountHero(){
  const old=document.querySelector('#v300-cosmos-field');
  if(old?.parentElement!==host){old?.remove();hero=null;heroCanvas=null}
  if(!hero){
-  lastStillSize='';
+  lastStillSize='';reducedPainted=false;
   hero=document.createElement('div');hero.id='v300-cosmos-field';hero.setAttribute('aria-hidden','true');
   hero.innerHTML='<canvas id="v300-cosmos-canvas"></canvas>';
   host.insertBefore(hero,host.firstChild);heroCanvas=hero.querySelector('canvas');
@@ -291,7 +294,8 @@ window.addEventListener('hashchange',()=>{if(!HOME())setVisible(false);setTimeou
 document.addEventListener('visibilitychange',()=>setVisible(!document.hidden));
 window.addEventListener('pagehide',()=>setVisible(false));
 window.addEventListener('pageshow',()=>setTimeout(mountHero,65));
-window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change',()=>{if(REDUCE()){if(raf)cancelAnimationFrame(raf);raf=0;setVisible(true)}else setVisible(true)});
+window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change',()=>{reducedPainted=false;if(REDUCE()){if(raf)cancelAnimationFrame(raf);raf=0;setVisible(true)}else setVisible(true)});
+window.addEventListener('resize',()=>{if(REDUCE()&&HOME()){reducedPainted=false;setVisible(true)}},{passive:true});
 ['scholaverum:editorial-home-mounted','scholark-return-home','scholark-runtime-ready'].forEach(evt=>window.addEventListener(evt,()=>setTimeout(mountHero,90)));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mountHero,100),{once:true});
 else setTimeout(mountHero,100);
