@@ -485,8 +485,9 @@ function mount(){
    if(gallery){gallery.dataset.v307UserChoice=key;gallery.dataset.v307UserChoiceAt=String(Date.now())}
    state.active=key;wake();
   };
-  card.addEventListener('pointerenter',activate);
-  card.addEventListener('pointerover',activate);
+  // A focus() call can scroll a card under a stationary cursor. Only actual
+  // pointer movement should supersede keyboard focus, never incidental hover.
+  card.addEventListener('pointermove',activate,{passive:true});
   card.addEventListener('focus',activate);
   card.addEventListener('focusin',activate);
   card.addEventListener('click',activate);
