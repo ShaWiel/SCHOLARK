@@ -127,7 +127,7 @@ vec3 material(float id,vec3 p){
  return vec3(.23,.40,.68);
 }
 
-/* r308: analytic raycast keeps the hero photorealistic without costly SDF marching. */
+// r308: analytic planet raycast avoids expensive hero SDF marching.
 float hitOrb(vec3 ro,vec3 rd,vec3 c,float radius){
  vec3 v=ro-c;float b=dot(v,rd),h=b*b-dot(v,v)+radius*radius;
  return h<0.?-1.:-b-sqrt(h);
