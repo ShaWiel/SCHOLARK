@@ -477,15 +477,16 @@ function mount(){
   if(card.dataset.v303Bound==='1')return;
   card.dataset.v303Bound='1';
   const activate=()=>{
-   // Always select the live gallery; language changes can replace card elements.
-   activeCards().forEach(el=>{el.classList.toggle('is-active',el===card);el.setAttribute('aria-current',String(el===card))});
+   // Mouse, touch and keyboard selections must survive the legacy auto-gallery timer.
+   const live=activeCards();const selected=live.find(el=>el===card)||live.find(el=>el.dataset.v303World===key);
+   if(!selected)return;
+   live.forEach(el=>{el.classList.toggle('is-active',el===selected);el.setAttribute('aria-current',String(el===selected))});
+   const gallery=$('#v298-feature-gallery');
+   if(gallery){gallery.dataset.v307UserChoice=key;gallery.dataset.v307UserChoiceAt=String(Date.now())}
    state.active=key;wake();
   };
-  card.addEventListener('pointerenter',()=>{
-   const focused=document.activeElement?.closest?.('#v298-feature-gallery .v298-feature');
-   if(focused&&focused!==card)return; // keyboard selection wins over stale hover
-   activate();
-  });
+  card.addEventListener('pointerenter',activate);
+  card.addEventListener('pointerover',activate);
   card.addEventListener('focus',activate);
   card.addEventListener('focusin',activate);
   card.addEventListener('click',activate);
