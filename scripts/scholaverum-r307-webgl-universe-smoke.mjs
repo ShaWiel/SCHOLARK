@@ -55,6 +55,40 @@ try{
   assert.equal(celestial.orbVisibility,'hidden','legacy orbs cannot cover physical satellites');
   assert.ok(celestial.mark,'official SCHOLAVERUM crest preserved on the 3D world');
   assert.equal(celestial.shader,'cosmos');
+  // r309 acceptance contract: a real compiled 3D planet and eclipse path,
+  // not a cosmetic CSS overlay; the orbital shader must remain GPU driven.
+  const photoreal=await page.evaluate(()=>{
+   const canvas=document.querySelector('#v280-hero > .v307-cosmic-background');
+   const gl=canvas?.getContext('webgl2'),program=gl?.getParameter(gl.CURRENT_PROGRAM);
+   const eclipse=program?gl.getUniformLocation(program,'introProgress'):null;
+   const detail=program?gl.getUniformLocation(program,'quality'):null;
+   return{
+    version:window.__SCHOLAVERUM_R307_3D__?.state?.().heroVersion,
+    linked:!!program&&gl.getProgramParameter(program,gl.LINK_STATUS),
+    eclipseUniform:!!eclipse,
+    qualityUniform:!!detail,
+    eclipseProgress:eclipse?gl.getUniform(program,eclipse):null,
+    quality:detail?gl.getUniform(program,detail):null
+   };
+  });
+  assert.equal(photoreal.version,'photoreal-eclipse','r309 new planet/eclipsing shader is active');
+  assert.ok(photoreal.linked&&photoreal.eclipseUniform&&photoreal.qualityUniform,
+   'r309 has a linked physically rendered 3D world and independently animated eclipse uniforms');
+  assert.ok(photoreal.quality>0.65,'desktop should use high-detail planet materials');
+  const r309Source=await(await page.request.get(base+'/scholark-v134-immersive-3d.js')).text();
+  assert.match(r309Source,/vec3 heroWorld\(/,'r309 rich planet shader ships in the production bundle');
+  assert.match(r309Source,/float craterField\(/,'r309 cratered independent moons ship in the bundle');
+  assert.match(r309Source,/float eclipseVisibility=/,'r309 3D eclipse travels through the hero renderer');
+  await page.evaluate(()=>window.__SCHOLAVERUM_R299_PLANET__?.skip?.());
+  await page.waitForTimeout(280);
+  const skipped=await page.evaluate(()=>{
+   const gl=document.querySelector('#v280-hero > .v307-cosmic-background')?.getContext('webgl2');
+   const prog=gl?.getParameter(gl.CURRENT_PROGRAM);
+   const pos=prog?gl.getUniformLocation(prog,'introProgress'):null;
+   return pos?gl.getUniform(prog,pos):null;
+  });
+  assert.ok(skipped>=11.9,'skipping the eclipse must restore the normal 3D planet immediately');
+
  }
  assert.equal(status.version,'r307-webgl-universe');
  assert.equal(status.surfaces,8,'hero + four illustrated features + theater + two full panels');
