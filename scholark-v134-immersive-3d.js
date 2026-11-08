@@ -156,7 +156,7 @@ float craterField(vec3 n,float scale){
  float v=.0;
  for(int i=0;i<3;i++){
   vec3 o=vec3(float(i==1),float(i==2),float(i==0))*.49-.16;
-  float r=length(f-o),ring=smoothstep(.22,.18,abs(r-.22));
+  float r=length(f-o),ring=(1.-smoothstep(.018,.055,abs(r-.22)));
   v+=ring*.44+(.18-smoothstep(.06,.22,r)*.18);
  }
  return v;
