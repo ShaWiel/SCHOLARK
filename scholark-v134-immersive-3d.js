@@ -127,101 +127,252 @@ vec3 material(float id,vec3 p){
  return vec3(.23,.40,.68);
 }
 
-// r308: analytic planet raycast avoids expensive hero SDF marching.
-float hitOrb(vec3 ro,vec3 rd,vec3 c,float radius){
- vec3 v=ro-c;float b=dot(v,rd),h=b*b-dot(v,v)+radius*radius;
- return h<0.?-1.:-b-sqrt(h);
+// SCHOLAVERUM r309 / HERO-ONLY: layered exoplanet, spatial rings, volcanic
+// cratered moons, textured secondary world and physically inspired eclipse.
+// Analytic intersections instead of full-frame ray marching keep fallback practical.
+uniform float introProgress;
+uniform float quality;
+float hitOrb(vec3 ro,vec3 rd,vec3 centre,float r){
+ vec3 v=ro-centre;
+ float b=dot(v,rd),h=b*b-dot(v,v)+r*r;
+ return h<0.?-1.:-b-sqrt(max(h,0.));
 }
-float surfaceDetail(vec3 p,float scale){
- vec3 w=pow(abs(p),vec3(4.));w/=max(w.x+w.y+w.z,.0001);
- return fbm(p.yz*scale+vec2(3.1,7.2))*w.x+
-        fbm(p.xz*scale+vec2(9.3,2.7))*w.y+
-        fbm(p.xy*scale+vec2(5.6,4.1))*w.z;
+float triplanar(vec3 n,float scale){
+ vec3 w=pow(abs(n),vec3(6.));
+ w/=max(w.x+w.y+w.z,.0001);
+ return fbm(n.yz*scale+vec2(3.1,7.2))*w.x
+       +fbm(n.xz*scale+vec2(9.3,2.7))*w.y
+       +fbm(n.xy*scale+vec2(5.6,4.1))*w.z;
 }
-vec3 celestialWorld(vec3 ro,vec3 rd,vec2 screen,vec3 backdrop){
- float aspect=resolution.x/max(1.,resolution.y);
- float compact=1.-smoothstep(.75,1.23,aspect);
- vec3 c=vec3(mix(1.36,.28,compact),mix(-.04,-.53,compact),0.);
- float radius=mix(1.01,.73,compact);
- vec3 sun=normalize(vec3(-.62,.55,1.18));
- float body=hitOrb(ro,rd,c,radius);
- vec3 nearPoint=ro+rd*max(0.,dot(c-ro,rd));
- float halo=exp(-max(0.,length(nearPoint-c)-radius)*9.);
- backdrop+=mix(vec3(.06,.18,.46),vec3(.20,.09,.48),clamp(screen.y*.5+.5,0.,1.))*halo*.35;
- // Tilted debris rings have correct front/back sphere occlusion.
- vec3 tilt=normalize(vec3(.27,.80,.53));
- float denom=dot(rd,tilt),rt=-1.;
- if(abs(denom)>.0008)rt=dot(c-ro,tilt)/denom;
- float ringAlpha=0.,ringR=0.;
- if(rt>0.){
-  vec3 point=ro+rd*rt-c;
-  ringR=length(point);
-  float inside=smoothstep(radius*1.11,radius*1.20,ringR);
-  float outside=1.-smoothstep(radius*1.78,radius*1.87,ringR);
-  float bands=.57+.43*sin(ringR*88.+sin(ringR*29.)*.7);
-  ringAlpha=inside*outside*(.30+.31*bands);
- }
- vec3 ringColor=mix(vec3(.37,.25,.67),vec3(.71,.95,.43),.5+.5*sin(ringR*21.));
- if(ringAlpha>0.&&(body<0.||rt<body))backdrop=mix(backdrop,ringColor,ringAlpha);
- if(body>0.){
-  vec3 n=normalize(ro+rd*body-c);
-  vec3 sampleN=spin(n,.22,time*.045);
-  float terrain=surfaceDetail(sampleN,2.85);
-  float detail=surfaceDetail(sampleN,10.7);
-  float land=smoothstep(.46,.58,terrain+.08*(detail-.5));
-  float coast=smoothstep(.42,.53,terrain)*(1.-smoothstep(.56,.64,terrain));
-  float snow=smoothstep(.70,.90,abs(sampleN.y)+.12*detail);
-  vec3 ocean=mix(vec3(.018,.038,.17),vec3(.07,.23,.37),clamp(detail*.92,0.,1.));
-  vec3 ground=mix(vec3(.06,.24,.26),vec3(.32,.38,.42),clamp(detail*.98,0.,1.));
-  ground=mix(ground,vec3(.43,.64,.37),.20+.26*terrain);
-  vec3 albedo=mix(ocean,ground,land)+coast*vec3(.11,.19,.16);
-  albedo=mix(albedo,vec3(.83,.90,.97),snow*.78);
-  float cloud=surfaceDetail(sampleN+vec3(time*.009,0.,time*.004),17.1);
-  albedo=mix(albedo,vec3(.77,.84,.94),smoothstep(.57,.72,cloud)*.67);
-  float light=max(0.,dot(n,sun));
-  float shade=.075+.93*pow(light,.83);
-  float rim=pow(1.-max(dot(n,-rd),0.),3.5);
-  vec3 lit=albedo*shade+vec3(.12,.25,.41)*rim*.72;
-  lit+=vec3(.22,.47,.62)*pow(max(0.,dot(reflect(-sun,n),-rd)),58.)*(1.-land)*.66;
-  float northern=max(0.,abs(sampleN.y)-.72);
-  lit+=vec3(.17,.52,.18)*max(0.,sin(sampleN.x*35.+time*.12))*northern*northern*.8*light;
-  float night=pow(1.-light,3.)*land;
-  lit+=vec3(.075,.07,.22)*night*step(.79,noise(sampleN.xz*150.))*.26;
-  backdrop=lit+vec3(.075,.18,.43)*rim*.25;
- }
- if(ringAlpha>0.&&rt>0.&&body>0.&&rt<body)
-  backdrop=mix(backdrop,ringColor*1.12,ringAlpha*.74);
- // Feature satellites spin in opposite directions and at different altitudes.
+vec3 worldNormal(vec3 n){
+ vec3 north=normalize(vec3(n.z+.001,.0002,-n.x+.001));
+ vec3 east=normalize(cross(n,north));
+ float nx=triplanar(normalize(n+north*.014),8.8)-triplanar(normalize(n-north*.014),8.8);
+ float ny=triplanar(normalize(n+east*.014),8.8)-triplanar(normalize(n-east*.014),8.8);
+ return normalize(n-(north*nx+east*ny)*1.65);
+}
+float craterField(vec3 n,float scale){
+ vec3 c=floor(n*scale),f=fract(n*scale)-.5;
+ float v=.0;
  for(int i=0;i<3;i++){
-  float k=float(i),a=time*(i==1?-.13:.16)+k*2.399;
-  vec3 moon=c+vec3(cos(a)*(1.80+k*.22)*radius,
-                   sin(a*.81+k)*(.79+k*.13)*radius,
-                   sin(a)*(1.07+k*.24)*radius);
-  float mt=hitOrb(ro,rd,moon,(.078+.017*k)*radius);
-  if(mt>0.&&(body<0.||mt<body)&&(rt<0.||mt<rt||ringAlpha<.1)){
-   vec3 mn=normalize(ro+rd*mt-moon);
-   float intensity=.16+.84*max(0.,dot(mn,sun));
-   float edge=pow(1.-max(dot(mn,-rd),0.),2.);
-   backdrop=mix(vec3(.37,.31,.57),vec3(.73,.93,.51),step(1.5,k))*intensity+
-            vec3(.23,.16,.36)*edge;
+  vec3 o=vec3(float(i==1),float(i==2),float(i==0))*.49-.16;
+  float r=length(f-o),ring=smoothstep(.22,.18,abs(r-.22));
+  v+=ring*.44+(.18-smoothstep(.06,.22,r)*.18);
+ }
+ return v;
+}
+vec3 moonSurface(vec3 n,float which){
+ float rock=triplanar(n+vec3(which*2.7),9.5);
+ float fracture=triplanar(n+vec3(2.1,which,7.9),32.);
+ float pits=craterField(n+vec3(which*.03),10.+which*2.);
+ vec3 dark=which<.5?vec3(.10,.10,.16):(which<1.5?vec3(.22,.15,.12):vec3(.13,.17,.21));
+ vec3 bright=which<.5?vec3(.66,.50,.77):(which<1.5?vec3(.83,.55,.32):vec3(.58,.82,.78));
+ return mix(dark,bright,smoothstep(.28,.76,rock*.78+fracture*.16+pits*.2));
+}
+vec3 nightPalette(vec3 n,float land,float light,float roads){
+ float cities=step(.80,noise(n.xz*163.+n.y*5.));
+ float clusters=smoothstep(.48,.69,triplanar(n,25.));
+ return vec3(1.0,.60,.29)*cities*clusters*roads*pow(1.-light,2.)*land*.65;
+}
+vec3 heroSpace(vec2 p){
+ vec2 sky=p*vec2(1.4,1.0);
+ float wide=fbm(sky*2.6+vec2(time*.006,1.3));
+ float wisps=fbm(sky*7.2+vec2(-time*.007,2.5));
+ vec3 col=mix(vec3(.002,.004,.028),vec3(.029,.013,.11),smoothstep(-.7,.8,p.y));
+ col+=vec3(.38,.055,.71)*pow(max(0.,wide-.41),2.)*2.6;
+ col+=vec3(.045,.35,.39)*pow(max(0.,wisps-.57),2.)*1.9;
+ float band=exp(-pow(p.y*.83-p.x*.25+.07,2.)*16.);
+ col+=vec3(.045,.023,.12)*band*(.3+.7*wisps);
+ vec2 starId=floor((p+3.5)*vec2(243.,142.));
+ vec2 starCell=fract((p+3.5)*vec2(243.,142.))-.5;
+ float seed=hash(starId);
+ float star=(1.-smoothstep(.02,.11,length(starCell)));
+ float size=step(.987,seed);
+ float bright=step(.998,seed);
+ vec3 starlight=mix(vec3(.61,.78,1.0),vec3(.92,.77,1.),hash(starId+9.));
+ col+=starlight*star*(size*.48+bright*1.16)*(.83+.17*sin(time*.48+seed*8.));
+ float glitter=exp(-dot(p-vec2(.61,.37),p-vec2(.61,.37))*11.);
+ col+=vec3(.13,.045,.22)*glitter;
+ return col;
+}
+vec3 heroWorld(vec3 ro,vec3 rd,vec2 p,vec3 backdrop){
+ float aspect=resolution.x/max(1.,resolution.y);
+ float compact=1.-smoothstep(.75,1.28,aspect);
+ vec3 c=vec3(mix(1.30,.30,compact)+sin(time*.038)*.048,mix(-.02,-.50,compact)+cos(time*.026)*.028,0.);
+ float r=mix(1.09,.78,compact);
+ vec3 sun=normalize(vec3(-.56,.71,1.18));
+ vec3 violet=vec3(.48,.22,.81),lime=vec3(.69,1.,.35);
+ float body=hitOrb(ro,rd,c,r);
+ vec3 shortest=ro+rd*max(.0,dot(c-ro,rd));
+ float atmosphereDist=length(shortest-c)-r;
+ float halo=exp(-max(0.,atmosphereDist)*7.5);
+ float sunSide=smoothstep(-.55,.6,dot(normalize(shortest-c),sun));
+ backdrop+=mix(violet,vec3(.06,.50,.79),sunSide)*halo*.13;
+ // A distant gas giant is a SECOND actual ray-intersected spherical world.
+ vec3 farC=c+vec3(-3.3+compact*1.6,1.54,-3.9);
+ float farT=hitOrb(ro,rd,farC,.89);
+ if(farT>0.){
+  vec3 fn=normalize(ro+rd*farT-farC);
+  vec3 tilted=spin(fn,.31,time*.017);
+  float bands=sin(tilted.y*41.+sin(tilted.x*8.+time*.024)*2.1);
+  float storms=fbm(tilted.xz*12.+vec2(time*.013,tilted.y*9.));
+  vec3 gas=mix(vec3(.14,.10,.28),vec3(.72,.28,.66),.5+.5*bands);
+  gas=mix(gas,vec3(.83,.69,.44),smoothstep(.53,.77,storms)*.44);
+  float lit=.12+.88*max(0.,dot(fn,sun));
+  float rim=pow(1.-max(dot(fn,-rd),0.),2.);
+  backdrop=gas*lit+violet*rim*.20;
+ }
+ // Tipped particle disk with split lanes, radial dust and realistic occlusion.
+ vec3 ringN=normalize(vec3(.25,.80,.48));
+ float denom=dot(rd,ringN);
+ float rt=-1.,ringA=0.,ringRadius=0.;
+ vec3 ringCol=vec3(0.);
+ if(abs(denom)>.0005)rt=dot(c-ro,ringN)/denom;
+ if(rt>0.){
+  vec3 rp=ro+rd*rt-c;
+  ringRadius=length(rp)/r;
+  float interior=smoothstep(1.10,1.17,ringRadius);
+  float exterior=1.-smoothstep(1.99,2.05,ringRadius);
+  float lane=sin(ringRadius*125.+sin(ringRadius*38.)*2.1);
+  float fine=sin(ringRadius*610.)*.13;
+  float gap=1.-.78*(1.-smoothstep(.02,.045,abs(ringRadius-1.42)));
+  gap*=1.-.73*(1.-smoothstep(.018,.038,abs(ringRadius-1.69)));
+  float dust=hash(floor(rp.xz*45.));
+  ringA=interior*exterior*gap*(.30+.26*lane+.10*fine+.08*dust);
+  ringA*=smoothstep(.0,.12,ringRadius-1.09);
+  ringCol=mix(vec3(.39,.23,.63),vec3(.82,1.0,.52),smoothstep(-.7,.8,lane));
+  ringCol*=.62+.45*pow(max(0.,dot(ringN,sun)),.45);
+ }
+ // Back ring renders before the surface; foreground ring renders after.
+ if(ringA>0.&&(body<0.||rt>body))
+  backdrop=mix(backdrop,ringCol,clamp(ringA,0.,.65));
+ if(body>0.){
+  vec3 normal=normalize(ro+rd*body-c);
+  vec3 spun=spin(normal,.18,time*.043);
+  float continent=triplanar(spun,3.5);
+  float regional=triplanar(spun+vec3(1.5,4.2,2.1),8.8);
+  float elevation=triplanar(spun,22.);
+  float ridges=1.-abs(2.*regional-1.);
+  float coastV=continent*.78+regional*.19+(elevation-.5)*.09;
+  float land=smoothstep(.455,.535,coastV);
+  float sand=(smoothstep(.445,.475,coastV)-smoothstep(.485,.55,coastV))*.9;
+  float peaks=pow(ridges,4.)*elevation;
+  float alpine=smoothstep(.40,.69,peaks+regional*.40);
+  float polar=smoothstep(.69,.92,abs(spun.y)+regional*.22);
+  float shallow=smoothstep(.37,.49,coastV);
+  vec3 deepSea=mix(vec3(.005,.045,.21),vec3(.023,.23,.50),shallow*.85);
+  deepSea=mix(deepSea,vec3(.08,.45,.59),sand*.6);
+  vec3 forest=mix(vec3(.015,.22,.17),vec3(.21,.58,.25),smoothstep(.23,.70,elevation));
+  vec3 desert=mix(vec3(.49,.31,.20),vec3(.81,.65,.38),regional);
+  float dry=smoothstep(.20,.83,abs(spun.y)+regional*.58);
+  vec3 ground=mix(forest,desert,dry*.72);
+  ground=mix(ground,vec3(.47,.43,.50),alpine*.64);
+  ground=mix(ground,vec3(.86,.93,.99),polar*.94);
+  vec3 albedo=mix(deepSea,ground,land);
+  albedo=mix(albedo,vec3(.78,.69,.44),sand*land*.45);
+  vec3 N=normal;
+  if(quality>.65&&land>.20)N=normalize(mix(normal,worldNormal(spun),.34*land));
+  float shade=max(0.,dot(N,sun));
+  float diffuse=.055+.96*pow(shade,.83);
+  // Two distinct semi-translucent cloud heights and their offset shadows.
+  vec3 cloudsN=spin(normal,.18,time*.052);
+  float high=triplanar(cloudsN+vec3(.01,time*.001,0.),16.);
+  float low=triplanar(cloudsN+vec3(time*.002,.01,0.),27.);
+  float storm=triplanar(cloudsN+vec3(.3,-.2,.6),6.);
+  float cloudCover=smoothstep(.49,.70,high*.67+low*.21+storm*.20);
+  float cirrus=smoothstep(.59,.79,low);
+  float cloudShadow=smoothstep(.48,.70,high*.68+low*.20)*land*.28;
+  float ocean=1.-land;
+  float sparkle=pow(max(0.,dot(reflect(-sun,N),-rd)),84.);
+  vec3 lit=albedo*(diffuse-cloudShadow*shade)+vec3(.54,.91,1.)*sparkle*ocean*.62;
+  lit=mix(lit,vec3(.86,.92,1.)*(.12+.85*shade),cloudCover*.83);
+  lit+=vec3(.76,.88,.98)*cirrus*.11*shade;
+  // Thin blue-cyan limb with sunlight scattering and electric violet dusk.
+  float limb=pow(1.-max(dot(normal,-rd),0.),3.0);
+  float day=max(0.,dot(normal,sun));
+  vec3 air=mix(vec3(.30,.09,.63),vec3(.05,.53,.96),smoothstep(.1,.85,day));
+  lit+=air*limb*(.35+.60*day);
+  lit+=vec3(.18,.55,.99)*pow(limb,5.)*.30;
+  // Night side city clusters are restrained by topography, not a grid.
+  float towns=step(.81,noise(spun.xz*171.+spun.y*9.));
+  float urban=smoothstep(.44,.68,triplanar(spun+vec3(1.2),18.));
+  lit+=vec3(1.0,.62,.28)*towns*urban*land*pow(1.-shade,3.)*.37;
+  // Aurora around high-latitude magnetic bands.
+  float polarArc=smoothstep(.68,.94,abs(spun.y));
+  float waves=.5+.5*sin(spun.x*46.+time*.2+spun.z*27.);
+  lit+=mix(lime,vec3(.18,.84,1.),waves)*polarArc*waves*day*.12;
+  backdrop=max(lit,vec3(.005));
+ }
+ if(ringA>0.&&rt>0.&&body>0.&&rt<body)
+  backdrop=mix(backdrop,ringCol*1.14,clamp(ringA*.90,0.,.70));
+ // Small physical moons. Each has individual crater fields, terrain and light.
+ for(int i=0;i<4;i++){
+  float k=float(i),direction=i==1||i==3?-1.:1.;
+  float a=time*direction*(.115+.017*k)+k*2.399;
+  vec3 m=c+vec3(cos(a)*(1.92+k*.19)*r,
+                sin(a*.78+k*1.8)*(.77+.10*k)*r,
+                sin(a)*(1.02+k*.18)*r);
+  float size=r*(.10+.016*k);
+  float moonT=hitOrb(ro,rd,m,size);
+  if(moonT>0.&&(body<0.||moonT<body)&&(farT<0.||moonT<farT)&&(rt<0.||moonT<rt||ringA<.1)){
+   vec3 n=normalize(ro+rd*moonT-m);
+   float base=triplanar(n+vec3(k*1.7),8.7);
+   float pits=craterField(n,8.+k*1.5);
+   float elevation=smoothstep(.3,.72,base+pits*.23);
+   vec3 marble=moonSurface(n,k);
+   marble=mix(marble,vec3(.05,.06,.10),(.18+.3*pits)*(1.-elevation));
+   float lit=.09+.91*max(0.,dot(n,sun));
+   float rim=pow(1.-max(dot(n,-rd),0.),2.4);
+   backdrop=marble*lit+mix(vec3(.31,.13,.58),vec3(.54,.94,.45),step(1.5,k))*rim*.17;
   }
  }
- float arc=abs(length((screen-vec2(mix(.71,.15,compact),-.13))*vec2(1.0,1.34))-1.16);
- backdrop+=vec3(.12,.29,.19)*exp(-arc*155.)*.20;
+ // Volumetric-looking penumbra: a physically positioned near-field moon
+ // eclipses the hero world during the existing 12s intro, never in idle.
+ float eclipseVisibility=smoothstep(.15,.83,introProgress)*(1.-smoothstep(3.2,3.95,introProgress));
+ if(eclipseVisibility>.001){
+  float withdrawal=smoothstep(.83,3.22,introProgress);
+  vec3 moonC=c+vec3(-r*1.93*withdrawal,
+                         r*(.065+.11*withdrawal),r*1.42);
+  float eclipsingRadius=r*.96;
+  float ecT=hitOrb(ro,rd,moonC,eclipsingRadius);
+  vec3 point=ro+rd*max(.0,dot(moonC-ro,rd));
+  float clearance=length(point-moonC)-eclipsingRadius;
+  float grazing=exp(-max(0.,clearance)*25.);
+  float lens=exp(-max(0.,clearance)*5.5);
+  float coronaTurbulence=.76+.24*noise(p*29.+vec2(time*.11,3.1));
+  vec3 haloCol=mix(vec3(.82,.52,1.),vec3(.70,1.,.59),.5+.5*sin(introProgress*1.7));
+  backdrop+=haloCol*grazing*.40*eclipseVisibility*coronaTurbulence;
+  backdrop+=haloCol*lens*.08*eclipseVisibility;
+  if(ecT>0.&&(body<0.||ecT<body)){
+   vec3 n=normalize(ro+rd*ecT-moonC);
+   float rubble=triplanar(n,9.6);
+   float chips=craterField(n,13.);
+   vec3 stone=mix(vec3(.012,.016,.031),vec3(.075,.068,.103),rubble*.62+chips*.10);
+   float rim=pow(1.-max(dot(n,-rd),0.),4.);
+   float faint=max(0.,dot(n,sun))*.08;
+   vec3 silhouette=stone*(.16+faint)+haloCol*rim*.28;
+   backdrop=mix(backdrop,silhouette,eclipseVisibility);
+  }
+ }
+ // Sparse near-field orbital dust flares (not large duplicate silhouettes).
+ float orbitArc=abs(length((p-vec2(mix(.65,.14,compact),-.10))*vec2(1.,1.27))-1.14);
+ backdrop+=mix(violet,lime,.5+.5*sin(time*.13))*exp(-orbitArc*155.)*.105;
  return backdrop;
 }
-
 void main(){
  vec2 p=(uv*2.-1.);p.x*=resolution.x/max(resolution.y,1.);
  vec2 look=(pointer-.5)*vec2(.19,.12);
  vec3 ro=vec3(look.x,look.y,5.45),rd=normalize(vec3(p*.95,-3.0));
  vec3 bg=atmosphere(p);
  if(scene==5){
-  float aurora=pow(max(0.,fbm(p*vec2(1.3,2.2)+vec2(time*.008,.4))-.49),2.)*1.6;
-  bg+=vec3(.11,.045,.23)*aurora;
-  bg=celestialWorld(ro,rd,p,bg);
-  float fade=1.-.21*pow(length(uv-.5)*1.35,2.);
-  pixel=vec4(pow(max(bg*fade,0.),vec3(.88)),1.);return;
+  bg=heroWorld(ro,rd,p,heroSpace(p));
+  float frame=1.-.20*pow(length(uv-.5)*1.28,2.);
+  // Filmic shoulder with a gentle lifted toe keeps purple/lime vivid,
+  // but prevents solar rim and cloud detail from burning out.
+  bg=max(bg*frame,vec3(0.));
+  bg=bg*(2.15*bg+.045)/(bg*(1.70*bg+.55)+.13);
+  bg=pow(clamp(bg,vec3(0.),vec3(1.)),vec3(.88));
+  pixel=vec4(bg,1.);return;
  }
  float distance=0.,id=-1.,stepD=0.;
  vec3 hit=ro;
@@ -275,7 +426,7 @@ function init(node,key){
  const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
  gl.useProgram(program);const pos=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
  const obj={node,gl,program,buffer,key,visible:false,ready:false,lastSize:'',lastFrame:0,uniforms:{}};
- ['resolution','pointer','time','scene'].forEach(k=>{obj.uniforms[k]=gl.getUniformLocation(program,k)});
+ ['resolution','pointer','time','scene','introProgress','quality'].forEach(k=>{obj.uniforms[k]=gl.getUniformLocation(program,k)});
  return obj;
 }
 function draw(obj,stamp,force){
@@ -295,10 +446,12 @@ function draw(obj,stamp,force){
  gl.uniform2f(uniforms.pointer,obj.key==='cosmos'?.5+.5*(window.__scholaverumPointerX||0):.5,.5);
  gl.uniform1f(uniforms.time,t);
  gl.uniform1i(uniforms.scene,scene);
+ gl.uniform1f(uniforms.introProgress,hero&&!REDUCED()?(window.__SCHOLAVERUM_R299_PLANET__?.state?.().progress??12):12);
+ gl.uniform1f(uniforms.quality,small?.55:.94);
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
  const err=gl.getError();
  if(err!==gl.NO_ERROR)return;
- if(!obj.ready){obj.ready=true;host.classList.add('v307-has-gpu');host.dataset.v307Gpu='1';if(obj.key==='cosmos')host.dataset.v308Planet='celestial-homeworld';}
+ if(!obj.ready){obj.ready=true;host.classList.add('v307-has-gpu');host.dataset.v307Gpu='1';if(obj.key==='cosmos'){host.dataset.v308Planet='celestial-homeworld';host.dataset.v309Hero='photoreal-eclipse';}}
  obj.lastSize=w+'x'+h+'-'+scene;obj.lastFrame=stamp;
 }
 function clear(){
@@ -408,7 +561,7 @@ function mount(){
 }
 if(!document.querySelector('#scholaverum-r307-3d-style')){
  const link=document.createElement('link');link.id='scholaverum-r307-3d-style';link.rel='stylesheet';
- link.href='scholark-v134-immersive-3d.css?v=20261101-r308';document.head.appendChild(link);
+ link.href='scholark-v134-immersive-3d.css?v=20261108-r309';document.head.appendChild(link);
 }
 for(const name of ['scholaverum:editorial-home-mounted','scholark-runtime-ready','scholark-return-home','scholark-language-applied','scholark-language-change','pageshow']){
  window.addEventListener(name,()=>{setTimeout(mount,85);setTimeout(()=>{const root=ROOT();if(root)updateToolLabels(root)},130)});
@@ -420,5 +573,5 @@ window.addEventListener('resize',()=>{for(const o of stages.values())o.lastSize=
 window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change',()=>{for(const o of stages.values())o.lastSize='';wake()});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,160),{once:true});
 else setTimeout(mount,150);
-window.__SCHOLAVERUM_R307_3D__={version:VERSION,mount,state:()=>({scenes:stages.size,gpu:[...stages.values()].filter(o=>o.ready).length,active:[...stages.values()].filter(o=>o.visible).length,reduced:REDUCED(),planet:document.querySelector('#v280-hero')?.dataset.v308Planet||'fallback'})};
+window.__SCHOLAVERUM_R307_3D__={version:VERSION,mount,state:()=>({scenes:stages.size,gpu:[...stages.values()].filter(o=>o.ready).length,active:[...stages.values()].filter(o=>o.visible).length,reduced:REDUCED(),planet:document.querySelector('#v280-hero')?.dataset.v308Planet||'fallback',heroVersion:document.querySelector('#v280-hero')?.dataset.v309Hero||'fallback',eclipse:window.__SCHOLAVERUM_R299_PLANET__?.state?.().phase||'unknown'})};
 })();
