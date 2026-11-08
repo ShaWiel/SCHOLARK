@@ -471,6 +471,11 @@ function clear(){
 }
 function tick(now){
  raf=0;if(!HOME()||!mountedRoot?.isConnected||document.hidden)return;
+ // Do not compete with language hydration, layout or focus events for the
+ // main thread. Continue the RAF loop cheaply and resume after adaptation.
+ const translating=document.documentElement.classList.contains('scholark-language-switching')||
+                   document.documentElement.classList.contains('scholark-home-language-adapting');
+ if(translating){if(!REDUCED())raf=requestAnimationFrame(tick);return}
  const interval=innerWidth<760?115:58;
  if(now-previous<interval&&!REDUCED()){raf=requestAnimationFrame(tick);return}
  previous=now;
