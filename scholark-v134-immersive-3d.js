@@ -475,7 +475,8 @@ function tick(now){
  // main thread. Continue the RAF loop cheaply and resume after adaptation.
  const translating=document.documentElement.classList.contains('scholark-language-switching')||
                    document.documentElement.classList.contains('scholark-home-language-adapting');
- if(translating){if(!REDUCED())raf=requestAnimationFrame(tick);return}
+ const modalBusy=!!document.querySelector('#v72-modal.open,#v116-dialog.open,#v89-account.open,#v90-language-overlay.open');
+ if(translating||modalBusy){if(!REDUCED())raf=requestAnimationFrame(tick);return}
  const interval=innerWidth<760?115:58;
  if(now-previous<interval&&!REDUCED()){raf=requestAnimationFrame(tick);return}
  previous=now;
