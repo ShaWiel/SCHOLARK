@@ -337,12 +337,16 @@ vec3 heroWorld(vec3 ro,vec3 rd,vec2 p,vec3 backdrop){
   float ecT=hitOrb(ro,rd,moonC,eclipsingRadius);
   vec3 point=ro+rd*max(.0,dot(moonC-ro,rd));
   float clearance=length(point-moonC)-eclipsingRadius;
-  float grazing=exp(-max(0.,clearance)*25.);
-  float lens=exp(-max(0.,clearance)*5.5);
+  float grazing=exp(-max(0.,clearance)*29.);
+  float lens=exp(-max(0.,clearance)*6.8);
+  vec3 ray=normalize(point-moonC+vec3(.0001));
+  float angle=atan(ray.y,ray.x);
+  float streamer=.69+.18*sin(angle*19.+time*.065)+.10*sin(angle*43.-time*.11);
+  float bead=pow(max(0.,sin(angle*27.+time*.27)),25.);
   float coronaTurbulence=.76+.24*noise(p*29.+vec2(time*.11,3.1));
-  vec3 haloCol=mix(vec3(.82,.52,1.),vec3(.70,1.,.59),.5+.5*sin(introProgress*1.7));
-  backdrop+=haloCol*grazing*.40*eclipseVisibility*coronaTurbulence;
-  backdrop+=haloCol*lens*.08*eclipseVisibility;
+  vec3 haloCol=mix(vec3(.84,.58,1.),vec3(.72,1.,.63),.5+.5*sin(introProgress*1.7));
+  backdrop+=haloCol*grazing*(.37+.37*streamer+.11*bead)*eclipseVisibility*coronaTurbulence;
+  backdrop+=haloCol*lens*.087*eclipseVisibility;
   if(ecT>0.&&(body<0.||ecT<body)){
    vec3 n=normalize(ro+rd*ecT-moonC);
    float rubble=triplanar(n,9.6);
