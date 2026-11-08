@@ -14,7 +14,7 @@ try{
       await page.goto(base+'/#home',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>!!window.__SCHOLARK_I18N__,null,{timeout:15000});
       await page.evaluate(async c=>{await window.__SCHOLARK_I18N__.changeLanguage(c)},code);
-      try{await page.waitForFunction(c=>document.documentElement.lang===c&&document.documentElement.dataset.scholarkI18nReady===c,code,{timeout:4500})}
+      try{await page.waitForFunction(c=>document.documentElement.lang===c&&document.documentElement.dataset.scholarkI18nReady===c,code,{timeout:12000,polling:250})}
       catch(e){
         const detail=await page.evaluate(()=>({lang:document.documentElement.lang,ready:document.documentElement.dataset.scholarkI18nReady||'',storage:localStorage.getItem('scholark_ui_language'),switching:document.documentElement.classList.contains('scholark-language-switching'),homeAdapting:document.documentElement.classList.contains('scholark-home-language-adapting'),overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open'),runtime:window.__SCHOLARK_RUNTIME__?.errors?.()?.slice(-3)}));
         throw new Error('Visual language transition '+viewport.name+'/'+code+' failed: '+String(e.message)+'; '+JSON.stringify(detail))
