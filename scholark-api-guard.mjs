@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {createHash} from 'node:crypto';
+import {isIP} from 'node:net';
 
 const previousEmit = http.Server.prototype.emit;
 const buckets = new Map();
@@ -33,13 +34,12 @@ const rules = [
 ];
 
 function sourceIp(req) {
-  const cf = String(req.headers?.['cf-connecting-ip'] || '').trim();
-  if (cf) return cf.slice(0,120);
-  const real = String(req.headers?.['x-real-ip'] || '').trim();
-  if (real) return real.slice(0,120);
-  const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
-  if (forwarded) return forwarded.slice(0,120);
-  return String(req.socket?.remoteAddress || 'unknown').slice(0,120);
+  const peer=String(req.socket?.remoteAddress||'unknown').trim().slice(0,120);
+  // Never trust arbitrary CF-Connecting-IP / X-Real-IP request headers for
+  // security-sensitive rate-limit keys. Render provides the trusted edge's
+  // X-Forwarded-For client value; outside Render use the socket peer only.
+  const forwarded=String(req.headers?.['x-forwarded-for']||'').split(',')[0].trim();
+  return process.env.RENDER==='true'&&isIP(forwarded)?forwarded:peer;
 }
 
 function clientKey(req) {
@@ -148,8 +148,8 @@ function requestOriginAllowed(req) {
   if (!origin) return true;
   try {
     const originHost = new URL(origin).host.toLowerCase();
-    const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim().toLowerCase();
-    const host = forwardedHost || String(req.headers?.host || '').trim().toLowerCase();
+    // X-Forwarded-Host may be supplied by a caller; it cannot authorize Origin.
+    const host = String(req.headers?.host || '').trim().toLowerCase();
     return !!host && originHost === host;
   } catch { return false; }
 }
