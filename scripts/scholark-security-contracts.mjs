@@ -20,6 +20,12 @@ const release=(docker.match(/ENV SCHOLARK_RELEASE=(r\d+(?:-[a-z0-9-]+)?)/)||[])[
 assert.match(release,/^r\d+(?:-[a-z0-9-]+)?$/);
 assert.match(guard,/content-security-policy/);
 assert.match(guard,/strictMutationOrigin:true/);
+assert.match(guard,/process\.env\.RENDER==='true'&&isIP\(forwarded\)/);
+assert.doesNotMatch(guard,/req\.headers\?\.\['cf-connecting-ip'\]/);
+assert.doesNotMatch(guard,/const forwardedHost/);
+assert.match(security,/process\.env\.RENDER==='true'&&isIP\(forwarded\)/);
+assert.doesNotMatch(security,/req\.headers\?\.\['x-real-ip'\]/);
+
 assert.match(guard,/SENSITIVE_QUERY_BLOCKED/);
 assert.match(guard,/function hardenServer\(server\)/);
 assert.match(guard,/maxHeadersCount = 100/);
