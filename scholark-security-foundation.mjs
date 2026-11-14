@@ -1,5 +1,6 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
+import {isIP} from 'node:net';
 
 const previousEmit=http.Server.prototype.emit;
 const SB=String(process.env.SUPABASE_URL||'').replace(/\/+$/,'');
@@ -39,8 +40,12 @@ const b64url=v=>Buffer.from(v).toString('base64url');
 const safeEqual=(a,b)=>{try{const x=Buffer.from(String(a||'')),y=Buffer.from(String(b||''));return x.length===y.length&&crypto.timingSafeEqual(x,y)}catch{return false}};
 function json(res,status,body,extra={}){if(res.headersSent)return;res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...extra});res.end(JSON.stringify(body))}
 function readJson(req,limit=4096){return new Promise((resolve,reject)=>{let raw='',size=0;req.setEncoding('utf8');req.on('data',c=>{size+=Buffer.byteLength(c);if(size>limit){reject(Object.assign(new Error('request_too_large'),{code:'REQUEST_TOO_LARGE'}));req.destroy();return}raw+=c});req.on('end',()=>{try{resolve(raw?JSON.parse(raw):{})}catch{reject(Object.assign(new Error('invalid_json'),{code:'INVALID_JSON'}))}});req.on('error',reject)})}
-function sameOrigin(req){const site=String(req.headers?.['sec-fetch-site']||'').toLowerCase();if(site==='cross-site')return false;const origin=String(req.headers?.origin||'').trim();if(!origin)return true;try{const oh=new URL(origin).host.toLowerCase(),host=String(req.headers?.['x-forwarded-host']||req.headers?.host||'').split(',')[0].trim().toLowerCase();return !!host&&oh===host}catch{return false}}
-function sourceIp(req){return clean(String(req.headers?.['cf-connecting-ip']||req.headers?.['x-real-ip']||req.headers?.['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0],120)}
+function sameOrigin(req){const site=String(req.headers?.['sec-fetch-site']||'').toLowerCase();if(site==='cross-site')return false;const origin=String(req.headers?.origin||'').trim();if(!origin)return true;try{const oh=new URL(origin).host.toLowerCase(),host=String(req.headers?.host||'').trim().toLowerCase();return !!host&&oh===host}catch{return false}}
+function sourceIp(req){
+  const peer=clean(req.socket?.remoteAddress||'unknown',120);
+  const forwarded=String(req.headers?.['x-forwarded-for']||'').split(',')[0].trim();
+  return process.env.RENDER==='true'&&isIP(forwarded)?forwarded:peer;
+}
 function ipHash(req){return crypto.createHmac('sha256',STEP_SECRET).update(sourceIp(req)).digest('hex').slice(0,32)}
 function sessionHash(value){const v=clean(value,160);return v?crypto.createHmac('sha256',STEP_SECRET).update(v).digest('hex').slice(0,32):null}
 function tokenHash(token){return crypto.createHash('sha256').update(String(token||'')).digest('hex').slice(0,32)}
