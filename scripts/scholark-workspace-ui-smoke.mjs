@@ -235,6 +235,11 @@ check(await page.locator('#v117-credit-store-page').evaluate(el=>el.hidden),'Cre
 check(await visible('#v29-home-layer',5000),'Homepage did not recover after leaving Credit Store');
 await checkTransitionSingletons('store-return-home initial');
 
+// Simulate an unrelated topbar update removing the Store action.
+// The product must repair the canonical entry without reloading.
+await page.evaluate(()=>document.querySelector('#v55-topbar #v117-credit-store-button')?.remove());
+check(await visible('#v117-credit-store-button',2000),'Home topbar did not self-heal after Store action removal');
+await checkTransitionSingletons('store-action-self-heal');
 for(let cycle=1;cycle<=3;cycle++){
   check(await visible('#v117-credit-store-button',5000),'Cycle '+cycle+': Credit Store button missing on Home');
   await page.click('#v117-credit-store-button');
