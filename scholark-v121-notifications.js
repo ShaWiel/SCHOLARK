@@ -1,6 +1,6 @@
 (() => {
   if(window.__SCHOLARK_NOTIFICATIONS__)return;
-  const RELEASE='r250-notifications',SW_VERSION='20261009-r247-push';
+  const RELEASE='r250-notifications',SW_VERSION='20261123-r311-notification-icons';
   const VAPID_PUBLIC='BCZr66dMfGomd-lDQTaglxhFbjYCd4vZ55AKZ_Nwp_p4WC4P-UCCyOG9WL_0Nnes_HD4eCdQIi3igZ2I4kgREqA';
   const ASSIGN_KEY='scholark_v106_assignments',ONBOARD_KEY='scholark_notification_onboarding_pending',DISMISS_KEY='scholark_notification_device_prompt_until_v2';
   const $=(s,r=document)=>r?.querySelector?.(s)||null,$$=(s,r=document)=>r?.querySelectorAll?[...r.querySelectorAll(s)]:[];
@@ -55,7 +55,7 @@
     if(!supported()||Notification.permission!=='granted')return false;
     try{
       const reg=await sw(),tag='scholaverum-local-check-'+Date.now();
-      await reg.showNotification('SCHOLAVERUM notification display check',{body:'Local notification display is working on this device.',tag,icon:'/scholaverum-icon-512-r242.png',badge:'/scholaverum-icon-512-r242.png',renotify:true,requireInteraction:true,silent:false,data:{url:'/#reminders',kind:'test'}});
+      await reg.showNotification('SCHOLAVERUM notification display check',{body:'Local notification display is working on this device.',tag,icon:'/scholaverum-notification-icon-192.png',badge:'/scholaverum-notification-badge-96.png',renotify:true,requireInteraction:true,silent:false,data:{url:'/#reminders',kind:'test'}});
       return true;
     }catch{return false}
   }
