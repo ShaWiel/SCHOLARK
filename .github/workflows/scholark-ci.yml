@@ -98,6 +98,7 @@ jobs:
           node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholaverum-r284-data-contract.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-notification-icon-smoke.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
 
@@ -132,6 +133,7 @@ jobs:
         run: node scripts/scholark-security-smoke.mjs http://127.0.0.1:10000
       - name: Run full local API smoke suite
         run: node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-notification-icon-smoke.mjs http://127.0.0.1:10000
       - name: Run global Schools Near Me sampling
         run: node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
       - name: Run concurrent launch load smoke
