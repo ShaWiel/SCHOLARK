@@ -62,6 +62,9 @@ COPY scholark-v120-experience-controls.js /tmp/scholark-v120-experience-controls
 COPY scholark-v121-notifications.js /tmp/scholark-v121-notifications.js
 COPY scholark-v122-connect.js /tmp/scholark-v122-connect.js
 COPY scholark-sw.js /app/scholark-sw.js
+# Dedicated small-format push icons: preserve the full-size official branding elsewhere.
+COPY scholaverum-notification-icon-192.png /app/scholaverum-notification-icon-192.png
+COPY scholaverum-notification-badge-96.png /app/scholaverum-notification-badge-96.png
 COPY scholark.webmanifest /app/scholark.webmanifest
 COPY scholaverum-logo.webp /tmp/scholaverum-logo.webp
 COPY scholaverum-icon-512.webp /tmp/scholaverum-icon-512.webp
