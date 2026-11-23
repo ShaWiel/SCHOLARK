@@ -12,7 +12,7 @@ const client = readFileSync('scholark-v121-notifications.js', 'utf8');
 const docker = readFileSync('Dockerfile', 'utf8');
 assert.match(source, /SW_RELEASE='20261123-r311-notification-icons'/);
 assert.match(client, /SW_VERSION='20261123-r311-notification-icons'/);
-const origin = String(process.argv[2] || '').replace(/\\/$/, '');
+const origin = String(process.argv[2] || '').replace(new RegExp('/$'), '');
 for (const [name, size] of files) {
   const bytes = readFileSync(name);
   assert.ok(bytes.subarray(0, 8).equals(signature), name + ' must be a real PNG');
@@ -27,7 +27,7 @@ for (const [name, size] of files) {
   if (origin) {
     const res = await fetch(origin + '/' + name, {headers:{'cache-control':'no-cache'}});
     assert.equal(res.status, 200, name + ' HTTP ' + res.status);
-    assert.match(String(res.headers.get('content-type')), /image\\/png/i, name + ' must be served as image/png');
+    assert.ok(String(res.headers.get('content-type')).toLowerCase().includes('image/png'), name + ' must be served as image/png');
     const deployed = Buffer.from(await res.arrayBuffer());
     assert.equal(createHash('sha256').update(deployed).digest('hex'), createHash('sha256').update(bytes).digest('hex'), 'Runtime asset bytes differ: ' + name);
   }
