@@ -94,6 +94,7 @@ jobs:
           node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholaverum-r284-data-contract.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-notification-icon-smoke.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
       - name: Build production image
@@ -117,6 +118,7 @@ jobs:
       - name: Full API and global Schools QA
         run: |
           node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-notification-icon-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
