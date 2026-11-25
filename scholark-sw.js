@@ -1,4 +1,4 @@
-const SW_RELEASE='20261123-r311-notification-icons';
+const SW_RELEASE='20261125-r312-approved-orbital-logo';
 const safeNotificationUrl=raw=>{try{const u=new URL(String(raw||'/#dashboard'),self.location.origin);return u.origin===self.location.origin?u.href:new URL('/#dashboard',self.location.origin).href}catch{return new URL('/#dashboard',self.location.origin).href}};
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
