@@ -10,8 +10,8 @@ const signature = Buffer.from('89504e470d0a1a0a', 'hex');
 const source = readFileSync('scholark-sw.js', 'utf8');
 const client = readFileSync('scholark-v121-notifications.js', 'utf8');
 const docker = readFileSync('Dockerfile', 'utf8');
-assert.match(source, /SW_RELEASE='20261123-r311-notification-icons'/);
-assert.match(client, /SW_VERSION='20261123-r311-notification-icons'/);
+assert.match(source, /SW_RELEASE='20261125-r312-approved-orbital-logo'/);
+assert.match(client, /SW_VERSION='20261125-r312-approved-orbital-logo'/);
 const origin = String(process.argv[2] || '').replace(new RegExp('/$'), '');
 for (const [name, size] of files) {
   const bytes = readFileSync(name);
