@@ -12,15 +12,26 @@ const browser=await chromium.launch({headless:true});
 try{
   const context=await browser.newContext({viewport:{width:1280,height:800}});
   const page=await context.newPage();
+  // Mock the entire Supabase origin at the browser-context level so that both
+  // tabs use the same deterministic fake backend. Page-level routes did not
+  // apply to the second tab: its background cloud fetch could receive a real
+  // 401 and invalidate the deliberately synthetic QA session.
+  await context.route(SB+'/**',route=>route.fulfill({
+    status:200,contentType:'application/json',body:'[]',
+    headers:{'cache-control':'no-store'}
+  }));
   // The lifecycle smoke validates Supabase session flows, not the external bot provider.
   // Keep security configuration deterministic so CAPTCHA discovery cannot stall mocked requests.
-  await page.route('**/api/security/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({turnstile:{enabled:false}})}));
+  await context.route('**/api/security/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({turnstile:{enabled:false}})}));
 
-  await page.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
-  await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
-  await page.route(SB+'/auth/v1/recover**',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
-  await page.route(SB+'/auth/v1/logout',route=>route.fulfill({status:204,body:''}));
-  await page.route(SB+'/auth/v1/user',async route=>{
+  await context.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
+  await context.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
+  await context.route(SB+'/auth/v1/token?grant_type=refresh_token',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({...SESSION,expires_at:Math.floor(Date.now()/1000)+3600})
+  }));
+  await context.route(SB+'/auth/v1/recover**',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+  await context.route(SB+'/auth/v1/logout',route=>route.fulfill({status:204,body:''}));
+  await context.route(SB+'/auth/v1/user',async route=>{
     if(route.request().method()==='PUT')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(USER)});
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(USER)});
   });
@@ -34,10 +45,11 @@ try{
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
   await page.locator('.v72-form input[type="password"]').fill('LongEnough1');
   await page.locator('[data-v72-terms]').check();
-  await page.locator('.v72-form button').filter({hasText:'Create account'}).click();
-  await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Check your email'),null,{timeout:5000});
+  const signupDone=page.waitForResponse(r=>r.url().startsWith(SB+'/auth/v1/signup')&&r.request().method()==='POST'&&r.status()===200);
+  await page.locator('.v72-form button:not([type="button"])').click();
+  await signupDone;
+  check(!await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()),'unverified signup requires email confirmation');
   check(signupPayload?.data?.terms_version==='2026-10-05','signup uses current legal version',signupPayload?.data?.terms_version||'missing');
-  check(true,'unverified signup requires email confirmation');
 
   await page.goto(base+'/#access_token=qa-access-token&refresh_token=qa-refresh-token&expires_in=3600&type=signup',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='qa-access-token',null,{timeout:10000});
@@ -61,6 +73,7 @@ try{
     throw new Error('login session was not retained '+JSON.stringify(diag));
   }
   check(true,'login restores session');
+  await page.waitForFunction(()=>!document.querySelector('#v72-modal')?.classList.contains('open'),null,{timeout:10000,polling:100});
 
   await page.evaluate(()=>window.__SCHOLARK_V72_CLOUD__.openAuth('signin'));
   await page.locator('.v72-form input[type="email"]').fill(USER.email);
@@ -69,11 +82,12 @@ try{
   check(true,'forgot-password request completes');
 
   await page.goto(base+'/#access_token=qa-access-token&refresh_token=qa-refresh-token&expires_in=3600&type=recovery',{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>document.querySelector('.v72-modal-top h2')?.textContent==='Set a new password',null,{timeout:10000});
+  await page.waitForFunction(()=>document.querySelectorAll('#v72-modal.open .v72-form input[type="password"]').length===2,null,{timeout:10000,polling:100});
   await page.locator('.v72-form input[type="password"]').nth(0).fill('NewLongPassword1');
   await page.locator('.v72-form input[type="password"]').nth(1).fill('NewLongPassword1');
-  await page.locator('.v72-form button').click();
-  await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Password updated'),null,{timeout:5000});
+  const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200,{timeout:6000});
+  await page.locator('#v72-modal.open .v72-form button').click();
+  await passwordUpdate;
   check(true,'recovery callback updates password');
 
   const second=await context.newPage();
@@ -98,6 +112,7 @@ try{
 
   // The privacy modal must remain visible after the cross-tab session sync,
   // including when homepage hydration and UI observers are still active.
+  await second.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint')&&document.documentElement.dataset.scholaverumBootFailed!=='1',null,{timeout:35000,polling:100});
   await second.evaluate(()=>window.__SCHOLARK_LAUNCH__?.privacy?.());
   try{await second.waitForSelector('#v116-dialog.open [data-v116-export]',{state:'visible',timeout:5000})}
   catch(err){
