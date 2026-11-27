@@ -35,7 +35,22 @@ page.on('console',msg=>{
 
 function check(cond,msg){if(!cond)failures.push(msg)}
 async function visible(sel,timeout=7000){
-  try{await page.waitForSelector(sel,{state:'visible',timeout});return true}catch{return false}
+  try{
+    // The 3D homepage can postpone animation frames; selectors waiting for a
+    // visible state must still be sampled at fixed wall-clock intervals.
+    await page.waitForFunction(selector=>{
+      const el=document.querySelector(selector);
+      if(!el)return false;
+      const css=getComputedStyle(el),r=el.getBoundingClientRect();
+      if(css.display==='none'||css.visibility==='hidden'||r.width<=0||r.height<=0)return false;
+      for(let parent=el.parentElement;parent;parent=parent.parentElement){
+        const pc=getComputedStyle(parent);
+        if(parent.hidden||pc.display==='none'||pc.visibility==='hidden')return false;
+      }
+      return true;
+    },sel,{timeout,polling:100});
+    return true;
+  }catch{return false}
 }
 async function checkWorkspaceSingletons(label){
   const state=await page.evaluate(()=>{
