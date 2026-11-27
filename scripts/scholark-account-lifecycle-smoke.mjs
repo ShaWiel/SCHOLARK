@@ -85,9 +85,30 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('#v72-modal.open .v72-form input[type="password"]').length===2,null,{timeout:10000,polling:100});
   await page.locator('.v72-form input[type="password"]').nth(0).fill('NewLongPassword1');
   await page.locator('.v72-form input[type="password"]').nth(1).fill('NewLongPassword1');
-  const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200,{timeout:6000});
-  await page.locator('#v72-modal.open .v72-form button').click();
-  await passwordUpdate;
+  // Submit through the browser form API (including native validation) to
+  // avoid heavy WebGL rendering starving hit-testing of the button itself.
+  // This still exercises the real form onsubmit and requires a real mocked
+  // PUT /auth/v1/user response; it does not call the app's API directly.
+  const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200,{timeout:10000}).catch(()=>null);
+  const recoveryForm=page.locator('#v72-modal.open .v72-form');
+  const formReady=await recoveryForm.evaluate(el=>({
+    valid:el.checkValidity(),
+    hasHandler:typeof el.onsubmit==='function',
+    fieldCount:el.querySelectorAll('input[type="password"]').length
+  }));
+  check(formReady.valid&&formReady.hasHandler&&formReady.fieldCount===2,'recovery form is valid and submit handler is ready',JSON.stringify(formReady));
+  if(!formReady.valid||!formReady.hasHandler)throw new Error('Password recovery form not ready: '+JSON.stringify(formReady));
+  await recoveryForm.evaluate(el=>el.requestSubmit());
+  const passwordResponse=await passwordUpdate;
+  if(!passwordResponse){
+    const diag=await page.evaluate(()=>({
+      open:document.querySelector('#v72-modal')?.classList.contains('open'),
+      status:document.querySelector('#v72-modal .v72-modal-status')?.textContent||'',
+      valid:document.querySelector('#v72-modal.open .v72-form')?.checkValidity(),
+      currentSession:!!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token
+    }));
+    throw new Error('Recovery form did not submit a password update request: '+JSON.stringify(diag));
+  }
   check(true,'recovery callback updates password');
 
   const second=await context.newPage();
