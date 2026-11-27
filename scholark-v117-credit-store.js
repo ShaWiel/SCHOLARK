@@ -258,6 +258,39 @@
     }else{exitStoreSurface('route-exit');ensureButton();window.__SCHOLARK_V55_TOPBAR__?.sync?.()}
   }
 
+  // r310: The public header may be replaced after Workspace -> Home.
+  // Watch only its actions container so this does not tax cinematic rendering.
+  let observedStoreActions=null;
+  const storeEntryObserver=new MutationObserver(records=>{
+    if(isStore())return; // Parking the Store button is expected on its own route.
+    if(!records.some(r=>[...r.removedNodes].some(n=>n?.id==='v117-credit-store-button')))return;
+    queueMicrotask(repairHomeStoreEntry);
+  });
+  function repairHomeStoreEntry(){
+    if(isStore()||!['','#home','#/home'].includes(String(location.hash||'').toLowerCase()))return;
+    const actions=$('#v55-topbar .v55-actions');
+    if(actions!==observedStoreActions){
+      storeEntryObserver.disconnect();
+      observedStoreActions=actions;
+      if(actions)storeEntryObserver.observe(actions,{childList:true});
+    }
+    if(actions&&!$('#v117-credit-store-button',actions))ensureButton();
+  }
+  // The canonical topbar itself is removed on Workspace entry and rebuilt
+  // as a direct body child on return. A scoped child observer misses a whole
+  // replacement, so reconnect it whenever a *new topbar* is appended.
+  const homeTopbarObserver=new MutationObserver(records=>{
+    if(isStore()||!['','#home','#/home'].includes(String(location.hash||'').toLowerCase()))return;
+    if(records.some(r=>[...r.addedNodes].some(n=>n?.id==='v55-topbar')))
+      queueMicrotask(repairHomeStoreEntry);
+  });
+  if(document.body)homeTopbarObserver.observe(document.body,{childList:true});
+  else addEventListener('DOMContentLoaded',()=>homeTopbarObserver.observe(document.body,{childList:true}),{once:true});
+  addEventListener('scholark:topbar-ready',()=>queueMicrotask(repairHomeStoreEntry));
+  addEventListener('scholark-return-home',()=>[0,80,250,700].forEach(ms=>setTimeout(repairHomeStoreEntry,ms)));
+  addEventListener('pageshow',()=>setTimeout(repairHomeStoreEntry,65));
+  addEventListener('hashchange',()=>setTimeout(repairHomeStoreEntry,65));
+  setTimeout(repairHomeStoreEntry,180);
   addEventListener('hashchange',()=>setTimeout(syncRoute,10));
   addEventListener('popstate',()=>setTimeout(syncRoute,10));
   addEventListener('pageshow',()=>setTimeout(syncRoute,30));

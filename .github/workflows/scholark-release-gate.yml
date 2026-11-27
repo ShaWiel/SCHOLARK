@@ -14,7 +14,7 @@ concurrency:
 jobs:
   release-gate:
     if: contains(github.event.head_commit.message, '[release-gate]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v7
@@ -94,6 +94,7 @@ jobs:
           node scripts/scholark-foundation-network-smoke.mjs
           node scripts/scholaverum-r284-data-contract.mjs
           node scripts/scholark-static-audit.mjs
+          node scripts/scholark-notification-icon-smoke.mjs
           node scripts/scholark-connect-smoke.mjs
           node scripts/scholark-security-contracts.mjs
       - name: Build production image
@@ -117,6 +118,7 @@ jobs:
       - name: Full API and global Schools QA
         run: |
           node scripts/scholark-smoke.mjs http://127.0.0.1:10000
+          node scripts/scholark-notification-icon-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-global-schools-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-load-smoke.mjs http://127.0.0.1:10000
           node scripts/scholark-capacity-smoke.mjs http://127.0.0.1:10000
@@ -156,6 +158,11 @@ jobs:
           s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-top h2')?.textContent==='Set a new password',null,{timeout:10000});", "await page.waitForFunction(()=>document.querySelectorAll('#v72-modal.open .v72-form input[type=\\\"password\\\"]').length===2,null,{timeout:10000});");
           s=s.replace("await page.locator('.v72-form button').click();", "const passwordUpdate=page.waitForResponse(r=>r.url()===SB+'/auth/v1/user'&&r.request().method()==='PUT'&&r.status()===200); await page.locator('.v72-form button').click();");
           s=s.replace("await page.waitForFunction(()=>document.querySelector('.v72-modal-status')?.textContent?.includes('Password updated'),null,{timeout:5000});", "await passwordUpdate;");
+          // A new browser tab can expose the account API before the homepage
+          // prepaint veil is gone. Test an actually usable interface, not
+          // controls intentionally hidden during the launch transition.
+          s=s.replace("await second.evaluate(()=>window.__SCHOLARK_LAUNCH__?.privacy?.());", "await second.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint')&&document.documentElement.dataset.scholaverumBootFailed!=='1',null,{timeout:35000,polling:100}); await second.evaluate(()=>window.__SCHOLARK_LAUNCH__?.privacy?.());");
+          if(!s.includes("await second.waitForFunction(()=>!document.documentElement.classList.contains('scholark-prepaint')"))throw new Error('account privacy readiness patch did not apply');
           const required=['grant_type=refresh_token','/rest/v1/**','signupDone=page.waitForResponse','await signupDone','passwordUpdate=page.waitForResponse','await passwordUpdate'];
           if(required.some(x=>!s.includes(x)))throw new Error('account lifecycle request patch failed');
           fs.writeFileSync(p,s);
