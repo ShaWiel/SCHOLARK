@@ -789,7 +789,17 @@
 
   function cleanConflicts(){
     build();sanitizeWorkspace('route-cleanup');$('#v49-sidebar-toggle')?.setAttribute('hidden','');$('#v48-sidebar')?.setAttribute('hidden','');$('#v48-dashboard')?.setAttribute('hidden','');$('#v48-return-home')?.setAttribute('hidden','');qsa('#v41-studio-workspace .v41-mode[data-mode="book"],#v29-home-layer .v29-type[data-mode="book"],#v29-home-layer .v29-tab[data-mode="book"]').forEach(x=>x.remove());
-    const active=workspaceRoute();const entryEpoch=active?beginWorkspaceEntry('route-cleanup'):0;document.body.classList.toggle('v51-workspace',active);document.documentElement.classList.toggle('v51-workspace-root',active);if(!active){clearModes();document.documentElement.classList.remove('scholark-workspace-entering');return}
+    const active=workspaceRoute();const entryEpoch=active?beginWorkspaceEntry('route-cleanup'):0;document.body.classList.toggle('v51-workspace',active);document.documentElement.classList.toggle('v51-workspace-root',active);if(!active){
+      clearModes();document.documentElement.classList.remove('scholark-workspace-entering');
+      // Workspace owns the initial hidden state of the public landing layer;
+      // restore that state on direct hash navigation as well as goHome().
+      if(['','#home','#start'].includes(String(route()||'').toLowerCase())){
+        const landing=$('#v29-home-layer');
+        if(landing){landing.hidden=false;landing.removeAttribute('aria-hidden');['display','visibility','opacity','pointer-events'].forEach(p=>landing.style.removeProperty(p))}
+        window.__SCHOLARK_V55_TOPBAR__?.sync?.();
+      }
+      return;
+    }
     document.body.classList.remove('v55-public-home','v81-home');document.documentElement.classList.remove('v55-public-home');
     if(entryEpoch)scheduleWorkspaceEntryFinish(entryEpoch);
     forceQuality();const h=route();let id='dashboard';if(h.includes('studio')||h.includes('presentation')||h.includes('webpage')||h.includes('document')||h.includes('report')||h.includes('graphic')||h.includes('social'))id='studio';else if(h.includes('schools'))id='schools';else if(h.includes('study'))id='study';else if(h.includes('book'))id='book';else if(h.startsWith('#connect'))id='connect';else if(h==='#ai'||h.startsWith('#ai?'))id='ai';else if(h.includes('tutor'))id='tutor';else if(h.includes('education'))id='education';else if(h.includes('language'))id='language';else if(h.includes('planner'))id='planner';else if(h.includes('focus'))id='focus';else if(h.includes('flashcards'))id='flashcards';else if(h.includes('assignments'))id='assignments';else if(h.includes('reminders'))id='reminders';else if(h.includes('progress'))id='progress';else if(h.includes('goal'))id='goal';else if(h.includes('project'))id='project';state.active=id;syncNav(id);if(INACTIVE.has(id)){showComingSoon(id);return}if(id==='project'){setCollapsed(false,true);showPage('fallback');setTimeout(()=>{if(route()==='#project'){window.__SCHOLARK_V64_PROJECTS__?.open?.();syncWorkspaceLanguage($('#v51-fallback'))}},0)}else if(id==='connect'){setCollapsed(false,true);showPage('fallback');window.__SCHOLARK_RUNTIME__?.ensure?.('connect')?.then(()=>{if(route().startsWith('#connect'))window.__SCHOLARK_CONNECT__?.open?.()}).catch(()=>{})}else if(id==='dashboard'&&!document.body.classList.contains('v51-native')&&!document.body.classList.contains('v51-studio')&&!document.body.classList.contains('v51-pro'))showPage('dashboard');refreshLogo()

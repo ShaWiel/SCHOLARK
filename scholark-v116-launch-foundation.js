@@ -199,8 +199,29 @@
     return '<div class="v116-dialog-top"><div><small>SCHOLAVERUM · SERVICE STATUS</small><h2>'+(ready?'SCHOLAVERUM is operational.':'SCHOLAVERUM service status')+'</h2><p>Current product-service information for this session.</p></div><button class="v116-x" type="button" aria-label="Close" data-v116-close>×</button></div><section class="v116-panel"><h3>Core service</h3><p>Workspace, learning, account, support and guarded billing routes are available on release <b>'+release+'</b>.</p></section><section class="v116-panel"><h3>Billing environment</h3><p>Current environment: <b>'+billing+'</b>. Checkout remains protected by server-side billing and webhook validation.</p></section><section class="v116-panel"><h3>Need help?</h3><p>If something is not working as expected, use Support or Feedback from Help & Support.</p></section>';
   }
   function openService(returnEl){openDialog(serviceHtml(),returnEl)}
+  async function refreshPrivacyAccountControls(){
+    const body=$('#v116-dialog-body'),exportBtn=$('[data-v116-export]',body);
+    if(!dialog.classList.contains('open')||!exportBtn)return;
+    // A storage event can finish while the dialog is opening. Resolve the
+    // current authenticated session rather than freezing initial button state.
+    // Never enable exports or deletion based only on a stale UI flag.
+    let valid=null;
+    try{valid=await cloud()?.session?.()}catch{}
+    if(!dialog.classList.contains('open')||$('#v116-dialog-body')!==body||!body.contains(exportBtn))return;
+    const signed=!!valid?.access_token;
+    for(const selector of ['[data-v116-export]','[data-v116-delete]','[data-v116-manage]','.v116-danger-confirm input']){
+      const control=$(selector,body);
+      if(control)control.disabled=!signed;
+    }
+    const status=$('[data-v116-status]',body);
+    if(status){
+      if(signed&&status.textContent==='Sign in first to manage account data.')status.textContent='';
+      else if(!signed&&!status.textContent)status.textContent='Sign in first to manage account data.';
+    }
+  }
+  addEventListener('scholark:auth-changed',()=>{if(dialog.classList.contains('open'))void refreshPrivacyAccountControls()});
   function openPrivacy(returnEl){
-    openDialog(privacyHtml(),returnEl);const body=$('#v116-dialog-body'),st=$('[data-v116-status]',body),confirm=$('.v116-danger-confirm input',body);
+    openDialog(privacyHtml(),returnEl);void refreshPrivacyAccountControls();const body=$('#v116-dialog-body'),st=$('[data-v116-status]',body),confirm=$('.v116-danger-confirm input',body);
     $('[data-v116-manage]',body)?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;st.textContent='Opening secure Paddle subscription management…';try{await window.__SCHOLARK_BILLING__?.manage?.('overview')}catch(err){st.textContent=clean(err?.message||err)}finally{b.disabled=false}});
     $('[data-v116-export]',body)?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;st.textContent='Verifying your identity before export…';try{const proof=await window.__SCHOLARK_SECURITY__?.stepUp?.('export');if(!proof)throw new Error('Account security verification is unavailable.');st.textContent='Preparing your SCHOLAVERUM data export…';const r=await fetch('/api/account/export',{headers:{authorization:'Bearer '+token(),'x-scholark-step-up':proof},cache:'no-store'}),txt=await r.text();if(!r.ok){let d={};try{d=JSON.parse(txt)}catch{}throw new Error(d?.error||d?.code||'Export failed')}const blob=new Blob([txt],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='scholark-data-export-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);st.textContent='Your export has been prepared.'}catch(err){st.textContent=clean(err?.message||err)}finally{b.disabled=false}});
     $('[data-v116-open-support]',body)?.addEventListener('click',()=>openSupport(returnEl));

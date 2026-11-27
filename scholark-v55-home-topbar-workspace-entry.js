@@ -63,7 +63,23 @@
     return $$('button,a,[role="button"],[tabindex],div,span').filter(el=>!el.closest('#v55-topbar,#v29-home-layer,#v51-sidebar,#v51-main,#v53-emergency')&&text(el).length>0&&text(el).length<70).map(el=>({el,t:lower(el),n:el.querySelectorAll('*').length})).filter(o=>regex.test(o.t)).sort((a,b)=>{const aa=['BUTTON','A'].includes(a.el.tagName)||a.el.getAttribute('role')==='button'?0:1,bb=['BUTTON','A'].includes(b.el.tagName)||b.el.getAttribute('role')==='button'?0:1;return aa-bb||a.n-b.n})[0]?.el||null;
   }
   function clickNative(regex){const el=findNative(regex);if(!el)return false;const hit=el.closest('button,a,[role="button"],[tabindex]')||el;try{hit.click();return true}catch{return false}}
-  function openAuth(tab='signin'){const a=window.__SCHOLARK_V72_CLOUD__;if(a?.openAuth){a.openAuth(tab);return true}return clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i)}
+  let pendingAuthOpen=0;
+  function openAuth(tab='signin'){
+    const a=window.__SCHOLARK_V72_CLOUD__;
+    if(a?.openAuth){pendingAuthOpen++;a.openAuth(tab);return true}
+    if(clickNative(/^(sign in|log in|login|inloggen|aanmelden)$/i))return true;
+    // A Home header can be interactive before Cloud Auth finishes loading.
+    // Retry only this requested click; never silently discard a sign-in action.
+    const epoch=++pendingAuthOpen,started=Date.now();
+    const retry=()=>{
+      if(epoch!==pendingAuthOpen||!publicTopbarRoute()||document.querySelector('#v72-modal.open'))return;
+      const api=window.__SCHOLARK_V72_CLOUD__;
+      if(api?.openAuth){api.openAuth(tab);return}
+      if(Date.now()-started<2500)setTimeout(retry,120);
+    };
+    setTimeout(retry,60);
+    return true;
+  }
   function doSignOut(){const a=window.__SCHOLARK_V72_CLOUD__;if(a?.signOut){Promise.resolve(a.signOut()).finally(()=>setTimeout(syncAuth,40));return true}return clickNative(/^(uitloggen|log out|sign out|logout)$/i)}
   function signedIn(){
     try{
@@ -129,12 +145,19 @@
     document.querySelectorAll('.v116-public-actions').forEach(el=>el.remove());
     topbar=accountWrap=authButton=null;
   }
+  function repairTopbarCriticalActions(){
+    const bar=$('#v55-topbar');if(!bar)return;
+    const auth=$('#v55-auth',bar);
+    if(auth){authButton=auth;auth.onclick=()=>{if(!signedIn())openAuth('signin');setTimeout(syncAuth,80)}}
+    const store=$('#v117-credit-store-button',bar);
+    if(store)store.onclick=()=>{const feature=window.__SCHOLARK_CREDIT_STORE__;if(feature?.open)feature.open();else location.hash='#credit-store'};
+  }
   function buildTopbar(){
     if(!publicTopbarRoute()){removePublicTopbar();return null}
     pruneTopbarDuplicates();
-    if(topbar?.isConnected)return;
+    if(topbar?.isConnected){repairTopbarCriticalActions();return;}
     topbar=$('#v55-topbar');
-    if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);authButton=$('#v55-auth',topbar);return}
+    if(topbar?.isConnected){accountWrap=$('.v55-account-wrap',topbar);repairTopbarCriticalActions();return}
     topbar=document.createElement('header');topbar.id='v55-topbar';topbar.dataset.v55Owned='1';topbar.innerHTML=`<div class="v55-brand"><img class="v55-brand-logo" src="/scholaverum-official-logo-r290.webp" alt="SCHOLAVERUM logo" loading="eager" decoding="async" fetchpriority="high"><div><small>AI LEARNING + CREATION OS</small></div></div><div class="v55-actions"><select id="v55-language" class="v55-select" aria-label="Language">${languageRows().map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select><button type="button" class="v117-store-return" id="v117-store-return-home" aria-label="Return to Homepage"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Homepage</span></button><button type="button" class="v117-store-return primary" id="v117-store-return-workspace" aria-label="Return to Workspace"><span class="v117-return-prefix">← </span><span class="v117-store-return-label">Return to Workspace</span></button><button type="button" id="v117-credit-store-button" class="v117-store-nav" aria-label="Credit Store · buy extra SCHOLAVERUM credits" title="Buy extra SCHOLAVERUM credits"><span aria-hidden="true">✦</span><span class="v117-store-label">Credit Store</span></button><div class="v55-account-wrap"><button class="v55-btn v55-profile-trigger" id="v55-account" data-sch-i18n-owned="1" aria-haspopup="menu" aria-expanded="false" title="SCHOLAVERUM profile"><span class="v55-profile-avatar" id="v55-profile-avatar"><span>S</span></span><span class="v55-account-label"></span></button><div class="v55-menu" role="menu" data-sch-i18n-owned="1"></div></div><button class="v55-btn dark" id="v55-auth" data-sch-i18n-owned="1"></button></div>`;
     document.body.appendChild(topbar);pruneTopbarDuplicates();
     // Credit Store belongs to the public-topbar first paint, not a late script race.
@@ -154,7 +177,7 @@
       else if(a==='signout'){accountWrap.classList.remove('open');$('#v55-account',topbar)?.setAttribute('aria-expanded','false');doSignOut();setTimeout(syncAuth,80)}
     });
     hydrateAccountIdentity();
-    authButton=$('#v55-auth',topbar);authButton.onclick=()=>{if(!signedIn())openAuth('signin');setTimeout(syncAuth,80)};
+    repairTopbarCriticalActions();
     if(!window.__SCHOLARK_V55_DOC_CLICK_BOUND__){
       window.__SCHOLARK_V55_DOC_CLICK_BOUND__=true;
       document.addEventListener('click',e=>{if(accountWrap&&!accountWrap.contains(e.target))accountWrap.classList.remove('open')});
@@ -269,6 +292,16 @@
       document.documentElement.classList.remove('v51-workspace-root','scholark-workspace-entering');
     }
     document.body.classList.toggle('v55-public-home',home);document.documentElement.classList.toggle('v55-public-home',home);
+    const publicSlug=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0];
+    if(home&&['','home','start'].includes(publicSlug)){
+      // Workspace entry parks the landing layer. Direct hash navigation must
+      // restore it too, not only the dedicated goHome() button path.
+      const landing=$('#v29-home-layer');
+      if(landing){
+        landing.hidden=false;landing.removeAttribute('aria-hidden');
+        ['display','visibility','opacity','pointer-events'].forEach(p=>landing.style.removeProperty(p));
+      }
+    }
     $('#v41-dashboard-entry')?.remove();
     if(!home){
       accountWrap?.classList.remove('open');

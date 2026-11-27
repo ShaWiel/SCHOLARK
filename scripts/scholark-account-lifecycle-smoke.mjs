@@ -78,9 +78,22 @@ try{
 
   const second=await context.newPage();
   await second.goto(base+'/#home',{waitUntil:'domcontentloaded'});
-  await second.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__&&!!window.__SCHOLARK_LAUNCH__,null,{timeout:15000});
+  // Wait for the second tab's auth listener and homepage bootstrap to settle
+  // before simulating a storage event from the first tab.
+  await second.waitForFunction(()=>!!window.__SCHOLARK_V72_CLOUD__&&!!window.__SCHOLARK_LAUNCH__&&!document.documentElement.classList.contains('scholark-prepaint'),null,{timeout:35000,polling:100});
   await page.evaluate(s=>localStorage.setItem('scholark_supabase_session_v2',JSON.stringify(s)),{...SESSION,access_token:'tab-sync-token'});
-  await second.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token',null,{timeout:15000});
+  try{
+    // WebGL scenes may throttle animation frames; use real-time polling,
+    // without weakening the cross-tab session-sync assertion.
+    await second.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token',null,{timeout:20000,polling:100});
+  }catch(err){
+    const diag=await second.evaluate(()=>({
+      ready:document.readyState,prepaint:document.documentElement.classList.contains('scholark-prepaint'),
+      cloud:!!window.__SCHOLARK_V72_CLOUD__,storedMatch:(()=>{try{return JSON.parse(localStorage.getItem('scholark_supabase_session_v2')||'null')?.access_token==='tab-sync-token'}catch{return false}})(),
+      sessionMatch:window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token'
+    }));
+    throw new Error('Cross-tab storage session did not synchronize: '+JSON.stringify(diag)+'; '+String(err?.message||err));
+  }
   check(true,'multi-tab session synchronization works');
 
   // The privacy modal must remain visible after the cross-tab session sync,
@@ -99,6 +112,25 @@ try{
       modalStatus:document.querySelector('#v116-dialog-body')?.innerText?.slice(-280)||''
     }));
     throw new Error('Privacy export dialog not visible after cross-tab sync: '+JSON.stringify(diag)+'; '+String(err?.message||err))
+  }
+  // Session-gated account actions may be revalidated asynchronously after
+  // a cross-tab storage event. Require both controls to become actionable.
+  try{
+    await second.waitForFunction(()=>{
+      const exportBtn=document.querySelector('#v116-dialog.open [data-v116-export]');
+      const deleteBtn=document.querySelector('#v116-dialog.open [data-v116-delete]');
+      return !!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token
+        &&!!exportBtn&&!exportBtn.disabled&&!!deleteBtn&&!deleteBtn.disabled;
+    },null,{timeout:7000,polling:100});
+  }catch(err){
+    const diag=await second.evaluate(()=>({
+      signedIn:!!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token,
+      storedSession:!!localStorage.getItem('scholark_supabase_session_v2'),
+      exportDisabled:document.querySelector('[data-v116-export]')?.disabled,
+      deleteDisabled:document.querySelector('[data-v116-delete]')?.disabled,
+      dialogStatus:document.querySelector('#v116-dialog-body [data-v116-status]')?.textContent||''
+    }));
+    throw new Error('Privacy account controls did not become enabled: '+JSON.stringify(diag)+'; '+String(err?.message||err));
   }
   check(await second.locator('#v116-dialog.open [data-v116-export]').isEnabled(),'data export control enabled while signed in');
   check(await second.locator('[data-v116-delete]').isEnabled(),'account deletion control enabled while signed in');
