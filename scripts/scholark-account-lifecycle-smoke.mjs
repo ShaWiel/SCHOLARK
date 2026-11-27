@@ -83,9 +83,24 @@ try{
   await second.waitForFunction(()=>window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token==='tab-sync-token',null,{timeout:15000});
   check(true,'multi-tab session synchronization works');
 
+  // The privacy modal must remain visible after the cross-tab session sync,
+  // including when homepage hydration and UI observers are still active.
   await second.evaluate(()=>window.__SCHOLARK_LAUNCH__?.privacy?.());
-  await second.waitForSelector('[data-v116-export]',{timeout:5000});
-  check(await second.locator('[data-v116-export]').isEnabled(),'data export control enabled while signed in');
+  try{await second.waitForSelector('#v116-dialog.open [data-v116-export]',{state:'visible',timeout:5000})}
+  catch(err){
+    const diag=await second.evaluate(()=>({
+      route:location.hash,ready:document.readyState,login:!!window.__SCHOLARK_V72_CLOUD__?.currentSession?.(),
+      launch:!!window.__SCHOLARK_LAUNCH__,dialogCount:document.querySelectorAll('#v116-dialog').length,
+      dialogOpen:!!document.querySelector('#v116-dialog')?.classList.contains('open'),
+      dialogAttached:!!document.querySelector('#v116-dialog')?.isConnected,
+      bodyLength:document.querySelector('#v116-dialog-body')?.innerHTML?.length||0,
+      exportCount:document.querySelectorAll('[data-v116-export]').length,
+      dialogDisplay:document.querySelector('#v116-dialog')?getComputedStyle(document.querySelector('#v116-dialog')).display:'missing',
+      modalStatus:document.querySelector('#v116-dialog-body')?.innerText?.slice(-280)||''
+    }));
+    throw new Error('Privacy export dialog not visible after cross-tab sync: '+JSON.stringify(diag)+'; '+String(err?.message||err))
+  }
+  check(await second.locator('#v116-dialog.open [data-v116-export]').isEnabled(),'data export control enabled while signed in');
   check(await second.locator('[data-v116-delete]').isEnabled(),'account deletion control enabled while signed in');
 
   const report={ok:failures.length===0,checks:10,failures};
