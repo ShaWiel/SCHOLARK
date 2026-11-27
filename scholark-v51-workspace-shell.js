@@ -440,7 +440,13 @@
       syncWorkspaceLanguage(main,true);
       window.__SCHOLARK_COUNTRY__?.apply?.();
       try{if(document.fonts?.ready)await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,700))])}catch{}
-      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      // WebGL/Cinematic canvases can starve requestAnimationFrame in Chromium,
+      // especially during fast Home -> Workspace re-entry. Do not let a
+      // missing paint callback permanently strand the entering state.
+      await Promise.race([
+        new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))),
+        new Promise(resolve=>setTimeout(resolve,320))
+      ]);
       if(epoch!==workspaceEntryEpoch||!workspaceRoute())return false;
       syncWorkspaceLanguage(main,true);
       const dash=$('[data-v51-page="dashboard"]',main),h1=$('.v51-head h1',dash),grid=$('.v51-grid',dash);
