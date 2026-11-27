@@ -12,15 +12,26 @@ const browser=await chromium.launch({headless:true});
 try{
   const context=await browser.newContext({viewport:{width:1280,height:800}});
   const page=await context.newPage();
+  // Mock the entire Supabase origin at the browser-context level so that both
+  // tabs use the same deterministic fake backend. Page-level routes did not
+  // apply to the second tab: its background cloud fetch could receive a real
+  // 401 and invalidate the deliberately synthetic QA session.
+  await context.route(SB+'/**',route=>route.fulfill({
+    status:200,contentType:'application/json',body:'[]',
+    headers:{'cache-control':'no-store'}
+  }));
   // The lifecycle smoke validates Supabase session flows, not the external bot provider.
   // Keep security configuration deterministic so CAPTCHA discovery cannot stall mocked requests.
-  await page.route('**/api/security/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({turnstile:{enabled:false}})}));
+  await context.route('**/api/security/config',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({turnstile:{enabled:false}})}));
 
-  await page.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
-  await page.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
-  await page.route(SB+'/auth/v1/recover**',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
-  await page.route(SB+'/auth/v1/logout',route=>route.fulfill({status:204,body:''}));
-  await page.route(SB+'/auth/v1/user',async route=>{
+  await context.route(SB+'/auth/v1/signup',route=>{try{signupPayload=route.request().postDataJSON()}catch{};return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user:USER,session:null})})});
+  await context.route(SB+'/auth/v1/token?grant_type=password',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SESSION)}));
+  await context.route(SB+'/auth/v1/token?grant_type=refresh_token',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({...SESSION,expires_at:Math.floor(Date.now()/1000)+3600})
+  }));
+  await context.route(SB+'/auth/v1/recover**',route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+  await context.route(SB+'/auth/v1/logout',route=>route.fulfill({status:204,body:''}));
+  await context.route(SB+'/auth/v1/user',async route=>{
     if(route.request().method()==='PUT')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(USER)});
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(USER)});
   });
