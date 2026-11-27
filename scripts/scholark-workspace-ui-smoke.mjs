@@ -245,7 +245,13 @@ if(!storeReturnVisible){
       barDisplay:bar?getComputedStyle(bar).display:'absent',
       buttonDisplay:btn?getComputedStyle(btn).display:'absent',
       buttonVisibility:btn?getComputedStyle(btn).visibility:'absent',
-      buttonParent:btn?.parentElement?.className||''};
+      barVisibility:bar?getComputedStyle(bar).visibility:'absent',
+      barOpacity:bar?getComputedStyle(bar).opacity:'absent',
+      barRect:bar?.getBoundingClientRect()?.toJSON?.()||null,
+      buttonRect:btn?.getBoundingClientRect()?.toJSON?.()||null,
+      buttonParent:btn?.parentElement?.className||'',
+      prepaint:document.documentElement.classList.contains('scholark-prepaint'),
+      landing:(()=>{const el=document.querySelector('#v29-home-layer');return el?{hidden:el.hidden,ariaHidden:el.getAttribute('aria-hidden'),display:getComputedStyle(el).display,visibility:getComputedStyle(el).visibility,rect:el.getBoundingClientRect().toJSON()}:null})()};
   });
   check(false,'Credit Store topbar action did not recover after Workspace: '+JSON.stringify(diag));
 }
