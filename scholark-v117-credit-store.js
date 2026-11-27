@@ -276,6 +276,16 @@
     }
     if(actions&&!$('#v117-credit-store-button',actions))ensureButton();
   }
+  // The canonical topbar itself is removed on Workspace entry and rebuilt
+  // as a direct body child on return. A scoped child observer misses a whole
+  // replacement, so reconnect it whenever a *new topbar* is appended.
+  const homeTopbarObserver=new MutationObserver(records=>{
+    if(isStore()||!['','#home','#/home'].includes(String(location.hash||'').toLowerCase()))return;
+    if(records.some(r=>[...r.addedNodes].some(n=>n?.id==='v55-topbar')))
+      queueMicrotask(repairHomeStoreEntry);
+  });
+  if(document.body)homeTopbarObserver.observe(document.body,{childList:true});
+  else addEventListener('DOMContentLoaded',()=>homeTopbarObserver.observe(document.body,{childList:true}),{once:true});
   addEventListener('scholark:topbar-ready',()=>queueMicrotask(repairHomeStoreEntry));
   addEventListener('scholark-return-home',()=>[0,80,250,700].forEach(ms=>setTimeout(repairHomeStoreEntry,ms)));
   addEventListener('pageshow',()=>setTimeout(repairHomeStoreEntry,65));
