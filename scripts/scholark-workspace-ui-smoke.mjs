@@ -236,7 +236,19 @@ check(await visible('#v51-main [data-v51-page="dashboard"].active',12000),'Credi
 await page.evaluate(()=>{location.hash='home'});
 await page.waitForFunction(()=>location.hash==='#home',{timeout:5000});
 check(await visible('#v29-home-layer',8000),'Homepage did not recover after leaving Workspace');
-check(await visible('#v117-credit-store-button',5000),'Credit Store topbar action did not recover after Workspace');
+const storeReturnVisible=await visible('#v117-credit-store-button',5000);
+if(!storeReturnVisible){
+  const diag=await page.evaluate(()=>{
+    const bar=document.querySelector('#v55-topbar'),btn=document.querySelector('#v117-credit-store-button');
+    return {route:location.hash,body:document.body.className,html:document.documentElement.className,
+      surface:document.documentElement.dataset.scholaverumSurface,topbar:!!bar,button:!!btn,
+      barDisplay:bar?getComputedStyle(bar).display:'absent',
+      buttonDisplay:btn?getComputedStyle(btn).display:'absent',
+      buttonVisibility:btn?getComputedStyle(btn).visibility:'absent',
+      buttonParent:btn?.parentElement?.className||''};
+  });
+  check(false,'Credit Store topbar action did not recover after Workspace: '+JSON.stringify(diag));
+}
 await page.click('#v117-credit-store-button');
 await page.waitForFunction(()=>location.hash==='#credit-store',{timeout:5000});
 check(await visible('#v117-credit-store-page',8000),'Credit Store did not reopen from the homepage after Workspace');
