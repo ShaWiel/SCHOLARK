@@ -268,13 +268,29 @@
   });
   function repairHomeStoreEntry(){
     if(isStore()||!['','#home','#/home'].includes(String(location.hash||'').toLowerCase()))return;
-    const actions=$('#v55-topbar .v55-actions');
+    // A fast Store -> Workspace -> Home transition may leave an old Store
+    // display flag or replace the entire public header after its first repair.
+    document.documentElement.classList.remove('v117-credit-store-route');
+    document.body?.classList.remove('v117-credit-store-route');
+    let actions=$('#v55-topbar .v55-actions');
+    if(!actions){
+      window.__SCHOLARK_V55_TOPBAR__?.sync?.();
+      actions=$('#v55-topbar .v55-actions');
+    }
     if(actions!==observedStoreActions){
       storeEntryObserver.disconnect();
       observedStoreActions=actions;
       if(actions)storeEntryObserver.observe(actions,{childList:true});
     }
-    if(actions&&!$('#v117-credit-store-button',actions))ensureButton();
+    if(!actions)return;
+    restoreParkedTopbarControls();
+    const btn=$('#v117-credit-store-button',actions)||ensureButton();
+    if(btn){
+      btn.onclick=routeStore;
+      if(btn.hidden)btn.hidden=false;
+      ['display','visibility','opacity','pointer-events'].forEach(p=>btn.style.removeProperty(p));
+      setAriaCurrent(btn,'false');
+    }
   }
   // The canonical topbar itself is removed on Workspace entry and rebuilt
   // as a direct body child on return. A scoped child observer misses a whole
@@ -287,7 +303,7 @@
   if(document.body)homeTopbarObserver.observe(document.body,{childList:true});
   else addEventListener('DOMContentLoaded',()=>homeTopbarObserver.observe(document.body,{childList:true}),{once:true});
   addEventListener('scholark:topbar-ready',()=>queueMicrotask(repairHomeStoreEntry));
-  addEventListener('scholark-return-home',()=>[0,80,250,700].forEach(ms=>setTimeout(repairHomeStoreEntry,ms)));
+  addEventListener('scholark-return-home',()=>[0,80,250,700,1800].forEach(ms=>setTimeout(repairHomeStoreEntry,ms)));
   addEventListener('pageshow',()=>setTimeout(repairHomeStoreEntry,65));
   addEventListener('hashchange',()=>setTimeout(repairHomeStoreEntry,65));
   setTimeout(repairHomeStoreEntry,180);
