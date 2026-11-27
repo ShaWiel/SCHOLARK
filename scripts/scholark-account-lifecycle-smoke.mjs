@@ -113,6 +113,25 @@ try{
     }));
     throw new Error('Privacy export dialog not visible after cross-tab sync: '+JSON.stringify(diag)+'; '+String(err?.message||err))
   }
+  // Session-gated account actions may be revalidated asynchronously after
+  // a cross-tab storage event. Require both controls to become actionable.
+  try{
+    await second.waitForFunction(()=>{
+      const exportBtn=document.querySelector('#v116-dialog.open [data-v116-export]');
+      const deleteBtn=document.querySelector('#v116-dialog.open [data-v116-delete]');
+      return !!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token
+        &&!!exportBtn&&!exportBtn.disabled&&!!deleteBtn&&!deleteBtn.disabled;
+    },null,{timeout:7000,polling:100});
+  }catch(err){
+    const diag=await second.evaluate(()=>({
+      signedIn:!!window.__SCHOLARK_V72_CLOUD__?.currentSession?.()?.access_token,
+      storedSession:!!localStorage.getItem('scholark_supabase_session_v2'),
+      exportDisabled:document.querySelector('[data-v116-export]')?.disabled,
+      deleteDisabled:document.querySelector('[data-v116-delete]')?.disabled,
+      dialogStatus:document.querySelector('#v116-dialog-body [data-v116-status]')?.textContent||''
+    }));
+    throw new Error('Privacy account controls did not become enabled: '+JSON.stringify(diag)+'; '+String(err?.message||err));
+  }
   check(await second.locator('#v116-dialog.open [data-v116-export]').isEnabled(),'data export control enabled while signed in');
   check(await second.locator('[data-v116-delete]').isEnabled(),'account deletion control enabled while signed in');
 
