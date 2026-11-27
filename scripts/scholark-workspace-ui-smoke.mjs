@@ -157,11 +157,22 @@ check(await page.evaluate(()=>{
   return names.every((name,i)=>i===0||names[i-1].localeCompare(name,'en',{sensitivity:'base'})<=0);
 }),'Homepage language choices must be alphabetized by their displayed labels');
 check(await page.locator('#v55-language option[value="cmn"]').count()===0,'Mandarin duplicate must not appear');
-await page.evaluate(()=>{window.__SCHOLARK_I18N__?.changeLanguage?.('ar')});
-await page.waitForFunction(()=>document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,{timeout:1000});
-check(await page.evaluate(()=>document.documentElement.classList.contains('scholark-home-language-adapting')),'Homepage did not enter atomic language-adaptation mode');
-check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Homepage must remain visible during nonblocking translation');
-check((await page.locator('#v90-switch-copy').innerText()).includes('العربية'),'Adaptive Arabic switch did not show the Adapting SCHOLARK transition');
+// Capture the immediate synchronous transition state in the same JS task as
+// changeLanguage(). Polling after an animation frame can miss a healthy,
+// short-lived adapting state under heavy WebGL2 rendering.
+const arabicStart=await page.evaluate(()=>{
+  window.__SCHOLARK_I18N__?.changeLanguage?.('ar');
+  return {
+    overlay:document.querySelector('#v90-language-overlay')?.classList.contains('open')===true,
+    adapting:document.documentElement.classList.contains('scholark-home-language-adapting'),
+    visible:getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden',
+    copy:document.querySelector('#v90-switch-copy')?.textContent||''
+  };
+});
+check(arabicStart.overlay,'Language adaptation overlay never opened');
+check(arabicStart.adapting,'Homepage did not enter atomic language-adaptation mode');
+check(arabicStart.visible,'Homepage must remain visible during nonblocking translation');
+check(arabicStart.copy.includes('العربية'),'Adaptive Arabic switch did not show the Adapting SCHOLARK transition');
 await page.waitForFunction(()=>localStorage.getItem('scholark_ui_language')==='ar'&&document.documentElement.lang==='ar'&&document.documentElement.dir==='rtl',{timeout:4000});
 await page.waitForFunction(()=>!document.documentElement.classList.contains('scholark-home-language-adapting')&&!document.querySelector('#v90-language-overlay')?.classList.contains('open'),{timeout:5000});
 check(await page.evaluate(()=>getComputedStyle(document.querySelector('#v29-home-layer')).visibility!=='hidden'),'Homepage did not reveal after adaptive translation completed');
