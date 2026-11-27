@@ -292,6 +292,16 @@
       document.documentElement.classList.remove('v51-workspace-root','scholark-workspace-entering');
     }
     document.body.classList.toggle('v55-public-home',home);document.documentElement.classList.toggle('v55-public-home',home);
+    const publicSlug=String(location.hash||'').toLowerCase().replace(/^#/,'').split(/[?&]/)[0];
+    if(home&&['','home','start'].includes(publicSlug)){
+      // Workspace entry parks the landing layer. Direct hash navigation must
+      // restore it too, not only the dedicated goHome() button path.
+      const landing=$('#v29-home-layer');
+      if(landing){
+        landing.hidden=false;landing.removeAttribute('aria-hidden');
+        ['display','visibility','opacity','pointer-events'].forEach(p=>landing.style.removeProperty(p));
+      }
+    }
     $('#v41-dashboard-entry')?.remove();
     if(!home){
       accountWrap?.classList.remove('open');
