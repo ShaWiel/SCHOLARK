@@ -507,7 +507,7 @@ await page.evaluate(async()=>{
   window.__schWalletSmokeOrig={test:window.__SCHOLARK_TEST_MODE__,cloud:window.__SCHOLARK_V72_CLOUD__};
   const original=window.__SCHOLARK_V72_CLOUD__||{};
   window.__SCHOLARK_TEST_MODE__=false;
-  window.__SCHOLARK_V72_CLOUD__={...original,currentSession:()=>({access_token:'wallet-ci-token',user:{id:'ci-user'}}),session:async()=>({access_token:'wallet-ci-token',user:{id:'ci-user'}})};
+  window.__SCHOLARK_V72_CLOUD__={...original,currentSession:()=>({access_token:'wallet-ci-token',user:{id:'11111111-1111-4111-8111-111111111111'}}),session:async()=>({access_token:'wallet-ci-token',user:{id:'11111111-1111-4111-8111-111111111111'}})};
   await window.__SCHOLARK_CREDITS__?.load?.();
 });
 await page.waitForFunction(()=>document.querySelector('#v51-sidebar .v85-wallet'),null,{timeout:5000});
@@ -905,9 +905,9 @@ await page.evaluate(()=>{
   window.__SCHOLARK_TEST_MODE__=false;
   window.__schArkiAuthorizeCalls=0;
   window.__SCHOLARK_V72_CLOUD__={
-    currentSession:()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
-    session:async()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
-    refreshSession:async()=>({access_token:'fresh-delegated-token',user:{id:'ci-user'}}),
+    currentSession:()=>({access_token:'fresh-delegated-token',user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    session:async()=>({access_token:'fresh-delegated-token',user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    refreshSession:async()=>({access_token:'fresh-delegated-token',user:{id:'11111111-1111-4111-8111-111111111111'}}),
     openAuth:()=>{}
   };
   window.__SCHOLARK_CREDITS__={
@@ -950,16 +950,16 @@ await page.evaluate(()=>{
   window.__schArkiRefreshes=0;
   window.__SCHOLARK_TEST_MODE__=false;
   window.__SCHOLARK_V72_CLOUD__={
-    currentSession:()=>({access_token:token,user:{id:'ci-user'}}),
-    session:async()=>({access_token:token,user:{id:'ci-user'}}),
-    refreshSession:async()=>{window.__schArkiRefreshes++;token='fresh-arki-token';return{access_token:token,user:{id:'ci-user'}}},
+    currentSession:()=>({access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    session:async()=>({access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    refreshSession:async()=>{window.__schArkiRefreshes++;token='fresh-arki-token';return{access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}},
     openAuth:()=>{}
   };
   window.__SCHOLARK_CREDITS__={authorize:async()=>{throw new Error('legacy authorize must not block ARKI')},load:()=>{}};
 });
 await page.fill('#v107-q','Test expired ARKI session');
 await page.click('#v107-send');
-await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),{timeout:5000});
+await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),null,{timeout:5000});
 check(arkiAuthCalls===2,`ARKI expired-session recovery should make exactly 2 calls, got ${arkiAuthCalls}`);
 check((await page.evaluate(()=>window.__schArkiRefreshes))===1,'ARKI did not force-refresh the expired session exactly once');
 check((await page.locator('#v107-state').innerText()).trim()==='Ready','ARKI did not settle to the provider-neutral Ready state after a successful retry');
@@ -984,9 +984,9 @@ const sharedResult=await page.evaluate(async()=>{
   let token='stale-shared-token';window.__schSharedRefreshes=0;
   window.__SCHOLARK_TEST_MODE__=false;
   window.__SCHOLARK_V72_CLOUD__={
-    currentSession:()=>({access_token:token,user:{id:'ci-user'}}),
-    session:async()=>({access_token:token,user:{id:'ci-user'}}),
-    refreshSession:async()=>{window.__schSharedRefreshes++;token='fresh-shared-token';return{access_token:token,user:{id:'ci-user'}}},
+    currentSession:()=>({access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    session:async()=>({access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}),
+    refreshSession:async()=>{window.__schSharedRefreshes++;token='fresh-shared-token';return{access_token:token,user:{id:'11111111-1111-4111-8111-111111111111'}}},
     openAuth:()=>{}
   };
   window.__SCHOLARK_CREDITS__={authorize:async()=>({ok:true,cost:1,balance:100}),load:()=>{}};
