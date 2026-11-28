@@ -44,6 +44,18 @@
     if(owner==='guest'||owner!==ownerId())return false;
     try{const key=ownedKey(MEMORY_KEY,owner),v=String(value||'').trim().slice(0,2000);if(v)localStorage.setItem(key,v);else localStorage.removeItem(key);return true}catch{return false}
   }
+  async function cloudMemory(owner, value){
+    const c=window.__SCHOLARK_V72_CLOUD__;
+    if(owner==='guest'||owner!==ownerId()||c?.currentSession?.()?.user?.id!==owner)throw Error('Sign in to synchronize memory.');
+    const path='/rest/v1/arki_personal_memory';
+    const r=value===undefined
+      ?await c.request(path+'?select=memory_text&user_id=eq.'+encodeURIComponent(owner)+'&limit=1')
+      :await c.request(path+'?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({user_id:owner,memory_text:String(value).trim().slice(0,2000),updated_at:new Date().toISOString()})});
+    if(!r.ok||owner!==ownerId()||c.currentSession?.()?.user?.id!==owner)throw Error('Memory synchronization failed or account changed.');
+    const rows=await r.json();
+    if(!Array.isArray(rows)||(value!==undefined&&!rows.length))throw Error('Memory synchronization could not be verified.');
+    return rows.length?String(rows[0].memory_text||'').slice(0,2000):null;
+  }
   let activeVoice=null;
   function stopVoice(){
     const voice=activeVoice;activeVoice=null;
@@ -69,13 +81,20 @@
     if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();return}
     const u=new SpeechSynthesisUtterance(String(reply).slice(0,8000));u.lang=localStorage.getItem('scholark_ui_language')||'nl';window.speechSynthesis.speak(u);
   }
-  function configureMemory(){
+  async function configureMemory(){
     const owner=ownerId(),st=$('#v107-state');
     if(owner==='guest'){if(st)st.textContent='Sign in to save personal preferences.';return}
-    const value=window.prompt('Optional personal memory (max 2000 characters). Saved on this device for this account and sent to ARKI only when enabled. Add preferences or goals, not passwords, private identifiers or sensitive information. Empty text clears memory.',personalMemory(owner));
-    if(value===null)return;
-    if(savePersonalMemory(value,owner)){const toggle=$('#v107-memory-use');if(toggle)toggle.checked=!!value.trim();if(st)st.textContent=value.trim()?'Personal memory saved on this device.':'Personal memory cleared.'}
-    else if(st)st.textContent='Could not save personal memory.';
+    try{
+      const saved=await cloudMemory(owner);
+      if(owner!==ownerId()||!st?.isConnected)return;
+      const value=window.prompt('Optional personal memory (max 2000 characters). Saved in your SCHOLAVERUM account across devices; sent to ARKI only when enabled. Do not enter passwords, identifiers or sensitive information. Empty text clears memory on all devices.',saved===null?personalMemory(owner):saved);
+      if(value===null)return;
+      const synced=await cloudMemory(owner,value);
+      if(owner!==ownerId())return;
+      savePersonalMemory('',owner);
+      const toggle=$('#v107-memory-use');if(toggle)toggle.checked=!!synced;
+      if(st.isConnected)st.textContent=synced?'Personal memory synchronized.':'Personal memory cleared.';
+    }catch(e){if(st?.isConnected)st.textContent=String(e.message||e)}
   }
   function workspaceContextPayload(){
     if(!$('#v107-context')?.checked)return '';
@@ -265,7 +284,10 @@
       },delay));
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
-      const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload(),webSearch,personalMemory:$('#v107-memory-use')?.checked?personalMemory(responseOwner):''};
+      const useMemory=!!$('#v107-memory-use')?.checked;
+      const memory=useMemory&&!test?await cloudMemory(responseOwner):'';
+      if(ownerId()!==responseOwner)throw Error('Account changed. Please send again.');
+      const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload(),webSearch,personalMemory:memory||''};
       const timeoutMs=deep?210000:190000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
 
