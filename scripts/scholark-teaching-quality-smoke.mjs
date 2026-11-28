@@ -90,6 +90,25 @@ for(const tutorMode of ['review_work','quiz_coach','study_planner','assignment_c
 assert.equal(tier('general_ai',{prompt:'How was your day?'}),'light');
 assert.equal(tier('general_ai',{prompt:'How was your day?',deep:true}),'balanced');
 
+// Personal memory is explicitly opted in, scoped to one account and bounded.
+const memoryStart=arki.indexOf("  const MEMORY_KEY="),memoryEnd=arki.indexOf('  let activeVoice=',memoryStart);
+assert.ok(memoryStart>=0&&memoryEnd>memoryStart);
+const memoryStore=new Map();let memoryOwner='account-a';
+const memory=vm.runInNewContext(arki.slice(memoryStart,memoryEnd)+'\n({personalMemory,savePersonalMemory})',{
+  ownerId:()=>memoryOwner,ownedKey:(base,owner)=>base+':account:'+owner,
+  localStorage:{getItem:k=>memoryStore.get(k),setItem:(k,v)=>memoryStore.set(k,v),removeItem:k=>memoryStore.delete(k)}
+});
+assert.ok(memory.savePersonalMemory('Prefers Dutch explanations'));
+assert.equal(memory.personalMemory(),'Prefers Dutch explanations');
+memoryOwner='account-b';assert.equal(memory.personalMemory(),'');assert.equal(memory.savePersonalMemory('bad','account-a'),false);
+memoryOwner='account-a';assert.ok(memory.savePersonalMemory('x'.repeat(2500)));assert.equal(memory.personalMemory().length,2000);
+assert.ok(memory.savePersonalMemory(''));assert.equal(memory.personalMemory(),'');
+memoryOwner='guest';assert.equal(memory.savePersonalMemory('bad'),false);
+assert.ok(arki.includes('personalMemory:$(\'#v107-memory-use\')?.checked?personalMemory(responseOwner):\'\''));
+assert.ok(route.includes("personalMemory:mode==='general_ai'?clean(p.personalMemory).slice(0,2000):''"));
+assert.ok(everyday.includes('optional user-edited preferences or goals'));
+assert.equal(tier('general_ai',{prompt:'Read this',attachments:[{name:'notes.pdf'}]}),'balanced');
+
 const shared='$'+'{TEACHING_DEPTH_STYLE} $'+'{MATH_SOLUTION_STYLE}';
 assert.ok(route.split(shared).length===3,'Both ARKI and Tutor must receive teaching instructions');
 assert.ok(arki.includes('Explain a school problem with every step, rules and a memory aid'),'ARKI example prompt missing');
