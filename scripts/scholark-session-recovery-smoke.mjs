@@ -70,6 +70,24 @@ resolveRefresh(success(initial('previous-account','rt10',epoch()+3600,'u1')));
 assert.equal((await switching)?.user?.id,'u2','A rotated account switch token must win over a slow response');
 assert.equal(get()?.user?.id,'u2','Do not cross-contaminate switched accounts');
 
+// A pending cloud request must never retry or deliver a response under a different account.
+set(initial('account-a','rt-a',epoch()+3600,'u1'));fetchCalls=[];
+let finishRequest;
+fetchImpl=()=>new Promise(resolve=>{finishRequest=resolve});
+const pendingCloud=api.apiFetch('/rest/v1/projects');
+await wait(5);
+set(initial('account-b','rt-b',epoch()+3600,'u2'));
+finishRequest({ok:false,status:401,json:async()=>({})});
+await assert.rejects(pendingCloud,e=>e.code==='ACCOUNT_CHANGED');
+assert.equal(fetchCalls.length,1,'Must not retry a previous account request');
+set(initial('account-a','rt-c',epoch()+3600,'u1'));fetchCalls=[];
+fetchImpl=()=>new Promise(resolve=>{finishRequest=resolve});
+const lateCloud=api.apiFetch('/rest/v1/projects');
+await wait(5);set(initial('account-b','rt-d',epoch()+3600,'u2'));
+finishRequest(success([{id:'private-a'}]));
+await assert.rejects(lateCloud,e=>e.code==='ACCOUNT_CHANGED');
+assert.equal(fetchCalls.length,1,'Late private response must not reach another account');
+
 assert.ok(arki.includes('await withTimeout(cloud.session()')&&!arki.includes('if(!force&&current?.access_token)return current'),'ARKI must check token expiry, not reuse cached access tokens');
 assert.ok(core.includes('SESSION_REFRESH_TEMPORARY')&&core.includes('The server enforces feature credits and limits atomically'),'Tutor must use central refresh and server-authoritative credits');
 
@@ -94,4 +112,14 @@ assert.equal(refreshed,1,'Tutor must request a fresh session on unauthorized res
 assert.ok(calls[0].headers.authorization==='Bearer initial-ai'&&calls[1].headers.authorization==='Bearer refreshed-ai','Tutor must use the refreshed authorization header');
 assert.equal(calls[0].headers['x-scholark-request-id'],calls[1].headers['x-scholark-request-id'],'Tutor must preserve server-side credit idempotency across retry');
 assert.equal(preflightCalled,false,'Tutor must not block on stale client credit preflight');
+// Pin the shared Tutor request to the account that submitted the prompt.
+let aiOwner='u1',aiCalls=0;
+const switchingCloud={currentSession:()=>({user:{id:aiOwner}}),session:async()=>({access_token:'token-a',user:{id:'u1'}}),refreshSession:async()=>{aiOwner='u2';return {access_token:'token-b',user:{id:'u2'}}}};
+const isolated=vm.runInNewContext(core.slice(aiStart,aiEnd)+'\naiRequest',{
+  window:{__SCHOLARK_V72_CLOUD__:switchingCloud},localStorage:{getItem:()=>null},document:{documentElement:{lang:'nl'}},clean:x=>String(x||'').trim(),uid:()=> 'request-id-2',
+  fetch:async()=>{aiCalls++;return {ok:false,status:401,headers:{get:()=>null},json:async()=>({})}},
+  AbortController,setTimeout,clearTimeout,Math,Number,String,JSON,Promise
+});
+await assert.rejects(()=>isolated('tutor',{prompt:'Private question'}),e=>e.code==='ACCOUNT_CHANGED');
+assert.equal(aiCalls,1,'Tutor cannot retry with another account token');
 console.log('SCHOLAVERUM SESSION RECOVERY PASS: fresh, parallel, network outage, recovery, revocation, logout, account switching, ARKI and Tutor');
