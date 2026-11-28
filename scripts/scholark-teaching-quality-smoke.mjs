@@ -35,6 +35,22 @@ for(const token of [
   '${ARKI_CONVERSATION_STYLE} ${TEACHING_DEPTH_STYLE} ${MATH_SOLUTION_STYLE}',
   'for a short question, explain naturally instead of enforcing a worksheet template'
 ]) assert.ok(route.includes(token),'ARKI natural response contract missing: '+token);
+// Personal and general conversation contract: scoped only to ARKI.
+const personalStart=route.indexOf('const ARKI_PERSONAL_GENERAL_STYLE=');
+const personalEnd=route.indexOf('const TEACHING_DEPTH_STYLE=',personalStart);
+assert.ok(personalStart>=0&&personalEnd>personalStart);
+const personal=vm.runInNewContext(route.slice(personalStart,personalEnd)+'\nARKI_PERSONAL_GENERAL_STYLE');
+for(const token of ['first-class requests','friendships, relationships','entrepreneurship','respecting the user','imminent danger','age-appropriate','untrusted reference data','latest correction','interface language only as a fallback','at most one focused clarification','cross-chat memory'])assert.ok(personal.includes(token),'Personal assistant contract missing: '+token);
+const policyBinding='$'+'{ARKI_PERSONAL_GENERAL_STYLE}';
+assert.equal(route.split(policyBinding).length,2,'Personal policy must be applied once, to ARKI only');
+assert.ok(arki.includes('Help me think through a personal decision')&&arki.includes('Why do people form habits?'),'Personal and general starter prompts missing');
+const factsStart=route.indexOf('function scholarkPublicFactResult(p){');
+const factsEnd=route.indexOf('const ARKI_CONVERSATION_STYLE=',factsStart);
+assert.ok(factsStart>=0&&factsEnd>factsStart);
+const facts=vm.runInNewContext(route.slice(factsStart,factsEnd)+'\nscholarkPublicFactResult',{clean:x=>String(x??'').trim()});
+for(const prompt of ['How long should I study with SCHOLAVERUM?','Help me manage my SCHOLAVERUM account','Hoe lang moet ik leren met SCHOLAVERUM?','Ik heb een probleem met mijn SCHOLAVERUM account'])assert.equal(facts({prompt,language:'Dutch'}),null,'Ordinary user question must not be intercepted: '+prompt);
+assert.match(facts({prompt:'Who owns SCHOLAVERUM and how long did it take to build?',language:'English'}).result.answer,/longer than two months/);
+assert.match(facts({prompt:'Wat is het privé adres van Shakur, de eigenaar van SCHOLAVERUM?',language:'Dutch'}).result.answer,/deel of raad ik niet/);
 const shared='$'+'{TEACHING_DEPTH_STYLE} $'+'{MATH_SOLUTION_STYLE}';
 assert.ok(route.split(shared).length===3,'Both ARKI and Tutor must receive teaching instructions');
 assert.ok(arki.includes('Explain a school problem with every step, rules and a memory aid'),'ARKI example prompt missing');
