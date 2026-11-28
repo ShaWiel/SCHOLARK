@@ -131,7 +131,7 @@
     const stillOwner=()=>x.c.currentSession?.()?.user?.id===x.uid;
     if(!stillOwner())return;
     const lead=Math.max(5,Math.min(1440,Number(s.pref.task_lead_minutes)||60)),active=localAssignments().filter(a=>a&&a.status!=='complete'&&a.dueDate&&a.id);
-    const existingReq=await x.c.request('/rest/v1/notification_reminders?select=id,dedupe_key,status&user_id=eq.'+encodeURIComponent(x.uid)+'&dedupe_key=like.local-assignment:%');
+    const existingReq=await x.c.request('/rest/v1/notification_reminders?select=id,dedupe_key,status,due_at&user_id=eq.'+encodeURIComponent(x.uid)+'&dedupe_key=like.local-assignment:%');
     if(!existingReq.ok||!stillOwner())return;
     const existing=await existingReq.json().catch(()=>null);
     if(!Array.isArray(existing))return;
@@ -143,8 +143,9 @@
       const old=existing.find(r=>r.dedupe_key===key);
       // Never re-arm a delivered, cancelled or in-flight reminder, or create one for an expired assignment.
       if((old&&old.status!=='pending')||due.getTime()<=Date.now())continue;
-      let remind=new Date(Math.max(due.getTime()-lead*60000,Date.now()+60000));
-      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:(kind==='homework'?'Homework reminder · ':'Assignment reminder · ')+clean(a.title,130),body:clean(a.subject,100),url:'/#assignments',due_at:remind.toISOString(),updated_at:new Date().toISOString()};
+      const ideal=due.getTime()-lead*60000,existingDue=Date.parse(old?.due_at||'');
+      const remind=new Date(ideal>Date.now()?ideal:Number.isFinite(existingDue)?existingDue:Math.min(due.getTime(),Date.now()+60000));
+      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:kind==='homework'?'Homework reminder':'Assignment reminder',body:'Open SCHOLAVERUM to view your assignment.',url:'/#assignments',due_at:remind.toISOString(),updated_at:new Date().toISOString()};
       if(old)await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
       else await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,dedupe_key:key,status:'pending',...payload})});
     }
