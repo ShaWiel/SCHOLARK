@@ -127,20 +127,33 @@
   async function syncAssignments(){
     clearTimeout(syncTimer);
     const x=await ctx();if(!x)return;
-    const s=await load();if(!s)return;
+    const s=await load();if(!s||s.x.uid!==x.uid)return;
+    const stillOwner=()=>x.c.currentSession?.()?.user?.id===x.uid;
+    if(!stillOwner())return;
     const lead=Math.max(5,Math.min(1440,Number(s.pref.task_lead_minutes)||60)),active=localAssignments().filter(a=>a&&a.status!=='complete'&&a.dueDate&&a.id);
     const existingReq=await x.c.request('/rest/v1/notification_reminders?select=id,dedupe_key,status&user_id=eq.'+encodeURIComponent(x.uid)+'&dedupe_key=like.local-assignment:%');
-    const existing=await existingReq.json().catch(()=>[]),want=new Set();
+    if(!existingReq.ok||!stillOwner())return;
+    const existing=await existingReq.json().catch(()=>null);
+    if(!Array.isArray(existing))return;
+    const want=new Set();
     for(const a of active){
+      if(!stillOwner())return;
       const due=new Date(a.dueDate+'T18:00:00');if(!Number.isFinite(due.getTime()))continue;
-      let remind=new Date(due.getTime()-lead*60000);if(remind.getTime()<Date.now()&&due.getTime()>Date.now())remind=new Date(Date.now()+60000);
       const key='local-assignment:'+clean(a.id,90)+':'+a.dueDate;want.add(key);
-      const old=(Array.isArray(existing)?existing:[]).find(r=>r.dedupe_key===key);
-      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:(kind==='homework'?'Homework reminder · ':'Assignment reminder · ')+clean(a.title,130),body:[clean(a.subject,100),clean(a.instructions,260)].filter(Boolean).join(' · '),url:'/#assignments',due_at:remind.toISOString(),status:'pending',updated_at:new Date().toISOString()};
-      if(old)await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
-      else await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,dedupe_key:key,...payload})});
+      const old=existing.find(r=>r.dedupe_key===key);
+      // Never re-arm a delivered, cancelled or in-flight reminder, or create one for an expired assignment.
+      if((old&&old.status!=='pending')||due.getTime()<=Date.now())continue;
+      let remind=new Date(Math.max(due.getTime()-lead*60000,Date.now()+60000));
+      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:(kind==='homework'?'Homework reminder · ':'Assignment reminder · ')+clean(a.title,130),body:clean(a.subject,100),url:'/#assignments',due_at:remind.toISOString(),updated_at:new Date().toISOString()};
+      if(old)await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
+      else await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,dedupe_key:key,status:'pending',...payload})});
     }
-    for(const old of Array.isArray(existing)?existing:[])if(!want.has(old.dedupe_key)&&old.status==='pending')await cancelReminder(old.id);
+    // A different device can have a partial local assignment list. Only cancel a known completed assignment here.
+    const completed=new Set(localAssignments().filter(a=>a?.status==='complete'&&a.id&&a.dueDate).map(a=>'local-assignment:'+clean(a.id,90)+':'+a.dueDate));
+    for(const old of existing)if(completed.has(old.dedupe_key)&&!want.has(old.dedupe_key)&&old.status==='pending'){
+      if(!stillOwner())return;
+      await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})});
+    }
   }
   function fmt(v){try{return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return String(v||'')}}
   async function open(){
