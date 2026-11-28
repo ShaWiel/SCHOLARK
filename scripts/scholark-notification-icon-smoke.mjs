@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import vm from 'node:vm';
 
 const files = [
   ['scholaverum-notification-icon-192.png', 192],
@@ -32,4 +33,61 @@ for (const [name, size] of files) {
     assert.equal(createHash('sha256').update(deployed).digest('hex'), createHash('sha256').update(bytes).digest('hex'), 'Runtime asset bytes differ: ' + name);
   }
 }
+// Exercise real service-worker event handlers with mocked browser APIs.
+const handlers={},shown=[],opened=[],steps=[];
+const originUrl='https://scholaverum.example';
+const worker={
+  location:{origin:originUrl},
+  addEventListener:(name,fn)=>{handlers[name]=fn},
+  registration:{showNotification:async(title,options)=>{shown.push({title,options})}},
+  clients:{matchAll:async()=>[],openWindow:async url=>{opened.push(url)}}
+};
+vm.runInNewContext(source,{self:worker,URL,Date});
+async function dispatch(name,event){
+  let task;
+  handlers[name]({...event,waitUntil:p=>{task=p}});
+  await task;
+}
+await dispatch('push',{data:{json:()=>null}});
+assert.equal(shown[0].title,'SCHOLAVERUM');
+await dispatch('push',{data:{json:()=>({title:'Homework',tag:'task-1',url:'https://external.example/'})}});
+assert.equal(shown[1].options.tag,'task-1');
+assert.equal(shown[1].options.data.url,originUrl+'/#dashboard');
+const target=originUrl+'/#assignments';
+worker.clients.matchAll=async()=>[{url:originUrl+'/#dashboard',navigate:async url=>{steps.push('navigate:'+url);return {focus:async()=>steps.push('focus')}}}];
+await dispatch('notificationclick',{notification:{data:{url:target},close:()=>steps.push('close')}});
+assert.deepEqual(steps,['close','navigate:'+target,'focus']);
+worker.clients.matchAll=async()=>[{url:target,focus:async()=>{throw Error('focus failed')},navigate:async()=>{throw Error('navigation failed')}}];
+await dispatch('notificationclick',{notification:{data:{url:target},close:()=>{}}});
+assert.equal(opened.at(-1),target);
+
+// Verify assignment sync against delivered, pending and absent remote reminders.
+const syncStart=client.indexOf('  async function syncAssignments(){'),syncEnd=client.indexOf('  function fmt(',syncStart);
+assert.ok(syncStart>=0&&syncEnd>syncStart);
+const date='2099-01-01',writes=[];
+const records=[
+  {id:'delivered',dedupe_key:'local-assignment:sent:'+date,status:'sent'},
+  {id:'pending',dedupe_key:'local-assignment:active:'+date,status:'pending'},
+  {id:'other-device',dedupe_key:'local-assignment:remote:'+date,status:'pending'},
+  {id:'done',dedupe_key:'local-assignment:done:'+date,status:'pending'}
+];
+const assignments=[{id:'sent',dueDate:date},{id:'active',dueDate:date},{id:'new',dueDate:date},{id:'done',dueDate:date,status:'complete'},{id:'expired',dueDate:'2000-01-01'}];
+let owner='user-a',readOk=true;
+const cloudMock={currentSession:()=>({user:{id:owner}}),request:async(path,opts)=>{
+  if(opts){writes.push({path,body:JSON.parse(opts.body)});return {ok:true}}
+  return {ok:readOk,json:async()=>records};
+}};
+const context={uid:'user-a',c:cloudMock};
+const sync=vm.runInNewContext(client.slice(syncStart,syncEnd)+'\nsyncAssignments',{
+  ctx:async()=>context,load:async()=>({x:context,pref:{task_lead_minutes:60}}),
+  localAssignments:()=>assignments,clean:(x,n)=>String(x??'').slice(0,n),syncTimer:0,clearTimeout:()=>{},Date,encodeURIComponent
+});
+await sync();
+assert.equal(writes.length,3);
+assert.ok(writes.some(w=>w.path.includes('id=eq.pending')&&w.path.includes('status=eq.pending')&&!('status' in w.body)));
+assert.ok(writes.some(w=>w.body.dedupe_key==='local-assignment:new:'+date&&w.body.status==='pending'));
+assert.ok(writes.some(w=>w.path.includes('id=eq.done')&&w.body.status==='cancelled'));
+assert.ok(!writes.some(w=>w.path.includes('other-device')||w.path.includes('delivered')||w.body.dedupe_key?.includes('expired')));
+writes.length=0;readOk=false;await sync();assert.equal(writes.length,0);
+readOk=true;owner='user-b';await sync();assert.equal(writes.length,0);
 console.log('SCHOLAVERUM NOTIFICATION ICON SMOKE', JSON.stringify({ok:true,items:files.map(([name,size])=>({name,size})),runtime:!!origin}));
