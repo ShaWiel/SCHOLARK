@@ -104,7 +104,21 @@ memoryOwner='account-b';assert.equal(memory.personalMemory(),'');assert.equal(me
 memoryOwner='account-a';assert.ok(memory.savePersonalMemory('x'.repeat(2500)));assert.equal(memory.personalMemory().length,2000);
 assert.ok(memory.savePersonalMemory(''));assert.equal(memory.personalMemory(),'');
 memoryOwner='guest';assert.equal(memory.savePersonalMemory('bad'),false);
-assert.ok(arki.includes('personalMemory:$(\'#v107-memory-use\')?.checked?personalMemory(responseOwner):\'\''));
+assert.ok(arki.includes("personalMemory:memory||''"));
+assert.ok(arki.includes('useMemory&&!test?await cloudMemory(responseOwner)'));
+// Exercise cloud ownership checks with a mock request, without real user data.
+const cloudStart=arki.indexOf('  async function cloudMemory('),cloudEnd=arki.indexOf('  let activeVoice=',cloudStart);
+assert.ok(cloudStart>=0&&cloudEnd>cloudStart);
+let cloudOwner='account-a',memoryRequests=[];
+const cloudMemory=vm.runInNewContext(arki.slice(cloudStart,cloudEnd)+'\ninstructionsPlaceholder'.replace('instructionsPlaceholder','cloudMemory'),{
+  ownerId:()=>cloudOwner,encodeURIComponent,Date,
+  window:{__SCHOLARK_V72_CLOUD__:{currentSession:()=>({user:{id:cloudOwner}}),request:async(path,opts)=>{memoryRequests.push({path,opts});return {ok:true,json:async()=>[{memory_text:opts?JSON.parse(opts.body).memory_text:'Existing memory'}]}}}}
+});
+assert.equal(await cloudMemory('account-a'),'Existing memory');
+assert.equal(await cloudMemory('account-a','Updated memory'),'Updated memory');
+assert.ok(memoryRequests[0].path.includes('user_id=eq.account-a'));
+assert.equal(JSON.parse(memoryRequests[1].opts.body).user_id,'account-a');
+cloudOwner='account-b';await assert.rejects(()=>cloudMemory('account-a'));assert.equal(memoryRequests.length,2);
 assert.ok(route.includes("personalMemory:mode==='general_ai'?clean(p.personalMemory).slice(0,2000):''"));
 assert.ok(everyday.includes('optional user-edited preferences or goals'));
 assert.equal(tier('general_ai',{prompt:'Read this',attachments:[{name:'notes.pdf'}]}),'balanced');
