@@ -106,4 +106,18 @@ assert.equal(inbox.markInboxRead('user-a',['reminder-2']),false);
 assert.ok(!inbox.inboxRead('user-a').has('reminder-2'));
 assert.ok(inbox.markInboxRead('user-b',Array.from({length:600},(_,i)=>'r'+i)));
 assert.equal(inbox.inboxRead('user-b').size,500);
+// Read updates must be sent only for the signed-in account and already-sent rows.
+const syncReadStart=client.indexOf('  async function syncInboxRead('),syncReadEnd=client.indexOf('  async function load(){',syncReadStart);
+assert.ok(syncReadStart>=0&&syncReadEnd>syncReadStart);
+let readOwner='user-a';const readWrites=[];
+const syncRead=vm.runInNewContext(client.slice(syncReadStart,syncReadEnd)+'\nsyncInboxRead',{
+  cloud:()=>({currentSession:()=>({user:{id:readOwner}}),request:async(path,opts)=>{readWrites.push({path,opts});return {ok:true}}}),Date,encodeURIComponent
+});
+const reminderId='12345678-1234-1234-1234-123456789abc';
+assert.equal(await syncRead('user-a',[reminderId,reminderId,'bad']),true);
+assert.equal(readWrites.length,1);
+assert.ok(readWrites[0].path.includes('user_id=eq.user-a&status=eq.sent&read_at=is.null'));
+assert.ok(readWrites[0].path.endsWith('id=in.('+reminderId+')'));
+assert.ok(JSON.parse(readWrites[0].opts.body).read_at);
+readOwner='user-b';assert.equal(await syncRead('user-a',[reminderId]),false);assert.equal(readWrites.length,1);
 console.log('SCHOLAVERUM NOTIFICATION ICON SMOKE', JSON.stringify({ok:true,items:files.map(([name,size])=>({name,size})),runtime:!!origin}));
