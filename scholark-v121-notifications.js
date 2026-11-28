@@ -114,7 +114,9 @@
       x.c.request('/rest/v1/notification_reminders?select=id,kind,title,body,url,due_at,status,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending&order=due_at.asc&limit=100'),
       x.c.request('/rest/v1/notification_reminders?select=id,kind,title,url,due_at,sent_at,read_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.sent&order=sent_at.desc&limit=100')
     ]);
-    const pd=await p.json().catch(()=>[]),dd=await d.json().catch(()=>[]),rd=await r.json().catch(()=>[]),hd=h.ok?await h.json().catch(()=>null):null;
+    if(!p.ok||!d.ok||!r.ok)throw Error('Could not load notification settings or reminders. Try again.');
+    const pd=await p.json().catch(()=>null),dd=await d.json().catch(()=>null),rd=await r.json().catch(()=>null),hd=h.ok?await h.json().catch(()=>null):null;
+    if(!Array.isArray(pd)||!Array.isArray(dd)||!Array.isArray(rd))throw Error('Notification data could not be read. Try again.');
     if(x.c.currentSession?.()?.user?.id!==x.uid)return null;
     const pref=(Array.isArray(pd)?pd[0]:pd)||{enabled:true,study_reminders:true,task_reminders:true,payment_reminders:true,timezone:timezone(),task_lead_minutes:60,quiet_hours_start:'22:00:00',quiet_hours_end:'07:00:00'};
     return {x,pref,devices:Array.isArray(dd)?dd:[],reminders:Array.isArray(rd)?rd:[],inbox:Array.isArray(hd)?hd:[],inboxAvailable:Array.isArray(hd)}
@@ -127,7 +129,7 @@
     if(!r.ok)throw new Error(d?.message||'Could not save reminder.');return d
   }
   function safeUrl(v){try{const s=String(v||'/#reminders');if(!s.startsWith('/')||s.startsWith('//'))return '/#reminders';const u=new URL(s,location.origin);return u.origin===location.origin?u.pathname+u.search+u.hash:'/#reminders'}catch{return '/#reminders'}}
-  async function cancelReminder(id){const x=await ctx();if(!x)return;await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})})}
+  async function cancelReminder(id){const x=await ctx();if(!x)throw Error('Sign in first.');const r=await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})});const rows=await r.json().catch(()=>null);if(!r.ok||!Array.isArray(rows)||!rows.length)throw Error('Reminder could not be cancelled or is no longer pending.');return true}
   async function unlinkDevice(id){
     const x=await ctx();if(!x)return;
     let endpoint='';
@@ -177,7 +179,7 @@
   function fmt(v){try{return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return String(v||'')}}
   async function open(){
     const epoch=++openEpoch,host=$('#v51-fallback');if(!host)return;
-    const s=await load();
+    let s;try{s=await load()}catch(e){if(epoch!==openEpoch||!host.isConnected||String(location.hash||'').toLowerCase()!=='#reminders')return;host.innerHTML='<div class="v121"><h1>Reminders unavailable</h1><p>'+esc(e.message||'Could not load reminders.')+'</p><button type="button" class="v121-btn" id="v121-retry">Retry</button></div>';$('#v121-retry').onclick=()=>open();return}
     if(epoch!==openEpoch||!host.isConnected||String(location.hash||'').toLowerCase()!=='#reminders')return;
     if(!s){host.innerHTML='<div class="v121"><div class="v121-k">SCHOLAVERUM · REMINDERS</div><h1>Reminders & notifications.</h1><p>Sign in to link devices and keep reminders synced.</p><button class="v121-btn" id="v121-signin">Sign in / Create account</button></div>';$('#v121-signin').onclick=()=>cloud()?.openAuth?.('signin');return}
     const perm=supported()?Notification.permission:'unsupported',linked=s.devices.filter(x=>x.enabled).length,seen=new Set(s.inbox.filter(r=>r.read_at).map(r=>r.id)),unread=s.inbox.filter(r=>!seen.has(r.id)).length;
@@ -215,9 +217,9 @@
       finally{if(btn?.isConnected)btn.disabled=false}
     };
     $('#v121-create').onclick=async e=>{const btn=e.currentTarget,title=clean($('#v121-title').value,180),date=$('#v121-date').value,time=$('#v121-time').value||'18:00';if(!title||!date){st.textContent='Add a reminder title and date.';return}btn.disabled=true;try{const delivery=await ensureReminderDelivery();await createReminder({title,kind:$('#v121-kind').value,when:new Date(date+'T'+time+':00'),url:'/#reminders'});if(st.isConnected)st.textContent='Reminder saved.'+(delivery.message||'');setTimeout(()=>{if(String(location.hash||'').toLowerCase()!=='#reminders')history.replaceState(history.state,'',location.pathname+location.search+'#reminders');open()},350)}catch(err){if(st.isConnected)st.textContent=clean(err?.message||err,300)}finally{if(btn?.isConnected)btn.disabled=false}};
-    $$('[data-v121-cancel]').forEach(b=>b.onclick=async()=>{await cancelReminder(b.dataset.v121Cancel);open()});
+    $$('[data-v121-cancel]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await cancelReminder(b.dataset.v121Cancel);open()}catch(e){st.textContent=clean(e.message||e,200);b.disabled=false}});
     $$('[data-v121-unlink]').forEach(b=>b.onclick=async()=>{await unlinkDevice(b.dataset.v121Unlink);open()});
-    $('#v121-save').onclick=async()=>{await savePrefs({enabled:$('#v121-enabled').checked,task_reminders:$('#v121-task').checked,payment_reminders:$('#v121-payment').checked,study_reminders:$('#v121-study').checked,study_time:$('#v121-study-time').value||'19:00',task_lead_minutes:Number($('#v121-lead').value)||60,quiet_hours_start:$('#v121-quiet-start').value||'22:00',quiet_hours_end:$('#v121-quiet-end').value||'07:00',timezone:timezone()});st.textContent='Notification settings saved.';scheduleAssignmentSync(100)};
+    $('#v121-save').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{const saved=await savePrefs({enabled:$('#v121-enabled').checked,task_reminders:$('#v121-task').checked,payment_reminders:$('#v121-payment').checked,study_reminders:$('#v121-study').checked,study_time:$('#v121-study-time').value||'19:00',task_lead_minutes:Number($('#v121-lead').value)||60,quiet_hours_start:$('#v121-quiet-start').value||'22:00',quiet_hours_end:$('#v121-quiet-end').value||'07:00',timezone:timezone()});if(!saved)throw Error('Settings could not be saved.');st.textContent='Notification settings saved.';scheduleAssignmentSync(100)}catch(err){st.textContent=clean(err.message||err,200)}finally{b.disabled=false}};
     const tomorrow=new Date(Date.now()+86400000),localTomorrow=new Date(tomorrow.getTime()-tomorrow.getTimezoneOffset()*60000);$('#v121-date').value=localTomorrow.toISOString().slice(0,10);$('#v121-time').value='18:00';
   }
   async function onboardingNeeded(){
