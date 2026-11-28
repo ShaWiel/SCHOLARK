@@ -35,6 +35,31 @@ for(const token of [
   '${ARKI_CONVERSATION_STYLE} ${TEACHING_DEPTH_STYLE} ${MATH_SOLUTION_STYLE}',
   'for a short question, explain naturally instead of enforcing a worksheet template'
 ]) assert.ok(route.includes(token),'ARKI natural response contract missing: '+token);
+// Validate the actual composed ARKI instruction, not a paid model response.
+const styleStart=route.indexOf('const ARKI_CONVERSATION_STYLE=');
+const styleEnd=route.indexOf('function userPayload(',styleStart);
+assert.ok(styleStart>=0&&styleEnd>styleStart,'Cannot isolate ARKI instruction builder');
+const makeInstructions=vm.runInNewContext(route.slice(styleStart,styleEnd)+'\ninstructions',{clean:x=>String(x??'').trim()});
+const everyday=makeInstructions('general_ai',{language:'Dutch',level:'student'});
+for(const token of [
+  "questions about the user's own life as first-class ARKI requests",
+  'friendships, relationships, family communication',
+  'hobbies, sports, entertainment, travel planning, cooking',
+  'do not diagnose, moralize, make unsupported assumptions',
+  'rely only on the current conversation and explicitly supplied context',
+  'Never pretend to remember other chats',
+  'protect private identifying details',
+  'do not inject assignments or school references',
+  'keep sensitive guidance age-appropriate',
+  'prioritize immediate safety and local emergency support',
+  'without suggesting emotional dependence',
+  'do not fabricate a live answer',
+  'do not turn non-educational questions into lessons',
+  'Output language: Dutch',
+  'When the user asks you to calculate'
+]) assert.ok(everyday.includes(token),'ARKI everyday instruction missing: '+token);
+assert.ok(!makeInstructions('tutor',{language:'Dutch'}).includes("questions about the user's own life as first-class ARKI requests"),'Dedicated Tutor must not inherit general personal-chat instructions');
+
 const shared='$'+'{TEACHING_DEPTH_STYLE} $'+'{MATH_SOLUTION_STYLE}';
 assert.ok(route.split(shared).length===3,'Both ARKI and Tutor must receive teaching instructions');
 assert.ok(arki.includes('Explain a school problem with every step, rules and a memory aid'),'ARKI example prompt missing');
