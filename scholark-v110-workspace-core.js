@@ -211,12 +211,15 @@
     const m=clean(mode).toLowerCase(),feature=AI_FEATURES[m];
     if(!feature){const e=new Error('Unsupported SCHOLAVERUM AI mode.');e.code='AI_MODE_UNSUPPORTED';throw e}
     const test=!!window.__SCHOLARK_TEST_MODE__;
+    const cloud=window.__SCHOLARK_V72_CLOUD__,owner=cloud?.currentSession?.()?.user?.id;
+    const ensureOwner=s=>{if(!test&&typeof cloud?.currentSession==='function'&&(!owner||s?.user?.id!==owner||cloud.currentSession()?.user?.id!==owner)){const e=new Error('Account changed. Retry from the current account.');e.code='ACCOUNT_CHANGED';throw e}};
     let session=test?null:await aiSession(false);
     if(!test&&!session?.access_token){
       const recovering=window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary';
       if(!recovering&&opts.openAuth!==false)window.__SCHOLARK_V72_CLOUD__?.openAuth?.('signin');
       const e=new Error(recovering?'SCHOLAVERUM could not renew your session right now. Check your connection and retry; your sign-in was preserved.':'Sign in to use SCHOLAVERUM AI features and protect your credits.');e.code=recovering?'SESSION_REFRESH_TEMPORARY':'AUTH_REQUIRED';throw e;
     }
+    ensureOwner(session);
     // The server enforces feature credits and limits atomically. A separate
     // client wallet preflight can delay Tutor and race an expiring session.
     // Always let the authenticated server decide whether credits suffice.
@@ -239,10 +242,10 @@
         return{response,data};
       }finally{clearTimeout(timer)}
     };
-    let attempt=await once(session);
+    let attempt=await once(session);ensureOwner(session);
     if(!test&&attempt.response.status===401){
       const fresh=await aiSession(true);
-      if(fresh?.access_token){session=fresh;attempt=await once(session)}
+      if(fresh?.access_token){ensureOwner(fresh);session=fresh;attempt=await once(session);ensureOwner(session)}
       else if(window.__SCHOLARK_V72_CLOUD__?.sessionRefreshState?.()==='temporary'){
         const e=new Error('Your session could not be renewed because the connection is temporarily unavailable. Try again; your account remains signed in.');e.code='SESSION_REFRESH_TEMPORARY';throw e;
       }

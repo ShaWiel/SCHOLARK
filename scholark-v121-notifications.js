@@ -90,16 +90,36 @@
     const r=await x.c.request('/rest/v1/notification_preferences?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(body)});
     return r.ok
   }
+  const inboxReadKey=uid=>'scholark_notification_read_v1:account:'+uid;
+  function inboxRead(uid){
+    try{const rows=JSON.parse(localStorage.getItem(inboxReadKey(uid))||'[]');return new Set(Array.isArray(rows)?rows.filter(x=>typeof x==='string').slice(-500):[])}catch{return new Set()}
+  }
+  function markInboxRead(uid,ids){
+    if(cloud()?.currentSession?.()?.user?.id!==uid)return false;
+    try{const seen=inboxRead(uid);for(const id of ids){seen.delete(id);seen.add(id)}localStorage.setItem(inboxReadKey(uid),JSON.stringify([...seen].slice(-500)));return true}catch{return false}
+  }
+  async function syncInboxRead(uid,ids){
+    const c=cloud();
+    if(c?.currentSession?.()?.user?.id!==uid)return false;
+    const unique=[...new Set(ids)].filter(id=>/^[a-f0-9-]{36}$/i.test(id)).slice(0,100);
+    if(!unique.length)return true;
+    const r=await c.request('/rest/v1/notification_reminders?user_id=eq.'+encodeURIComponent(uid)+'&status=eq.sent&read_at=is.null&id=in.('+unique.join(',')+')',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({read_at:new Date().toISOString()})});
+    return r.ok&&c.currentSession?.()?.user?.id===uid;
+  }
   async function load(){
     const x=await ctx();if(!x)return null;
-    const [p,d,r]=await Promise.all([
+    const [p,d,r,h]=await Promise.all([
       x.c.request('/rest/v1/notification_preferences?select=*&user_id=eq.'+encodeURIComponent(x.uid)+'&limit=1'),
       x.c.request('/rest/v1/push_subscriptions?select=id,endpoint,device_label,platform,enabled,last_seen_at,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&order=last_seen_at.desc'),
-      x.c.request('/rest/v1/notification_reminders?select=id,kind,title,body,url,due_at,status,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending&order=due_at.asc&limit=100')
+      x.c.request('/rest/v1/notification_reminders?select=id,kind,title,body,url,due_at,status,created_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending&order=due_at.asc&limit=100'),
+      x.c.request('/rest/v1/notification_reminders?select=id,kind,title,url,due_at,sent_at,read_at&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.sent&order=sent_at.desc&limit=100')
     ]);
-    const pd=await p.json().catch(()=>[]),dd=await d.json().catch(()=>[]),rd=await r.json().catch(()=>[]);
+    if(!p.ok||!d.ok||!r.ok)throw Error('Could not load notification settings or reminders. Try again.');
+    const pd=await p.json().catch(()=>null),dd=await d.json().catch(()=>null),rd=await r.json().catch(()=>null),hd=h.ok?await h.json().catch(()=>null):null;
+    if(!Array.isArray(pd)||!Array.isArray(dd)||!Array.isArray(rd))throw Error('Notification data could not be read. Try again.');
+    if(x.c.currentSession?.()?.user?.id!==x.uid)return null;
     const pref=(Array.isArray(pd)?pd[0]:pd)||{enabled:true,study_reminders:true,task_reminders:true,payment_reminders:true,timezone:timezone(),task_lead_minutes:60,quiet_hours_start:'22:00:00',quiet_hours_end:'07:00:00'};
-    return {x,pref,devices:Array.isArray(dd)?dd:[],reminders:Array.isArray(rd)?rd:[]}
+    return {x,pref,devices:Array.isArray(dd)?dd:[],reminders:Array.isArray(rd)?rd:[],inbox:Array.isArray(hd)?hd:[],inboxAvailable:Array.isArray(hd)}
   }
   async function createReminder({title,body='',kind='custom',when,url='/#reminders',dedupeKey=null}){
     const x=await ctx();if(!x)throw new Error('Sign in first.');
@@ -108,8 +128,8 @@
     const r=await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)}),d=await r.json().catch(()=>null);
     if(!r.ok)throw new Error(d?.message||'Could not save reminder.');return d
   }
-  function safeUrl(v){const s=String(v||'/#reminders');return s.startsWith('/')&&!s.startsWith('//')?s:'/#reminders'}
-  async function cancelReminder(id){const x=await ctx();if(!x)return;await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})})}
+  function safeUrl(v){try{const s=String(v||'/#reminders');if(!s.startsWith('/')||s.startsWith('//'))return '/#reminders';const u=new URL(s,location.origin);return u.origin===location.origin?u.pathname+u.search+u.hash:'/#reminders'}catch{return '/#reminders'}}
+  async function cancelReminder(id){const x=await ctx();if(!x)throw Error('Sign in first.');const r=await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})});const rows=await r.json().catch(()=>null);if(!r.ok||!Array.isArray(rows)||!rows.length)throw Error('Reminder could not be cancelled or is no longer pending.');return true}
   async function unlinkDevice(id){
     const x=await ctx();if(!x)return;
     let endpoint='';
@@ -127,35 +147,52 @@
   async function syncAssignments(){
     clearTimeout(syncTimer);
     const x=await ctx();if(!x)return;
-    const s=await load();if(!s)return;
+    const s=await load();if(!s||s.x.uid!==x.uid)return;
+    const stillOwner=()=>x.c.currentSession?.()?.user?.id===x.uid;
+    if(!stillOwner())return;
     const lead=Math.max(5,Math.min(1440,Number(s.pref.task_lead_minutes)||60)),active=localAssignments().filter(a=>a&&a.status!=='complete'&&a.dueDate&&a.id);
-    const existingReq=await x.c.request('/rest/v1/notification_reminders?select=id,dedupe_key,status&user_id=eq.'+encodeURIComponent(x.uid)+'&dedupe_key=like.local-assignment:%');
-    const existing=await existingReq.json().catch(()=>[]),want=new Set();
+    const existingReq=await x.c.request('/rest/v1/notification_reminders?select=id,dedupe_key,status,due_at&user_id=eq.'+encodeURIComponent(x.uid)+'&dedupe_key=like.local-assignment:%');
+    if(!existingReq.ok||!stillOwner())return;
+    const existing=await existingReq.json().catch(()=>null);
+    if(!Array.isArray(existing))return;
+    const want=new Set();
     for(const a of active){
+      if(!stillOwner())return;
       const due=new Date(a.dueDate+'T18:00:00');if(!Number.isFinite(due.getTime()))continue;
-      let remind=new Date(due.getTime()-lead*60000);if(remind.getTime()<Date.now()&&due.getTime()>Date.now())remind=new Date(Date.now()+60000);
       const key='local-assignment:'+clean(a.id,90)+':'+a.dueDate;want.add(key);
-      const old=(Array.isArray(existing)?existing:[]).find(r=>r.dedupe_key===key);
-      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:(kind==='homework'?'Homework reminder · ':'Assignment reminder · ')+clean(a.title,130),body:[clean(a.subject,100),clean(a.instructions,260)].filter(Boolean).join(' · '),url:'/#assignments',due_at:remind.toISOString(),status:'pending',updated_at:new Date().toISOString()};
-      if(old)await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
-      else await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,dedupe_key:key,...payload})});
+      const old=existing.find(r=>r.dedupe_key===key);
+      // Never re-arm a delivered, cancelled or in-flight reminder, or create one for an expired assignment.
+      if((old&&old.status!=='pending')||due.getTime()<=Date.now())continue;
+      const ideal=due.getTime()-lead*60000,existingDue=Date.parse(old?.due_at||'');
+      const remind=new Date(ideal>Date.now()?ideal:Number.isFinite(existingDue)?existingDue:Math.min(due.getTime(),Date.now()+60000));
+      const kind=String(a.type||'assignment').toLowerCase()==='homework'?'homework':'assignment',payload={kind,title:kind==='homework'?'Homework reminder':'Assignment reminder',body:'Open SCHOLAVERUM to view your assignment.',url:'/#assignments',due_at:remind.toISOString(),updated_at:new Date().toISOString()};
+      if(old)await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
+      else await x.c.request('/rest/v1/notification_reminders',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:x.uid,dedupe_key:key,status:'pending',...payload})});
     }
-    for(const old of Array.isArray(existing)?existing:[])if(!want.has(old.dedupe_key)&&old.status==='pending')await cancelReminder(old.id);
+    // A different device can have a partial local assignment list. Only cancel a known completed assignment here.
+    const completed=new Set(localAssignments().filter(a=>a?.status==='complete'&&a.id&&a.dueDate).map(a=>'local-assignment:'+clean(a.id,90)+':'+a.dueDate));
+    for(const old of existing)if(completed.has(old.dedupe_key)&&!want.has(old.dedupe_key)&&old.status==='pending'){
+      if(!stillOwner())return;
+      await x.c.request('/rest/v1/notification_reminders?id=eq.'+encodeURIComponent(old.id)+'&user_id=eq.'+encodeURIComponent(x.uid)+'&status=eq.pending',{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:'cancelled',updated_at:new Date().toISOString()})});
+    }
   }
   function fmt(v){try{return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch{return String(v||'')}}
   async function open(){
     const epoch=++openEpoch,host=$('#v51-fallback');if(!host)return;
-    const s=await load();
+    let s;try{s=await load()}catch(e){if(epoch!==openEpoch||!host.isConnected||String(location.hash||'').toLowerCase()!=='#reminders')return;host.innerHTML='<div class="v121"><h1>Reminders unavailable</h1><p>'+esc(e.message||'Could not load reminders.')+'</p><button type="button" class="v121-btn" id="v121-retry">Retry</button></div>';$('#v121-retry').onclick=()=>open();return}
     if(epoch!==openEpoch||!host.isConnected||String(location.hash||'').toLowerCase()!=='#reminders')return;
     if(!s){host.innerHTML='<div class="v121"><div class="v121-k">SCHOLAVERUM · REMINDERS</div><h1>Reminders & notifications.</h1><p>Sign in to link devices and keep reminders synced.</p><button class="v121-btn" id="v121-signin">Sign in / Create account</button></div>';$('#v121-signin').onclick=()=>cloud()?.openAuth?.('signin');return}
-    const perm=supported()?Notification.permission:'unsupported',linked=s.devices.filter(x=>x.enabled).length;
+    const perm=supported()?Notification.permission:'unsupported',linked=s.devices.filter(x=>x.enabled).length,seen=new Set(s.inbox.filter(r=>r.read_at).map(r=>r.id)),unread=s.inbox.filter(r=>!seen.has(r.id)).length;
     const iosHelp=isIOS()&&!standalone()?'<div class="v121-note">iPhone/iPad: add SCHOLAVERUM to your Home Screen and open it there before linking push notifications.</div>':'';
     host.innerHTML=`<div class="v121"><div class="v121-k">SCHOLAVERUM · REMINDERS</div><h1>Stay ahead without keeping SCHOLAVERUM open.</h1><p>Link the devices you use, set your own reminders and let SCHOLAVERUM remind you about tasks, homework, assignments and upcoming payments.</p>
       <div class="v121-grid"><section class="v121-card"><h2>Devices</h2><p>Link one or more devices to the same SCHOLAVERUM account. Each phone, tablet, laptop or PC is linked separately: open SCHOLAVERUM on that device, sign in and choose “Link this device”.</p><div class="v121-state"><span class="v121-pill ${linked?'ok':'warn'}">${linked} linked device${linked===1?'':'s'}</span><span class="v121-pill ${perm==='granted'?'ok':'warn'}">Permission: ${esc(perm)}</span></div><div class="v121-actions"><button type="button" class="v121-btn" id="v121-link">Link this device</button><button type="button" class="v121-btn alt" id="v121-test">Send test notification now</button></div>${iosHelp}<div class="v121-note">Smartwatches usually mirror notifications from the linked phone when watch notification mirroring is enabled.</div><div class="v121-list" id="v121-devices">${s.devices.length?s.devices.map(d=>'<div class="v121-item"><div><b>'+esc(d.device_label||d.platform||'Linked device')+'</b><span>Last seen '+esc(fmt(d.last_seen_at))+(d.enabled?' · enabled':' · disabled')+'</span></div><button class="v121-btn danger" data-v121-unlink="'+esc(d.id)+'">Unlink</button></div>').join(''):'<div class="v121-item"><div><b>No linked devices yet</b><span>Link this device to receive push reminders.</span></div></div>'}</div></section>
       <section class="v121-card"><h2>Set a reminder</h2><div class="v121-form"><input id="v121-title" placeholder="What should SCHOLAVERUM remind you about?"><div class="v121-row"><input id="v121-date" type="date"><input id="v121-time" type="time"></div><select id="v121-kind"><option value="custom">General reminder</option><option value="study">Study reminder</option><option value="homework">Homework</option><option value="assignment">Assignment</option></select><button type="button" class="v121-btn" id="v121-create">Set reminder</button></div><div class="v121-status" id="v121-status"></div><div class="v121-list" id="v121-reminders">${s.reminders.length?s.reminders.map(r=>'<div class="v121-item"><div><b>'+esc(r.title)+'</b><span>'+esc(r.kind)+' · '+esc(fmt(r.due_at))+'</span></div><button class="v121-btn danger" data-v121-cancel="'+esc(r.id)+'">Cancel</button></div>').join(''):'<div class="v121-item"><div><b>No pending reminders</b><span>Create one above whenever you need it.</span></div></div>'}</div></section>
       <section class="v121-card"><h2>Automatic reminders</h2><div class="v121-settings"><label class="v121-toggle"><b>Notifications enabled</b><input id="v121-enabled" type="checkbox" ${s.pref.enabled!==false?'checked':''}></label><label class="v121-toggle"><b>Assignments, homework & Planner tasks</b><input id="v121-task" type="checkbox" ${s.pref.task_reminders!==false?'checked':''}></label><label class="v121-toggle"><b>Payment & renewal reminders</b><input id="v121-payment" type="checkbox" ${s.pref.payment_reminders!==false?'checked':''}></label><label class="v121-toggle"><b>Study reminders</b><input id="v121-study" type="checkbox" ${s.pref.study_reminders!==false?'checked':''}></label><div class="v121-row"><label class="v121-form"><span>Daily study time</span><input id="v121-study-time" type="time" value="${esc(String(s.pref.study_time||'19:00').slice(0,5))}"></label><label class="v121-form"><span>Remind before task</span><select id="v121-lead">${[[15,'15 minutes'],[30,'30 minutes'],[60,'1 hour'],[120,'2 hours'],[1440,'1 day']].map(x=>'<option value="'+x[0]+'" '+(Number(s.pref.task_lead_minutes)===x[0]?'selected':'')+'>'+x[1]+'</option>').join('')}</select></label><label class="v121-form"><span>Timezone</span><input value="${esc(timezone())}" disabled></label></div><div class="v121-row"><label class="v121-form"><span>Quiet hours start</span><input id="v121-quiet-start" type="time" value="${esc(String(s.pref.quiet_hours_start||'22:00').slice(0,5))}"></label><label class="v121-form"><span>Quiet hours end</span><input id="v121-quiet-end" type="time" value="${esc(String(s.pref.quiet_hours_end||'07:00').slice(0,5))}"></label></div><button type="button" class="v121-btn alt" id="v121-save">Save notification settings</button></div></section>
+      <section class="v121-card"><h2>Notification history · ${unread} unread</h2><p>Sent reminders from your account. Read status is synchronized across signed-in devices; “sent” means accepted for delivery, not confirmed displayed.</p><button type="button" class="v121-btn alt" id="v121-read-all" ${unread?'':'disabled'}>Mark all as read</button><div class="v121-list">${!s.inboxAvailable?'<p>History could not be loaded. Reopen this page to retry.</p>':s.inbox.length?s.inbox.map(r=>'<div class="v121-item"><div><b>'+esc(r.title)+'</b><span>'+esc(fmt(r.sent_at||r.due_at))+' · '+(seen.has(r.id)?'Read':'Unread')+'</span></div><button type="button" class="v121-btn alt" data-v121-read="'+esc(r.id)+'">'+(seen.has(r.id)?'Open':'Read &amp; open')+'</button></div>').join(''):'<p>No sent reminders yet.</p>'}</div></section>
       <section class="v121-card"><h2>How device linking works</h2><p>SCHOLAVERUM never links a device silently. Browser notification permission is only requested after you press “Link this device”. You can unlink any device here at any time.</p><div class="v121-note">Android, Windows, macOS and most modern desktop/mobile browsers support Web Push. On iPhone/iPad, Web Push works from an installed Home Screen web app. A smartwatch normally receives the phone’s mirrored notification rather than registering directly with the website.</div></section></div></div>`;
     const st=$('#v121-status');
+    $('#v121-read-all').onclick=async()=>{try{if(await syncInboxRead(s.x.uid,s.inbox.map(r=>r.id)))open();else st.textContent='Could not synchronize read status.'}catch{st.textContent='Could not synchronize read status.'}};
+    $$('[data-v121-read]').forEach(b=>b.onclick=async()=>{const r=s.inbox.find(z=>z.id===b.dataset.v121Read);if(!r)return;try{if(!await syncInboxRead(s.x.uid,[r.id]))throw Error('Could not synchronize read status.');const url=safeUrl(r.url);if(url==='/#reminders')open();else location.assign(url)}catch(e){st.textContent=clean(e.message||e,200)}});
     $('#v121-link').onclick=async e=>{const btn=e.currentTarget;btn.disabled=true;st.textContent='Linking this device…';try{await linkDevice();if(st.isConnected)st.textContent='Device linked. SCHOLAVERUM can now send notifications here.';setTimeout(open,450)}catch(err){if(st.isConnected)st.textContent=clean(err?.message||err,300)}finally{if(btn?.isConnected)btn.disabled=false}};
     $('#v121-test').onclick=async e=>{
       const btn=e.currentTarget;btn.disabled=true;st.textContent='Testing this device now…';
@@ -180,9 +217,9 @@
       finally{if(btn?.isConnected)btn.disabled=false}
     };
     $('#v121-create').onclick=async e=>{const btn=e.currentTarget,title=clean($('#v121-title').value,180),date=$('#v121-date').value,time=$('#v121-time').value||'18:00';if(!title||!date){st.textContent='Add a reminder title and date.';return}btn.disabled=true;try{const delivery=await ensureReminderDelivery();await createReminder({title,kind:$('#v121-kind').value,when:new Date(date+'T'+time+':00'),url:'/#reminders'});if(st.isConnected)st.textContent='Reminder saved.'+(delivery.message||'');setTimeout(()=>{if(String(location.hash||'').toLowerCase()!=='#reminders')history.replaceState(history.state,'',location.pathname+location.search+'#reminders');open()},350)}catch(err){if(st.isConnected)st.textContent=clean(err?.message||err,300)}finally{if(btn?.isConnected)btn.disabled=false}};
-    $$('[data-v121-cancel]').forEach(b=>b.onclick=async()=>{await cancelReminder(b.dataset.v121Cancel);open()});
+    $$('[data-v121-cancel]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await cancelReminder(b.dataset.v121Cancel);open()}catch(e){st.textContent=clean(e.message||e,200);b.disabled=false}});
     $$('[data-v121-unlink]').forEach(b=>b.onclick=async()=>{await unlinkDevice(b.dataset.v121Unlink);open()});
-    $('#v121-save').onclick=async()=>{await savePrefs({enabled:$('#v121-enabled').checked,task_reminders:$('#v121-task').checked,payment_reminders:$('#v121-payment').checked,study_reminders:$('#v121-study').checked,study_time:$('#v121-study-time').value||'19:00',task_lead_minutes:Number($('#v121-lead').value)||60,quiet_hours_start:$('#v121-quiet-start').value||'22:00',quiet_hours_end:$('#v121-quiet-end').value||'07:00',timezone:timezone()});st.textContent='Notification settings saved.';scheduleAssignmentSync(100)};
+    $('#v121-save').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{const saved=await savePrefs({enabled:$('#v121-enabled').checked,task_reminders:$('#v121-task').checked,payment_reminders:$('#v121-payment').checked,study_reminders:$('#v121-study').checked,study_time:$('#v121-study-time').value||'19:00',task_lead_minutes:Number($('#v121-lead').value)||60,quiet_hours_start:$('#v121-quiet-start').value||'22:00',quiet_hours_end:$('#v121-quiet-end').value||'07:00',timezone:timezone()});if(!saved)throw Error('Settings could not be saved.');st.textContent='Notification settings saved.';scheduleAssignmentSync(100)}catch(err){st.textContent=clean(err.message||err,200)}finally{b.disabled=false}};
     const tomorrow=new Date(Date.now()+86400000),localTomorrow=new Date(tomorrow.getTime()-tomorrow.getTimezoneOffset()*60000);$('#v121-date').value=localTomorrow.toISOString().slice(0,10);$('#v121-time').value='18:00';
   }
   async function onboardingNeeded(){
@@ -206,7 +243,7 @@
   function scheduleAssignmentSync(ms=600){clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncAssignments().catch(()=>{}),ms)}
   addEventListener('scholark:assignments-changed',()=>scheduleAssignmentSync(450));
   addEventListener('scholark:notification-onboarding',()=>offerDeviceLink());
-  addEventListener('scholark:auth-changed',e=>{if(e.detail?.signedIn){offerDeviceLink();scheduleAssignmentSync(900)}});
+  addEventListener('scholark:auth-changed',e=>{openEpoch++;if(String(location.hash||'').toLowerCase()==='#reminders'){const h=$('#v51-fallback');if(h)h.textContent='Loading reminders…';open().catch(()=>{})}if(e.detail?.signedIn){offerDeviceLink();scheduleAssignmentSync(900)}});
   addEventListener('scholark-runtime-ready',()=>{sw().catch(()=>{});setTimeout(()=>{offerDeviceLink();scheduleAssignmentSync(1600)},900)},{once:true});
   window.__SCHOLARK_NOTIFICATIONS__={open,linkDevice,currentDeviceReady,offerDeviceLink,onboardingNeeded,syncAssignments,createReminder,release:RELEASE};
 })();
