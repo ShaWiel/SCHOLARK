@@ -959,7 +959,13 @@ await page.evaluate(()=>{
 });
 await page.fill('#v107-q','Test expired ARKI session');
 await page.click('#v107-send');
-await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),null,{timeout:5000});
+try{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.v107-msg.assistant')].some(x=>/answered after refreshing/i.test(x.textContent||'')),null,{timeout:5000});
+}catch(error){
+  const diagnostic=await page.evaluate(()=>({state:document.querySelector('#v107-state')?.textContent,activeChat:window.__SCHOLARK_V107_GENERAL_AI__?.getCurrent?.()?.id,messageCount:document.querySelectorAll('.v107-msg').length,refreshes:window.__schArkiRefreshes,sendDisabled:document.querySelector('#v107-send')?.disabled}));
+  console.error('ARKI session recovery diagnostic',JSON.stringify({calls:arkiAuthCalls,...diagnostic}));
+  throw error;
+}
 check(arkiAuthCalls===2,`ARKI expired-session recovery should make exactly 2 calls, got ${arkiAuthCalls}`);
 check((await page.evaluate(()=>window.__schArkiRefreshes))===1,'ARKI did not force-refresh the expired session exactly once');
 check((await page.locator('#v107-state').innerText()).trim()==='Ready','ARKI did not settle to the provider-neutral Ready state after a successful retry');
