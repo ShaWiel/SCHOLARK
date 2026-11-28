@@ -60,6 +60,36 @@ for(const token of [
 ]) assert.ok(everyday.includes(token),'ARKI everyday instruction missing: '+token);
 assert.ok(!makeInstructions('tutor',{language:'Dutch'}).includes("questions about the user's own life as first-class ARKI requests"),'Dedicated Tutor must not inherit general personal-chat instructions');
 
+// Dedicated academic coaching and model routing (no paid provider calls).
+const academic=makeInstructions('tutor',{language:'Dutch',level:'university'});
+for(const token of [
+  'secondary school through university level, including vocational education',
+  'calculus, geometry, probability, statistics, linear algebra and proofs',
+  'algorithms, data structures, programming and systems',
+  'accounting, business, psychology, social science, law and health sciences',
+  'preserve domain restrictions',
+  'dimensional checks',
+  'check mass, charge and stoichiometry',
+  'distinguish evidence, interpretation, cause and correlation',
+  'never invent quotations, references, official syllabus requirements',
+  'change the explanation using a concrete analogy',
+  'retrieval practice, spaced review, interleaving',
+  'keep answer keys out of all visible response fields',
+  'label any score as an estimate',
+  'Output language: Dutch'
+]) assert.ok(academic.includes(token),'Academic Tutor contract missing: '+token);
+assert.ok(!everyday.includes('Be a multidisciplinary academic tutor'),'ARKI must not inherit dedicated academic policy');
+const tierStart=route.indexOf('function learningTier('),tierEnd=route.indexOf('function learningModels(',tierStart);
+assert.ok(tierStart>=0&&tierEnd>tierStart,'Cannot isolate provider routing');
+const tier=vm.runInNewContext(route.slice(tierStart,tierEnd)+'\nlearningTier',{clean:x=>String(x??'').trim()});
+assert.equal(tier('tutor',{prompt:'Wat is osmose?',tutorMode:'teach'}),'light');
+assert.equal(tier('tutor',{prompt:'Solve x² − 4x + 3 = 0',tutorMode:'teach'}),'balanced');
+assert.equal(tier('tutor',{prompt:'Wat is osmose?',attachments:[{name:'notes.pdf'}]}),'balanced');
+assert.equal(tier('tutor',{prompt:'Wat is osmose?',context:'learner confused about diffusion'}),'balanced');
+for(const tutorMode of ['review_work','quiz_coach','study_planner','assignment_coach']) assert.equal(tier('tutor',{prompt:'Wat is osmose?',tutorMode}),'balanced');
+assert.equal(tier('general_ai',{prompt:'How was your day?'}),'light');
+assert.equal(tier('general_ai',{prompt:'How was your day?',deep:true}),'balanced');
+
 const shared='$'+'{TEACHING_DEPTH_STYLE} $'+'{MATH_SOLUTION_STYLE}';
 assert.ok(route.split(shared).length===3,'Both ARKI and Tutor must receive teaching instructions');
 assert.ok(arki.includes('Explain a school problem with every step, rules and a memory aid'),'ARKI example prompt missing');
