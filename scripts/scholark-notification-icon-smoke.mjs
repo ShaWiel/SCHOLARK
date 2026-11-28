@@ -90,4 +90,20 @@ assert.ok(writes.some(w=>w.path.includes('id=eq.done')&&w.body.status==='cancell
 assert.ok(!writes.some(w=>w.path.includes('other-device')||w.path.includes('delivered')||w.body.dedupe_key?.includes('expired')));
 writes.length=0;readOk=false;await sync();assert.equal(writes.length,0);
 readOk=true;owner='user-b';await sync();assert.equal(writes.length,0);
+// Read controls remain account-scoped and cannot mutate another user's local history.
+const inboxStart=client.indexOf('  const inboxReadKey='),inboxEnd=client.indexOf('  async function load(){',inboxStart);
+assert.ok(inboxStart>=0&&inboxEnd>inboxStart);
+const store=new Map();let inboxOwner='user-a';
+const inbox=vm.runInNewContext(client.slice(inboxStart,inboxEnd)+'\n({inboxRead,markInboxRead})',{
+  cloud:()=>({currentSession:()=>({user:{id:inboxOwner}})}),
+  localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)}
+});
+assert.ok(inbox.markInboxRead('user-a',['reminder-1']));
+assert.ok(inbox.inboxRead('user-a').has('reminder-1'));
+inboxOwner='user-b';
+assert.equal(inbox.inboxRead('user-b').size,0);
+assert.equal(inbox.markInboxRead('user-a',['reminder-2']),false);
+assert.ok(!inbox.inboxRead('user-a').has('reminder-2'));
+assert.ok(inbox.markInboxRead('user-b',Array.from({length:600},(_,i)=>'r'+i)));
+assert.equal(inbox.inboxRead('user-b').size,500);
 console.log('SCHOLAVERUM NOTIFICATION ICON SMOKE', JSON.stringify({ok:true,items:files.map(([name,size])=>({name,size})),runtime:!!origin}));
