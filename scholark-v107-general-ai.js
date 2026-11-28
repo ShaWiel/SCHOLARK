@@ -34,6 +34,49 @@
   function getCurrent(owner=ownerId()){const a=read(owner),id=activeId(owner);return a.find(x=>x.id===id)||a[0]||createChat(owner)}
   function update(id,fn,owner=ownerId()){const a=read(owner),x=a.find(z=>z.id===id);if(!x)return null;fn(x);x.updatedAt=new Date().toISOString();a.sort((p,q)=>String(q.updatedAt).localeCompare(String(p.updatedAt)));write(a,owner);return x}
   function outputLanguage(){const code=localStorage.getItem('scholark_ui_language')||'nl';return window.__SCHOLARK_I18N__?.languageName?.(code)||window.__SCHOLARK_I18N__?.nativeName?.(code)||code}
+  // Explicit, user-edited memory only; no automatic extraction from chats.
+  const MEMORY_KEY='scholark_v107_personal_memory';
+  function personalMemory(owner=ownerId()){
+    if(owner==='guest')return '';
+    try{return String(localStorage.getItem(ownedKey(MEMORY_KEY,owner))||'').slice(0,2000)}catch{return ''}
+  }
+  function savePersonalMemory(value,owner=ownerId()){
+    if(owner==='guest'||owner!==ownerId())return false;
+    try{const key=ownedKey(MEMORY_KEY,owner),v=String(value||'').trim().slice(0,2000);if(v)localStorage.setItem(key,v);else localStorage.removeItem(key);return true}catch{return false}
+  }
+  let activeVoice=null;
+  function stopVoice(){
+    const voice=activeVoice;activeVoice=null;
+    try{voice?.abort()}catch{}
+    try{window.speechSynthesis?.cancel()}catch{}
+  }
+  function voiceInput(){
+    const q=$('#v107-q'),st=$('#v107-state'),Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!q||busy)return;
+    if(activeVoice){stopVoice();if(st)st.textContent='Voice input stopped';return}
+    if(!Recognition){if(st)st.textContent='Voice input is not supported in this browser.';return}
+    if(!window.confirm('Start voice input? Your browser may send audio to its speech recognition service. ARKI receives only the editable transcript when you send it.'))return;
+    const owner=ownerId(),chatId=current?.id,voice=new Recognition();
+    activeVoice=voice;voice.lang=(localStorage.getItem('scholark_ui_language')||'nl').replace('_','-');voice.interimResults=false;voice.continuous=false;
+    voice.onresult=e=>{if(activeVoice!==voice||owner!==ownerId()||current?.id!==chatId||!q.isConnected)return;const transcript=Array.from(e.results).map(r=>r[0]?.transcript||'').join(' ').trim();if(transcript){q.value=[q.value.trim(),transcript].filter(Boolean).join(' ');q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}};
+    voice.onerror=()=>{if(activeVoice===voice&&st?.isConnected)st.textContent='Voice input unavailable. You can still type your question.'};
+    voice.onend=()=>{if(activeVoice===voice){activeVoice=null;if(st?.isConnected&&st.textContent==='Listening…')st.textContent='Review the transcript before sending.'}};
+    try{voice.start();if(st)st.textContent='Listening…'}catch{stopVoice();if(st)st.textContent='Could not start voice input.'}
+  }
+  function readAloud(){
+    const st=$('#v107-state'),reply=lastAssistant()?.content;
+    if(!reply||!window.speechSynthesis||!window.SpeechSynthesisUtterance){if(st)st.textContent='No reply or speech playback available.';return}
+    if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();return}
+    const u=new SpeechSynthesisUtterance(String(reply).slice(0,8000));u.lang=localStorage.getItem('scholark_ui_language')||'nl';window.speechSynthesis.speak(u);
+  }
+  function configureMemory(){
+    const owner=ownerId(),st=$('#v107-state');
+    if(owner==='guest'){if(st)st.textContent='Sign in to save personal preferences.';return}
+    const value=window.prompt('Optional personal memory (max 2000 characters). Saved on this device for this account and sent to ARKI only when enabled. Add preferences or goals, not passwords, private identifiers or sensitive information. Empty text clears memory.',personalMemory(owner));
+    if(value===null)return;
+    if(savePersonalMemory(value,owner)){const toggle=$('#v107-memory-use');if(toggle)toggle.checked=!!value.trim();if(st)st.textContent=value.trim()?'Personal memory saved on this device.':'Personal memory cleared.'}
+    else if(st)st.textContent='Could not save personal memory.';
+  }
   function workspaceContextPayload(){
     if(!$('#v107-context')?.checked)return '';
     try{
@@ -141,7 +184,7 @@
     }catch{return false}
   }
   function drawHistory(){const recover=$('#v107-restore');if(recover)recover.hidden=!legacyChatsAvailable(viewOwner||ownerId());const box=$('#v107-history-list');if(!box||!current)return;const a=read();box.innerHTML=a.map(x=>'<div class="v107-row '+(x.id===current.id?'active':'')+'" data-v107-chat="'+esc(x.id)+'"><b>'+esc(x.title||'New chat')+'</b><small>'+esc(new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString())+'</small><button class="v107-rename" data-v107-rename="'+esc(x.id)+'" aria-label="Rename chat" title="Rename chat">✎</button><button class="v107-del" data-v107-del="'+esc(x.id)+'" aria-label="Delete chat">×</button></div>').join('');$$('[data-v107-chat]',box).forEach(row=>row.onclick=e=>{if(e.target.closest('[data-v107-del],[data-v107-rename]'))return;const x=read().find(z=>z.id===row.dataset.v107Chat);if(!x)return;current=x;setActive(x.id);drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()});$$('[data-v107-rename]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();renameChat(b.dataset.v107Rename)});$$('[data-v107-del]',box).forEach(b=>b.onclick=e=>{e.stopPropagation();let a=read().filter(x=>x.id!==b.dataset.v107Del);write(a);if(current.id===b.dataset.v107Del){current=a[0]||createChat();setActive(current.id)}drawHistory();drawThread();syncDraftInput()})}
-  function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Build an interactive HTML lesson I can preview here','Debug my code and show a tested fix','Analyze information and explain the findings','Draft a professional document','Create a step-by-step project plan','Explain a school problem with every step, rules and a memory aid'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='user'?attachmentTags(m.attachments||[]):'')+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
+  function drawThread(){const box=$('#v107-thread');if(!box||!current)return;const msgs=current.messages||[];if(!msgs.length){const q=['Build an interactive HTML lesson I can preview here','Debug my code and show a tested fix','Analyze information and explain the findings','Draft a professional document','Help me make a difficult personal decision','Explain a school problem with every step, rules and a memory aid'];box.innerHTML='<div class="v107-welcome"><h2>Ask me anything.</h2><p>ARKI can help with general knowledge, writing, coding, ideas, planning, explanations, maths, science, languages and more.</p><div class="v107-prompts">'+q.map(x=>'<button class="v107-prompt">'+esc(x)+'</button>').join('')+'</div></div>';$$('.v107-prompt',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.textContent;i.focus()});notifyThreadRendered();return}box.innerHTML=msgs.map((m,i)=>'<div class="v107-msg '+(m.role==='user'?'user':'assistant')+'" data-v107-message-index="'+i+'"><div>'+(m.role==='assistant'?rich(m.content):esc(m.content).replace(/\n/g,'<br>'))+'</div>'+(m.role==='user'?attachmentTags(m.attachments||[]):'')+(m.role==='assistant'?htmlPreviewAction(m,i):'')+'<div class="v107-meta">'+esc(new Date(m.createdAt||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))+'</div>'+(m.role==='assistant'&&Array.isArray(m.followUps)&&m.followUps.length?'<div class="v107-follow">'+m.followUps.slice(0,4).map(x=>'<button data-v107-follow="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>':'')+'</div>').join('');$$('[data-v107-follow]',box).forEach(b=>b.onclick=()=>{const i=$('#v107-q');i.value=b.dataset.v107Follow||b.textContent;i.focus()});bindHtmlPreviews(box);box.scrollTop=box.scrollHeight;notifyThreadRendered()}
   // Release session-check timers immediately when the result settles.
   // Avoid orphaned timeouts after successful ARKI and account-switch requests.
   const withTimeout=(promise,ms,label='request')=>new Promise((resolve,reject)=>{
@@ -219,13 +262,13 @@
       },delay));
       const requestId=(globalThis.crypto?.randomUUID?.()||('sch-ai-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^a-zA-Z0-9._:-]/g,'');
       const deep=!!$('#v107-deep')?.checked;
-      const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload()};
+      const payload={mode:'general_ai',prompt,history,attachments,deep,language:outputLanguage(),level:localStorage.getItem('scholark_learning_level')||'student',context:workspaceContextPayload(),personalMemory:$('#v107-memory-use')?.checked?personalMemory(responseOwner):''};
       const timeoutMs=deep?210000:190000;
       let attempt=await arkiFetch(payload,requestId,session,timeoutMs);
 
       if(!test&&attempt.response.status===401){
         const fresh=await resolvedSession(true);
-        if(fresh?.access_token){
+        if(fresh?.access_token&&fresh.user?.id===responseOwner&&ownerId()===responseOwner){
           session=fresh;
           if(state)state.textContent='Session refreshed · ARKI is retrying…';
           attempt=await arkiFetch(payload,requestId,session,timeoutMs)
@@ -258,7 +301,7 @@
       $('#v107-thinking')?.remove();drawHistory();drawThread();window.__SCHOLARK_CHAT_QUOTA__?.sync?.();window.__SCHOLARK_CHAT_QUOTA__?.refresh?.(false);window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))
     }
   }
-  function open(){const h=host();if(!h)return;viewOwner=ownerId();current=getCurrent(viewOwner);h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><button type="button" class="v107-new" id="v107-restore" hidden style="width:100%;margin-bottom:9px">Restore previous device chats</button><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};$('#v107-restore').onclick=restoreLegacyChats;syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
+  function open(){const h=host();if(!h)return;stopVoice();viewOwner=ownerId();current=getCurrent(viewOwner);h.innerHTML='<div id="v107-ai"><div class="v107-head"><div><div class="v107-kicker">SCHOLARK WORKSPACE</div><h1>ARKI</h1><p>A general-purpose AI you can ask about almost anything — with optional context from your SCHOLARK workspace.</p></div></div><div class="v107-layout"><aside class="v107-history"><div class="v107-history-head"><b>CHAT HISTORY</b><button class="v107-new" id="v107-new">+ New</button></div><button type="button" class="v107-new" id="v107-restore" hidden style="width:100%;margin-bottom:9px">Restore previous device chats</button><div id="v107-history-list"></div></aside><section class="v107-main"><div class="v107-thread" id="v107-thread"></div><div class="v107-compose"><textarea id="v107-q" placeholder="Ask ARKI anything…"></textarea><div class="v107-composebar"><label><input id="v107-deep" type="checkbox"> Deep answer</label><label><input id="v107-context" type="checkbox" checked> Use workspace context</label><label><input id="v107-memory-use" type="checkbox"> Use personal memory</label><button type="button" id="v107-memory-edit">Edit memory</button><button type="button" id="v107-voice">Voice input / stop</button><button type="button" id="v107-read">Read reply / stop</button><a href="/#reminders">Set a reminder</a><span class="v107-state" id="v107-state">Enter to send · Shift + Enter for new line</span><button class="v107-send" id="v107-send">Ask <span>ARKI</span></button></div></div></section></div></div>';$('#v107-new').onclick=()=>{current=createChat();drawHistory();drawThread();syncDraftInput();$('#v107-q')?.focus()};$('#v107-send').onclick=e=>{e.preventDefault();send()};$('#v107-restore').onclick=restoreLegacyChats;$('#v107-memory-edit').onclick=configureMemory;$('#v107-voice').onclick=voiceInput;$('#v107-read').onclick=readAloud;syncDraftInput();$('#v107-q').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey||e.currentTarget.dataset.editing==='1')return;e.preventDefault();send()});drawHistory();drawThread();$('#v107-q').focus();window.__SCHOLARK_I18N__?.apply?.($('#v107-ai'))}
 
   function editUserMessage(index,text){
     const next=String(text||'').trim();if(!next||busy)return false;current=current||getCurrent();const msg=current?.messages?.[index];if(!msg||msg.role!=='user')return false;
@@ -272,9 +315,10 @@
     open();setTimeout(()=>{const q=$('#v107-q');if(q){q.value=text;writeDraft(current?.id,text);q.dispatchEvent(new Event('input',{bubbles:true}));q.focus()}},25);return true;
   }
   addEventListener('scholark:auth-changed',()=>{
-    const next=ownerId();if(viewOwner===next)return;viewOwner=next;current=getCurrent(next);
+    const next=ownerId();if(viewOwner===next)return;stopVoice();const toggle=$('#v107-memory-use');if(toggle)toggle.checked=false;viewOwner=next;current=getCurrent(next);
     if($('#v107-ai')){drawHistory();drawThread();syncDraftInput()}
   });
+  addEventListener('hashchange',()=>stopVoice());
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#v107-send');if(!b||b.onclick)return;e.preventDefault();send()});
   window.__SCHOLARK_V107_GENERAL_AI__={open,newChat:()=>{current=createChat();open()},renameChat,prefill,getCurrent:()=>current||getCurrent(),lastAssistant,editUserMessage,send,version:'20261011-r255'};
 })();
