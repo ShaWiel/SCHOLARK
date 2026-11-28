@@ -545,7 +545,7 @@ function learningModels(mode,p={}){
       ? [process.env.POLLINATIONS_FAST_MODEL||'openai-fast',process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra']
       : [process.env.POLLINATIONS_BALANCED_MODEL||'gpt-5.6-terra',process.env.POLLINATIONS_PREMIUM_MODEL||process.env.POLLINATIONS_MODEL||'gpt-5.6-sol'],
     openai:tier==='light'?(process.env.OPENAI_FAST_MODEL||'gpt-5.6-luna'):(process.env.OPENAI_BALANCED_MODEL||'gpt-5.6-terra'),
-    gemini:process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash'
+    gemini:(tier==='balanced'&&process.env.GEMINI_BALANCED_MODEL)||process.env.GEMINI_FAST_MODEL||process.env.GEMINI_PRIMARY_MODEL||'gemini-3.8-flash'
   };
 }
 async function pollinations(mode,p){
