@@ -4,6 +4,7 @@ self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('push',event=>{
   let data={};try{data=event.data?event.data.json():{}}catch{try{data={body:event.data?.text?.()||''}}catch{}}
+  if(!data||typeof data!=='object'||Array.isArray(data))data={};
   const title=String(data.title||'SCHOLAVERUM'),kind=String(data.kind||'reminder'),tag=String(data.tag||('scholaverum-reminder-'+Date.now()));
   const options={body:String(data.body||''),tag,renotify:kind==='custom',requireInteraction:kind==='custom',silent:false,icon:'/scholaverum-notification-icon-192.png',badge:'/scholaverum-notification-badge-96.png',timestamp:Date.now(),data:{url:safeNotificationUrl(data.url),kind,tag}};
   event.waitUntil((async()=>{
@@ -18,9 +19,12 @@ self.addEventListener('push',event=>{
 self.addEventListener('notificationclick',event=>{
   event.notification.close();
   const target=safeNotificationUrl(event.notification?.data?.url);
-  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
+  event.waitUntil((async()=>{
+    const list=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    const exact=list.find(c=>c.url===target);
+    if(exact){try{return await exact.focus()}catch{}}
     const same=list.find(c=>{try{return new URL(c.url).origin===self.location.origin}catch{return false}});
-    if(same){same.navigate(target);return same.focus()}
+    if(same){try{const navigated=await same.navigate(target);if(navigated)return await navigated.focus()}catch{}}
     return self.clients.openWindow(target);
-  }));
+  })());
 });
